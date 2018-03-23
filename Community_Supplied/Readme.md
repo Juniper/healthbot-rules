@@ -1,1 +1,1 @@
-Community contribution goes here
+Rules under testing goes here
