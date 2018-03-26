@@ -1,1 +1,1 @@
-Rules under testing goes here
+Rules by the open source community goes here
