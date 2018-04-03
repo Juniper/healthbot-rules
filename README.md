@@ -24,8 +24,8 @@ Submit only the .conf files
       uid                          Hubot 
       ssb   4096R/42B317FD4BA89E7A 2016-03-10
       ```
-    - Set git to use commit signing using `git config --global commit.gpgsign true`
-    - Set git to use the key generated above using `git config --global user.signingKey <PASTE_SHORT_KEY_HERE>`
+    - Set git to use commit signing using `git config commit.gpgsign true`
+    - Set git to use the key generated above using `git config user.signingKey <PASTE_SHORT_KEY_HERE>`
     - Use '-S' flag while making a commit e.g. `git commit -S -m your commit message`
 - From your fork open a pull request
     
