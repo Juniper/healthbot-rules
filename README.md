@@ -27,7 +27,7 @@ Submit only the .conf files
     - Set git to use commit signing using `git config commit.gpgsign true`
     - Set git to use the key generated above using `git config user.signingKey <PASTE_SHORT_KEY_HERE>`
     - Use '-S' flag while making a commit e.g. `git commit -S -m your commit message`
-- From your fork open a pull request
+- From your fork open a pull request to the development branch
     
 ### Others
 - All others can only contribute to the 'Community_Supplied' folder. Steps to follow are as follows
@@ -36,7 +36,8 @@ Submit only the .conf files
   - Add the original repository as a remote called upstream
   - If you created your fork a while ago be sure to pull upstream changes into your local repository. Your fork needs to be in sync with upstream for pull request to get merged
   - Make changes 
-  - From your fork open a pull request
+  - From your fork open a pull request to the development branch
+
 **NOTE** 
 Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
 
