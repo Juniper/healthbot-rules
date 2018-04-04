@@ -1,1 +1,1 @@
-Ospf related rules goes here
+Ospf related rules go here
