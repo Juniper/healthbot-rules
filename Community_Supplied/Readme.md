@@ -1,1 +1,1 @@
-Rules by the open source community goes here
+Rules by the open source community go here

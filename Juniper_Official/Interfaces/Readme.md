@@ -1,1 +1,1 @@
-Interface related rules goes here
+Interface related rules go here

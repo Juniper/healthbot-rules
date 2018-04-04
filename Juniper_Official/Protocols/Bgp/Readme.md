@@ -1,1 +1,1 @@
-Bgp related rules goes here
+Bgp related rules go here
