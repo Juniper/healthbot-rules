@@ -1,1 +1,1 @@
-System related rules goes here
+System related rules go here
