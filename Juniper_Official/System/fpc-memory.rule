@@ -1,0 +1,51 @@
+version "18.1I20171121_0736_rsankar [rsankar]";
+iceberg:iceberg {
+    topic pfe-generic {
+        rule fpc-memory {
+            keys [ id target name ];
+            sensor FpcMemory {
+                iAgent {
+                    file fpc_memory.yml;
+                    table FpcMemory;
+                    frequency 10;
+                }
+            }
+            trigger memory-usage-percentage {
+                term way-over-limit {
+                    when {
+                        greater-than "$perc" 90;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name memory usage for $slot is too high ($perc)!";
+                        }
+                    }
+                }
+                term over-limit {
+                    when {
+                        greater-than "$perc" 70;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name memory usage for $slot is high ($perc)!";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        matches-with Any Any;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$name memory usage for $slot is normal ($perc)!";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
