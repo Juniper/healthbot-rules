@@ -2,7 +2,7 @@ version "18.1I20171121_0736_rsankar [rsankar]";
 iceberg:iceberg {
     topic ospf {
         rule pfe-ddos-policer {
-            keys [ location slot protocol ];
+            keys [ location target protocol ];
             sensor DdosPolicerStatsTable {
                 iAgent {
                     file pfe-ddos-policer.yml;
@@ -49,25 +49,28 @@ iceberg:iceberg {
                 }
             }
             trigger drop {
-                term some-drops {
+                term drops-increasing {
                     when {
-                        greater-than "$drop" 0;
+                        min-rate-of-increase "$drop" {
+                            rate 1;
+                            time-range 60s;
+                        }
                     }
                     then {
                         status {
-                            color yellow;
-                            message "Some OSPF packets were dropped.";
+                            color red;
+                            message "OSPF packets dropped in the last 60 seconds";
                         }
                     }
                 }
-                term no-drops {
+                term not-increasing {
                     when {
-                        equal-to "$drop" 0;
+                        matches-with True True;
                     }
                     then {
                         status {
                             color green;
-                            message "No OSPF packets dropped";
+                            message "No OSPF packets dropped in the last 60 seconds.";
                         }
                     }
                 }
