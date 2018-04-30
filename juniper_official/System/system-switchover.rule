@@ -1,0 +1,39 @@
+version "18.1I20171121_0736_rsankar [rsankar]";
+iceberg:iceberg {
+    topic ifstate-system {
+        rule gres-readiness {
+            keys switchover-state;
+            sensor ifstate-gres {
+                iAgent {
+                    file gres.yaml;
+                    table ifstate-gres;
+                    frequency 1800s;
+                }
+            }
+            trigger check-gres-readiness {
+                term sso-enabled-true {
+                    when {
+                        matches-with "$switchover-state" On;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "GRES is enabled";
+                        }
+                    }
+                }
+                term sso-enabled-false {
+                    when {
+                        matches-with "$switchover-state" Off;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "GRES is disabled";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
