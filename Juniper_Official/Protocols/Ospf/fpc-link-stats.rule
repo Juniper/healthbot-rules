@@ -1,0 +1,42 @@
+version "18.1I20171121_0736_rsankar [rsankar]";
+iceberg:iceberg {
+    topic ospf {
+        rule fpc-link-stats {
+            keys target;
+            sensor FPCLinkStats {
+                iAgent {
+                    file fpc_link_stats.yml;
+                    table FPCLinkStats;
+                    frequency 10s;
+                }
+            }
+            trigger ospf-hello-increasing {
+                term monotonically-increasing {
+                    when {
+                        min-rate-of-increase "$OSPF_Hello" {
+                            rate 1;
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF Hello packets received on $target within the last 60 seconds.";
+                        }
+                    }
+                }
+                term not-increasing {
+                    when {
+                        equal-to True True;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF Hello packets *not* received on $target within the last 60 seconds.";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
