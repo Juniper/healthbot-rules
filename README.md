@@ -28,6 +28,7 @@ Submit only the .conf files
     - Set git to use the key generated above using `git config user.signingKey <PASTE_SHORT_KEY_HERE>`
     - Use '-S' flag while making a commit e.g. `git commit -S -m your commit message`
 - From your fork open a pull request to the development branch
+NOTE - You need to set the juniper email id in your git configuration
     
 ### Others
 - All others can only contribute to the 'Community_Supplied' folder. Steps to follow are as follows
