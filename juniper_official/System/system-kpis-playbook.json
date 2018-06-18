@@ -1,0 +1,1035 @@
+{
+            "topic" : [
+            {
+                "topic-name" : "system_cpu", 
+                "description" : "This topic is to monitor's system cpu and sends an alert in case utilization is above thresholds", 
+                "rule" : [
+                {
+                    "rule-name" : "system_cpu", 
+                    "keys" : ["route_engine"],
+                    "function" : [
+                    {
+                        "function-name" : "subtract", 
+                        "description" : "function that tweaks thresholds by subtracting them from 100 so that cpu utilization can be found from cpu-idle%", 
+                        "path" : "system_sensors.py", 
+                        "method" : "subtract", 
+                        "argument" : [
+                        {
+                            "argument-name" : "threshold", 
+                            "mandatory" : [null]
+                        }
+                        ]
+                    }
+                    ], 
+                    "sensor" : [
+                    {
+                        "sensor-name" : "components", 
+                        "open-config" : {
+                            "sensor-name" : "/components/", 
+                            "frequency" : "20s"
+                        }
+                    }
+                    ], 
+                    "field" : [
+                    {
+                        "field-name" : "re_cpu_utilization", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "components", 
+                            "where" : "/components/component/properties/property/@name == 'cpu-utilization-idle'", 
+                            "path" : "/components/component/properties/property/state/value"
+                        }
+                        ], 
+                        "description" : "This field is for re cpu idle utilization"
+                    }, 
+                    {
+                        "field-name" : "re_cpu_utilization_higher_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_Higher_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer", 
+                        "description" : "This field is for re cpu utilization higher threshold value"
+                    }, 
+                    {
+                        "field-name" : "re_cpu_utilization_lower_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_Lower_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer", 
+                        "description" : "This field is for re cpu utilization lower threshold value"
+                    }, 
+                    {
+                        "field-name" : "route_engine", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "components", 
+                            "where" : "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/", 
+                            "path" : "/components/component/@name"
+                        }
+                        ], 
+                        "description" : "This field is for re identification"
+                    }
+                    ], 
+                    "trigger" : [
+                    {
+                        "trigger-name" : "re_cpu_utilization", 
+                        "term" : [
+                        {
+                            "term-name" : "is_re_cpu_utilization_normal", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$re_cpu_utilization", 
+                                    "right-operand" : "$re_cpu_utilization_lower_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "$route_engine cpu utilization is lesser than lower threshold"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_re_cpu_utilization_median", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$re_cpu_utilization", 
+                                    "right-operand" : "$re_cpu_utilization_higher_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : " $route_engine cpu utilization is in medium range"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_re_cpu_utilization_abnormal", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "$route_engine cpu utilization is greater than higher threshold"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ], 
+                    "variable" : [
+                    {
+                        "name" : "RE_CPU_Utilization_Higher_Threshold", 
+                        "value" : "50", 
+                        "description" : "Enter re cpu utilization maximum threshold values if default value not matches with your requirement", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_CPU_Utilization_Lower_Threshold", 
+                        "value" : "20", 
+                        "description" : "Enter re cpu utilization maximum threshold values if default value not matches with your requirement", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_Slot_No", 
+                        "value" : "0-1", 
+                        "description" : "Enter RE numbers to be monitored i.e. 0 or 1, deafult is set for both res ", 
+                        "type" : "string"
+                    }
+                    ]
+                }, 
+                {
+                    "rule-name" : "system_cpu_load_average", 
+                    "keys" : ["slot"],
+                    "function" : [
+                    {
+                        "function-name" : "subtract", 
+                        "description" : "function that tweaks thresholds by subtracting them from 100 so that cpu utilization can be found from cpu-idle%", 
+                        "path" : "system_sensors.py", 
+                        "method" : "subtract", 
+                        "argument" : [
+                        {
+                            "argument-name" : "threshold", 
+                            "mandatory" : [null]
+                        }
+                        ]
+                    }
+                    ], 
+                    "sensor" : [
+                    {
+                        "sensor-name" : "CPUutilizationTable", 
+                        "iAgent" : {
+                            "file" : "SystemCpu.yml", 
+                            "table" : "CPUutilizationTable", 
+                            "frequency" : "10s"
+                        }
+                    }
+                    ], 
+                    "field" : [
+                    {
+                        "field-name" : "cpu_utilization_15min_higher_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_15min_Higher_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer", 
+                        "description" : "This field shows processes to be monitored"
+                    }, 
+                    {
+                        "field-name" : "cpu_utilization_15min_lower_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_15min_Lower_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "cpu_utilization_1min_higher_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_1min_Higher_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "cpu_utilization_1min_lower_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_1min_Lower_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "cpu_utilization_5min_higher_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_5min_Higher_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "cpu_utilization_5min_lower_threshold", 
+                        "formula" : {
+                            "user-defined-function" : {
+                                "function-name" : "subtract", 
+                                "argument" : [
+                                {
+                                    "argument" : "threshold", 
+                                    "value" : "{{RE_CPU_Utilization_5min_Lower_Threshold}}"
+                                }
+                                ]
+                            }
+                        }, 
+                        "type" : "integer"
+                    }
+                    ], 
+                    "trigger" : [
+                    {
+                        "trigger-name" : "cpu-utilization-15min", 
+                        "term" : [
+                        {
+                            "term-name" : "green", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$cpu-idle-15min", 
+                                    "right-operand" : "$cpu_utilization_15min_lower_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "Routing Engine$slot 15min cpu utilization is lesser than lower threshold"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "yellow", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$cpu-idle-15min", 
+                                    "right-operand" : "$cpu_utilization_15min_higher_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "Routing Engine$slot 15min cpu utilization is in medium range"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "red", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "Routing Engine$slot  15min cpu utilization is greater than higher threshold"
+                                }
+                            }
+                        }
+                        ]
+                    }, 
+                    {
+                        "trigger-name" : "cpu-utilization-1min", 
+                        "term" : [
+                        {
+                            "term-name" : "green", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$cpu-idle-1min", 
+                                    "right-operand" : "$cpu_utilization_1min_lower_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "Routing Engine$slot 1min cpu utilization is lesser than lower threshold"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "yellow", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$cpu-idle-1min", 
+                                    "right-operand" : "$cpu_utilization_1min_higher_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "Routing Engine$slot  1min cpu utilization is in medium range"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "red", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "Routing Engine$slot 1min cpu utilization is greater than higher threshold"
+                                }
+                            }
+                        }
+                        ]
+                    }, 
+                    {
+                        "trigger-name" : "cpu-utilization-5min", 
+                        "term" : [
+                        {
+                            "term-name" : "green", 
+                            "when" : {
+                                "greater-than" : [
+                                {
+                                    "left-operand" : "$cpu-idle-5min", 
+                                    "right-operand" : "$cpu_utilization_5min_lower_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "Routing Engine$slot 5min cpu utilization is lesser than lower threshold"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "yellow", 
+                            "when" : {
+                                "greater-than" : [
+                                {
+                                    "left-operand" : "$cpu-idle-5min", 
+                                    "right-operand" : "$cpu_utilization_5min_higher_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "Routing Engine$slot 5min cpu utilization is in medium range"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "red", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "Routing Engine$slot 5min cpu utilization is greater than higher threshold"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ], 
+                    "variable" : [
+                    {
+                        "name" : "RE_CPU_Utilization_15min_Higher_Threshold", 
+                        "value" : "75", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_CPU_Utilization_15min_Lower_Threshold", 
+                        "value" : "25", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_CPU_Utilization_1min_Higher_Threshold", 
+                        "value" : "80", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_CPU_Utilization_1min_Lower_Threshold", 
+                        "value" : "40", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_CPU_Utilization_5min_Higher_Threshold", 
+                        "value" : "75", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_CPU_Utilization_5min_Lower_Threshold", 
+                        "value" : "25", 
+                        "type" : "int"
+                    }
+                    ]
+                }
+                ]
+            }, 
+            {
+                "topic-name" : "system_memory", 
+                "description" : "This topic is to monitor's system memory and sends an alert in case utilization is above thresholds", 
+                "rule" : [
+                {
+                    "rule-name" : "system_memory", 
+                    "keys" : ["route_engine"],
+                    "sensor" : [
+                    {
+                        "sensor-name" : "components", 
+                        "open-config" : {
+                            "sensor-name" : "/components/", 
+                            "frequency" : "20s"
+                        }
+                    }
+                    ], 
+                    "field" : [
+                    {
+                        "field-name" : "re_memory_buffer", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "components", 
+                            "where" : "/components/component/properties/property/@name == 'memory-utilization-buffer'", 
+                            "path" : "/components/component/properties/property/state/value"
+                        }
+                        ], 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "re_memory_buffer_higher_threshold", 
+                        "constant" : {
+                            "value" : "{{RE_Memory_Buffer_Higher_Threshold}}"
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "re_memory_buffer_lower_threshold", 
+                        "constant" : {
+                            "value" : "{{RE_Memory_Buffer_Lower_Threshold}}"
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "route_engine", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "components", 
+                            "where" : "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/", 
+                            "path" : "/components/component/@name"
+                        }
+                        ], 
+                        "type" : "string"
+                    }
+                    ], 
+                    "trigger" : [
+                    {
+                        "trigger-name" : "re_memory_buffer_utilization", 
+                        "term" : [
+                        {
+                            "term-name" : "green", 
+                            "when" : {
+                                "less-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$re_memory_buffer", 
+                                    "right-operand" : "$re_memory_buffer_lower_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "$route_engine memory buffer utilization($re_memory_buffer) is lesser than lower threshold($re_memory_buffer_lower_threshold)"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "yellow", 
+                            "when" : {
+                                "less-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$re_memory_buffer", 
+                                    "right-operand" : "$re_memory_buffer_higher_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "$route_engine memory buffer utilization($re_memory_buffer) is in medium range(>=$re_memory_buffer_lower_threshold, <=$re_memory_buffer_higher_threshold)"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "red", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "$route_engine memory buffer utilization($re_memory_buffer) is greater than higher threshold($re_memory_buffer_higher_threshold)"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ], 
+                    "variable" : [
+                    {
+                        "name" : "RE_Memory_Buffer_Higher_Threshold", 
+                        "value" : "60", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_Memory_Buffer_Lower_Threshold", 
+                        "value" : "20", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "RE_Slot_No", 
+                        "value" : "0-1", 
+                        "type" : "string"
+                    }
+                    ]
+                }
+                ]
+            }, 
+            {
+                "topic-name" : "system_processes", 
+                "description" : "This topic is to monitori the cpu, memory utilization of junos system processes", 
+                "rule" : [
+                {
+                    "rule-name" : "process_cpu", 
+                    "keys" : ["cmd"],
+                    "sensor" : [
+                    {
+                        "sensor-name" : "SystemProcExtTable", 
+                        "iAgent" : {
+                            "file" : "SystemProcExt.yml", 
+                            "table" : "SystemProcExtTable", 
+                            "frequency" : "10s"
+                        }
+                    }
+                    ], 
+                    "field" : [
+                    {
+                        "field-name" : "cmd", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "SystemProcExtTable", 
+                            "path" : "cmd"
+                        }
+                        ], 
+                        "description" : "This field is to parse all junos processes names"
+                    }, 
+                    {
+                        "field-name" : "max_threshold", 
+                        "constant" : {
+                            "value" : "{{max_threshold}}"
+                        }, 
+                        "type" : "integer", 
+                        "description" : "This field is for processes cpu maximum threshold value"
+                    }, 
+                    {
+                        "field-name" : "min_threshold", 
+                        "constant" : {
+                            "value" : "{{min_threshold}}"
+                        }, 
+                        "type" : "integer", 
+                        "description" : "This field is for processes cpu minimum threshold value"
+                    }, 
+                    {
+                        "field-name" : "process_name", 
+                        "constant" : {
+                            "value" : "{{process_name}}"
+                        }, 
+                        "type" : "string", 
+                        "description" : "This field shows processes to be monitored"
+                    }, 
+                    {
+                        "field-name" : "wcpu", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "SystemProcExtTable", 
+                            "path" : "wcpu"
+                        }
+                        ], 
+                        "description" : "This field shows cpu utilization for corresponding processes"
+                    }
+                    ], 
+                    "trigger" : [
+                    {
+                        "trigger-name" : "check_processes_cpu", 
+                        "term" : [
+                        {
+                            "term-name" : "skip_undefined_processes", 
+                            "when" : {
+                                "does-not-match-with" : [
+                                {
+                                    "left-operand" : "$cmd", 
+                                    "right-operand" : "$process_name"
+                                }
+                                ]
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_cpu_utilization_normal", 
+                            "when" : {
+                                "less-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$wcpu", 
+                                    "right-operand" : "$min_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "$cmd cpu utilization($wcpu) is below lower threshold($min_threshold)"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_cpu_utilization_median", 
+                            "when" : {
+                                "less-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$wcpu", 
+                                    "right-operand" : "$max_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "$cmd cpu utilization($wcpu) is in medium range(>=$min_threshold, <=$max_threshold)"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_cpu_utilization_abnormal", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "$cmd cpu utilization($wcpu) is above higher threshold($max_threshold)"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ], 
+                    "variable" : [
+                    {
+                        "name" : "max_threshold", 
+                        "value" : "70", 
+                        "description" : "Enter processes cpu maximum threshold values if default value not matches with your requirement", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "min_threshold", 
+                        "value" : "20", 
+                        "description" : "Enter processes cpu minimum threshold values if default value not matches with your requirement", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "process_name", 
+                        "value" : "chassisd|pfed|cosd|snmpd|dcd|dfwd|eventd|mgd|mib2d|rpd", 
+                        "description" : "Enter processes to be monitored with separator or leave it to default", 
+                        "type" : "string"
+                    }
+                    ]
+                }, 
+                {
+                    "rule-name" : "process_memory", 
+                    "keys" : ["cmd"],
+                    "function" : [
+                    {
+                        "function-name" : "isExceeding", 
+                        "path" : "system_processes.py", 
+                        "method" : "isExceeding", 
+                        "argument" : [
+                        {
+                            "argument-name" : "res", 
+                            "mandatory" : [null]
+                        }, 
+                        {
+                            "argument-name" : "size", 
+                            "mandatory" : [null]
+                        }, 
+                        {
+                            "argument-name" : "threshold", 
+                            "mandatory" : [null]
+                        }
+                        ]
+                    }
+                    ], 
+                    "sensor" : [
+                    {
+                        "sensor-name" : "SystemProcExtTable", 
+                        "iAgent" : {
+                            "file" : "SystemProcExt.yml", 
+                            "table" : "SystemProcExtTable", 
+                            "frequency" : "10s"
+                        }
+                    }
+                    ], 
+                    "field" : [
+                    {
+                        "field-name" : "cmd", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "SystemProcExtTable", 
+                            "path" : "cmd"
+                        }
+                        ], 
+                        "description" : "This field is to parse all junos processes names"
+                    }, 
+                    {
+                        "field-name" : "max_threshold", 
+                        "constant" : {
+                            "value" : "{{max_threshold}}"
+                        }, 
+                        "type" : "integer", 
+                        "description" : "This field is for processes memory maximum threshold value"
+                    }, 
+                    {
+                        "field-name" : "min_threshold", 
+                        "constant" : {
+                            "value" : "{{min_threshold}}"
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "process_name", 
+                        "constant" : {
+                            "value" : "{{process_name}}"
+                        }, 
+                        "type" : "string", 
+                        "description" : "This field shows processes to be monitored"
+                    }, 
+                    {
+                        "field-name" : "reserved", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "SystemProcExtTable", 
+                            "path" : "res"
+                        }
+                        ], 
+                        "description" : "This field is for reserved memory"
+                    }, 
+                    {
+                        "field-name" : "size", 
+                        "sensor" : [
+                        {
+                            "sensor-name" : "SystemProcExtTable", 
+                            "path" : "size"
+                        }
+                        ], 
+                        "description" : "This field is for processes memory size"
+                    }
+                    ], 
+                    "trigger" : [
+                    {
+                        "trigger-name" : "skiping_undefined_processes", 
+                        "term" : [
+                        {
+                            "term-name" : "skip", 
+                            "when" : {
+                                "does-not-match-with" : [
+                                {
+                                    "left-operand" : "$cmd", 
+                                    "right-operand" : "$process_name"
+                                }
+                                ]
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_memory_utilization_normal", 
+                            "when" : {
+                                "user-defined-function" : [
+                                {
+                                    "function-name" : "isExceeding", 
+                                    "argument" : [
+                                    {
+                                        "argument" : "size", 
+                                        "value" : "$size"
+                                    }, 
+                                    {
+                                        "argument" : "res", 
+                                        "value" : "$reserved"
+                                    }, 
+                                    {
+                                        "argument" : "threshold", 
+                                        "value" : "$min_threshold"
+                                    }
+                                    ]
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "$cmd  memory utilization is below lower threshold($min_threshold)"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_memory_utilization_median", 
+                            "when" : {
+                                "user-defined-function" : [
+                                {
+                                    "function-name" : "isExceeding", 
+                                    "argument" : [
+                                    {
+                                        "argument" : "size", 
+                                        "value" : "$size"
+                                    }, 
+                                    {
+                                        "argument" : "res", 
+                                        "value" : "$reserved"
+                                    }, 
+                                    {
+                                        "argument" : "threshold", 
+                                        "value" : "$max_threshold"
+                                    }
+                                    ]
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "$cmd memory utilization is in medium range(>=$min_threshold, <=$max_threshold)"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_memory_utilization_abnormal", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "$cmd memory utilization is above higher threshold($max_threshold)"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ], 
+                    "variable" : [
+                    {
+                        "name" : "max_threshold", 
+                        "value" : "70", 
+                        "description" : "Enter processes memory maximum threshold values if default value not matches with your requirement", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "min_threshold", 
+                        "value" : "20", 
+                        "description" : "Enter processes memory minimum threshold values if default value not matches with your requirement", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "process_name", 
+                        "value" : "chassisd|pfed|cosd|snmpd|dcd|dfwd|eventd|mgd|mib2d|rpd", 
+                        "description" : "Enter processes to be monitored with separator or leave it to default", 
+                        "type" : "string"
+                    }
+                    ]
+                }
+                ]
+            }, 
+            {
+                "topic-name" : "system_storage", 
+                "rule" : [
+                {
+                    "rule-name" : "storage_used", 
+                    "keys" : ["filesystem-name"],
+                    "sensor" : [
+                    {
+                        "sensor-name" : "StorageTable", 
+                        "iAgent" : {
+                            "file" : "SystemStorage.yml", 
+                            "table" : "StorageTable", 
+                            "frequency" : "20s"
+                        }
+                    }
+                    ], 
+                    "field" : [
+                    {
+                        "field-name" : "higher_threshold", 
+                        "constant" : {
+                            "value" : "{{Higher_Threshold}}"
+                        }, 
+                        "type" : "integer"
+                    }, 
+                    {
+                        "field-name" : "lower_threshold", 
+                        "constant" : {
+                            "value" : "{{Lower_Threshold}}"
+                        }, 
+                        "type" : "integer"
+                    }
+                    ], 
+                    "trigger" : [
+                    {
+                        "trigger-name" : "fs_utilization", 
+                        "term" : [
+                        {
+                            "term-name" : "is_system_storage_abnormal", 
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$used-percent", 
+                                    "right-operand" : "$higher_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "red", 
+                                    "message" : "storage used for $filesystem-name is above $higher_threshold%"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_system_storage_normal", 
+                            "when" : {
+                                "less-than" : [
+                                {
+                                    "left-operand" : "$used-percent", 
+                                    "right-operand" : "$lower_threshold"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "status" : {
+                                    "color" : "green", 
+                                    "message" : "storage used for $filesystem-name is normal $used-percent%"
+                                }
+                            }
+                        }, 
+                        {
+                            "term-name" : "is_system_storage_midian", 
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow", 
+                                    "message" : "storage used for $filesystem-name is in medium range(>=$lower_threshold, <=$higher_threshold)"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ], 
+                    "variable" : [
+                    {
+                        "name" : "Higher_Threshold", 
+                        "value" : "70", 
+                        "type" : "int"
+                    }, 
+                    {
+                        "name" : "Lower_Threshold", 
+                        "value" : "50", 
+                        "type" : "int"
+                    }
+                    ]
+                }
+                ]
+            }
+            ], 
+            "playbook" : [
+            {
+                "playbook-name" : "system-kpis-playbook", 
+                "rules" : ["system_cpu/system_cpu", "system_cpu/system_cpu_load_average", "system_memory/system_memory", "system_processes/process_cpu", "system_processes/process_memory", "system_storage/storage_used"],
+                "description" : "This playbook takes min, max thresholds as input and monitors system cpu, memory, storage and junos processes cpu and memory utilization", 
+                "synopsis" : "System key performance indicators"
+            }
+            ] 
+}

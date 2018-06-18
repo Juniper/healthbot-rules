@@ -1,0 +1,108 @@
+{
+        "topic" : [
+        {
+            "topic-name" : "storage", 
+            "rule" : [
+            {
+                "rule-name" : "storage_used", 
+                "keys" : ["filesystem-name"],
+                "sensor" : [
+                {
+                    "sensor-name" : "StorageTable", 
+                    "iAgent" : {
+                        "file" : "SystemStorage.yml", 
+                        "table" : "StorageTable", 
+                        "frequency" : "20s"
+                    }
+                }
+                ], 
+                "field" : [
+                {
+                        "field-name" : "lower_threshold", 
+                        "constant" : {
+                            "value" : "{{Lower_Threshold}}"
+                        }, 
+                        "type" : "integer"
+                },
+                {
+                        "field-name" : "higher_threshold", 
+                        "constant" : {
+                            "value" : "{{Higher_Threshold}}"
+                        }, 
+                        "type" : "integer"
+                }
+                ], 
+                "trigger" : [
+                {
+                    "trigger-name" : "check_system_storage", 
+                    "term" : [
+                    {
+                        "term-name" : "is_system_storage_abnormal", 
+                        "when" : {
+                            "greater-than-or-equal-to" : [
+                            {
+                                "left-operand" : "$used-percent", 
+                                "right-operand" : "$higher_threshold"
+                            }
+                            ]
+                        }, 
+                        "then" : {
+                            "status" : {
+                                "color" : "red", 
+                                "message" : "storage used for $filesystem-name is above $higher_threshold%"
+                            }
+                        }
+                    },
+                    {
+                        "term-name" : "is_system_storage_normal", 
+                        "when" : {
+                            "less-than" : [
+                            {
+                                "left-operand" : "$used-percent", 
+                                "right-operand" : "$lower_threshold"
+                            }
+                            ]
+                        },
+                        "then" : {
+                            "status" : {
+                                "color" : "green", 
+                                "message" : "storage used for $filesystem-name is normal $used-percent%"
+                            }
+                        }
+                    },
+                    {
+                        "term-name" : "is_system_storage_midian", 
+                        "then" : {
+                            "status" : {
+                                "color" : "yellow", 
+                                "message" : "storage used for $filesystem-name is in medium range(>=$lower_threshold, <=$higher_threshold)"
+                            }
+                        }
+                    }
+                    ]
+                }
+                ], 
+                    "variable" : [
+                    {
+                        "name" : "Lower_Threshold", 
+                        "value" : "50", 
+                        "type" : "int"
+                    },
+                    {
+                        "name" : "Higher_Threshold", 
+                        "value" : "70", 
+                        "type" : "int"
+                    }
+                    ]
+            }
+            ]
+        }
+        ], 
+        "playbook" : [
+            {
+                "playbook-name" : "System-Storage-playbook", 
+                "rules" : ["storage/storage_used"],
+                "synopsis" : "This playbook is to monitor and notify storage used by filesystems"
+            }
+            ]
+}
