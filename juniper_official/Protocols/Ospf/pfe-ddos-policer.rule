@@ -1,0 +1,104 @@
+version "18.1I20171121_0736_rsankar [rsankar]";
+iceberg:iceberg {
+    topic ospf {
+        rule pfe-ddos-policer {
+            keys [ location target protocol ];
+            sensor DdosPolicerStatsTable {
+                iAgent {
+                    file pfe-ddos-policer.yml;
+                    table DdosPolicerStatsTable;
+                    frequency 10s;
+                }
+            }
+            trigger arrival {
+                term nothing-arrived {
+                    when {
+                        equal-to "$pass" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "No OSPF packets received.";
+                        }
+                    }
+                }
+                term incrementing {
+                    when {
+                        min-rate-of-increase "$pass" {
+                            rate 1;
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF packets received in the last 60 seconds";
+                        }
+                    }
+                }
+                term not-incrementing {
+                    when {
+                        matches-with True True;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF packets stopped arriving.";
+                        }
+                    }
+                }
+            }
+            trigger drop {
+                term drops-increasing {
+                    when {
+                        min-rate-of-increase "$drop" {
+                            rate 1;
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF packets dropped in the last 60 seconds";
+                        }
+                    }
+                }
+                term not-increasing {
+                    when {
+                        matches-with True True;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No OSPF packets dropped in the last 60 seconds.";
+                        }
+                    }
+                }
+            }
+            trigger pass-versus-arrival {
+                term equal {
+                    when {
+                        equal-to "$arrival_rate" "$pass_rate";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF Arrival rate is equal to the Pass rate.";
+                        }
+                    }
+                }
+                term less-than {
+                    when {
+                        less-than "$pass_rate" "$arrival_rate";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "OSPF Arrival rate is less than the Pass rate.";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
