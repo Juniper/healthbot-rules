@@ -1,0 +1,42 @@
+iceberg {
+    topic chassis {
+        rule check-controlboard-switch-statistics {
+            keys description;
+            sensor controlboard-switch-statistics {
+                iAgent {
+                    file chassis-ethernetswitch-statistics.yml;
+                    table chassisEthernetSwitchStatisticsTable;
+                    frequency 10s;
+                }
+            }
+            trigger ethernet-errors-increasing {
+                term are-any-errors-increasing {
+                    when {
+                        min-rate-of-increase "@all-error-counters" {
+                            rate 1;
+                            time-range 60s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ControlBoard ethernet switch errors increasing for $description";
+                        }
+                    }
+                }
+                term no-errors-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "ControlBoard ethernet switch errors not increasing for $description";
+                        }
+                    }
+                }
+            }
+            vector all-error-counters {
+                path [ "$rx_align_errs" "$rx_false_carrier_errs" "$rx_fcs_errs" "$rx_fragments" "$rx_jabbers" "$rx_out_of_range_len" "$rx_oversize_pkts" "$rx_symbol_errs" "$rx_undersize_pkts" "$rx_unsupp_opcodes" "$tx_coll_frames" "$tx_excessive_colls" "$tx_fcs_errs" "$tx_frag_counter" "$tx_frame_deferred" "$tx_frame_excessive_deferred" "$tx_jabbers" "$tx_late_colls" "$tx_mac_ctrl_frames" "$tx_multiple_coll_frames" "$tx_oversize_pkts" "$tx_pause_mac_ctrl_frames" "$tx_single_coll_frames" ];
+            }
+        }
+    }
+}
