@@ -1,0 +1,38 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-system-storage-capacity {
+            /* description "Monitors the system storage capacity"; */
+            keys filesystem-name;
+            sensor system-storage-capacity {
+                iAgent {
+                    file system-storage-capacity.yml;
+                    table systemStorage;
+                    frequency 10s;
+                }
+            }
+            trigger system-storage-capacity {
+                term is-system-storage-capacity-greater-than-80 {
+                    when {
+                        greater-than "$system-storage-capacity" 80;
+                        matches-with "$system-storage-filesystem" /dev/gpt/junos;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The system has less than 20% storage capacity left";
+                        }
+                    }
+                }
+                term system-storage-capacity-lesser-than-equal-to-80 {
+                    then {
+                        status {
+                            color green;
+			    message "The system is using $system-storage-capacity percent of the storage capacity";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
