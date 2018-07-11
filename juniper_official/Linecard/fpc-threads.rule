@@ -1,0 +1,37 @@
+iceberg {
+    topic linecard {
+	description "Rules relevant to metrics on the line-card";
+        rule check-fpc-threads {
+	  /*  description "Monitors the CPU utilization by FPC threads"; */
+            keys [ Name target ];
+            sensor fpc-threads {
+                iAgent {
+                    file fpc-threads.yml;
+                    table FPCThread;
+                    frequency 60s;
+                }
+            }
+            trigger fpc-threads-cpu-utilization {
+                term is-cpu-utilization-greater-than-80 {
+                    when {
+                        greater-than "$cpu" 80;
+			does-not-match-with "$Name" "Idle";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC thread CPU utilization for $Name is over 80%";
+                        }
+                    }
+                }
+                term cpu-utilization-is-less-than-or-equal-to-80 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
