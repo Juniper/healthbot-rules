@@ -1,0 +1,145 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to protocols";
+        rule check-pfe-traffic-statistics {
+            /*  Monitors PFE traffic statistics such as fabric drops, host path hardware drops, info cell discards, OSPF hello counts */
+            keys ospf-hello-count;
+            sensor pfeStats {
+                iAgent {
+                    file pfe-traffic-statistics.yml;
+                    table pfeStats;
+                    frequency 10s;
+                }
+            }
+            trigger fabric-drops {
+                term are-fabric-drops-increasing {
+                    when {
+                        min-rate-of-increase "$fabric-drops" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Fabric drops ($fabric-drops) increasing";
+                        }
+                    }
+                }
+                term are-fabric-drops-non-zero {
+                    when {
+                        greater-than "$fabric-drops" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Fabric drops ($fabric-drops) non-zero";
+                        }
+                    }
+                }
+                term fabric-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Fabric drops not increasing";
+                        }
+                    }
+                }
+            }
+            trigger host-path-hardware-drops {
+                term are-host-path-drops-increasing {
+                    when {
+                        min-rate-of-increase "$host-path-hardware-drops" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Host path hardware input drops ($host-path-hardware-drops) increasing";
+                        }
+                    }
+                }
+                term are-host-path-drops-non-zero {
+                    when {
+                        greater-than "$host-path-hardware-drops" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Host path hardware input drops ($host-path-hardware-drops) non-zero";
+                        }
+                    }
+                }
+                term host-path-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Host path hardware input drops not increasing";
+                        }
+                    }
+                }
+            }
+            trigger info-cell-discard {
+                term are-info-cell-discards-increasing {
+                    when {
+                        min-rate-of-increase "$info-cell-discards" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Info cell discards ($info-cell-discards) increasing";
+                        }
+                    }
+                }
+                term are-info-cell-discards-non-zero {
+                    when {
+                        greater-than "$info-cell-discards" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Info cell discards ($info-cell-discards) are non-zero";
+                        }
+                    }
+                }
+                term info-cell-discards-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Info cell discards not increasing";
+                        }
+                    }
+                }
+            }
+            trigger ospf-hello-count {
+                term are-ospf-hello-counts-increasing {
+                    when {
+                        min-rate-of-increase "$ospf-hello-count" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF hello count ($ospf-hello-count) increasing";
+                        }
+                    }
+                }
+                term are-ospf-hello-counts-not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "OSPF hello count ($ospf-hello-count) not increasing";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
