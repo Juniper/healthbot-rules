@@ -1,0 +1,50 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-system-statistics-ip {
+            /* description "Monitors incoming ip no socket buffer drops"; */
+            keys incoming-rawip-packets-dropped-no-socket-buffer;
+            sensor system-statistics-ip {
+                iAgent {
+                    file system-statistics-ip.yml;
+                    table systemStatisticsIP;
+                    frequency 10s;
+                }
+            }
+            trigger incoming-raw-ip-no-socket-buffer-packets-dropped {
+                term are-incoming-ip-no-socket-buffer-drops-increasing {
+                    when {
+                        min-rate-of-increase "$system-statistics-ip-no-socket-buffer" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Incoming IP no socket buffer drops ($system-statistics-ip-no-socket-buffer) increasing";
+                        }
+                    }
+                }
+                term are-incoming-ip-no-socket-buffer-drops-non-zero {
+                    when {
+                        greater-than "$system-statistics-ip-no-socket-buffer" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Incoming IP no socket buffer drops are non-zero";
+                        }
+                    }
+                }
+                term incoming-ip-no-socket-buffer-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
