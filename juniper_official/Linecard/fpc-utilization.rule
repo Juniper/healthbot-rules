@@ -1,0 +1,78 @@
+iceberg {
+    topic linecard {
+    description "Rules relevant to metrics on the line-card";
+        rule check-fpc-utilization-information {
+	    /* description "Monitors FPC buffer, heap and cpu utilizations"; */
+            keys slot;
+            sensor FPCCPUHEAPutilizationTable {
+                iAgent {
+                    file fpc-utilization.yml;
+                    table FPCCPUHEAPutilizationTable;
+                    frequency 10s;
+                }
+            }
+            trigger fpc-buffer-memory-utilization {
+                term is-buffer-memory-utilization-greater-than-80 {
+                    when {
+                        greater-than "$memory-buffer-utilization" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC buffer memory utilization is over 80%";
+                        }
+                    }
+                }
+                term buffer-utilization-less-than-or-equal-to-80 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger fpc-cpu-utilization {
+                term is-cpu-utilization-greater-than-80 {
+                    when {
+                        greater-than "$cpu-total" 80 {
+			time-range 60s;
+			}
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC CPU utilization is over 80% in the last 60s";
+                        }
+                    }
+                }
+                term cpu-utilization-less-than-or-equal-to-80 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }                   
+                }                       
+            }                           
+            trigger fpc-heap-memory-utilization {
+                term is-heap-memory-utilization-greater-than-80 {
+                    when {              
+                        greater-than "$memory-heap-utilization" 80;
+                    }                   
+                    then {              
+                        status {        
+                            color red;  
+                            message "FPC heap memory utilization is over 80%";
+                        }               
+                    }                   
+                }                       
+                term heap-memory-utilization-less-than-or-equal-to-80 {    
+                    then {              
+                        status {        
+                            color green;
+                        }               
+                    }                   
+                }                       
+            }                           
+        }                               
+    }                                   
+}
