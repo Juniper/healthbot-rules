@@ -1,0 +1,76 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line card";
+        rule check-ithrottle {
+            /* description "Monitors throttle configuration, state and usage"; */
+            keys [ Name target ];
+            sensor Ithrottle {
+                iAgent {
+                    file ithrottle.yml;
+                    table IthrottleTable;
+                    frequency 10s;
+                }
+            }
+            trigger configuration-state {
+                term is-configuration-state-not-1 {
+                    when {
+                        not-equal-to "$configuration-state" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "iThrottle configuration state is not equal to 1";
+                        }
+                    }
+                }
+                term configuration-state-is-1 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger operating-state {
+                term is-operating-state-not-1 {
+                    when {
+                        not-equal-to "$operating-state" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Operating state is not equal to 1";
+                        }
+                    }
+                }
+                term operating-state-is-1 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger usage-percentage {
+                term is-usage-percentage-greater-than-80 {
+                    when {
+                        greater-than "$usage" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Usage is greater than 80 percent";
+                        }
+                    }
+                }
+                term usage-percentage-less-than-or-equal-to-80 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
