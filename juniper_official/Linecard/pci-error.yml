@@ -1,0 +1,16 @@
+---
+ShowPciErrorsTable:
+  command: show pci errors {{ pci-controller-number }}
+  target: Null
+  args:
+    pci-controller-number: 2
+  key:
+    - pci-address
+    - status-type
+  view: ShowPciErrorsView
+
+ShowPciErrorsView:
+  regex:
+    pci-address: 'PCI ERROR: (\d+:\d+:\d+:\d+) \(0x[a-f0-9]+\)'
+    status-type: '(Slot|Link) status :'
+    status: '0x[a-f0-9]+'
