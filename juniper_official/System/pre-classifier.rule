@@ -1,0 +1,52 @@
+iceberg {
+    topic linecard {
+	description "Rules pertaining to the performance of the PFE";
+        rule check-pre-classifier-dropped-packets {
+            /* description "Monitors the rate of increase of packets dropped by the pre-classifier"; */
+            keys [ id port precl_index target ];
+            sensor PreClStatsTable {
+                iAgent {
+                    file pre-classifier.yml;
+                    table PreClStatsTable;
+                    frequency 10s;
+                }
+            }
+            trigger pre-classifier-packet-drops {
+                term is-packet-drop-increasing {
+                    when {
+                        min-rate-of-increase "$dropped-packets" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+			    message "Pre-classifier dropped packets ($dropped-packets) increasing";
+                        }
+                    }
+                }
+		term is-packet-drop-non-zero {
+                    when {
+                        greater-than "$dropped-packets" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Pre-classifier dropped packets ($dropped-packets) non-zero";
+                        }
+                    }
+                }
+                term packet-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+			    message "Pre-classifier packet drops not increasing in the last 50 seconds";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
