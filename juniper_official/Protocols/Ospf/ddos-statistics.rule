@@ -1,0 +1,105 @@
+iceberg {
+    topic linecard.ospf {
+        description "Rules relevant to protocols"; 
+        rule check-ddos-statistics {
+            /* description "Monitors ospf related distributed denial of service statistics"; */
+            keys [ group-name protocol-states-locale ];
+            sensor ddosStats {
+                iAgent {
+                    file ddos-statistics.yml;
+                    table ddosStats;
+                    frequency 10s;
+                }
+            }
+            trigger ddos-drops {
+                term is-ddos-drops-increasing {
+                    when {
+                        min-rate-of-increase "$dropped-packets" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS packet drops ($dropped-packets) increasing";
+                        }
+                    }
+                }
+                term are-ddos-drops-non-zero {
+                    when {
+                        greater-than "$dropped-packets" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DDOS packet drop is non-zero";
+                        }
+                    }
+                }
+                term ddos-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger ddos-packet-arrival-rate {
+                term is-max-packet-arrival-rate-greater-than-1000 {
+                    when {
+                        greater-than-or-equal-to "$packet-arrival-rate-max" 1000;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DDOS packet max arrival rate is over 1000";
+                        }
+                    }
+                }
+                term max-packet-arrival-rate-less-than-1000 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger ddos-packet-dropped-others {
+                term is-ddos-packet-dropped-others-increasing {
+                    when {
+                        min-rate-of-increase "$dropped-packets-others" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS packet dropped others ($dropped-packets-others) increasing";
+                        }
+                    }
+                }
+                term is-ddos-packet-drop-others-non-zero {
+                    when {
+                        greater-than "$dropped-packets-others" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DDOS packet dropped others is non-zero";
+                        }
+                    }
+                }
+                term ddos-packet-drop-others-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
