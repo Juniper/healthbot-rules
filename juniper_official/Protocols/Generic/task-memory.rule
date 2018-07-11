@@ -1,0 +1,37 @@
+iceberg {
+    topic protocol {
+        description "Rules relevant to protocols";
+        rule check-task-memory-usage {
+            /* description "Monitors the percentage of task memory in use"; */
+            keys task-memory-overall-report;
+            sensor task-memory-usage {
+                iAgent {
+                    file task-memory.yml;
+                    table taskMemory;
+                    frequency 60s;
+                }
+            }
+            trigger percentage-of-task-memory-in-use {
+                term is-percentage-of-task-memory-in-use-greater-than-80 {
+                    when {
+                        greater-than-or-equal-to "$in-use-percent" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Routing Protocol Daemon task memory in use is greater than 80%";
+                        }
+                    }
+                }
+                term percentage-of-task-memory-in-use-lesser-than-equal-to-80 {
+                    then {
+                        status {
+                            color green;
+			    message "Routing Protocol Daemon task memory in use is lower than 80%";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
