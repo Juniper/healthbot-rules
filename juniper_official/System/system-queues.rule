@@ -1,0 +1,95 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-system-input-queues {
+            /* description "Monitors packet drops on the input interface"; */
+            keys interface;
+            sensor system-input-queues {
+                iAgent {
+                    file system-queues.yml;
+                    table SystemQueuesINTable;
+                    frequency 10s;
+                }
+            }
+            trigger system-input-queue-drops {
+                term are-system-input-queue-drops-increasing {
+                    when {
+                        min-rate-of-increase "$drops" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "System interface input drops ($drops) increasing";
+                        }
+                    }
+                }
+                term are-system-input-queue-drops-non-zero {
+                    when {
+                        greater-than "$drops" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "System interface input drops are non-zero";
+                        }
+                    }
+                }
+                term system-input-queue-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+        rule check-system-output-queues {
+            /* description "Monitors packet drops on the output interface"; */
+            keys interface;
+            sensor system-output-queues {
+                iAgent {
+                    file system-queues.yml;
+                    table SystemQueuesOutTable;
+                    frequency 10s;
+                }
+            }
+            trigger system-output-queue-drops {
+                term are-system-output-queue-drops-increasing {
+                    when {
+                        min-rate-of-increase "$drops" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "System interface output drops ($drops) increasing";
+                        }
+                    }
+                }
+                term are-system-output-queue-drops-non-zero {
+                    when {
+                        greater-than "$drops" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "System interface output drops are non-zero";
+                        }
+                    }
+                }
+                term system-output-queue-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
