@@ -1,0 +1,40 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-jnh-interface-statistics {
+            /* description "Monitors the jnh ifd stream"; */
+            keys [ counter ifd target ];
+            sensor ShowJnhIfdStream {
+                iAgent {
+                    file jnh-ifd-stream.yml;
+                    table ShowJnhIfdStream;
+                    frequency 10s;
+                }
+            }
+            trigger jnh-ifd-stream-packets {
+                term are-jnh-ifd-stream-packets-increasing {
+                    when {
+                        min-rate-of-increase "$packets" {
+                            rate 1;
+                            time-range 50s;
+                        }
+			does-not-match-with "$counter" "rx."
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "JNH ifd stream packets ($packets) increasing";
+                        }
+                    }
+                }
+                term jnh-ifd-stream-packets-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
