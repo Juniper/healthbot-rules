@@ -1,0 +1,143 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-traffic-offload-engine-status {
+            /* description "Monitors  TOE packets, Asic blocks, Wedge declaration, Wedge window size, Ucode, Hostpath app status"; */
+            keys [ asic_instance asic_type pfe_instance stream_id target toe_instance ];
+            sensor ospf-traffic-offload-engine-status {
+                iAgent {
+                    file toe-pfe.yml;
+                    table ShowToePfeTable;
+                    frequency 10s;
+                }
+            }
+            trigger toe-hostpath-app-status {
+                term is-toe-hostpath-app-running {
+                    when {
+                        matches-with "$toe-driver-host-path-app-running" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TOE driver host path app is running";
+                        }
+                    }
+                }
+                term toe-hostpath-app-not-running {
+                    then {
+                        status {
+                            color red;
+                            message "TOE driver host path app not running";
+                        }
+                    }
+                }
+            }
+            trigger toe-packet-reception {
+                term are-toe-packets-received {
+                    when {
+                        matches-with "$toe-packets-received" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TOE packets are being received";
+                        }
+                    }
+                }
+                term toe-packets-not-received {
+                    then {
+                        status {
+                            color red;
+                            message "TOE packets are NOT being received";
+                        }
+                    }
+                }
+            }
+            trigger toe-to-asic-blockage {
+                term is-asic-to-not-blocked {
+                    when {
+                        matches-with "$to-asic-not-blocked" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TOE to-asic is not blocked ";
+                        }
+                    }
+                }
+                term toe-to-asic-blocked {
+                    then {
+                        status {
+                            color red;
+                            message "TOE to-asic is blocked";
+                        }
+                    }
+                }
+            }
+            trigger toe-ucode-status {
+                term has-toe-ucode-not-halted {
+                    when {
+                        matches-with "$toe-ucode-not-halted" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TOE ucode has not halted";
+                        }
+                    }
+                }
+                term toe-ucode-halted {
+                    then {
+                        status {
+                            color red;
+                            message "TOE ucode has halted";
+                        }
+                    }
+                }
+            }
+            trigger toe-wedge-declaration {
+                term has-wedge-not-been-declared {
+                    when {
+                        matches-with "$wedge-not-declared" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TOE is operating normally with no wedge declared";
+                        }
+                    }
+                }
+                term toe-wedge-declared {
+                    then {
+                        status {
+                            color red;
+                            message "TOE wedge declared.";
+                        }
+                    }
+                }
+            }
+            trigger wedge-window-size {
+                term is-wedge-window-size-0 {
+                    when {
+                        matches-with "$wedge-window-size-0" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TOE wedge window size is 0";
+                        }
+                    }
+                }
+                term wedge-window-size-not-0 {
+                    then {
+                        status {
+                            color yellow;
+                            message "TOE wedge is suspected";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
