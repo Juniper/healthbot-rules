@@ -1,0 +1,96 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-routing-engine-cpu-utilization {
+            /* description "Monitors the routing engine's cpu utilization"; */
+            keys slot;
+            sensor REutlizationTable {
+                iAgent {
+                    file re-cpu-utilization.yml;
+                    table REutlizationTable;
+                    frequency 10s;
+                }
+            }
+            trigger routing-engine-cpu-utilization-idle-15min {
+                term is-15min-cpu-idle-less-than-20 {
+                    when {
+                        less-than "$cpu-idle-15-min" 20;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "15 min cpu idle is less than 20 percent";
+                        }
+                    }
+                }
+                term cpu-idle-15min-greater-than-or-equal-to-20 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger routing-engine-cpu-utilization-idle-1min {
+                term is-1min-cpu-idle-less-than-20 {
+                    when {
+                        less-than "$cpu-idle-1-min" 20;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "1 min cpu idle is less than 20 percent";
+                        }
+                    }
+                }
+                term cpu-idle-1min-greater-than-or-equal-to-20 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger routing-engine-cpu-utilization-idle-5-sec {
+                term is-5sec-cpu-idle-less-than-20 {
+                    when {
+                        less-than "$cpu-idle-5-sec" 20;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "5 second cpu idle is less than 20 percent";
+                        }
+                    }
+                }
+                term cpu-idle-5sec-greater-than-or-equal-to-20 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger routing-engine-cpu-utilization-idle-5min {
+                term is-5min-cpu-idle-less-than-20 {
+                    when {
+                        less-than "$cpu-idle-5-min" 20;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "5 min cpu idle is less than 20 percent";
+                        }
+                    }
+                }
+                term cpu-idle-5min-greater-than-or-equal-to-20 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
