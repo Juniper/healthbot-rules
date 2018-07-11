@@ -1,0 +1,58 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-version {
+            /* description "Validates the product name and Junos version"; */
+            keys host-name;
+            sensor product-and-junos-version {
+                iAgent {
+                    file software-version.yml;
+                    table SoftwareVersionTable;
+                    frequency 60s;
+                }
+            }
+            trigger product-name {
+                term is-product-mx480 {
+                    when {
+                        matches-with "$product" mx480;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "MX480 is being used";
+                        }
+                    }
+                }
+                term unauthorized-product-used {
+                    then {
+                        status {
+                            color red;
+                            message "Unauthorized product is being used";
+                        }
+                    }
+                }
+            }
+            trigger software-version {
+                term is-junos-version-correct {
+                    when {
+                        matches-with "$version" 17.4-20170821_dev_common.0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Junos version 17.4-20170821_dev_common.0 is being used";
+                        }
+                    }
+                }
+                term unauthorized-junos-version-used {
+                    then {
+                        status {
+                            color red;
+                            message "Unauthorized Junos version ($junos-version) is being used";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
