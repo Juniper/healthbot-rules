@@ -1,0 +1,311 @@
+{
+            "topic" : [
+            {
+                "topic-name" : "protocol.bgp",
+                "description" : "This topic is to monitors and notify bgp sessions statitics i.e. neighbor state, detects flaps, route damping and max received-routes count",
+                "synopsis" : "lldp session statistics analyzer",
+                "rule" : [
+                {
+                    "rule-name" : "check-bgp-session-statstics",
+                    "keys" : ["neighbor-address"],
+                    "synopsis" : "bgp session state analyzer",
+                    "description" : "This rule collects bgp session statistics periodically and notifies in case of anomalies",
+                    "sensor" : [
+                    {
+                        "sensor-name" : "bgp-sensor",
+                        "synopsis" : "bgp open-config sensor definition",
+                        "description" : "/protocol/bgp open-config sensor to collect telemetry data from network device",
+                        "open-config" : {
+                            "sensor-name" : "/network-instances/network-instance/protocols/protocol/bgp/",
+                            "frequency" : "10s"
+                        }
+                    }
+                    ],
+                    "field" : [
+                    {
+                        "field-name" : "established-transitions",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/established-transitions"
+                        }
+                        ],
+                        "type" : "integer",
+                        "description" : "This field for session down or flap count"
+                    },
+                    {
+                        "field-name" : "interface-error",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/interface-error"
+                        }
+                        ],
+                        "type" : "string",
+                        "description" : "This field is for interface errors where session established on"
+                    },
+                    {
+                        "field-name" : "last-established",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/last-established"
+                        }
+                        ],
+                        "type" : "string",
+                        "description" : "This field is for session last established time"
+                    },
+                    {
+                        "field-name" : "neighbor-address",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "where" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address"
+                        }
+                        ],
+                        "type" : "string",
+                        "description" : "This field is for neighbor address"
+                    },
+                    {
+                        "field-name" : "neighbors",
+                        "constant" : {
+                            "value" : "{{neighbors}}"
+                        },
+                        "type" : "string",
+                        "description" : "This field takes neighbor addresses as an input from user through variable name neighbors"
+                    },
+                    {
+                        "field-name" : "received-route-count-threshold",
+                        "constant" : {
+                            "value" : "{{max_received_route_count_threshold}}"
+                        },
+                        "type" : "integer",
+                        "description" : "Set received route count threshold"
+                    },
+                    {
+                        "field-name" : "received-routes",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received"
+                        }
+                        ],
+                        "type" : "integer",
+                        "description" : "This field is for received routes from neighbor"
+                    },
+                    {
+                        "field-name" : "route-flap-count-threshold",
+                        "constant" : {
+                            "value" : "{{max_route_flap_count_threshold}}"
+                        },
+                        "type" : "integer",
+                        "description" : "Set received route count threshold"
+                    },
+                    {
+                        "field-name" : "route-flap-damping",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/route-flap-damping"
+                        }
+                        ],
+                        "type" : "string",
+                        "description" : "This field is for route flap daming on session"
+                    },
+                    {
+                        "field-name" : "session-state",
+                        "sensor" : [
+                        {
+                            "sensor-name" : "bgp-sensor",
+                            "path" : "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state"
+                        }
+                        ],
+                        "type" : "string",
+                        "description" : "This field is for session status"
+                    }
+                    ],
+                    "trigger" : [
+                    {
+                        "trigger-name" : "neigbor-flap",
+                        "synopsis" : "bgp neighbor session flaps kpi",
+                        "description" : "Sets health based on bgp neighbor session flaps.",
+                        "term" : [
+                        {
+                            "term-name" : "is-session-flapping",
+                            "when" : {
+                                "min-rate-of-increase" : [
+                                {
+                                    "field-name" : "$established-transitions",
+                                    "rate" : "$route-flap-count-threshold",
+                                    "time-range" : "60s"
+                                }
+                                ]
+                            },
+                            "then" : {
+                                "status" : {
+                                    "color" : "red",
+                                    "message" : "Neighbor session flapping"
+                                }
+                            }
+                        },
+                        {
+                            "term-name" : "is-session-inconsistent",
+                            "when" : {
+                                "min-rate-of-increase" : [
+                                {
+                                    "field-name" : "$established-transitions",
+                                    "rate" : "$route-flap-count-threshold"
+                                }
+                                ]
+                            },
+                            "then" : {
+                                "status" : {
+                                    "color" : "yellow",
+                                    "message" : "Neighbor session inconsistant"
+                                }
+                            }
+                        },
+                        {
+                            "term-name" : "is-session-stable",
+                            "then" : {
+                                "status" : {
+                                    "color" : "green",
+                                    "message" : "Neighbor session stable"
+                                }
+                            }
+                        }
+                        ]
+                    },
+                    {
+                        "trigger-name" : "neigbor-route-flap-damping",
+                        "synopsis" : "bgp neighbor route flap damping kpi",
+                        "description" : "Sets health based on bgp neighbor route flap damping.",
+                        "term" : [
+                        {
+                            "term-name" : "is-neighbor-route-flap-damping",
+                            "when" : {
+                                "does-not-match-with" : [
+                                {
+                                    "left-operand" : "$route-flap-damping",
+                                    "right-operand" : "false"
+                                }
+                                ]
+                            },
+                            "then" : {
+                                "status" : {
+                                    "color" : "red",
+                                    "message" : "Observed route-flap-damping"
+                                }
+                            }
+                        },
+                        {
+                            "term-name" : "no-route-flap-damping",
+                            "then" : {
+                                "status" : {
+                                    "color" : "green",
+                                    "message" : "no routeflap damping observed"
+                                }
+                            }
+                        }
+                        ]
+                    },
+                    {
+                        "trigger-name" : "neigbor-state",
+                        "synopsis" : "bgp session state kpi",
+                        "description" : "Sets health based on bgp session state.",
+                        "term" : [
+                        {
+                            "term-name" : "is-neighbor-up",
+                            "when" : {
+                                "matches-with" : [
+                                {
+                                    "left-operand" : "$session-state",
+                                    "right-operand" : "ESTABLISHED"
+                                }
+                                ]
+                            },
+                            "then" : {
+                                "status" : {
+                                    "color" : "green",
+                                    "message" : "Neighbor session up"
+                                }
+                            }
+                        },
+                        {
+                            "term-name" : "neighbor-down",
+                            "then" : {
+                                "status" : {
+                                    "color" : "red",
+                                    "message" : "Neighbor session down"
+                                }
+                            }
+                        }
+                        ]
+                    },
+                    {
+                        "trigger-name" : "received-routes",
+                        "synopsis" : "bgp max received routes kpi",
+                        "description" : "Sets health based on bgp max received routes.",
+                        "term" : [
+                        {
+                            "term-name" : "is-rcd-route-count-above-threshold",
+                            "when" : {
+                                "greater-than-or-equal-to" : [
+                                {
+                                    "left-operand" : "$received-routes",
+                                    "right-operand" : "$received-route-count-threshold"
+                                }
+                                ]
+                            },
+                            "then" : {
+                                "status" : {
+                                    "color" : "red",
+                                    "message" : "Received route count is above threshold i.e.($received-routes)"
+                                }
+                            }
+                        },
+                        {
+                            "term-name" : "rcd-route-count-normal",
+                            "then" : {
+                                "status" : {
+                                    "color" : "green",
+                                    "message" : "Received route count below threshold i.e.($received-routes)"
+                                }
+                            }
+                        }
+                        ]
+                    }
+                    ],
+                    "variable" : [
+                    {
+                        "name" : "max_received_route_count_threshold",
+                        "value" : "10000",
+                        "description" : "Enter received routes count threshold value using regular expression",
+                        "type" : "int"
+                    },
+                    {
+                        "name" : "max_route_flap_count_threshold",
+                        "value" : "1",
+                        "description" : "Enter route flap count rate of increase threshold value using regular expression",
+                        "type" : "int"
+                    },
+                    {
+                        "name" : "neighbors",
+                        "value" : ".*",
+                        "description" : "Enter neighbor name or address using regular expression",
+                        "type" : "string"
+                    }
+                    ]
+                }
+                ]
+            }
+            ],
+            "playbook" : [
+            {
+                "playbook-name" : "bgp-playbook",
+                "rules" : ["protocol.bgp/check-bgp-session-statstics"]
+            }
+            ]
+}
+
