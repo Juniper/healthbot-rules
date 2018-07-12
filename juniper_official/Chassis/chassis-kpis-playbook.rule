@@ -1,0 +1,1041 @@
+#
+#   This playbook checks health of chassis and notify in case any of the health monitored fields crosses threshold
+#
+iceberg {
+    topic chassis.fan {
+        description "This topic is to check health of chassis fan";
+        synopsis "chassis fan heath check kpi";
+        rule check-fan-health {
+            keys fan-name;
+            synopsis "Chassis fan health analyzer";
+            description "This rule collects chassis fan statistics periodically and notifies in case of anomalies";
+            sensor chassis-fan {
+                synopsis "iAgent sensor definition";
+                description "iAgent sensor using show-chassis-fan command to collect data from network device";
+                iAgent {
+                    file chassis_fan.yml;
+                    table ChassisFanTable;
+                    frequency 10s;
+                }
+            }
+            trigger fan-health {
+                synopsis "chassis fan health kpi";
+                description "Sets health based on chassis fan status and speed.";
+                term is-fan-health-good {
+                    when {
+                        matches-with "$fan-status" OK;
+                        matches-with "$fan-measurement" normal;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fan-name health-status is $fan-status and $fan-measurement($fan-rpm rpm)";
+                        }
+                    }
+                }
+                term fan-health-bad {
+                    then {
+                        status {
+                            color red;
+                            message "$fan-name health-status is $fan-status and $fan-measurement($fan-rpm rpm)";
+                        }
+                    }
+                }
+            }
+        }
+    }
+    topic chassis.fpc {
+        description "This topic monitors fpc memory, cpu and temperatures";
+        synopsis "chassis fpc health analyzer";
+        rule check-fpc-cpu {
+            keys fpc;
+            synopsis "Fpc cpu analyzer";
+            description "This rule collects fpc cpu statistics periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field fpc {
+                sensor components {
+                    where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]:CPU$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "This field is to parse all fpc names";
+            }
+            field fpc-cpu-utilization {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'cpu-utilization-total'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is to show fpc cpu utilization";
+            }
+            field fpc-cpu-utilization-higher-threshold {
+                constant {
+                    value "{{FPC_CPU_Utilization_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for fpc cpu higher threshold value";
+            }
+            field fpc-cpu-utilization-lower-threshold {
+                constant {
+                    value "{{FPC_CPU_Utilization_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for fpc cpu lower threshold value";
+            }
+            trigger fpc-cpu-utilization {
+                synopsis "Fpc cpu utilization kpi";
+                description "Sets health based on fpc cpu utilization threshold.";
+                term is-fpc-cpu-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-cpu-utilization" "$fpc-cpu-utilization-lower-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc CPU utilization($fpc-cpu-utilization) is lesser than lower threshold($fpc-cpu-utilization-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-cpu-utilization-median {
+                    when {
+                        less-than "$fpc-cpu-utilization" "$fpc-cpu-utilization-higher-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc CPU utilization is in medium range(>=$fpc-cpu-utilization-lower-threshold, <=$fpc-cpu-utilization-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-cpu-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc CPU utilization($fpc-cpu-utilization) is greater than higher threshold($fpc-cpu-utilization-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable FPC_CPU_Utilization_Higher_Threshold {
+                value 60;
+                description "Enter fpc cpu maximum threshold value";
+                type int;
+            }
+            variable FPC_CPU_Utilization_Lower_Threshold {
+                value 20;
+                description "Enter fpc cpu minimum threshold value";
+                type int;
+            }
+            variable FPC_Slot_No {
+                value 0-9;
+                description "Enter fpc slot numbers to be monitored using regular epression";
+                type string;
+            }
+        }
+        rule check-fpc-memory {
+            keys fpc;
+            synopsis "Fpc memory analyzer";
+            description "This rule collects fpc memory statistics periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field buffer-higher-threshold {
+                constant {
+                    value "{{FPC_Buffer_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory higher threshold";
+            }
+            field buffer-lower-threshold {
+                constant {
+                    value "{{FPC_Buffer_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory lower threshold";
+            }
+            field fpc {
+                sensor components {
+                    where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "This field is to parse fpc solt number";
+            }
+            field fpc-memory-buffer {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "This field is to set fpc buffer memory utilization";
+            }
+            field fpc-memory-heap {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'memory-utilization-heap'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "This field is to set fpc buffer heap memory";
+            }
+            field heap-higher-threshold {
+                constant {
+                    value "{{FPC_Heap_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc heap memory higher threshold";
+            }
+            field heap-lower-threshold {
+                constant {
+                    value "{{FPC_Heap_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory lower threshold";
+            }
+            trigger fpc-buffer-memory-utilization {
+                synopsis "Fpc memory utilization kpi";
+                description "Sets health based on fpc memory utilization threshold.";
+                term is-fpc-buffer-memory-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-buffer" "$buffer-lower-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc memory buffer utilization($fpc-memory-buffer) is below lower threshold($buffer-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-buffer-memory-utilization-median {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-buffer" "$buffer-higher-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc memory buffer utilization($fpc-memory-buffer) is in medium range(>=$buffer-lower-threshold, <=$buffer-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-buffer-memory-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc memory buffer utilization($fpc-memory-buffer) is above higher threshold($buffer-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            trigger fpc-heap-memory-utilization {
+                synopsis "Fpc heap memory utilization kpi";
+                description "Sets health based on fpc heap memory utilization threshold.";
+                term is-fpc-heap-memory-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-heap" "$heap-lower-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc memory heap utilization($fpc-memory-heap) is below lower threshold($heap-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-heap-memory-utilization-median {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-heap" "$heap-higher-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc memory heap utilization($fpc-memory-heap) is in medium range(>=$heap-lower-threshold, <=$heap-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-heap-memory-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc memory heap utilization($fpc-memory-heap) is above higher threshold($heap-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable FPC_Buffer_Higher_Threshold {
+                value 70;
+                description "Enter processes fpc buffer memory maximum threshold value";
+                type int;
+            }
+            variable FPC_Buffer_Lower_Threshold {
+                value 25;
+                description "Enter processes fpc buffer memory minimum threshold value";
+                type int;
+            }
+            variable FPC_Heap_Higher_Threshold {
+                value 70;
+                description "Enter processes fpc heap memory maximum threshold value";
+                type int;
+            }
+            variable FPC_Heap_Lower_Threshold {
+                value 25;
+                description "Enter processes fpc heap memory minimum threshold value";
+                type int;
+            }
+            variable FPC_Slot_No {
+                value 0-9;
+                description "Enter fpc slot numbers to be monitored with separator using regular expression";
+                type string;
+            }
+        }
+        rule check-fpc-temperature {
+            keys fpc;
+            synopsis "Fpc temperature analyzer";
+            description "This rule collects fpc current temperature periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field fpc {
+                sensor components {
+                    where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "This field is to parse all fpc names";
+            }
+            field fpc-temperature {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature-intake'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "This field shows fpc temparature to be monitored";
+            }
+            field fpc-temperature-higher-threshold {
+                constant {
+                    value "{{FPC_Temperature_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for fpc temparature higher threshold value";
+            }
+            field fpc-temperature-lower-threshold {
+                constant {
+                    value "{{FPC_Temperature_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for fpc temparature lower threshold value";
+            }
+            trigger fpc-temperature {
+                synopsis "Fpc temperature kpi";
+                description "Sets health based on fpc temperature threshold.";
+                term is-fpc-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-temperature" "$fpc-temperature-lower-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc temperature($fpc-temperature) is below lower threshold($fpc-temperature-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-temperature-median {
+                    when {
+                        less-than-or-equal-to "$fpc-temperature" "$fpc-temperature-higher-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc temperature($fpc-temperature) is in medium range(>=$fpc-temperature-lower-threshold, <=$fpc-temperature-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc temperature($fpc-temperature) is above higher threshold($fpc-temperature-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable FPC_Slot_No {
+                value 0-9;
+                description "Enter fpc slot numbers to be monitored with separator using regular expression";
+                type string;
+            }
+            variable FPC_Temperature_Higher_Threshold {
+                value 55;
+                description "Enter processes fpc temparature maximum threshold value";
+                type int;
+            }
+            variable FPC_Temperature_Lower_Threshold {
+                value 45;
+                description "Enter processes fpc temparature minimum threshold value";
+                type int;
+            }
+        }
+    }
+    topic chassis.power {
+        description "This topic monitors PEM, zones and overall system power usage";
+        synopsis "Chassis power management kpis";
+        rule check-pem-power-usage {
+            keys pem-slot;
+            synopsis "Chassis PEM power manager";
+            description "This rule collects chassis PEM power usage statistics periodically and notifies in case of anomalies";
+            function used-percentage {
+                description "calculates % of power usage out of total available";
+                path used_percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
+            }
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 10s;
+                }
+            }
+            field fru-model-number {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'fru-model-number'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "stores fru model number";
+            }
+            field pem-power-usage {
+                formula {
+                    user-defined-function {
+                        function-name used-percentage;
+                        argument total "$power-capacity-maximum";
+                        argument used "$power-dc-output";
+                    }
+                }
+                type integer;
+                description "stores % of power usage by PEMs using udf";
+            }
+            field pem-power-usage-threshold {
+                constant {
+                    value "{{pem_power_usage_threshold}}";
+                }
+                type integer;
+                description "Set pem power usage threshold";
+            }
+            field pem-slot {
+                sensor components {
+                    where "/components/component/@name =~/^PEM[0-9]$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "stores all available PEM slots";
+            }
+            field pem-state {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "stores state of PEMs";
+            }
+            field power-capacity-maximum {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'power-capacity-maximum'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "stores max power capacity for PEMs";
+            }
+            field power-dc-input {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'power-dc-input'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "stores power input state of PEMs";
+            }
+            field power-dc-output {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'power-dc-output'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "stores power being used by PEMs";
+            }
+            field temperature-status {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature-status'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "stores temperature status of PEMs";
+            }
+            trigger pem-power-usage {
+                synopsis "chassis PEM power usage kpi";
+                description "Sets health based on PEM power usage.";
+                term is-power-usage-crossing-threshold {
+                    when {
+                        greater-than "$pem-power-usage" "$pem-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$pem-slot power usage($pem-power-usage) is crossing threshold(50)";
+                        }
+                    }
+                }
+                term power-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$pem-slot power usage($pem-power-usage) is normal";
+                        }
+                    }
+                }
+            }
+            trigger pem-state {
+                synopsis "chassis PEM state kpi";
+                description "Sets health based on PEM state.";
+                term is-pem-online {
+                    when {
+                        matches-with "$pem-state" Online;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$pem-slot is $pem-state";
+                        }
+                    }
+                }
+                term pem-offline {
+                    then {
+                        status {
+                            color red;
+                            message "$pem-slot is $pem-state";
+                        }
+                    }
+                }
+            }
+            trigger pem-temperature-status {
+                synopsis "chassis PEM temperature kpi";
+                description "Sets health based on PEM temperature threshold.";
+                term is-temperature-status-ok {
+                    when {
+                        matches-with "$temperature-status" OK;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$pem-slot temperature status is $temperature-status";
+                        }
+                    }
+                }
+                term temperature-status-not-ok {
+                    then {
+                        status {
+                            color red;
+                            message "$pem-slot temperature status is $temperature-status";
+                        }
+                    }
+                }
+            }
+            trigger power-dc-input {
+                synopsis "chassis power DC input state kpi";
+                description "Sets health based on power DC input state.";
+                term is-power-dc-input-ok {
+                    when {
+                        matches-with "$power-dc-input" OK;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$pem-slot power-dc-input is $power-dc-input";
+                        }
+                    }
+                }
+                term is-power-dc-input-not-ok {
+                    then {
+                        status {
+                            color red;
+                            message "$pem-slot power-dc-input is $power-dc-input";
+                        }
+                    }
+                }
+            }
+            variable pem_power_usage_threshold {
+                value 50;
+                description "Enter PEM power usage threshold value";
+                type int;
+            }
+        }
+        rule check-system-power-usage {
+            synopsis "Chassis system power manager";
+            description "This rule collects chassis system power usage statistics periodically and notifies in case of anomalies";
+            function used-percentage {
+                description "calculates % of power usage out of total available";
+                path used_percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
+            }
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 10s;
+                }
+            }
+            field power-system-capacity {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'power-system-capacity'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "stores power system capacity";
+            }
+            field power-system-maximum {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'power-system-maximum'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "stores max power available for system";
+            }
+            field power-system-remaining {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'power-system-remaining'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "stores remaining power for system";
+            }
+            field system-power-remaining-in-percentage {
+                formula {
+                    user-defined-function {
+                        function-name used-percentage;
+                        argument total "$power-system-maximum";
+                        argument used "$power-system-remaining";
+                    }
+                }
+                type integer;
+                description "stores remaining power for system using udf";
+            }
+            field system-power-usage-threshold {
+                constant {
+                    value "{{system_power_usage_threshold}}";
+                }
+                type integer;
+                description "Set pem power usage threshold";
+            }
+            trigger system-power-usage {
+                synopsis "System power usage kpi";
+                description "Sets health based on system power usage threshold.";
+                term is-power-usage-abnormal {
+                    when {
+                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "System power usage abnormal!!! only $system-power-remaining-in-percentage % of power is remaining";
+                        }
+                    }
+                }
+                term power-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "System power usage is normal $system-power-remaining-in-percentage % of power is remaining";
+                        }
+                    }
+                }
+            }
+            variable system_power_usage_threshold {
+                value 50;
+                description "Enter PEM power usage threshold value";
+                type int;
+            }
+        }
+        rule check-zone-power-usage {
+            keys zone;
+            synopsis "Zone power usage kpi";
+            description "Sets health based on zone power usage threshold.";
+            function used-percentage {
+                description "calculates % of power usage out of total available";
+                path used_percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
+            }
+            sensor chassis-power {
+                synopsis "iAgent sensor definition";
+                description "Netconf rpc used to collect telemetry data from network device";
+                iAgent {
+                    file chassis_power.yml;
+                    table ChassisPowerTable;
+                    frequency 10s;
+                }
+            }
+            field zone-power-usage {
+                formula {
+                    user-defined-function {
+                        function-name used-percentage;
+                        argument total "$capacity-max";
+                        argument used "$capacity-actual-usage";
+                    }
+                }
+                type integer;
+                description "stores % of zone power used using udf";
+            }
+            field zone-power-usage-threshold {
+                constant {
+                    value "{{zone_power_usage_threshold}}";
+                }
+                type integer;
+                description "Set pem power usage threshold";
+            }
+            trigger zone-power-usage {
+                term is-power-usage-abnormal {
+                    when {
+                        greater-than "$zone-power-usage" "$zone-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "zone-$zone is using $zone-power-usage% of power!!";
+                        }
+                    }
+                }
+                term power-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "zone-$zone is using $zone-power-usage% of power";
+                        }
+                    }
+                }
+            }
+            variable zone_power_usage_threshold {
+                value 50;
+                description "Enter PEM power usage threshold value";
+                type int;
+            }
+        }
+    }
+    topic chassis.temperatures {
+        description "This topic is to monitor the chassis, RE and RE-CPU teparatures";
+        synopsis "Chassis temperature check";
+        rule check-chassis-temperature {
+            keys chassis-name;
+            synopsis "Chassis temperature analyzer";
+            description "This rule collects chassis temperature periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 10s;
+                }
+            }
+            field chassis-name {
+                sensor components {
+                    where "/components/component/@name =~ /Chassis/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "stores chassis name";
+            }
+            field chassis-temperature-higher-threshold {
+                constant {
+                    value "{{chassis_temperature_higher_threshold}}";
+                }
+                type integer;
+                description "This field is for chassis ambient temparature maximum threshold value";
+            }
+            field chassis-temperature-lower-threshold {
+                constant {
+                    value "{{chassis_temperature_lower_threshold}}";
+                }
+                type integer;
+                description "This field is for chassis temparature minimum threshold value";
+            }
+            field temperature-ambient {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature-ambient'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "stores ambient temperature of chassis";
+            }
+            trigger chassis-ambient-temperature {
+                synopsis "chassis temperature kpi";
+                description "Sets health based on chassis temperature.";
+                term is-temperature-normal {
+                    when {
+                        less-than "$temperature-ambient" "$chassis-temperature-lower-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Chassis ambient temperature($temperature-ambient) is normal";
+                        }
+                    }
+                }
+                term is-temperature-median {
+                    when {
+                        less-than "$temperature-ambient" "$chassis-temperature-higher-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis ambient temperature($temperature-ambient) is medium";
+                        }
+                    }
+                }
+                term temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "Chassis ambient temperature($temperature-ambient) is abnormal";
+                        }
+                    }
+                }
+            }
+            variable chassis_temperature_higher_threshold {
+                value 55;
+                description "Enter chassis temparature maximum threshold value";
+                type int;
+            }
+            variable chassis_temperature_lower_threshold {
+                value 45;
+                description "Enter chassis temparature minimum threshold value";
+                type int;
+            }
+        }
+        rule check-re-cpu-temperature {
+            keys route-engine;
+            synopsis "RE cpu temperature analyzer";
+            description "This rule collects RE cpu temperature periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field re-cpu-temperature {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature-cpu'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is to parse re cpu temparature";
+            }
+            field re-cpu-temperature-higher-threshold {
+                constant {
+                    value "{{RE_CPU_Temperature_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for re cpu temparature maximum threshold value";
+            }
+            field re-cpu-temperature-lower-threshold {
+                constant {
+                    value "{{RE_CPU_Temperature_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for re cpu temparature minimum threshold value";
+            }
+            field route-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "This field is for RE identification";
+            }
+            trigger re-cpu-temperature {
+                synopsis "RE cpu temperature kpi";
+                description "Sets health based on RE cpu temperature threshold.";
+                term is-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$re-cpu-temperature" "$re-cpu-temperature-lower-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$route-engine cpu temperature($re-cpu-temperature) is lesser than lower threshold($re-cpu-temperature-lower-threshold)";
+                        }
+                    }
+                }
+                term is-temperature-median {
+                    when {
+                        less-than "$re-cpu-temperature" "$re-cpu-temperature-higher-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$route-engine cpu temperature($re-cpu-temperature) is in medium range(>=$re-cpu-temperature-lower-threshold, <=$re-cpu-temperature-higher-threshold)";
+                        }
+                    }
+                }
+                term temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$route-engine cpu temperature($re-cpu-temperature) is greater than higher threshold($re-cpu-temperature-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable RE_CPU_Temperature_Higher_Threshold {
+                value 55;
+                description "Enter re cpu temparature maximum threshold value";
+                type int;
+            }
+            variable RE_CPU_Temperature_Lower_Threshold {
+                value 45;
+                description "Enter re cpu temparature minimum threshold value";
+                type int;
+            }
+            variable RE_Slot_No {
+                value 0-1;
+                description "Enter RE numbers to be monitored using regular expression";
+                type string;
+            }
+        }
+        rule check-re-temperature {
+            keys route-engine;
+            synopsis "RE temperature analyzer";
+            description "This rule collects RE temperature periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field re-temperature {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is to parse re temparature";
+            }
+            field re-temperature-higher-threshold {
+                constant {
+                    value "{{RE_Temperature_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for re temparature maximum threshold value";
+            }
+            field re-temperature-lower-threshold {
+                constant {
+                    value "{{RE_Temperature_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for re temparature minimum threshold value";
+            }
+            field route-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "This field is for re identification";
+            }
+            trigger re-temperature {
+                synopsis "RE cpu temperature kpi";
+                description "Sets health based on RE cpu temperature threshold.";
+                term is-re-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$re-temperature" "$re-temperature-lower-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$route-engine temperature($re-temperature) is lesser than lower threshold($re-temperature-lower-threshold)";
+                        }
+                    }
+                }
+                term is-re-temperature-median {
+                    when {
+                        less-than-or-equal-to "$re-temperature" "$re-temperature-higher-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$route-engine temperature($re-temperature) is in medium range(>=$re-temperature-lower-threshold, <=$re-temperature-higher-threshold)";
+                        }
+                    }
+                }
+                term re-temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$route-engine temperature($re-temperature) is greater than higher threshold($re-temperature-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable RE_Slot_No {
+                value 0-1;
+                description "Enter RE numbers using regular expression";
+                type string;
+            }
+            variable RE_Temperature_Higher_Threshold {
+                value 55;
+                description "Enter RE temperature higher threshold value";
+                type int;
+            }
+            variable RE_Temperature_Lower_Threshold {
+                value 45;
+                description "Enter RE temperature lower threshold value";
+                type int;
+            }
+        }
+    }
+    playbook chassis-kpis-playbook {
+        rules [ chassis.fan/check-fan-health chassis.fpc/check-fpc-cpu chassis.fpc/check-fpc-memory chassis.fpc/check-fpc-temperature chassis.power/check-pem-power-usage chassis.power/check-system-power-usage chassis.power/check-zone-power-usage chassis.temperatures/check-chassis-temperature chassis.temperatures/check-re-cpu-temperature chassis.temperatures/check-re-temperature ];
+        description "This playbook monitors chassis temperatures&power, fpc temperature, memory&cpu utilization and notify in case any of the health monitored field crosses threshld";
+        synopsis "chassis kpi playbook";
+    }
+}
