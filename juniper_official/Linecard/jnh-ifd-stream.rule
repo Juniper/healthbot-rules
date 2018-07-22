@@ -2,7 +2,7 @@ iceberg {
     topic linecard {
         description "Rules relevant to metrics on the line-card";
         rule check-jnh-interface-statistics {
-            /* description "Monitors the jnh ifd stream"; */
+            description "Monitors the jnh ifd stream";
             keys [ counter ifd target ];
             sensor ShowJnhIfdStream {
                 iAgent {
@@ -11,11 +11,17 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field linecard-jnh-ifd-stream-increase-rate {
+                constant {
+                    value "{{FPC_JNH_IFD_Stream_Increase_Rate}}";
+                }
+                type integer;
+            }
             trigger jnh-ifd-stream-packets {
-                term are-jnh-ifd-stream-packets-increasing {
+                term are-jnh-ifd-stream-packets-increasing-over-threshold {
                     when {
                         min-rate-of-increase "$packets" {
-                            rate 1;
+                            rate "$linecard-jnh-ifd-stream-increase-rate";
                             time-range 50s;
                         }
 			does-not-match-with "$counter" "rx."
@@ -23,7 +29,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "JNH ifd stream packets ($packets) increasing";
+                            message "JNH ifd stream packets ($packets) increasing over threshold ($linecard-jnh-ifd-stream-increase-rate)";
                         }
                     }
                 }
@@ -34,6 +40,11 @@ iceberg {
                         }
                     }
                 }
+            }
+            variable FPC_JNH_IFD_Stream_Increase_Rate {
+                value 1;
+                description "Linecard JNH IFD Stream Increase Rate Threshold Value";
+                type int;
             }
         }
     }
