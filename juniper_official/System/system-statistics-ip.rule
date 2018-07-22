@@ -22,7 +22,7 @@ iceberg {
                 }
             }
             trigger incoming-raw-ip-no-socket-buffer-packets-dropped {
-                term are-incoming-ip-no-socket-buffer-drops-increasing {
+                term are-incoming-ip-no-socket-buffer-drops-increasing-over-threshold-rate {
                     when {
                         min-rate-of-increase "$system-statistics-ip-no-socket-buffer" {
                             rate "$configured-packets-dropped-rate-threshold";
@@ -32,11 +32,11 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "IP no socket buffer drops ($system-statistics-ip-no-socket-buffer) increasing";
+                            message "IP no socket buffer drops ($system-statistics-ip-no-socket-buffer) increase rate is higher than threshold ($configured-packets-dropped-rate-threshold)";
                         }
                     }
                 }
-                term are-incoming-ip-no-socket-buffer-drops-non-zero {
+                term are-incoming-ip-no-socket-buffer-drops-larger-than-threshold {
                     when {
                         greater-than "$system-statistics-ip-no-socket-buffer" "$configured-packets-dropped-count-threshold";
                     }
@@ -47,7 +47,7 @@ iceberg {
                         }
                     }
                 }
-                term incoming-ip-no-socket-buffer-drops-not-increasing {
+                term incoming-ip-no-socket-buffer-drops-not-increasing-above-configured-rate {
                     then {
                         status {
                             color green;
