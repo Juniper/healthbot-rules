@@ -11,11 +11,21 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field ithrottle-lower-rate-threshold {
+                constant {
+                    value "{{FPC_iThrottle_Lower_Rate}}";
+                }
+            }
+            field ithrottle-higher-rate-threshold {
+                constant {
+                    value "{{FPC_iThrottle_Higher_Rate}}";
+                }
+            }
             trigger adjacency-down {
                 term is-adjacency-down-increasing {
                     when {
                         min-rate-of-increase "$AdjDown" {
-                            rate 5;
+                            rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -38,7 +48,7 @@ iceberg {
                 term is-adjacency-up-increasing {
                     when {
                         min-rate-of-increase "$AdjUp" {
-                            rate 5;
+                            rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -61,7 +71,7 @@ iceberg {
                 term are-checks-increasing {
                     when {
                         min-rate-of-increase "$Checks" {
-                            rate 1;
+                            rate "$ithrottle-lower-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -84,7 +94,7 @@ iceberg {
                 term are-disables-increasing {
                     when {
                         min-rate-of-increase "$Disables" {
-                            rate 5;
+                            rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -107,7 +117,7 @@ iceberg {
                 term are-enables-increasing {
                     when {
                         min-rate-of-increase "$Enables" {
-                            rate 5;
+                            rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -130,7 +140,7 @@ iceberg {
                 term are-starts-increasing {
                     when {
                         min-rate-of-increase "$Starts" {
-                            rate 1;
+                            rate "$ithrottle-lower-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -153,7 +163,7 @@ iceberg {
                 term are-stops-increasing {
                     when {
                         min-rate-of-increase "$Stops" {
-                            rate 1;
+                            rate "$ithrottle-lower-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -171,6 +181,16 @@ iceberg {
                         }
                     }
                 }
+            }
+            variable FPC_iThrottle_Lower_Rate {
+                value 1;
+                description "Linecard interrupt throttle LOW threshold value";
+                type int;
+            }
+            variable FPC_iThrottle_Higher_Rate {
+                value 5;
+                description "Linecard interrupt throttle HIGH threshold value";
+                type int;
             }
         }
     }
