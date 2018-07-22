@@ -2,7 +2,7 @@ iceberg {
     topic linecard {
 	description "Rules pertaining to the performance of the PFE";
         rule check-pre-classifier-dropped-packets {
-            /* description "Monitors the rate of increase of packets dropped by the pre-classifier"; */
+            description "Monitors the rate of increase of packets dropped by the pre-classifier";
             keys [ id port precl_index target ];
             sensor PreClStatsTable {
                 iAgent {
@@ -11,11 +11,21 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field linecard-pre-classifier-rate-threshold {
+                constant {
+                    value "{{FPC_PreClassifier_Rate_Threshold}}";
+                }
+            }
+            field linecard-pre-classifier-count-threshold {
+                constant {
+                    value "{{FPC_PreClassifier_Count_Threshold}}";
+                }
+            }
             trigger pre-classifier-packet-drops {
                 term is-packet-drop-increasing {
                     when {
                         min-rate-of-increase "$dropped-packets" {
-                            rate 1;
+                            rate "$linecard-pre-classifier-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -28,12 +38,12 @@ iceberg {
                 }
 		term is-packet-drop-non-zero {
                     when {
-                        greater-than "$dropped-packets" 0;
+                        greater-than "$dropped-packets" "$linecard-pre-classifier-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Pre-classifier dropped packets ($dropped-packets) non-zero";
+                            message "Pre-classifier dropped packets counter ($dropped-packets) larger than threshold ($linecard-pre-classifier-count-threshold)";
                         }
                     }
                 }
@@ -41,12 +51,21 @@ iceberg {
                     then {
                         status {
                             color green;
-			    message "Pre-classifier packet drops not increasing in the last 50 seconds";
+			    message "Pre-classifier packet drops not increasing";
                         }
                     }
                 }
             }
+            variable FPC_PreClassifier_Rate_Threshold {
+                value 1;
+                description "Linecard Pre-Classifier drop rate threshold value";
+                type int;
+            }
+            variable FPC_PreClassifier_Count_Threshold {
+                value 1;
+                description "Linecard Pre-Classifier drop count threshold value";
+                type int;
+            }
         }
     }
 }
-
