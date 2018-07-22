@@ -2,7 +2,7 @@ iceberg {
     topic system {
         description "Rules relevant to metrics and KPI of the system";
         rule check-system-input-queues {
-            /* description "Monitors packet drops on the input interface"; */
+            description "Monitors packet drops on the input interface";
             keys interface;
             sensor system-input-queues {
                 iAgent {
@@ -11,11 +11,21 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field system-queue-drop-count-threshold {
+                constant {
+                    value "{{System_Queue_Drop_Count_Threshold}}";
+                }
+            }
+            field system-queue-drop-rate-threshold {
+                constant {
+                    value "{{System_Queue_Drop_Rate_Threshold}}";
+                }
+            }
             trigger system-input-queue-drops {
                 term are-system-input-queue-drops-increasing {
                     when {
                         min-rate-of-increase "$drops" {
-                            rate 1;
+                            rate "$system-queue-drop-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -26,9 +36,9 @@ iceberg {
                         }
                     }
                 }
-                term are-system-input-queue-drops-non-zero {
+                term are-system-input-queue-drops-above-threshold {
                     when {
-                        greater-than "$drops" 0;
+                        greater-than "$drops" "$system-queue-drop-count-threshold";
                     }
                     then {
                         status {
@@ -47,7 +57,7 @@ iceberg {
             }
         }
         rule check-system-output-queues {
-            /* description "Monitors packet drops on the output interface"; */
+            description "Monitors packet drops on the output interface";
             keys interface;
             sensor system-output-queues {
                 iAgent {
@@ -60,7 +70,7 @@ iceberg {
                 term are-system-output-queue-drops-increasing {
                     when {
                         min-rate-of-increase "$drops" {
-                            rate 1;
+                            rate "$system-queue-drop-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -71,9 +81,9 @@ iceberg {
                         }
                     }
                 }
-                term are-system-output-queue-drops-non-zero {
+                term are-system-output-queue-drops-above-threshold {
                     when {
-                        greater-than "$drops" 0;
+                        greater-than "$drops" "$system-queue-drop-count-threshold";
                     }
                     then {
                         status {
@@ -89,6 +99,16 @@ iceberg {
                         }
                     }
                 }
+            }
+            variable System_Queue_Drop_Count_Threshold {
+                value 0;
+                description "System queue drop count threshold value";
+                type int;
+            }
+            variable System_Queue_Drop_Rate_Threshold {
+                value 1;
+                description "System queue drop rate threshold value";
+                type int;
             }
         }
     }
