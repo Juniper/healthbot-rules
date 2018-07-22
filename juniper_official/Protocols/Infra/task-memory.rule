@@ -11,6 +11,11 @@ iceberg {
                     frequency 60s;
                 }
             }
+            field configured-threshold {
+                constant {
+                    value "{{memory_threshold}}";
+                }
+            }
             trigger percentage-of-task-memory-in-use {
                 term is-percentage-of-task-memory-in-use-greater-than-80 {
                     when {
@@ -19,7 +24,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Routing Protocol Daemon in use task memory ($in-use-percent) greater than 80%";
+                            message "Routing Protocol Daemon in use task memory ($in-use-percent) greater than configured threshold($configured-threshold)";
                         }
                     }
                 }
@@ -27,10 +32,15 @@ iceberg {
                     then {
                         status {
                             color green;
-			    message "Routing Protocol Daemon in user task memory ($in-use-percent) lower than 80%";
+			    message "Routing Protocol Daemon in user task memory ($in-use-percent) lower than configured threshold($configured-threshold)";
                         }
                     }
                 }
+            }
+            variable memory_threshold {
+                value 80;
+                description "RPD Task Memory threshold value";
+                type string;
             }
         }
     }
