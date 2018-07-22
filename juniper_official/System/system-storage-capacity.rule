@@ -2,7 +2,7 @@ iceberg {
     topic system {
         description "Rules relevant to metrics and KPI of the system";
         rule check-system-storage-capacity {
-            /* description "Monitors the system storage capacity"; */
+            description "Monitors the system storage capacity";
             keys filesystem-name;
             sensor system-storage-capacity {
                 iAgent {
@@ -11,27 +11,37 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field configured-storage-usage-threshold {
+                constant {
+                    value "{{Storage_Usage_Threshold}}";
+                }
+            }
             trigger system-storage-capacity {
-                term is-system-storage-capacity-greater-than-80 {
+                term is-system-storage-capacity-greater-than-threshold {
                     when {
-                        greater-than "$system-storage-capacity" 80;
+                        greater-than "$system-storage-capacity" "$configured-storage-usage-threshold";
                         matches-with "$system-storage-filesystem" /dev/gpt/junos;
                     }
                     then {
                         status {
                             color red;
-                            message "The system has less than 20% storage capacity left";
+                            message "The system storage usage ($system-storage-capacity) is over threshold ($configured-storage-usage-threshold)";
                         }
                     }
                 }
-                term system-storage-capacity-lesser-than-equal-to-80 {
+                term system-storage-capacity-less-than-threshold {
                     then {
                         status {
                             color green;
-			    message "The system is using $system-storage-capacity percent of the storage capacity";
+                            message "The system storage usage ($system-storage-capacity) is under threshold ($configured-storage-usage-threshold)";
                         }
                     }
                 }
+            }
+            variable Storage_Usage_Threshold {
+                value 80;
+                description "System storage used capacity threshold value";
+                type int;
             }
         }
     }
