@@ -1,0 +1,77 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-system-virtual-memory-information {
+            description "Monitors the virtual memory and interrupt rate";
+            keys vm-kmem-map-free;
+            sensor system-virtual-memory {
+                iAgent {
+                    file system-virtual-memory.yml;
+                    table systemVirtualMemory;
+                    frequency 60s;
+                }
+            }
+            field free-virtual-memory-threshold {
+                constant {
+                    value "{{Virtual_Memory_Threshold}}";
+                }
+            }
+            field interrupt-rate-threshold {
+                constant {
+                    value "{{Interrupt_Rate_Threshold}}";
+                }
+            }
+            trigger interrupt-rate {
+                term is-interrupt-rate-greater-than-threshold {
+                    when {
+                        greater-than "$interrupt-rate" "$interrupt-rate-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interrupt rate is greater than threshold ($interrupt-rate-threshold)";
+                        }
+                    }
+                }
+                term interrupt-rate-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger vm-kmem-map-free {
+                term is-virtual-memory-lower-than-threshold {
+                    when {
+                        less-than "$vm-kmem-map-free" "$free-virtual-memory-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Virtual memory is lower than threshold ($free-virtual-memory-threshold)";
+                        }
+                    }
+                }
+                term virtual-memory-greater-than-equal-to-1000000000 {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable Interrupt_Rate_Threshold {
+                value 500;
+                description "System Interrupt Rate threshold value";
+                type int;
+            }
+            variable Virtual_Memory_Threshold {
+                value 1000000000;
+                description "Free Virtual Memory threshold value";
+                type int;
+            }
+
+        }
+    }
+}
