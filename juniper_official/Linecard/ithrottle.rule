@@ -1,0 +1,96 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line card";
+        rule check-ithrottle {
+            description "Monitors interrupt throttle configuration, state and usage";
+            keys [ Name target ];
+            sensor Ithrottle {
+                iAgent {
+                    file ithrottle.yml;
+                    table IthrottleTable;
+                    frequency 10s;
+                }
+            }
+            field ithrottle-state-OK {
+                constant {
+                    value "{{FPC_iThrottle_State_OK}}";
+                }
+            }
+            field ithrottle-usage-threshold {
+                constant {
+                    value "{{FPC_iThrottle_Usage_Threshold}}";
+                }
+            }
+            trigger configuration-state {
+                term is-configuration-state-not-OK {
+                    when {
+                        not-equal-to "$configuration-state" "$ithrottle-state-OK";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "iThrottle configuration state is not OK";
+                        }
+                    }
+                }
+                term configuration-state-is-OK {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger operating-state {
+                term is-operating-state-not-OK {
+                    when {
+                        not-equal-to "$operating-state" "$ithrottle-state-OK";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Operating state is not OK";
+                        }
+                    }
+                }
+                term operating-state-is-OK {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger usage-percentage {
+                term is-usage-percentage-greater-than-threshold {
+                    when {
+                        greater-than "$usage" "$ithrottle-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Usage ($usage) is greater than threshold ($ithrottle-usage-threshold)";
+                        }
+                    }
+                }
+                term usage-percentage-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable FPC_iThrottle_State_OK {
+                value 1;
+                description "Linecard Interrupt Throttle OK state value";
+                type int;
+            }
+            variable FPC_iThrottle_Usage_Threshold {
+                value 80;
+                description "Linecard Interrupt Throttle usage threshold value";
+                type int;
+            }
+        }
+    }
+}
