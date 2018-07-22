@@ -2,7 +2,7 @@ iceberg {
     topic linecard {
     description "Rules relevant to metrics on the line-card";
         rule check-fpc-utilization-information {
-	    /* description "Monitors FPC buffer, heap and cpu utilizations"; */
+	    description "Monitors FPC buffer, heap and cpu utilization";
             keys slot;
             sensor FPCCPUHEAPutilizationTable {
                 iAgent {
@@ -11,19 +11,34 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field linecard-cpu-usage-threshold {
+                constant {
+                    value "{{FPC_CPU_Usage_Threshold}}";
+                }
+            }
+            field linecard-heap-usage-threshold {
+                constant {
+                    value "{{FPC_Heap_Usage_Threshold}}";
+                }
+            }
+            field linecard-buffer-usage-threshold {
+                constant {
+                    value "{{FPC_Buffer_Usage_Threshold}}";
+                }
+            }
             trigger fpc-buffer-memory-utilization {
-                term is-buffer-memory-utilization-greater-than-80 {
+                term is-buffer-memory-utilization-greater-than-threshold {
                     when {
-                        greater-than "$memory-buffer-utilization" 80;
+                        greater-than "$memory-buffer-utilization" "$linecard-buffer-usage-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "FPC buffer memory utilization is over 80%";
+                            message "FPC buffer memory utilization ($memory-buffer-utilization) is over threshold ($linecard-buffer-usage-threshold)";
                         }
                     }
                 }
-                term buffer-utilization-less-than-or-equal-to-80 {
+                term buffer-utilization-less-than-threshold {
                     then {
                         status {
                             color green;
@@ -34,18 +49,18 @@ iceberg {
             trigger fpc-cpu-utilization {
                 term is-cpu-utilization-greater-than-80 {
                     when {
-                        greater-than "$cpu-total" 80 {
+                        greater-than "$cpu-total" "$linecard-cpu-usage-threshold" {
 			time-range 60s;
 			}
                     }
                     then {
                         status {
                             color red;
-                            message "FPC CPU utilization is over 80% in the last 60s";
+                            message "FPC CPU utilization ($cpu-total) is over threshold ($linecard-cpu-usage-threshold)";
                         }
                     }
                 }
-                term cpu-utilization-less-than-or-equal-to-80 {
+                term cpu-utilization-less-than-threshold {
                     then {
                         status {
                             color green;
@@ -54,18 +69,18 @@ iceberg {
                 }                       
             }                           
             trigger fpc-heap-memory-utilization {
-                term is-heap-memory-utilization-greater-than-80 {
+                term is-heap-memory-utilization-greater-than-threshold {
                     when {              
-                        greater-than "$memory-heap-utilization" 80;
+                        greater-than "$memory-heap-utilization" "$linecard-heap-usage-threshold";
                     }                   
                     then {              
                         status {        
                             color red;  
-                            message "FPC heap memory utilization is over 80%";
+                            message "FPC heap memory utilization ($memory-heap-utilization) is over threshold ($linecard-heap-usage-threshold)";
                         }               
                     }                   
                 }                       
-                term heap-memory-utilization-less-than-or-equal-to-80 {    
+                term heap-memory-utilization-less-than-threshold {    
                     then {              
                         status {        
                             color green;
@@ -73,6 +88,21 @@ iceberg {
                     }                   
                 }                       
             }                           
+            variable FPC_CPU_Usage_Threshold {
+                value 80;
+                description "Linecard CPU usage threshold value";
+                type int;
+            }
+            variable FPC_Heap_Usage_Threshold {
+                value 80;
+                description "Linecard Heap Memory usage threshold value";
+                type int;
+            }
+            variable FPC_Buffer_Usage_Threshold {
+                value 80;
+                description "Linecard Buffer Memory usage threshold value";
+                type int;
+            }
         }                               
     }                                   
 }
