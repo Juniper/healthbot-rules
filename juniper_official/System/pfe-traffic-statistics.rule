@@ -1,0 +1,166 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to linecards";
+        rule check-pfe-traffic-statistics {
+            description "Monitors PFE traffic statistics such as fabric drops, host path hardware drops, info cell discards, OSPF hello counts";
+            /* The key should be removed when we fix the bug requiring a key for every rule */
+            keys ospf-hello-count;
+            sensor pfeStats {
+                iAgent {
+                    file pfe-traffic-statistics.yml;
+                    table pfeStats;
+                    frequency 10s;
+                }
+            }
+            field pfe-drop-rate-threshold {
+                constant {
+                    value "{{PFE_Drop_Rate_Threshold}}";
+                }
+            }
+            field pfe-drop-count-threshold {
+                constant {
+                    value "{{PFE_Drop_Count_Threshold}}";
+                }
+            }
+            trigger fabric-drops {
+                term are-fabric-drops-increasing {
+                    when {
+                        min-rate-of-increase "$fabric-drops" {
+                            rate "$pfe-drop-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Fabric drops ($fabric-drops) increasing";
+                        }
+                    }
+                }
+                term are-fabric-drops-over-threshold {
+                    when {
+                        greater-than "$fabric-drops" "$pfe-drop-count-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Fabric drops ($fabric-drops) over threshold ($pfe-drop-count-threshold)";
+                        }
+                    }
+                }
+                term fabric-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Fabric drops not increasing";
+                        }
+                    }
+                }
+            }
+            trigger host-path-hardware-drops {
+                term are-host-path-drops-increasing {
+                    when {
+                        min-rate-of-increase "$host-path-hardware-drops" {
+                            rate "$pfe-drop-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Host path hardware input drops ($host-path-hardware-drops) increasing";
+                        }
+                    }
+                }
+                term are-host-path-drops-over-threshold {
+                    when {
+                        greater-than "$host-path-hardware-drops" "$pfe-drop-count-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Host path hardware input drops ($host-path-hardware-drops) over threshold ($pfe-drop-count-threshold)";
+                        }
+                    }
+                }
+                term host-path-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Host path hardware input drops not increasing";
+                        }
+                    }
+                }
+            }
+            trigger info-cell-discard {
+                term are-info-cell-discards-increasing {
+                    when {
+                        min-rate-of-increase "$info-cell-discards" {
+                            rate "$pfe-drop-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Info cell discards ($info-cell-discards) increasing";
+                        }
+                    }
+                }
+                term are-info-cell-discards-over-threshold {
+                    when {
+                        greater-than "$info-cell-discards" "$pfe-drop-count-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Info cell discards ($info-cell-discards) over threshold ($pfe-drop-count-threshold)";
+                        }
+                    }
+                }
+                term info-cell-discards-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Info cell discards not increasing";
+                        }
+                    }
+                }
+            }
+            trigger ospf-hello-count {
+                term are-ospf-hello-counts-increasing {
+                    when {
+                        min-rate-of-increase "$ospf-hello-count" {
+                            rate "$pfe-drop-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF hello count ($ospf-hello-count) increasing";
+                        }
+                    }
+                }
+                term are-ospf-hello-counts-not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "OSPF hello count ($ospf-hello-count) not increasing";
+                        }
+                    }
+                }
+            }
+            variable PFE_Drop_Rate_Threshold {
+                value 1;
+                description "PFE Statistics drop counter rate threshold value";
+                type int;
+            }
+            variable PFE_Drop_Count_Threshold {
+                value 0;
+                description "PFE Statistics drop counter threshold value";
+                type int;
+            }
+        }
+    }
+}
