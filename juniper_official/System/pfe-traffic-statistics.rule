@@ -2,7 +2,8 @@ iceberg {
     topic linecard {
         description "Rules relevant to linecards";
         rule check-pfe-traffic-statistics {
-            /*  Monitors PFE traffic statistics such as fabric drops, host path hardware drops, info cell discards, OSPF hello counts */
+            description "Monitors PFE traffic statistics such as fabric drops, host path hardware drops, info cell discards, OSPF hello counts";
+            /* The key should be removed when we fix the bug requiring a key for every rule */
             keys ospf-hello-count;
             sensor pfeStats {
                 iAgent {
@@ -11,11 +12,21 @@ iceberg {
                     frequency 10s;
                 }
             }
+            field pfe-drop-rate-threshold {
+                constant {
+                    value "{{PFE_Drop_Rate_Threshold}}";
+                }
+            }
+            field pfe-drop-count-threshold {
+                constant {
+                    value "{{PFE_Drop_Count_Threshold}}";
+                }
+            }
             trigger fabric-drops {
                 term are-fabric-drops-increasing {
                     when {
                         min-rate-of-increase "$fabric-drops" {
-                            rate 1;
+                            rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -26,14 +37,14 @@ iceberg {
                         }
                     }
                 }
-                term are-fabric-drops-non-zero {
+                term are-fabric-drops-over-threshold {
                     when {
-                        greater-than "$fabric-drops" 0;
+                        greater-than "$fabric-drops" "$pfe-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Fabric drops ($fabric-drops) non-zero";
+                            message "Fabric drops ($fabric-drops) over threshold ($pfe-drop-count-threshold)";
                         }
                     }
                 }
@@ -50,7 +61,7 @@ iceberg {
                 term are-host-path-drops-increasing {
                     when {
                         min-rate-of-increase "$host-path-hardware-drops" {
-                            rate 1;
+                            rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -61,14 +72,14 @@ iceberg {
                         }
                     }
                 }
-                term are-host-path-drops-non-zero {
+                term are-host-path-drops-over-threshold {
                     when {
-                        greater-than "$host-path-hardware-drops" 0;
+                        greater-than "$host-path-hardware-drops" "$pfe-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Host path hardware input drops ($host-path-hardware-drops) non-zero";
+                            message "Host path hardware input drops ($host-path-hardware-drops) over threshold ($pfe-drop-count-threshold)";
                         }
                     }
                 }
@@ -85,7 +96,7 @@ iceberg {
                 term are-info-cell-discards-increasing {
                     when {
                         min-rate-of-increase "$info-cell-discards" {
-                            rate 1;
+                            rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -96,14 +107,14 @@ iceberg {
                         }
                     }
                 }
-                term are-info-cell-discards-non-zero {
+                term are-info-cell-discards-over-threshold {
                     when {
-                        greater-than "$info-cell-discards" 0;
+                        greater-than "$info-cell-discards" "$pfe-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Info cell discards ($info-cell-discards) are non-zero";
+                            message "Info cell discards ($info-cell-discards) over threshold ($pfe-drop-count-threshold)";
                         }
                     }
                 }
@@ -120,7 +131,7 @@ iceberg {
                 term are-ospf-hello-counts-increasing {
                     when {
                         min-rate-of-increase "$ospf-hello-count" {
-                            rate 1;
+                            rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
                     }
@@ -139,6 +150,16 @@ iceberg {
                         }
                     }
                 }
+            }
+            variable PFE_Drop_Rate_Threshold {
+                value 1;
+                description "PFE Statistics drop counter rate threshold value";
+                type int;
+            }
+            variable PFE_Drop_Count_Threshold {
+                value 0;
+                description "PFE Statistics drop counter threshold value";
+                type int;
             }
         }
     }
