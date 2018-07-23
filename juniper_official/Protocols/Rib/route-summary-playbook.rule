@@ -1,0 +1,111 @@
+#
+#   This playbook checks health of routing tables and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic protocol.routesummary {
+        description "This topic has rule on routing table statistics which monitors total-route-count in each routing table";
+        synopsis "Protocol routes and Route table statistics analyzer";
+        rule check-ascertain-routes {
+            keys table-name;
+            synopsis "Routing table statistics analyzer";
+            description "This rule collects total-route-count in each routing table and notify in case route count crosses threshold";
+            sensor route-summary {
+                synopsis "Get routing table statistics";
+                description "Get routing table statistics through -show route summary- command";
+                iAgent {
+                    file route-summary.yml;
+                    table RouteSummaryTable;
+                    frequency 10s;
+                }
+            }
+            field route-count-threshold {
+                constant {
+                    value "{{route_count_threshold}}";
+                }
+                type integer;
+                description "stores threshold value from playbook variable";
+            }
+            trigger route-table-total-routes-count {
+                description "Sets health based on tables route count threshold";
+                term is-route-table-routes-count-normal {
+                    when {
+                        less-than-or-equal-to "$total-route-count" "$route-count-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$table-name total route count($total-route-count) is normal";
+                        }
+                    }
+                }
+                term route-table-routes-count-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$table-name total route count($total-route-count) is above threshold($route-count-threshold)";
+                        }
+                    }
+                }
+            }
+            variable route_count_threshold {
+                value 60000;
+                description "Enter tables route count higher threshold value";
+                type int;
+            }
+        }
+        rule check-protocol-route-count {
+            keys [ protocol-name table-name ];
+            synopsis "collects protocols statistics in each routing table";
+            description "collects protocols statistics in each routing table";
+            sensor route-protocol-summary {
+                synopsis "Get routing table protocol statistics";
+                description "Get routing table statistics through -show route summary- command and filters protocols in each routing table";
+                iAgent {
+                    file route-protocol-summary.yml;
+                    table RouteProtocolsTable;
+                    frequency 10s;
+                }
+            }
+            field protocol-route-count-threshold {
+                constant {
+                    value "{{protocol_route_count_threshold}}";
+                }
+                type integer;
+                description "stores threshold value from playbook variable";
+            }
+            trigger protocol-routes-count {
+                synopsis "Each route table protocol route count check KPI";
+                description "Sets health based on each tables protocol route count threshold";
+                term is-protocol-route-count-abnormal {
+                    when {
+                        greater-than-or-equal-to "$protocol-route-count" "$protocol-route-count-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$table-name:$protocol-name route count($protocol-route-count) is above threshold($protocol-route-count-threshold)";
+                        }
+                    }
+                }
+                term protocol-route-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$table-name:$protocol-name route count($protocol-route-count) is below threshold($protocol-route-count-threshold)";
+                        }
+                    }
+                }
+            }
+            variable protocol_route_count_threshold {
+                value 60000;
+                description "Enter tables protocol route count higher threshold value";
+                type int;
+            }
+        }
+    }
+    playbook route-summary-playbook {
+        rules [ protocol.routesummary/check-ascertain-routes protocol.routesummary/check-protocol-route-count ];
+        description "Route summary playbook checks each table's and protocol's route count and notifies in case route count is above threshold";
+        synopsis "Route table and protocol routes key performance indicators";
+    }
+}

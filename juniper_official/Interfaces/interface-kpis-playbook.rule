@@ -1,0 +1,649 @@
+#
+#  This playbook checks health of each interface and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic interface.statistics {
+        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-in-errors {
+            keys interface-name;
+            synopsis "Interface in-error analyzer";
+            description "This rule collects an interface input error(errors(all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field inerrors-higher-threshold {
+                constant {
+                    value "{{inerrors_higher_threshold}}";
+                }
+                type integer;
+                description "This field is for interface in errors maximum threshold value";
+            }
+            field inerrors-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{inerrors_stats_name}}";
+                }
+                type integer;
+                description "This field shows interface field's value";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            trigger in-errors {
+                synopsis "Interface in-errors kpi";
+                description "Sets health based on interface in errors.";
+                term is-interface-in-errors-abnormal {
+                    when {
+                        min-rate-of-increase "$inerrors-stats-value" {
+                            rate "$inerrors-higher-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name in errors($inerrors-stats-value) are above higher threshold($inerrors-higher-threshold)";
+                        }
+                    }
+                }
+                term is-interface-in-errors-median {
+                    when {
+                        min-rate-of-increase "$inerrors-stats-value" {
+                            rate "$inerrors-higher-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name in errors($inerrors-stats-value) are abnormal";
+                        }
+                    }
+                }
+                term no-interface-in-errors {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name in errors($inerrors-stats-value) are below threshold";
+                        }
+                    }
+                }
+            }
+            variable inerrors_higher_threshold {
+                value 1;
+                description "Enter interface in-errors maximum threshold value";
+                type int;
+            }
+            variable inerrors_stats_name {
+                value in-errors;
+                description "Enter any one of interface error specific filed to be monitored";
+                type string;
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+        rule check-in-traffic {
+            keys interface-name;
+            synopsis "interface input traffic analyzer";
+            description "This rule collects input traffic(octets) periodically and notifies in case of traffic is above threshold";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field inoctets-higher-threshold {
+                constant {
+                    value "{{inoctets_higher_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored interface field's higher threshold value";
+            }
+            field inoctets-lower-threshold {
+                constant {
+                    value "{{inoctets_lower_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored interface field's lower threshold value";
+            }
+            field inoctets-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{inoctets_stats_name}}";
+                }
+                type integer;
+                description "This field shows interface field's value";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            trigger in-traffic {
+                synopsis "interface input traffic kpi";
+                description "Sets health based on input traffic threshold.";
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        min-rate-of-increase "$inoctets-stats-value" {
+                            rate "$inoctets-higher-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name in traffic is above higher threshold($inoctets-higher-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-in-traffic-median {
+                    when {
+                        min-rate-of-increase "$inoctets-stats-value" {
+                            rate "$inoctets-lower-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name in traffic is in medium range(>=$inoctets-lower-threshold,<=$inoctets-higher-threshold  octets)";
+                        }
+                    }
+                }
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name in traffic is below lower threshold($inoctets-lower-threshold octets)";
+                        }
+                    }
+                }
+            }
+            variable inoctets_higher_threshold {
+                value 70000000;
+                description "Enter interface field's stats maximum threshold value";
+                type int;
+            }
+            variable inoctets_lower_threshold {
+                value 20000000;
+                description "Enter interface field's stats maximum threshold value";
+                type int;
+            }
+            variable inoctets_stats_name {
+                value in-octets;
+                description "Enter interface filed to be monitored";
+                type string;
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+        rule check-interface-flaps {
+            keys interface-name;
+            synopsis "link flaps analyzer";
+            description "This rule collects link flap count periodically and notifies in case flap count increases";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "This field shows interfaces admin status";
+            }
+            field flaps {
+                sensor interfaces {
+                    path /interfaces/interface/state/counters/carrier-transitions;
+                }
+                type integer;
+                description "This field shows link flap count";
+            }
+            field flaps-threshold {
+                constant {
+                    value "{{flaps_threshold}}";
+                }
+                type integer;
+                description "This field shows flap count increase threshold";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            trigger link-flaps {
+                synopsis "link flaps kpi";
+                description "Sets health based on link flap count.";
+                term is-link-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                term is-link-not-flaping {
+                    when {
+                        max-rate-of-increase "$flaps" {
+                            rate 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name flap count is not increasing";
+                        }
+                    }
+                }
+                term is-link-flaping-consistently {
+                    when {
+                        min-rate-of-increase "$flaps" {
+                            rate "$flaps-threshold";
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name flaps($flaps) continously";
+                        }
+                    }
+                }
+                term is-link-fluctuating {
+                    when {
+                        min-rate-of-increase "$flaps" {
+                            rate "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name flaps($flaps) are intermittent";
+                        }
+                    }
+                }
+            }
+            variable flaps_threshold {
+                value 1;
+                description "Enter interface flaps threshold";
+                type int;
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+        rule check-interface-status {
+            keys interface-name;
+            synopsis "interface input traffic analyzer";
+            description "This rule collects interface state periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "This field shows interfaces admin status";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/oper-status;
+                }
+                type string;
+                description "This field shows interfaces link operator status";
+            }
+            trigger link-state {
+                synopsis "link state kpi";
+                description "Sets health based on link state.";
+                term is-link-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                term is-link-down {
+                    when {
+                        matches-with "$admin-state" UP;
+                        matches-with "$link-state" DOWN;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name link operator status is DOWN";
+                        }
+                    }
+                }
+                term link-up {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name link operator status is UP";
+                        }
+                    }
+                }
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+        rule check-neighbor-state {
+            keys interface-name;
+            synopsis "interface neighbor state analyzer";
+            description "This rule collects interface neighbor state periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "This field shows interfaces admin status";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/oper-status;
+                }
+                type string;
+                description "This field shows interfaces link operator status";
+            }
+            field neighbor-state {
+                sensor interfaces {
+                    path /interfaces/interface/subinterfaces/subinterface/ipv4/neighbors/neighbor/state/neighbor-state;
+                }
+                type string;
+                description "This field shows interface neighbor state";
+            }
+            trigger neighbor-state {
+                synopsis "interface neighbor state kpi";
+                description "Sets health based on interface neighbor state.";
+                term is-neighbor-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                term is-link-state-down {
+                    when {
+                        matches-with "$link-state" DOWN;
+                    }
+                }
+                term neighbor-reachable {
+                    when {
+                        matches-with "$link-state" UP;
+                        matches-with "$neighbor-state" REACHABLE;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name neighbor $neighbor-state";
+                        }
+                    }
+                }
+                term is-neighbor-unreachable {
+                    when {
+                        matches-with "$neighbor-state" NA;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name neighbor $neighbor-state";
+                        }
+                    }
+                }
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+        rule check-out-errors {
+            keys interface-name;
+            synopsis "Interface out-errors analyzer";
+            description "This rule collects interface output error(errors(all), drops, discards, timeouts and runts) periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            field outerrors-higher-threshold {
+                constant {
+                    value "{{outerrors_higher_threshold}}";
+                }
+                type integer;
+                description "This field is for interface out errors maximum threshold value";
+            }
+            field outerrors-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{outerrors_stats_name}}";
+                }
+                type integer;
+                description "This field shows interface field's value";
+            }
+            trigger in-errors {
+                synopsis "Interface out-errors kpi";
+                description "Sets health based on interface out errors.";
+                term is-interface-out-errors-abnormal {
+                    when {
+                        min-rate-of-increase "$outerrors-stats-value" {
+                            rate "$outerrors-higher-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name out errors($outerrors-stats-value) are above higher threshold($outerrors-higher-threshold)";
+                        }
+                    }
+                }
+                term is-interface-out-errors-median {
+                    when {
+                        min-rate-of-increase "$outerrors-stats-value" {
+                            rate "$outerrors-higher-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name out errors($outerrors-stats-value) are abnormal";
+                        }
+                    }
+                }
+                term no-interface-out-errors {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name out errors($outerrors-stats-value) are below threshold";
+                        }
+                    }
+                }
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+            variable outerrors_higher_threshold {
+                value 1;
+                description "Enter interface out-errors maximum threshold value";
+                type int;
+            }
+            variable outerrors_stats_name {
+                value out-errors;
+                description "Enter any one of interface error specific filed to be monitored";
+                type string;
+            }
+        }
+        rule check-out-traffic {
+            keys interface-name;
+            synopsis "interface output traffic analyzer";
+            description "This rule collects output traffic(octets) periodically and notifies in case of traffic is above threshold";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            field outoctets-higher-threshold {
+                constant {
+                    value "{{outoctets_higher_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored interface field's maximum threshold value";
+            }
+            field outoctets-lower-threshold {
+                constant {
+                    value "{{outoctets_lower_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored interface field's minimum threshold value";
+            }
+            field outoctets-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{outoctets_stats_name}}";
+                }
+                type integer;
+            }
+            trigger out-traffic {
+                synopsis "interface output traffic kpi";
+                description "Sets health based on output traffic threshold.";
+                term is-interface-stats-abnormal {
+                    when {
+                        min-rate-of-increase "$outoctets-stats-value" {
+                            rate "$outoctets-higher-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name out traffic is above higher threshold($outoctets-higher-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-stats-median {
+                    when {
+                        min-rate-of-increase "$outoctets-stats-value" {
+                            rate "$outoctets-lower-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name out traffic is in medium range(>=$outoctets-lower-threshold,<=$outoctets-higher-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-stats-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name out traffic is below lower threshold($outoctets-lower-threshold octets)";
+                        }
+                    }
+                }
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+            variable outoctets_higher_threshold {
+                value 70000000;
+                description "Enter interface field's stats maximum threshold values if default value not matches with your requirement";
+                type int;
+            }
+            variable outoctets_lower_threshold {
+                value 20000000;
+                description "Enter interface field's stats maximum threshold values if default value not matches with your requirement";
+                type int;
+            }
+            variable outoctets_stats_name {
+                value in-octets;
+                description "Enter any one of interface filedto be monitored. In case morethan on field to be monitored, seperate instance to be created for each";
+                type string;
+            }
+        }
+    }
+    playbook interface-kpis-playbook {
+        rules [ interface.statistics/check-in-errors interface.statistics/check-in-traffic interface.statistics/check-interface-flaps interface.statistics/check-interface-status interface.statistics/check-neighbor-state interface.statistics/check-out-errors interface.statistics/check-out-traffic ];
+        description "Interface playbook to health check link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface key performance indicators";
+    }
+}

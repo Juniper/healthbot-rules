@@ -1,0 +1,143 @@
+#
+#   Health monitoring of selective interfaces based on its description and selective KPIs.
+#   Using this playbook any one of the kpi (in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts,
+#   out-unicast-pkts, in-errors, out-errors, carrier-transitions) can be monitored.
+#   ****Seperate playbook instances to be created for each interface kpi****
+#
+iceberg {
+    topic interface.monitor.based.on.description {
+        description "This topic monitors only interfaces based on its description";
+        synopsis "Interface KPI monitor based on description";
+        rule check-interface-health {
+            keys interface-name;
+            synopsis "Interface KPI monitor based on description";
+            description "Using this rule any one of the field(in and out errors, packets, octets, flaps can be monitored).";
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 20s;
+                }
+            }
+            field description {
+                sensor interfaces {
+                    path /interfaces/interface/state/description;
+                }
+                type string;
+                description "This field is for interface description";
+            }
+            field higher-threshold {
+                constant {
+                    value "{{higher_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored field's higher threshold";
+            }
+            field interface-name {
+                sensor interfaces {
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field is interface name";
+            }
+            field medium-threshold {
+                constant {
+                    value "{{medium_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored field's medium threshold";
+            }
+            field stats-name {
+                constant {
+                    value "{{stats_name}}";
+                }
+                type string;
+                description "This field is for monitored field's stats name";
+            }
+            field stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{stats_name}}";
+                }
+                type integer;
+                description "This field is for monitored field's stats value";
+            }
+            field user-description {
+                constant {
+                    value "{{interface_description}}";
+                }
+                type string;
+                description "This field is for user entered interface description";
+            }
+            trigger interface-stats {
+                synopsis "interface statistics kpi";
+                description "Sets health based on interface statistics threshold.";
+                term is-interface-description-not-matching {
+                    when {
+                        does-not-match-with "$description" "$user-description";
+                    }
+                }
+                term is-interface-stats-crossing-higher-threshold {
+                    when {
+                        min-rate-of-increase "$stats-value" {
+                            rate "$higher-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$stats-name of $interface-name($description) is:$stats-value is above higher threshold($higher-threshold)";
+                        }
+                    }
+                }
+                term is-interface-stats-crossing-medium-threshold {
+                    when {
+                        min-rate-of-increase "$stats-value" {
+                            rate "$medium-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$stats-name of $interface-name($description) is:$stats-value is in medium range($medium-threshold)";
+                        }
+                    }
+                }
+                term interface-stats-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$stats-name of $interface-name($description) is:$stats-value is normal";
+                        }
+                    }
+                }
+            }
+            variable higher_threshold {
+                value 70000000;
+                description "Enter monitored fields higher threshold value";
+                type int;
+            }
+            variable interface_description {
+                value "Core|Access";
+                description "Enter interfaces description using regular expression";
+                type string;
+            }
+            variable medium_threshold {
+                value 20000000;
+                description "Enter monitored fields medium threshold value";
+                type int;
+            }
+            variable stats_name {
+                value "in-octets";
+                description "Enter any one of statistics name(in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors, carrier-transitions) to monitor. Create seperate instance for each kpi";
+                type string;
+            }
+        }
+    }
+    playbook health-monitor-based-on-interface-description-playbook {
+        rules interface.monitor.based.on.description/check-interface-health;
+        synopsis "This playbook is to monitor and notify interface stats based on interface description provided";
+    }
+}

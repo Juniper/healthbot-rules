@@ -1,0 +1,219 @@
+#
+#   This playbook checks health of each bgp session and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic protocol.bgp {
+        description "This topic is to monitors and notify bgp sessions statitics i.e. neighbor state, detects flaps, route damping and max received-routes count";
+        synopsis "bgp session statistics analyzer";
+        rule check-bgp-session-statstics {
+            description "This rule collects bgp session statistics periodically and notifies in case of anomalies";
+            synopsis "bgp session state analyzer";
+            keys neighbor-address;
+            sensor bgp-sensor {
+                synopsis "bgp open-config sensor definition";
+                description "/protocol/bgp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
+                    frequency 10s;
+                }
+            }
+            field established-transitions {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/established-transitions;
+                }
+                type integer;
+                description "This field for session down or flap count";
+            }
+            field interface-error {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/interface-error;
+                }
+                type string;
+                description "This field is for interface errors where session established on";
+            }
+            field last-established {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/last-established;
+                }
+                type string;
+                description "This field is for session last established time";
+            }
+            field neighbor-address {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "This field is for neighbor address";
+            }
+            field neighbors {
+                constant {
+                    value "{{neighbors}}";
+                }
+                type string;
+                description "This field takes neighbor addresses as an input from user through variable name neighbors";
+            }
+            field received-routes {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received;
+                }
+                type integer;
+                description "This field is for received routes from neighbor";
+            }
+            field route-flap-damping {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/route-flap-damping;
+                }
+                type string;
+                description "This field is for route flap daming on session";
+            }
+            field session-state {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "This field is for session status";
+            }
+            field received-route-count-threshold {
+                constant {
+                    value "{{max_received_route_count_threshold}}";
+                }
+                type integer;
+                description "Set received route count threshold";
+            }
+            field route-flap-count-threshold {
+                constant {
+                    value "{{max_route_flap_count_threshold}}";
+                }
+                type integer;
+                description "Set received route count threshold";
+            }
+            trigger neigbor-flap {
+                synopsis "bgp neighbor session flaps kpi";
+                description "Sets health based on bgp neighbor session flaps.";
+                term is-session-flapping {
+                    when {
+                        min-rate-of-increase "$established-transitions" {
+                            rate $route-flap-count-threshold;
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor session flapping";
+                        }
+                    }
+                }
+                term is-session-inconsistent {
+                    when {
+                        min-rate-of-increase "$established-transitions" {
+                            rate $route-flap-count-threshold;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Neighbor session inconsistant";
+                        }
+                    }
+                }
+                term is-session-stable {
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor session stable";
+                        }
+                    }
+                }
+            }
+            trigger neigbor-route-flap-damping {
+                synopsis "bgp neighbor route flap damping kpi";
+                description "Sets health based on bgp neighbor route flap damping.";
+                term is-neighbor-route-flap-damping {
+                    when {
+                        does-not-match-with "$route-flap-damping" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Observed route-flap-damping";
+                        }
+                    }
+                }
+                term no-route-flap-damping {
+                    then {
+                        status {
+                            color green;
+                            message "no routeflap damping observed";
+                        }
+                    }
+                }
+            }
+            trigger neigbor-state {
+                synopsis "bgp session state kpi";
+                description "Sets health based on bgp session state.";
+                term is-neighbor-up {
+                    when {
+                        matches-with "$session-state" ESTABLISHED;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor session up";
+                        }
+                    }
+                }
+                term neighbor-down {
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor session down";
+                        }
+                    }
+                }
+            }
+            trigger received-routes {
+                synopsis "bgp max received routes kpi";
+                description "Sets health based on bgp max received routes.";
+                term is-rcd-route-count-above-threshold {
+                    when {
+                        greater-than-or-equal-to "$received-routes" $received-route-count-threshold;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Received route count is above threshold i.e.($received-routes)";
+                        }
+                    }
+                }
+                term rcd-route-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Received route count below threshold i.e.($received-routes)";
+                        }
+                    }
+                }
+            }
+            variable neighbors {
+                value .*;
+                description "Enter neighbor name or address using regular expression";
+                type string;
+            }
+            variable max_received_route_count_threshold {
+                value 10000;
+                type int;
+                description "Enter received routes count threshold value using regular expression";
+            }
+            variable max_route_flap_count_threshold {
+                value 1;
+                type int;
+                description "Enter route flap count rate of increase threshold value using regular expression";
+            }
+        }
+    }
+    playbook bgp-playbook {
+        rules protocol.bgp/check-bgp-session-statstics;
+    }
+}
