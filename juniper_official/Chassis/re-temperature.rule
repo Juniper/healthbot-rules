@@ -1,0 +1,99 @@
+#
+#   This rule checks health of RE temperature and notify in case any of the health monitored fields crosses threshold
+#
+iceberg {
+    topic chassis.temperatures {
+        description "This topic is to monitor the RE teparatures";
+        synopsis "Chassis RE temperature check";
+        rule check-re-temperature {
+            keys routing-engine;
+            synopsis "RE temperature analyzer";
+            description "This rule collects RE temperature periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
+            field re-temperature {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is to parse re temparature";
+            }
+            field re-temperature-high-threshold {
+                constant {
+                    value "{{RE_Temperature_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for re temparature maximum threshold value";
+            }
+            field re-temperature-low-threshold {
+                constant {
+                    value "{{RE_Temperature_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for re temparature minimum threshold value";
+            }
+            field routing-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "This field is for re identification";
+            }
+            trigger re-temperature {
+                synopsis "RE temperature kpi";
+                description "Sets health based on RE temperature threshold.";
+                term is-re-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$re-temperature" "$re-temperature-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine temperature($re-temperature) is lesser than low threshold($re-temperature-low-threshold)";
+                        }
+                    }
+                }
+                term is-re-temperature-median {
+                    when {
+                        less-than-or-equal-to "$re-temperature" "$re-temperature-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine temperature($re-temperature) is in medium range(>=$re-temperature-low-threshold, <=$re-temperature-high-threshold)";
+                        }
+                    }
+                }
+                term re-temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$routing-engine temperature($re-temperature) is greater than high threshold($re-temperature-high-threshold)";
+                        }
+                    }
+                }
+            }
+            variable RE_Slot_No {
+                value 0-1;
+                description "Enter RE numbers using regular expression";
+                type string;
+            }
+            variable RE_Temperature_Higher_Threshold {
+                value 55;
+                description "Enter RE temperature high threshold value";
+                type int;
+            }
+            variable RE_Temperature_Lower_Threshold {
+                value 45;
+                description "Enter RE temperature low threshold value";
+                type int;
+            }
+        }
+    }
+}
