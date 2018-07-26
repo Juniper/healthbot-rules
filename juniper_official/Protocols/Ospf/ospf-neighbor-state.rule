@@ -1,0 +1,58 @@
+#
+#   This rule checks health of each ospf neigbor state and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic protocol.ospf {
+        description "This topic is to monitor ospf neigbor state";
+        synopsis "ospf neighbor status check";
+        rule check-ospf-neighbor-state {
+            description "This rule collects ospf session state periodically and notifies in case of anomalies";
+            synopsis "ospf session state analyzer";
+            keys Address;
+            sensor ospf-neighbor {
+                synopsis "ospf netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file ospf-neighbor.yml;
+                    table OspfNeighborTable;
+                    frequency 20s;
+                }
+            }
+            field neighbor-address-expr {
+                constant {
+                    value "{{Neighbor_Address}}";
+                }
+                type string;
+                description "This filed is for ospf neighbor address";
+            }
+            trigger ospf-neighbor-state {
+                synopsis "ospf neighbor state kpi";
+                description "Sets health based on ospf neighbor state.";
+                term is-neighbor-full {
+                    when {
+                        matches-with "$neighbor_state" Full;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$neighbor_address is in $neighbor_state state";
+                        }
+                    }
+                }
+                term is-neighbor-not-full {
+                    then {
+                        status {
+                            color red;
+                            message "$neighbor_address is in $neighbor_state state";
+                        }
+                    }
+                }
+            }
+            variable Neighbor_Address {
+                value .*;
+                description "Enter required ospf neighbor ids to be monitored usung regular expression";
+                type string;
+            }
+        }
+    }
+}
