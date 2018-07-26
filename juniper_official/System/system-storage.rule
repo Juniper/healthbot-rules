@@ -1,0 +1,81 @@
+#
+#   This rule checks system storage utilization and notify in case any of the health monitored field crosses threshld
+#
+iceberg {
+    topic system.storage {
+        description "This topic is to monitor system disk partitions mount usage and notify in case storage is above threshold";
+        synopsis "system storage usage analyzer";
+        rule check-storage {
+            description "This rule collects disk storage usage periodically and notifies in case of anomalies";
+            synopsis "system storage usage analyzer";
+            keys filesystem-name;
+            sensor StorageTable {
+                synopsis "System storage iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-storage.yml;
+                    table StorageTable;
+                    frequency 20s;
+                }
+            }
+            field high-threshold {
+                constant {
+                    value "{{storage_usage_high_threshold}}";
+                }
+                type integer;
+                description "This field is for storage usage high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{storage_usage_low_threshold}}";
+                }
+                type integer;
+                description "This field is for storage usage low threshold";
+            }
+            trigger fs-utilization {
+                synopsis "File system usage kpi";
+                description "Sets health based on file system storage usage.";
+                term is-system-storage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used-percent" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$filesystem-name storage used($used-percent) is above ($high-threshold)";
+                        }
+                    }
+                }
+                term is-system-storage-normal {
+                    when {
+                        less-than "$used-percent" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$filesystem-name storage used($used-percent) is normal ($used-percent)";
+                        }
+                    }
+                }
+                term system-storage-median {
+                    then {
+                        status {
+                            color yellow;
+                            message "$filesystem-name storage used($used-percent) is in medium range(>=$low-threshold, <=$high-threshold)";
+                        }
+                    }
+                }
+            }
+            variable storage_usage_high_threshold {
+                value 70;
+                type int;
+                description "Enter partition usage high threshold value";
+            }
+            variable storage_usage_low_threshold {
+                value 50;
+                type int;
+                description "Enter partition usage low threshold value";
+            }
+        }
+    }
+}

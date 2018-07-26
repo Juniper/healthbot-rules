@@ -1,0 +1,106 @@
+#
+#   This rule checks health of all processes cpu utilization and notify in case any of the health monitored field crosses threshld
+#
+iceberg {
+    topic system.processes {
+        description "This topic is to monitor and notify cpu, memory utilization of junos system processes";
+        synopsis "system processes(daemons) cpu&memory analyzer";
+        rule check-process-cpu {
+            description "This rule collects system process's cpu utilization periodically and notifies in case of anomalies";
+            synopsis "system processes cpu analyzer";
+            keys daemon;
+            sensor SystemProcExtTable {
+                synopsis "System processes CPU iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-proc-ext.yml;
+                    table SystemProcExtTable;
+                    frequency 10s;
+                }
+            }
+            field cpu-util-percent {
+                sensor SystemProcExtTable {
+                    path wcpu;
+                }
+                description "This field shows cpu utilization for corresponding processes";
+            }
+            field daemon {
+                sensor SystemProcExtTable {
+                    path cmd;
+                }
+                description "This field is to parse all junos processes names";
+            }
+            field max-threshold {
+                constant {
+                    value "{{process_cpu_max_threshold}}";
+                }
+                type integer;
+                description "This field is for processes cpu maximum threshold value";
+            }
+            field min-threshold {
+                constant {
+                    value "{{process_cpu_min_threshold}}";
+                }
+                type integer;
+                description "This field is for processes cpu minimum threshold value";
+            }
+            field process-name {
+                constant {
+                    value "{{process_name}}";
+                }
+                type string;
+                description "This field shows processes to be monitored";
+            }
+            trigger processe-cpu-utilization {
+                synopsis "system prcoesses cpu utilization kpi";
+                description "Sets health based on system processes cpu utilization."; 
+                term is-processes-not-found {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                term is-cpu-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-util-percent" "$max-threshold" {
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon cpu utilization:($cpu-util-percent), crossed high threshold($max-threshold)";
+                        }
+                    }
+                }
+                term is-cpu-utilization-median {
+                    when {
+                        greater-than-or-equal-to "$cpu-util-percent" "$min-threshold" {
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon cpu utilization:($cpu-util-percent), crossed medium threshold($min-threshold)";
+                        }
+                    }
+                }
+            }
+            variable process_cpu_max_threshold {
+                value 70;
+                description "Enter processes cpu maximum threshold value";
+                type int;
+            }
+            variable process_cpu_min_threshold {
+                value 50;
+                description "Enter processes cpu minimum threshold value";
+                type int;
+            }
+            variable process_name {
+                value .*;
+                description "Enter processes to be monitored using regular expression with seperator option";
+                type string;
+            }
+        }
+    }
+}

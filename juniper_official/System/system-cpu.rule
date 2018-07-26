@@ -1,0 +1,120 @@
+#
+#   This playbook checks health of system and notify in case any of the health monitored field crosses threshld
+#
+iceberg {
+    topic system.cpu {
+        description "This topic monitors system cpu and sends an alert in case utilization is above thresholds";
+        synopsis "system cpu key performance indicators monitoring";
+        rule check-system-cpu {
+            description "This rule collects system cpu statistics of REs periodically and notifies in case of anomalies";
+            synopsis "Routing enignes cpu analyzer";
+            keys routing-engine;
+            function subtract {
+                description "function that tweaks thresholds by subtracting them from 100 so that cpu utilization can be found from cpu-idle%";
+                path system-sensors.py;
+                method subtract;
+                argument threshold {
+                    mandatory;
+                }
+            }
+            sensor components {
+                synopsis "system components open-config sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field re-cpu-utilization-oc {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is for re cpu idle utilization";
+            }
+            field re-cpu-utilization {
+                formula {
+                    user-defined-function {
+                        function-name subtract;
+                        argument threshold $re-cpu-utilization-oc;
+                    }
+                }
+                type integer;
+                description "This field derives used percentage from idle cpu utilization";
+            }
+            field re-cpu-utilization-high-threshold {
+                constant {
+                    value "{{re_cpu_high_threshold}}";
+                }
+                type integer;
+                description "This field is for re cpu utilization high threshold value";
+            }
+            field re-cpu-utilization-low-threshold {
+                constant {
+                    value "{{re_cpu_low_threshold}}";
+                }
+                type integer;
+                description "This field is for re cpu utilization low threshold value";
+            }
+            field routing-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "This field is for re identification";
+            }
+            trigger re-cpu-utilization {
+                synopsis "Routing engine cpu kpi";
+                description "Sets health based on RE cpu utilization thresholds.";
+                term is-re-cpu-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine cpu utilization($re-cpu-utilization) is lesser than low threshold($re-cpu-utilization-low-threshold)";
+                        }
+                    }
+                }
+                term is-re-cpu-utilization-median {
+                    when {
+                        less-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message " $routing-engine cpu utilization($re-cpu-utilization) is in medium range";
+                        }
+                    }
+                }
+                term re-cpu-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$routing-engine cpu utilization($re-cpu-utilization) is greater than high threshold($re-cpu-utilization-high-threshold)";
+                        }
+                    }
+                }
+            }
+            variable RE_Slot_No {
+                value 0-1;
+                description "Enter RE numbers to be monitored i.e. 0 or 1, deafult is set for both REs";
+                type string;
+                description "Enter RE slot numbers using regular expression";
+            }
+            variable re_cpu_high_threshold {
+                value 75;
+                description "Enter RE cpu utilization maximum threshold value";
+                type int;
+                description "Enter RE cpu high threshol value";
+            }
+            variable re_cpu_low_threshold {
+                value 50;
+                description "Enter RE cpu utilization maximum threshold value";
+                type int;
+                description "Enter RE cpu low threshol value";
+            }
+        }
+    }
+}

@@ -1,0 +1,129 @@
+#
+#   This rule detects memory leaks as well checks system processes memory utilization and notify in case any of the health monitored field crosses threshld
+#
+iceberg {
+    topic system.processes {
+        description "This topic is to monitor and notify cpu, memory utilization of junos system processes";
+        synopsis "system processes(daemons) cpu&memory analyzer";
+        rule check-process-memory {
+            description "This rule collects system process's memory utilization periodically and notifies in case of anomalies";
+            synopsis "system processes memory utilization analyzer";
+            keys daemon;
+            function isExceeding {
+                description "This function isExceeding returns 'True' if % of size used out of reserved memory is not exceeding the threshold";
+                path system-processes.py;
+                method isExceeding;
+                argument res {
+                    mandatory;
+                }
+                argument size {
+                    mandatory;
+                }
+                argument threshold {
+                    mandatory;
+                }
+            }
+            sensor SystemProcExtTable {
+                synopsis "System processes memory iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-proc-ext.yml;
+                    table SystemProcExtTable;
+                    frequency 10s;
+                }
+            }
+            field daemon {
+                sensor SystemProcExtTable {
+                    path cmd;
+                }
+                description "This field is to parse all junos processes names";
+            }
+            field max-threshold {
+                constant {
+                    value "{{process_memory_max_threshold}}";
+                }
+                type integer;
+                description "This field is for processes memory maximum threshold value";
+            }
+            field min-threshold {
+                constant {
+                    value "{{process_memory_min_threshold}}";
+                }
+                type integer;
+            }
+            field process-name {
+                constant {
+                    value "{{process_name}}";
+                }
+                type string;
+                description "This field shows processes to be monitored";
+            }
+            field reserved {
+                sensor SystemProcExtTable {
+                    path res;
+                }
+                description "This field is for reserved memory";
+            }
+            field size {
+                sensor SystemProcExtTable {
+                    path size;
+                }
+                description "This field is for processes memory size";
+            }
+            trigger processes-memory-utilization {
+                term skiping-undefined-processes {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                term is-memory-utilization-abnormal {
+                    when {
+                        user-defined-function isExceeding {
+                            argument size "$size";
+                            argument res "$reserved";
+                            argument threshold "$max-threshold";
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon memory utilization is above high threshold($max-threshold)";
+                        }
+                    }
+                }
+                term is-memory-utilization-median {
+                    when {
+                        user-defined-function isExceeding {
+                            argument size "$size";
+                            argument res "$reserved";
+                            argument threshold "$min-threshold";
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon memory utilization is in medium range(>=$min-threshold, <=$max-threshold)";
+                        }
+                    }
+                }
+            }
+            variable process_memory_max_threshold {
+                value 70;
+                description "Enter processes memory maximum threshold values if default value not matches with your requirement";
+                type int;
+            }
+            variable process_memory_min_threshold {
+                value 50;
+                description "Enter processes memory minimum threshold values if default value not matches with your requirement";
+                type int;
+            }
+            variable process_name {
+                value .*;
+                description "Enter processes to be monitored with separator or leave it to default";
+                type string;
+            }
+        }
+    }
+}
