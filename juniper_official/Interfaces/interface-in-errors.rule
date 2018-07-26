@@ -1,0 +1,98 @@
+#
+#  This rule checks interface in errors(all types) and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic interface.statistics {
+        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-in-errors {
+            keys interface-name;
+            synopsis "Interface in-error analyzer";
+            description "This rule collects an interface input error(errors(all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field inerrors-high-threshold {
+                constant {
+                    value "{{inerrors_high_threshold}}";
+                }
+                type integer;
+                description "This field is for interface in errors maximum threshold value";
+            }
+            field inerrors-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{inerrors_stats_name}}";
+                }
+                type integer;
+                description "This field shows interface field's value";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            trigger in-errors {
+                synopsis "Interface in-errors kpi";
+                description "Sets health based on interface in errors.";
+                term is-interface-in-errors-abnormal {
+                    when {
+                        min-rate-of-increase "$inerrors-stats-value" {
+                            rate "$inerrors-high-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name in errors($inerrors-stats-value) are above high threshold($inerrors-high-threshold)";
+                        }
+                    }
+                }
+                term is-interface-in-errors-median {
+                    when {
+                        min-rate-of-increase "$inerrors-stats-value" {
+                            rate "$inerrors-high-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name in errors($inerrors-stats-value) are abnormal";
+                        }
+                    }
+                }
+                term no-interface-in-errors {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name in errors($inerrors-stats-value) are below threshold";
+                        }
+                    }
+                }
+            }
+            variable inerrors_high_threshold {
+                value 1;
+                description "Enter interface in-errors maximum threshold value";
+                type int;
+            }
+            variable inerrors_stats_name {
+                value in-errors;
+                description "Enter any one of interface error specific filed to be monitored";
+                type string;
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+    }
+}

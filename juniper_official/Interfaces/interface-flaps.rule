@@ -1,0 +1,110 @@
+#
+#  This rule checks interface flap count and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic interface.statistics {
+        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-interface-flaps {
+            keys interface-name;
+            synopsis "link flaps analyzer";
+            description "This rule collects link flap count periodically and notifies in case flap count increases";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "This field shows interfaces admin status";
+            }
+            field flaps {
+                sensor interfaces {
+                    path /interfaces/interface/state/counters/carrier-transitions;
+                }
+                type integer;
+                description "This field shows link flap count";
+            }
+            field flaps-threshold {
+                constant {
+                    value "{{flaps_threshold}}";
+                }
+                type integer;
+                description "This field shows flap count increase threshold";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            trigger link-flaps {
+                synopsis "link flaps kpi";
+                description "Sets health based on link flap count.";
+                term is-link-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                term is-link-not-flaping {
+                    when {
+                        max-rate-of-increase "$flaps" {
+                            rate 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name flap count is not increasing";
+                        }
+                    }
+                }
+                term is-link-flaping-consistently {
+                    when {
+                        min-rate-of-increase "$flaps" {
+                            rate "$flaps-threshold";
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name flaps($flaps) continously";
+                        }
+                    }
+                }
+                term is-link-fluctuating {
+                    when {
+                        min-rate-of-increase "$flaps" {
+                            rate "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name flaps($flaps) are intermittent";
+                        }
+                    }
+                }
+            }
+            variable flaps_threshold {
+                value 1;
+                description "Enter interface flaps threshold";
+                type int;
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+    }
+}

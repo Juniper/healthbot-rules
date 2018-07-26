@@ -1,0 +1,78 @@
+#
+#  This rule checks health of each interface state and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic interface.statistics {
+        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-interface-status {
+            keys interface-name;
+            synopsis "interface input traffic analyzer";
+            description "This rule collects interface state periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "This field shows interfaces admin status";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/oper-status;
+                }
+                type string;
+                description "This field shows interfaces link operator status";
+            }
+            trigger link-state {
+                synopsis "link state kpi";
+                description "Sets health based on link state.";
+                term is-link-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                term is-link-down {
+                    when {
+                        matches-with "$admin-state" UP;
+                        matches-with "$link-state" DOWN;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name link operator status is DOWN";
+                        }
+                    }
+                }
+                term link-up {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name link operator status is UP";
+                        }
+                    }
+                }
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+    }
+}

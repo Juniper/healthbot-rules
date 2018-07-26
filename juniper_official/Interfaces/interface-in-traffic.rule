@@ -1,0 +1,111 @@
+#
+#  This rule checks interfaces in traffic and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic interface.statistics {
+        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-in-traffic {
+            keys interface-name;
+            synopsis "interface input traffic analyzer";
+            description "This rule collects input traffic(octets) periodically and notifies in case of traffic is above threshold";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field inoctets-high-threshold {
+                constant {
+                    value "{{inoctets_high_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored interface field's high threshold value";
+            }
+            field inoctets-low-threshold {
+                constant {
+                    value "{{inoctets_low_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored interface field's low threshold value";
+            }
+            field inoctets-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{inoctets_stats_name}}";
+                }
+                type integer;
+                description "This field shows interface field's value";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            trigger in-traffic {
+                synopsis "interface input traffic kpi";
+                description "Sets health based on input traffic threshold.";
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        min-rate-of-increase "$inoctets-stats-value" {
+                            rate "$inoctets-high-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name in traffic is above high threshold($inoctets-high-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-in-traffic-median {
+                    when {
+                        min-rate-of-increase "$inoctets-stats-value" {
+                            rate "$inoctets-low-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name in traffic is in medium range(>=$inoctets-low-threshold,<=$inoctets-high-threshold  octets)";
+                        }
+                    }
+                }
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name in traffic is below low threshold($inoctets-low-threshold octets)";
+                        }
+                    }
+                }
+            }
+            variable inoctets_high_threshold {
+                value 70000000;
+                description "Enter interface field's stats maximum threshold value";
+                type int;
+            }
+            variable inoctets_low_threshold {
+                value 20000000;
+                description "Enter interface field's stats maximum threshold value";
+                type int;
+            }
+            variable inoctets_stats_name {
+                value in-octets;
+                description "Enter interface filed to be monitored";
+                type string;
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+    }
+}

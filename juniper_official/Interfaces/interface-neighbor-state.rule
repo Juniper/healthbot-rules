@@ -1,0 +1,93 @@
+#
+#  This rule checks each interface neighbor state and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic interface.statistics {
+        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-neighbor-state {
+            keys interface-name;
+            synopsis "interface neighbor state analyzer";
+            description "This rule collects interface neighbor state periodically and notifies in case of anomalies";
+            sensor interfaces {
+                synopsis "interface open-config sensor definition";
+                description "/interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 10s;
+                }
+            }
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "This field shows interfaces admin status";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "This field shows interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/oper-status;
+                }
+                type string;
+                description "This field shows interfaces link operator status";
+            }
+            field neighbor-state {
+                sensor interfaces {
+                    path /interfaces/interface/subinterfaces/subinterface/ipv4/neighbors/neighbor/state/neighbor-state;
+                }
+                type string;
+                description "This field shows interface neighbor state";
+            }
+            trigger neighbor-state {
+                synopsis "interface neighbor state kpi";
+                description "Sets health based on interface neighbor state.";
+                term is-neighbor-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                term is-link-state-down {
+                    when {
+                        matches-with "$link-state" DOWN;
+                    }
+                }
+                term neighbor-reachable {
+                    when {
+                        matches-with "$link-state" UP;
+                        matches-with "$neighbor-state" REACHABLE;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name neighbor $neighbor-state";
+                        }
+                    }
+                }
+                term is-neighbor-unreachable {
+                    when {
+                        matches-with "$neighbor-state" NA;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name neighbor $neighbor-state";
+                        }
+                    }
+                }
+            }
+            variable interface_name {
+                value "ge-././.|xe-././.";
+                description "Enter interface names to be monitored in regular expression";
+                type string;
+            }
+        }
+    }
+}
