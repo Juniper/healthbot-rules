@@ -1,0 +1,175 @@
+#
+#   This rule monitors FPC memory utilization and notify in case any of the health monitored fields crosses threshold
+#
+iceberg {
+    topic linecard.fpc {
+        description "This topic monitors fpc memory, cpu and temperatures";
+        synopsis "chassis fpc health analyzer";
+        rule check-fpc-memory {
+            keys fpc;
+            synopsis "Fpc memory analyzer";
+            description "This rule collects fpc memory statistics periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field buffer-higher-threshold {
+                constant {
+                    value "{{FPC_Buffer_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory higher threshold";
+            }
+            field buffer-lower-threshold {
+                constant {
+                    value "{{FPC_Buffer_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory lower threshold";
+            }
+            field fpc {
+                sensor components {
+                    where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "This field is to parse fpc solt number";
+            }
+            field fpc-memory-buffer {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "This field is to set fpc buffer memory utilization";
+            }
+            field fpc-memory-heap {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'memory-utilization-heap'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "This field is to set fpc buffer heap memory";
+            }
+            field heap-higher-threshold {
+                constant {
+                    value "{{FPC_Heap_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc heap memory higher threshold";
+            }
+            field heap-lower-threshold {
+                constant {
+                    value "{{FPC_Heap_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory lower threshold";
+            }
+            trigger fpc-buffer-memory-utilization {
+                synopsis "Fpc memory utilization kpi";
+                description "Sets health based on fpc memory utilization threshold.";
+                term is-fpc-buffer-memory-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-buffer" "$buffer-lower-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc memory buffer utilization($fpc-memory-buffer) is below lower threshold($buffer-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-buffer-memory-utilization-median {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-buffer" "$buffer-higher-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc memory buffer utilization($fpc-memory-buffer) is in medium range(>=$buffer-lower-threshold, <=$buffer-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-buffer-memory-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc memory buffer utilization($fpc-memory-buffer) is above higher threshold($buffer-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            trigger fpc-heap-memory-utilization {
+                synopsis "Fpc heap memory utilization kpi";
+                description "Sets health based on fpc heap memory utilization threshold.";
+                term is-fpc-heap-memory-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-heap" "$heap-lower-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc memory heap utilization($fpc-memory-heap) is below lower threshold($heap-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-heap-memory-utilization-median {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-heap" "$heap-higher-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc memory heap utilization($fpc-memory-heap) is in medium range(>=$heap-lower-threshold, <=$heap-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-heap-memory-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc memory heap utilization($fpc-memory-heap) is above higher threshold($heap-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable FPC_Buffer_Higher_Threshold {
+                value 70;
+                description "Enter processes fpc buffer memory maximum threshold value";
+                type int;
+            }
+            variable FPC_Buffer_Lower_Threshold {
+                value 25;
+                description "Enter processes fpc buffer memory minimum threshold value";
+                type int;
+            }
+            variable FPC_Heap_Higher_Threshold {
+                value 70;
+                description "Enter processes fpc heap memory maximum threshold value";
+                type int;
+            }
+            variable FPC_Heap_Lower_Threshold {
+                value 25;
+                description "Enter processes fpc heap memory minimum threshold value";
+                type int;
+            }
+            variable FPC_Slot_No {
+                value 0-9;
+                description "Enter fpc slot numbers to be monitored with separator using regular expression";
+                type string;
+            }
+        }
+    }
+}

@@ -1,0 +1,104 @@
+#
+#   This rule monitors FPC cpu utilization and notify in case any of the health monitored fields crosses threshold
+#
+iceberg {
+    topic linecard.fpc {
+        description "This topic monitors fpc memory, cpu and temperatures";
+        synopsis "chassis fpc health analyzer";
+        rule check-fpc-cpu {
+            keys fpc;
+            synopsis "Fpc cpu analyzer";
+            description "This rule collects fpc cpu statistics periodically and notifies in case of anomalies";
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 20s;
+                }
+            }
+            field fpc {
+                sensor components {
+                    where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]:CPU$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "This field is to parse all fpc names";
+            }
+            field fpc-cpu-utilization {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'cpu-utilization-total'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is to show fpc cpu utilization";
+            }
+            field fpc-cpu-utilization-higher-threshold {
+                constant {
+                    value "{{FPC_CPU_Utilization_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for fpc cpu higher threshold value";
+            }
+            field fpc-cpu-utilization-lower-threshold {
+                constant {
+                    value "{{FPC_CPU_Utilization_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for fpc cpu lower threshold value";
+            }
+            trigger fpc-cpu-utilization {
+                synopsis "Fpc cpu utilization kpi";
+                description "Sets health based on fpc cpu utilization threshold.";
+                term is-fpc-cpu-utilization-normal {
+                    when {
+                        less-than-or-equal-to "$fpc-cpu-utilization" "$fpc-cpu-utilization-lower-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc CPU utilization($fpc-cpu-utilization) is lesser than lower threshold($fpc-cpu-utilization-lower-threshold)";
+                        }
+                    }
+                }
+                term is-fpc-cpu-utilization-median {
+                    when {
+                        less-than "$fpc-cpu-utilization" "$fpc-cpu-utilization-higher-threshold" {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc CPU utilization is in medium range(>=$fpc-cpu-utilization-lower-threshold, <=$fpc-cpu-utilization-higher-threshold)";
+                        }
+                    }
+                }
+                term fpc-cpu-utilization-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$fpc CPU utilization($fpc-cpu-utilization) is greater than higher threshold($fpc-cpu-utilization-higher-threshold)";
+                        }
+                    }
+                }
+            }
+            variable FPC_CPU_Utilization_Higher_Threshold {
+                value 60;
+                description "Enter fpc cpu maximum threshold value";
+                type int;
+            }
+            variable FPC_CPU_Utilization_Lower_Threshold {
+                value 20;
+                description "Enter fpc cpu minimum threshold value";
+                type int;
+            }
+            variable FPC_Slot_No {
+                value 0-9;
+                description "Enter fpc slot numbers to be monitored using regular epression";
+                type string;
+            }
+        }
+    }
+}
