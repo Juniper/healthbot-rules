@@ -1,0 +1,58 @@
+#
+#   This rule checks route count of each protocol of each table and notify in case any of the health monitored field crosses threshold
+#
+iceberg {
+    topic protocol.routesummary {
+        description "This topic has rule on routing table statistics which monitors total-route-count in each routing table";
+        synopsis "Protocol routes and Route table statistics analyzer";
+        rule check-protocol-route-count {
+            keys [ protocol-name table-name ];
+            synopsis "collects protocols statistics in each routing table";
+            description "collects protocols statistics in each routing table";
+            sensor route-protocol-summary {
+                synopsis "Get routing table protocol statistics";
+                description "Get routing table statistics through -show route summary- command and filters protocols in each routing table";
+                iAgent {
+                    file route-protocol-summary.yml;
+                    table RouteProtocolsTable;
+                    frequency 10s;
+                }
+            }
+            field protocol-route-count-threshold {
+                constant {
+                    value "{{protocol_route_count_threshold}}";
+                }
+                type integer;
+                description "stores threshold value from playbook variable";
+            }
+            trigger protocol-routes-count {
+                synopsis "Each route table protocol route count check KPI";
+                description "Sets health based on each tables protocol route count threshold";
+                term is-protocol-route-count-abnormal {
+                    when {
+                        greater-than-or-equal-to "$protocol-route-count" "$protocol-route-count-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$table-name:$protocol-name route count($protocol-route-count) is above threshold($protocol-route-count-threshold)";
+                        }
+                    }
+                }
+                term protocol-route-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$table-name:$protocol-name route count($protocol-route-count) is below threshold($protocol-route-count-threshold)";
+                        }
+                    }
+                }
+            }
+            variable protocol_route_count_threshold {
+                value 60000;
+                description "Enter tables protocol route count high threshold value";
+                type int;
+            }
+        }
+    }
+}
