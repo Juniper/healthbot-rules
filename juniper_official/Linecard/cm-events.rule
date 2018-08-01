@@ -1,0 +1,102 @@
+#
+#   This rule detects all types of cm errors or alarms notify in case any of the health monitored fields crosses threshold
+#
+iceberg {
+    topic linecard.cm-events {
+        description "This topic to detect cm errors and alarms";
+        synopsis "cm-error finder";
+        rule check-cm-events {
+            keys cm-error-id;
+            synopsis "cm error analyzer";
+            description "This rule receives cm events periodically and notifies in case of anomalies";
+            sensor cm-events-sensor {
+                synopsis "cm error sensor definition";
+                description "/junos/system/cmerror/counters/ native gpb sensor to receive telemetry data from network device";
+                native-gpb {
+                    sensor-name jnpr_cmerror_data_ext;
+                    port 22000;
+                }
+            }
+            field cm-error-id {
+                sensor cm-events-sensor {
+                    path error_item.identifier;
+                }
+                type string;
+                description "This field is for error id";
+            }
+            field fru-slot {
+                sensor cm-events-sensor {
+                    path fru_slot;
+                }
+                type integer;
+                description "This field is for fru slot no";
+            }
+            field cm-error-module-id {
+                sensor cm-events-sensor {
+                    path error_item.module_id;
+                }
+                type integer;
+                description "This field is for error module id";
+            }
+            field cm-error-component-id {
+                sensor cm-events-sensor {
+                    path error_item.component_id;
+                }
+                type integer;
+                description "This field is for error component id";
+            }
+            field cm-error-description {
+                sensor cm-events-sensor {
+                    path error_item.description;
+                }
+                type string;
+                description "This field is for error description";
+            }
+            field cm-error-occur-count {
+                sensor cm-events-sensor {
+                    path error_item.occur_count;
+                }
+                type integer;
+                description "This field is for total cm error count";
+            }
+            field cm-error-threshold {
+                constant {
+                    value "{{cm_error_threshold}}";
+                }
+                type integer;
+                description "This field is for cm-errors minimum rate of increase threshold value";
+            }
+            trigger cm-errors {
+                synopsis "cm-error kpi";
+                description "Sets health based on cm-error count increase";
+                term is-cm-error-count-increased {
+                    when {
+                        min-rate-of-increase "$cm-error-occur-count" {
+                            rate "$cm-error-threshold";
+                            time-range 20s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "cm-errors increasing in fru:$fru-slot module:$cm-error-module-id component:$cm-error-component-id. $cm-error-description error count is:$cm-error-occur-count and crossed threshold";
+                        }
+                    }
+                }
+                term is-cm-error-count-fine {
+                    then {
+                        status {
+                            color green;
+                            message "$cm-error-description count not increased";
+                        }
+                    }
+                }
+            }
+            variable cm_error_threshold {
+                value 1;
+                description "Enter minimum rate of incresae of cm-errors threshold value";
+                type int;
+            }
+        }
+    }
+}
