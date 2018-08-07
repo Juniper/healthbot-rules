@@ -27,12 +27,12 @@ iceberg {
                 type string;
                 description "This field is for interface description";
             }
-            field higher-threshold {
+            field high-threshold {
                 constant {
-                    value "{{higher_threshold}}";
+                    value "{{high_threshold}}";
                 }
                 type integer;
-                description "This field is for monitored field's higher threshold";
+                description "This field is for monitored field's high threshold";
             }
             field interface-name {
                 sensor interfaces {
@@ -77,17 +77,17 @@ iceberg {
                         does-not-match-with "$description" "$user-description";
                     }
                 }
-                term is-interface-stats-crossing-higher-threshold {
+                term is-interface-stats-crossing-high-threshold {
                     when {
                         min-rate-of-increase "$stats-value" {
-                            rate "$higher-threshold";
+                            rate "$high-threshold";
                             time-range 60s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$stats-name of $interface-name($description) is:$stats-value is above higher threshold($higher-threshold)";
+                            message "$stats-name of $interface-name($description) is:$stats-value is above high threshold($high-threshold)";
                         }
                     }
                 }
@@ -114,9 +114,9 @@ iceberg {
                     }
                 }
             }
-            variable higher_threshold {
-                value 70000000;
-                description "Enter monitored fields higher threshold value";
+            variable high_threshold {
+                value 800000000;
+                description "Enter in octets high threshold value. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
                 type int;
             }
             variable interface_description {
@@ -125,8 +125,8 @@ iceberg {
                 type string;
             }
             variable medium_threshold {
-                value 20000000;
-                description "Enter monitored fields medium threshold value";
+                value 500000000;
+                description "Enter in octets medium threshold value. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
                 type int;
             }
             variable stats_name {
