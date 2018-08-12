@@ -23,7 +23,7 @@ iceberg {
                 iAgent {
                     file system-cpu.yml;
                     table CPUutilizationTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field cpu-15min {
@@ -137,18 +137,24 @@ iceberg {
                 description "Sets health based on RE cpu 1 mminute load average threshold.";
                 term is-cpu-utilization-1min-normal {
                     when {
-                        less-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-low-threshold";
+                        greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-high-threshold" {
+                            time-range 3m;
+                            all;
+                        }
                     }
                     then {
                         status {
-                            color green;
-                            message "Routing Engine$slot 1min cpu utilization($cpu-1min) is lesser than low threshold($cpu-utilization-1min-low-threshold)";
+                            color red;
+                            message "Routing Engine$slot 1min cpu utilization($cpu-1min) is greater than high threshold(cpu-utilization-1min-high-threshold)";
                         }
                     }
                 }
                 term is-cpu-utilization-1min-median {
                     when {
-                        less-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-high-threshold";
+                        greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-low-threshold" {
+                            time-range 3m;
+                            all;
+                        }
                     }
                     then {
                         status {
@@ -161,7 +167,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Routing Engine$slot 1min cpu utilization($cpu-1min) is greater than high threshold(cpu-utilization-1min-high-threshold)";
+                            message "Routing Engine$slot 1min cpu utilization($cpu-1min) is lesser than low threshold($cpu-utilization-1min-low-threshold)";
                         }
                     }
                 }

@@ -1,5 +1,5 @@
 #
-#   This playbook checks health of system and notify in case any of the health monitored field crosses threshld
+#   This rule checks system cpu utilization and notify in case any of the health monitored field crosses threshld
 #
 iceberg {
     topic system.cpu {
@@ -22,7 +22,7 @@ iceberg {
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             field re-cpu-utilization-oc {
@@ -68,18 +68,24 @@ iceberg {
                 description "Sets health based on RE cpu utilization thresholds.";
                 term is-re-cpu-utilization-normal {
                     when {
-                        less-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
+                        greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
+                            time-range 5m;
+                            all;
+                        }
                     }
                     then {
                         status {
-                            color green;
-                            message "$routing-engine cpu utilization($re-cpu-utilization) is lesser than low threshold($re-cpu-utilization-low-threshold)";
+                            color red;
+                            message "$routing-engine cpu utilization($re-cpu-utilization) is greater than high threshold($re-cpu-utilization-high-threshold)";
                         }
                     }
                 }
                 term is-re-cpu-utilization-median {
                     when {
-                        less-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold";
+                        greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
+                            time-range 5m;
+                            all;
+                        }
                     }
                     then {
                         status {
@@ -91,8 +97,8 @@ iceberg {
                 term re-cpu-utilization-abnormal {
                     then {
                         status {
-                            color red;
-                            message "$routing-engine cpu utilization($re-cpu-utilization) is greater than high threshold($re-cpu-utilization-high-threshold)";
+                            color green;
+                            message "$routing-engine cpu utilization($re-cpu-utilization) is lesser than low threshold($re-cpu-utilization-low-threshold)";
                         }
                     }
                 }
@@ -104,7 +110,7 @@ iceberg {
                 description "Enter RE slot numbers using regular expression";
             }
             variable re_cpu_high_threshold {
-                value 75;
+                value 80;
                 description "Enter RE cpu utilization maximum threshold value";
                 type int;
                 description "Enter RE cpu high threshol value";
