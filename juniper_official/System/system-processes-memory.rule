@@ -1,6 +1,6 @@
-#
-#   This rule detects memory leaks as well checks system processes memory utilization and notify in case any of the health monitored field crosses threshld
-#
+/*
+ *   This rule detects memory leaks as well checks system processes(daemons) memory utilization and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic system.processes {
         description "This topic is to monitor and notify cpu, memory utilization of junos system processes";
@@ -8,7 +8,13 @@ iceberg {
         rule check-process-memory {
             description "This rule collects system process's memory utilization periodically and notifies in case of anomalies";
             synopsis "system processes memory utilization analyzer";
+            /*
+             * unique identifier of the rule is junos daemon
+             */
             keys daemon;
+            /*
+             * This function required to derive memory utilization in percent as router provide values in KB and MB
+             */
             function isExceeding {
                 description "This function isExceeding returns 'True' if % of size used out of reserved memory is not exceeding the threshold";
                 path system-processes.py;
@@ -23,6 +29,9 @@ iceberg {
                     mandatory;
                 }
             }
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor SystemProcExtTable {
                 synopsis "System processes memory iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
@@ -32,12 +41,30 @@ iceberg {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field daemon {
                 sensor SystemProcExtTable {
                     path cmd;
                 }
                 description "This field is to parse all junos processes names";
             }
+            field reserved {
+                sensor SystemProcExtTable {
+                    path res;
+                }
+                description "This field is for reserved memory";
+            }
+            field size {
+                sensor SystemProcExtTable {
+                    path size;
+                }
+                description "This field is for processes memory size";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
             field max-threshold {
                 constant {
                     value "{{process_memory_max_threshold}}";
@@ -58,18 +85,11 @@ iceberg {
                 type string;
                 description "This field shows processes to be monitored";
             }
-            field reserved {
-                sensor SystemProcExtTable {
-                    path res;
-                }
-                description "This field is for reserved memory";
-            }
-            field size {
-                sensor SystemProcExtTable {
-                    path size;
-                }
-                description "This field is for processes memory size";
-            }
+            /*
+             * Daemon's set based on high and low thresholds i.e. When daemons memory utilization value (UDF isExceeding)
+             * is above high threshold then color is set to red and sends message. Sets color to green when memory
+             * utilization is below threshold and to yellow when value between low and high threshold.
+             */
             trigger processes-memory-utilization {
                 term skiping-undefined-processes {
                     when {
@@ -109,6 +129,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance"
+             */
             variable process_memory_max_threshold {
                 value 80;
                 description "Enter processes memory maximum threshold values if default value not matches with your requirement";

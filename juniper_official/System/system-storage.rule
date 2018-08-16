@@ -1,6 +1,6 @@
-#
-#   This rule checks system storage utilization and notify in case any of the health monitored field crosses threshld
-#
+/*
+ *  This rule checks filesystem storage utilization and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic system.storage {
         description "This topic is to monitor system disk partitions mount usage and notify in case storage is above threshold";
@@ -8,7 +8,13 @@ iceberg {
         rule check-storage {
             description "This rule collects disk storage usage periodically and notifies in case of anomalies";
             synopsis "system storage usage analyzer";
+            /*
+             * unique identifier of the rule is filesystem
+             */
             keys filesystem-name;
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor StorageTable {
                 synopsis "System storage iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
@@ -18,6 +24,9 @@ iceberg {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field high-threshold {
                 constant {
                     value "{{storage_usage_high_threshold}}";
@@ -32,6 +41,11 @@ iceberg {
                 type integer;
                 description "This field is for storage usage low threshold";
             }
+            /*
+             * System Storage health set based on high and low thresholds i.e. When filesystem storage ($used-percent) value
+             * is above high threshold then color is set to red and sends message. Sets color to green when filesystem storage
+             * usage is below threshold and to yellow when value between low and high threshold.
+             */
             trigger fs-utilization {
                 synopsis "File system usage kpi";
                 description "Sets health based on file system storage usage.";
@@ -66,6 +80,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance"
+             */
             variable storage_usage_high_threshold {
                 value 80;
                 type int;

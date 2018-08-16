@@ -1,6 +1,6 @@
-#
-#   This rule checks system memory usage and notify in case any of the health monitored field crosses threshld
-#
+/*
+ *  This rule checks system memory usage and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic system.memory {
         description "This topic is to monitor and notify  RE system memory";
@@ -8,7 +8,13 @@ iceberg {
         rule check-system-memory {
             description "This rule collects REs system cpu statistics periodically and notifies in case of anomalies";
             synopsis "RE system memory statistics analyzer";
+            /*
+             * unique identifier of the rule is routing-engine
+             */
             keys routing-engine;
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor components {
                 synopsis "system components open-config sensor definition";
                 description "RE system open-config sensor to collect telemetry data from network device";
@@ -17,6 +23,9 @@ iceberg {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field re-memory-buffer {
                 sensor components {
                     where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
@@ -25,6 +34,17 @@ iceberg {
                 type integer;
                 description "This field is for RE system memory buffer";
             }
+            field routing-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "This field is for routing-engine";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
             field re-memory-buffer-high-threshold {
                 constant {
                     value "{{memory_buffer_re_high_threshold}}";
@@ -39,18 +59,15 @@ iceberg {
                 type integer;
                 description "This field is for RE system memory buffer low threshold";
             }
-            field routing-engine {
-                sensor components {
-                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
-                    path "/components/component/@name";
-                }
-                type string;
-                description "This field is for routing-engine";
-            }
+            /*
+             * Memory health set based on high and low thresholds i.e. When RE memory utilization($re-memory-buffer-utilization) value
+             * is above high threshold then color is set to red and sends message. Sets color to green when memory utilization
+             * is below threshold and to yellow when value between low and high threshold.
+             */
             trigger re-memory-buffer-utilization {
                 synopsis "RE system memory buffer utilization kpi";
                 description "Sets health based on system memory buffer utilization state.";
-                term green {
+                term is-re-memory-buffer-utilization-normal {
                     when {
                         less-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold";
                     }
@@ -61,7 +78,7 @@ iceberg {
                         }
                     }
                 }
-                term yellow {
+                term is-re-memory-buffer-utilization-median {
                     when {
                         less-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold";
                     }
@@ -72,7 +89,7 @@ iceberg {
                         }
                     }
                 }
-                term red {
+                term is-re-memory-buffer-utilization-abnormal  {
                     then {
                         status {
                             color red;
@@ -81,6 +98,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance"
+             */
             variable RE_Slot_No {
                 value 0-1;
                 type string;

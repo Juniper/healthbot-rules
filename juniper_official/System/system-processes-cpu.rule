@@ -1,6 +1,6 @@
-#
-#   This rule checks health of all processes cpu utilization and notify in case any of the health monitored field crosses threshld
-#
+/*
+ *   This rule checks health of all processes(daemons) cpu utilization and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic system.processes {
         description "This topic is to monitor and notify cpu, memory utilization of junos system processes";
@@ -8,7 +8,13 @@ iceberg {
         rule check-process-cpu {
             description "This rule collects system process's cpu utilization periodically and notifies in case of anomalies";
             synopsis "system processes cpu analyzer";
+            /*
+             * unique identifier of the rule is junos daemon
+             */
             keys daemon;
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor SystemProcExtTable {
                 synopsis "System processes CPU iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
@@ -18,6 +24,9 @@ iceberg {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field cpu-util-percent {
                 sensor SystemProcExtTable {
                     path wcpu;
@@ -30,6 +39,9 @@ iceberg {
                 }
                 description "This field is to parse all junos processes names";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field max-threshold {
                 constant {
                     value "{{process_cpu_max_threshold}}";
@@ -51,6 +63,11 @@ iceberg {
                 type string;
                 description "This field shows processes to be monitored";
             }
+            /*
+             * Daemon's CPU health set based on high and low thresholds i.e. When daemon's cpu utilization($cpu-util-percent) value
+             * is above high threshold then color is set to red and sends message. Sets color to green when daemon's cpu utilization
+             * is below threshold and to yellow when value between low and high threshold.
+             */
             trigger processe-cpu-utilization {
                 synopsis "system prcoesses cpu utilization kpi";
                 description "Sets health based on system processes cpu utilization."; 
@@ -86,6 +103,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance"
+             */
             variable process_cpu_max_threshold {
                 value 80;
                 description "Enter processes cpu maximum threshold value";
