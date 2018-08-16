@@ -1,6 +1,6 @@
-#
-#   This rule checks health of each lldp session and notify in case any of the health monitored field crosses threshld
-#
+/*
+ *   This rule checks health of each lldp session and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic protocol.lldp {
         description "This topic is to monitor and notify lldp statitics i.e. neighbor state, frame discards, frame errors, tlv discards and unknown tlvs";
@@ -8,7 +8,13 @@ iceberg {
         rule check-lldp-session {
             description "This rule collects lldp session state periodically and notifies in case of anomalies";
             synopsis "lldp session state analyzer";
+            /*
+             * unique identifier of the rule is interface name
+             */
             keys interface-name;
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor lldp-sensor {
                 synopsis "lldp open-config sensor definition";
                 description "/lldp open-config sensor to collect telemetry data from network device";
@@ -17,6 +23,9 @@ iceberg {
                     frequency 10s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field if-lldp-state {
                 sensor lldp-sensor {
                     path /lldp/interfaces/interface/state/enabled;
@@ -39,6 +48,9 @@ iceberg {
                 type string;
                 description "This field is for lldp neighbor state";
             }
+            /*
+             * When lldp session state($if-lldp-state) is not true then sets lldp session health to red and send a message otherwise sets health to green
+             */
             trigger lldp-session-state {
                 synopsis "lldp state kpi";
                 description "Ignores lldp disabled interfaces. Sets health based on lldp session state.";
@@ -67,6 +79,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable interface_name {
                 value ".*";
                 type string;
