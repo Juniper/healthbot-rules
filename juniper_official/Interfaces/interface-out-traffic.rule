@@ -1,22 +1,31 @@
-#
-#  This rule checks interfaces out traffic and notify in case any of the health monitored field crosses threshold
-#
+/*
+ * This rule checks interfaces out traffic and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic interface.statistics {
         description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-out-traffic {
+            /*
+             * unique identifier of the rule is an interface name
+             */
             keys interface-name;
             synopsis "interface output traffic analyzer";
             description "This rule collects output traffic(octets) periodically and notifies in case of traffic is above threshold";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 10s;
+                    frequency 30s;
                 }
             }
+            /*
+             *  Fields defined using sensor path
+             */
             field interface-name {
                 sensor interfaces {
                     where "/interfaces/interface/@name =~ /{{interface_name}}/";
@@ -25,6 +34,15 @@ iceberg {
                 type string;
                 description "This field shows interfaces to be monitored";
             }
+            field outoctets-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{outoctets_stats_name}}";
+                }
+                type integer;
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
             field outoctets-high-threshold {
                 constant {
                     value "{{outoctets_high_threshold}}";
@@ -39,12 +57,11 @@ iceberg {
                 type integer;
                 description "This field is for monitored interface field's minimum threshold value";
             }
-            field outoctets-stats-value {
-                sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{outoctets_stats_name}}";
-                }
-                type integer;
-            }
+            /*
+             * When an interface output octets($outoctets-stats-value) count crosses high threshold then sends anomaly notification and sets color
+             * to red. When count is below low threshold then sets color to green. When count is between low and high threshold then sends anomaly
+             * notification and sets color to yellow.
+             */
             trigger out-traffic {
                 synopsis "interface output traffic kpi";
                 description "Sets health based on output traffic threshold.";
@@ -85,6 +102,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable interface_name {
                 value ".*";
                 description "Enter interface names to be monitored in regular expression";

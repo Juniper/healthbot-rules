@@ -1,38 +1,40 @@
-#
-#   Health monitoring of selective interfaces based on its description and selective KPIs.
-#   Using this playbook any one of the kpi (in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts,
-#   out-unicast-pkts, in-errors, out-errors, carrier-transitions) can be monitored.
-#   ****Seperate playbook instances to be created for each interface kpi****
-#
+/* 
+ * Health monitoring of selective interfaces based on its description and selective KPIs.
+ * Using this playbook any one of the kpi (in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts,
+ * out-unicast-pkts, in-errors, out-errors, carrier-transitions) can be monitored.
+ * ****Seperate playbook instances to be created for each interface kpi****
+ */ 
 iceberg {
     topic interface.monitor {
         description "This topic monitors only interfaces based on its description";
         synopsis "Interface KPI monitor based on description";
         rule check-interface-health {
+            /*
+             * unique identifier of the rule is an interface name
+             */
             keys interface-name;
             synopsis "Interface KPI monitor based on description";
             description "Using this rule any one of the field(in and out errors, packets, octets, flaps can be monitored).";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor interfaces {
                 synopsis "Interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 20s;
+                    frequency 30s;
                 }
             }
+            /*
+             *  Fields defined using sensor path
+             */
             field description {
                 sensor interfaces {
                     path /interfaces/interface/state/description;
                 }
                 type string;
                 description "This field is for interface description";
-            }
-            field high-threshold {
-                constant {
-                    value "{{high_threshold}}";
-                }
-                type integer;
-                description "This field is for monitored field's high threshold";
             }
             field interface-name {
                 sensor interfaces {
@@ -41,12 +43,29 @@ iceberg {
                 type string;
                 description "This field is interface name";
             }
+            field stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{stats_name}}";
+                }
+                type integer;
+                description "This field is for monitored field's stats value";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
             field medium-threshold {
                 constant {
                     value "{{medium_threshold}}";
                 }
                 type integer;
                 description "This field is for monitored field's medium threshold";
+            }
+            field high-threshold {
+                constant {
+                    value "{{high_threshold}}";
+                }
+                type integer;
+                description "This field is for monitored field's high threshold";
             }
             field stats-name {
                 constant {
@@ -55,13 +74,6 @@ iceberg {
                 type string;
                 description "This field is for monitored field's stats name";
             }
-            field stats-value {
-                sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{stats_name}}";
-                }
-                type integer;
-                description "This field is for monitored field's stats value";
-            }
             field user-description {
                 constant {
                     value "{{interface_description}}";
@@ -69,6 +81,11 @@ iceberg {
                 type string;
                 description "This field is for user entered interface description";
             }
+            /*
+             * When an interface input octets($stats-value) count crosses high threshold then sends anomaly notification and sets color
+             * to red. When count is below low threshold then sets color to green. When count is between low and high threshold then sends anomaly
+             * notification and sets color to yellow.
+             */
             trigger interface-stats {
                 synopsis "interface statistics kpi";
                 description "Sets health based on interface statistics threshold.";
@@ -114,6 +131,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable high_threshold {
                 value 800000000;
                 description "Enter in octets high threshold value. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";

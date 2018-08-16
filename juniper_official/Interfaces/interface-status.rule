@@ -1,22 +1,31 @@
-#
-#  This rule checks health of each interface state and notify in case any of the health monitored field crosses threshold
-#
+/*
+ * This rule checks health of each interface state and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic interface.statistics {
         description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-interface-status {
+            /*
+             * unique identifier of the rule is an interface name
+             */
             keys interface-name;
             synopsis "interface input traffic analyzer";
             description "This rule collects interface state periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 10s;
+                    frequency 30s;
                 }
             }
+            /*
+             * Fileds defined using sensor path
+             */
             field admin-state {
                 sensor interfaces {
                     path /interfaces/interface/state/admin-status;
@@ -39,6 +48,10 @@ iceberg {
                 type string;
                 description "This field shows interfaces link operator status";
             }
+            /*
+             * When an enabled interface link operator state($link-state) is down then send anomaly notification and sets color to red,
+             * otherwise sets color to green.
+             */
             trigger link-state {
                 synopsis "link state kpi";
                 description "Sets health based on link state.";
@@ -68,6 +81,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable interface_name {
                 value ".*";
                 description "Enter interface names to be monitored in regular expression";

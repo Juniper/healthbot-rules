@@ -1,22 +1,31 @@
-#
-#  This rule checks interface out errors(all types) and notify in case any of the health monitored field crosses threshold
-#
+/*
+ * This rule checks interface out errors(all types) and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic interface.statistics {
         description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-out-errors {
+            /*
+             * unique identifier of the rule is an interface name
+             */
             keys interface-name;
             synopsis "Interface out-errors analyzer";
             description "This rule collects interface output error(errors(all), drops, discards, timeouts and runts) periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 10s;
+                    frequency 30s;
                 }
             }
+            /*
+             * Fileds defined using sensor path
+             */
             field interface-name {
                 sensor interfaces {
                     where "/interfaces/interface/@name =~ /{{interface_name}}/";
@@ -25,13 +34,6 @@ iceberg {
                 type string;
                 description "This field shows interfaces to be monitored";
             }
-            field outerrors-high-threshold {
-                constant {
-                    value "{{outerrors_high_threshold}}";
-                }
-                type integer;
-                description "This field is for interface out errors maximum threshold value";
-            }
             field outerrors-stats-value {
                 sensor interfaces {
                     path "/interfaces/interface/state/counters/{{outerrors_stats_name}}";
@@ -39,6 +41,21 @@ iceberg {
                 type integer;
                 description "This field shows interface field's value";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field outerrors-high-threshold {
+                constant {
+                    value "{{outerrors_high_threshold}}";
+                }
+                type integer;
+                description "This field is for interface out errors maximum threshold value";
+            }
+            /*
+             * When an interface out error($outerrors-stats-value) count crosses threshold for period of 60 seconds then
+             * sends an anomaly notification and sets color to red. When error count increases by one then sends anomaly
+             * notification and sets color to yellow otherwise sets color to green.
+             */
             trigger out-errors {
                 synopsis "Interface out-errors kpi";
                 description "Sets health based on interface out errors.";
@@ -78,6 +95,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable interface_name {
                 value ".*";
                 description "Enter interface names to be monitored in regular expression";

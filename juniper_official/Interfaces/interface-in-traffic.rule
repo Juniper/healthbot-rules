@@ -1,22 +1,31 @@
-#
-#  This rule checks interfaces in traffic and notify in case any of the health monitored field crosses threshold
-#
+/*
+ * This rule checks interfaces in traffic and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic interface.statistics {
         description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-in-traffic {
+            /*
+             * unique identifier of the rule is an interface name
+             */
             keys interface-name;
             synopsis "interface input traffic analyzer";
             description "This rule collects input traffic(octets) periodically and notifies in case of traffic is above threshold";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 10s;
+                    frequency 30s;
                 }
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field inoctets-high-threshold {
                 constant {
                     value "{{inoctets_high_threshold}}";
@@ -31,6 +40,9 @@ iceberg {
                 type integer;
                 description "This field is for monitored interface field's low threshold value";
             }
+            /*
+             * Fileds defined using sensor path
+             */
             field inoctets-stats-value {
                 sensor interfaces {
                     path "/interfaces/interface/state/counters/{{inoctets_stats_name}}";
@@ -46,6 +58,11 @@ iceberg {
                 type string;
                 description "This field shows interfaces to be monitored";
             }
+            /*
+             * When an interface input octets($inoctets-stats-value) count crosses high threshold then sends anomaly notification and sets color
+             * to red. When count is below low threshold then sets color to green. When count is between low and high threshold then sends anomaly
+             * notification and sets color to yellow.
+             */
             trigger in-traffic {
                 synopsis "interface input traffic kpi";
                 description "Sets health based on input traffic threshold.";
@@ -86,6 +103,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable inoctets_high_threshold {
                 value 800000000;
                 description "Enter in octets high threshold value. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";

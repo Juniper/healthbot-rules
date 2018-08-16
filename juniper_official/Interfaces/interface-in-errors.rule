@@ -1,22 +1,31 @@
-#
-#  This rule checks interface in errors(all types) and notify in case any of the health monitored field crosses threshold
-#
+/*
+ * This rule checks interface in errors(all types) and notify in case any of the health monitored field crosses threshold
+ */
 iceberg {
     topic interface.statistics {
         description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-in-errors {
+            /*
+             * unique identifier of the rule is an interface name
+             */
             keys interface-name;
             synopsis "Interface in-error analyzer";
             description "This rule collects an interface input error(errors(all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 10s;
+                    frequency 30s;
                 }
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field inerrors-high-threshold {
                 constant {
                     value "{{inerrors_high_threshold}}";
@@ -24,6 +33,9 @@ iceberg {
                 type integer;
                 description "This field is for interface in errors maximum threshold value";
             }
+            /*
+             * Fileds defined using sensor path
+             */
             field inerrors-stats-value {
                 sensor interfaces {
                     path "/interfaces/interface/state/counters/{{inerrors_stats_name}}";
@@ -39,6 +51,11 @@ iceberg {
                 type string;
                 description "This field shows interfaces to be monitored";
             }
+            /*
+             * When an interface in error($inerrors-stats-value) count crosses threshold for period of 60 seconds then
+             * sends an anomaly notification and sets color to red. When error count increases by one then sends anomaly
+             * notification and sets color to yellow otherwise sets color to green.
+             */
             trigger in-errors {
                 synopsis "Interface in-errors kpi";
                 description "Sets health based on interface in errors.";
@@ -78,6 +95,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable inerrors_high_threshold {
                 value 1;
                 description "Enter interface in-errors maximum threshold value";
