@@ -1,14 +1,20 @@
-#
-#   This rule checks health of FPC temperature and notify in case any of the health monitored fields crosses threshold
-#
+/*
+ * This rule checks health of FPC temperature and notify in case any of the health monitored fields crosses threshold
+ */
 iceberg {
     topic chassis.temperatures {
         description "This topic is to monitor the chassis, fpc, re&re-cpu teparatures in degree C";
         synopsis "fpc temperature c";
         rule check-fpc-temperature {
+            /*
+             * unique identifier of the rule is fpc slot number
+             */
             keys fpc;
             synopsis "Fpc temperature check";
             description "This rule collects fpc current temperature periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor components {
                 synopsis "chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -17,6 +23,9 @@ iceberg {
                     frequency 20s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field fpc {
                 sensor components {
                     where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]*$/";
@@ -33,6 +42,9 @@ iceberg {
                 type integer;
                 description "This field shows fpc temparature to be monitored";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field fpc-temperature-high-threshold {
                 constant {
                     value "{{FPC_Temperature_Higher_Threshold}}";
@@ -47,6 +59,11 @@ iceberg {
                 type integer;
                 description "This field is for fpc temparature low threshold value";
             }
+            /*
+             * When any of the fpc temperature($fpc-temperature) crosses threshold then sends an anomaly notification and sets color to red.
+             * When temperatue is below threshold then sets color to green. When temperature is between low and high threshold then sends
+             * anomaly notification and sets color to yellow.
+             */
             trigger fpc-temperature {
                 synopsis "Fpc temperature kpi";
                 description "Sets health based on fpc temperature threshold.";
@@ -81,6 +98,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable FPC_Slot_No {
                 value 0-9;
                 description "Enter fpc slot numbers to be monitored with separator using regular expression";

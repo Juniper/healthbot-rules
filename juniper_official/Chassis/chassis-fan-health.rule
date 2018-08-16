@@ -1,14 +1,20 @@
-#
-#   This rule checks health of fan and notify in case any of the health monitored fields crosses threshold
-#
+/*
+ * This rule checks health of fan and notify in case any of the health monitored fields crosses threshold
+ */
 iceberg {
     topic chassis.fan {
         description "This topic is to check health of chassis fan";
         synopsis "chassis fan heath check kpi";
         rule check-fan-health {
+            /*
+             * unique identifier of the rule is fan name
+             */
             keys fan-name;
             synopsis "Chassis fan health analyzer";
             description "This rule collects chassis fan statistics periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor chassis-fan {
                 synopsis "iAgent sensor definition";
                 description "iAgent sensor using show-chassis-fan command to collect data from network device";
@@ -18,6 +24,9 @@ iceberg {
                     frequency 10s;
                 }
             }
+            /*
+             * When fan status(fan-status) is not ok then sends an anomaly notification and sets color to red otherwise sets color to green.
+             */
             trigger fan-status {
                 synopsis "chassis fan health kpi";
                 description "Sets health based on chassis fan status and speed.";

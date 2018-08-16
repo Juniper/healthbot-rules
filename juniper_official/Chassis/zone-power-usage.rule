@@ -1,14 +1,20 @@
-#
-#   This rule checks health of pem power zones usage and notify in case any of the health monitored fields crosses threshold
-#
+/*
+ * This rule checks health of pem power zones usage and notify in case any of the health monitored fields crosses threshold
+ */
 iceberg {
     topic chassis.power {
         description "This topic monitors PEM, zones and overall system power usage";
         synopsis "Chassis power management kpis";
         rule check-zone-power-usage {
+            /*
+             * unique identifier of the rule is power zone
+             */
             keys zone;
             synopsis "Zone power usage kpi";
             description "Sets health based on zone power usage threshold.";
+            /*
+             * This function required to derive available power
+             */
             function used-percentage {
                 description "calculates % of power usage out of total available";
                 path used-percentage.py;
@@ -20,6 +26,9 @@ iceberg {
                     mandatory;
                 }
             }
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor chassis-power {
                 synopsis "iAgent sensor definition";
                 description "Netconf rpc used to collect telemetry data from network device";
@@ -29,6 +38,9 @@ iceberg {
                     frequency 10s;
                 }
             }
+            /*
+             * Fields defined using formulae by user-defined function
+             */
             field zone-power-usage {
                 formula {
                     user-defined-function {
@@ -40,6 +52,9 @@ iceberg {
                 type integer;
                 description "stores % of zone power used using udf";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field zone-power-usage-threshold {
                 constant {
                     value "{{zone_power_usage_threshold}}";
@@ -47,6 +62,9 @@ iceberg {
                 type integer;
                 description "Set pem power usage threshold";
             }
+            /*
+             * When zone power usage is beyond threshold then send anomaly and sets color to red otherwise sets to green.
+             */
             trigger zone-power-usage {
                 term is-power-usage-abnormal {
                     when {
@@ -68,6 +86,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable zone_power_usage_threshold {
                 value 80;
                 description "Enter PEM power usage threshold value";

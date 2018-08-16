@@ -1,15 +1,21 @@
-#
-#   This rule checks pem status and power usage and notify in case any of the health monitored fields crosses threshold
-#
+/*
+ * This rule checks pem status and power usage and notify in case any of the health monitored fields crosses threshold
+ */
 iceberg {
     topic chassis.power {
         description "This topic monitors PEM, zones and overall system power usage";
         synopsis "Chassis power management kpis";
         rule check-pem-power-usage {
+            /*
+             * unique identifier of the rule is pem slot number
+             */
             keys pem-slot;
             synopsis "Chassis PEM power manager";
             description "This rule collects chassis PEM power usage statistics periodically and notifies in case of anomalies";
-            function used-percentage {
+            /*
+             * This function required to get remaining power as router provides only used
+             */
+             function used-percentage {
                 description "calculates % of power usage out of total available";
                 path used-percentage.py;
                 method used_percentage;
@@ -20,6 +26,9 @@ iceberg {
                     mandatory;
                 }
             }
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor components {
                 synopsis "chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -28,6 +37,9 @@ iceberg {
                     frequency 10s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field fru-model-number {
                 sensor components {
                     where "/components/component/properties/property/@name == 'fru-model-number'";
@@ -35,24 +47,6 @@ iceberg {
                 }
                 type string;
                 description "stores fru model number";
-            }
-            field pem-power-usage {
-                formula {
-                    user-defined-function {
-                        function-name used-percentage;
-                        argument total "$power-capacity-maximum";
-                        argument used "$power-dc-output";
-                    }
-                }
-                type integer;
-                description "stores % of power usage by PEMs using udf";
-            }
-            field pem-power-usage-threshold {
-                constant {
-                    value "{{pem_power_usage_threshold}}";
-                }
-                type integer;
-                description "Set pem power usage threshold";
             }
             field pem-slot {
                 sensor components {
@@ -102,6 +96,33 @@ iceberg {
                 type string;
                 description "stores temperature status of PEMs";
             }
+            /*
+             * Fields defined using formulae by user-defined function
+             */
+            field pem-power-usage {
+                formula {
+                    user-defined-function {
+                        function-name used-percentage;
+                        argument total "$power-capacity-maximum";
+                        argument used "$power-dc-output";
+                    }
+                }
+                type integer;
+                description "stores % of power usage by PEMs using udf";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field pem-power-usage-threshold {
+                constant {
+                    value "{{pem_power_usage_threshold}}";
+                }
+                type integer;
+                description "Set pem power usage threshold";
+            }
+            /*
+             * When power usage is beyond threshold then sends anomaly and sets color to red otherwise sets to green.
+             */
             trigger pem-power-usage {
                 synopsis "chassis PEM power usage kpi";
                 description "Sets health based on PEM power usage.";
@@ -125,6 +146,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * When pem state is offline then sends anomaly and sets color to red otherwise sets to green.
+             */
             trigger pem-state {
                 synopsis "chassis PEM state kpi";
                 description "Sets health based on PEM state.";
@@ -148,6 +172,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * When pem temperatue is not ok then send anomaly and sets color to red otherwise sets to green.
+             */
             trigger pem-temperature-status {
                 synopsis "chassis PEM temperature kpi";
                 description "Sets health based on PEM temperature threshold.";
@@ -171,6 +198,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * When power dc input not ok then send anomaly and sets color to red otherwise sets to green.
+             */
             trigger power-dc-input {
                 synopsis "chassis power DC input state kpi";
                 description "Sets health based on power DC input state.";
@@ -194,6 +224,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable pem_power_usage_threshold {
                 value 888888880;
                 description "Enter PEM power usage threshold value";

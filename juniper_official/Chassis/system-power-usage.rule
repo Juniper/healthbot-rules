@@ -1,6 +1,6 @@
-#
-#   This rule checks system power usage and notify in case any of the health monitored fields crosses threshold
-#
+/*
+ *  This rule checks system power usage and notify in case any of the health monitored fields crosses threshold
+ */
 iceberg {
     topic chassis.power {
         description "This topic monitors PEM, zones and overall system power usage";
@@ -8,6 +8,9 @@ iceberg {
         rule check-system-power-usage {
             synopsis "Chassis system power manager";
             description "This rule collects chassis system power usage statistics periodically and notifies in case of anomalies";
+            /*
+             * This function required to get remaining power as router provides only used
+             */
             function used-percentage {
                 description "calculates % of power usage out of total available";
                 path used-percentage.py;
@@ -19,6 +22,9 @@ iceberg {
                     mandatory;
                 }
             }
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor components {
                 synopsis "chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -27,6 +33,9 @@ iceberg {
                     frequency 10s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field power-system-capacity {
                 sensor components {
                     where "/components/component/properties/property/@name == 'power-system-capacity'";
@@ -51,6 +60,9 @@ iceberg {
                 type integer;
                 description "stores remaining power for system";
             }
+            /*
+             * Fields defined using formulae by user-defined function
+             */
             field system-power-remaining-in-percentage {
                 formula {
                     user-defined-function {
@@ -62,6 +74,9 @@ iceberg {
                 type integer;
                 description "stores remaining power for system using udf";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field system-power-usage-threshold {
                 constant {
                     value "{{system_power_usage_threshold}}";
@@ -69,6 +84,10 @@ iceberg {
                 type integer;
                 description "Set pem power usage threshold";
             }
+            /*
+             * When system remaining power goes below threshold then sends an anomaly notification and sets color to red otherwise
+             * sets color to green
+             */
             trigger system-power-usage {
                 synopsis "System power usage kpi";
                 description "Sets health based on system power usage threshold.";
@@ -79,7 +98,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "System power usage abnormal! only $system-power-remaining-in-percentage % of power is remaining";
+                            message "System power usage abnormal! only $system-power-remaining-in-percentage % of power remaining";
                         }
                     }
                 }
@@ -87,14 +106,17 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "System power usage is normal $system-power-remaining-in-percentage % of power is remaining";
+                            message "System power usage is normal $system-power-remaining-in-percentage % of power remaining";
                         }
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable system_power_usage_threshold {
-                value 80;
-                description "Enter PEM power usage threshold value";
+                value 20;
+                description "Enter system remaining power threshold value";
                 type int;
             }
         }
