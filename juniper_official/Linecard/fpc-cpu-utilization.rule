@@ -1,14 +1,20 @@
-#
-#   This rule monitors FPC cpu utilization and notify in case any of the health monitored fields crosses threshold
-#
+/*
+ *   This rule monitors FPC cpu utilization and notify in case any of the health monitored fields crosses threshold
+ */
 iceberg {
     topic linecard.fpc {
         description "This topic monitors fpc memory, cpu and temperatures";
         synopsis "chassis fpc health analyzer";
         rule check-fpc-cpu {
-            keys fpc;
+            /*
+             * unique identifier of the rule is fpc slot number
+             */
+            keys fpc
             synopsis "Fpc cpu analyzer";
             description "This rule collects fpc cpu statistics periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor components {
                 synopsis "chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -17,6 +23,9 @@ iceberg {
                     frequency 20s;
                 }
             }
+            /*
+             * Fields defined using sensor path
+             */
             field fpc {
                 sensor components {
                     where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]:CPU$/";
@@ -32,6 +41,9 @@ iceberg {
                 }
                 description "This field is to show fpc cpu utilization";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
             field fpc-cpu-utilization-higher-threshold {
                 constant {
                     value "{{FPC_CPU_Utilization_Higher_Threshold}}";
@@ -46,6 +58,11 @@ iceberg {
                 type integer;
                 description "This field is for fpc cpu lower threshold value";
             }
+            /*
+             * When fpc cpu utilization($fpc-cpu-utilization) crosses high threshold then sends anomaly notification and sets color to red.
+             * When fpc cpu utilization is below low threshold then sends anomaly notification and sets color to green. When cpu utilization
+             * is between low and high threshold then send anomaly notification and sets color to yellow.
+             */
             trigger fpc-cpu-utilization {
                 synopsis "Fpc cpu utilization kpi";
                 description "Sets health based on fpc cpu utilization threshold.";
@@ -84,6 +101,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable FPC_CPU_Utilization_Higher_Threshold {
                 value 80;
                 description "Enter fpc cpu maximum threshold value";
@@ -95,7 +115,7 @@ iceberg {
                 type int;
             }
             variable FPC_Slot_No {
-                value 0-2020202020202020202020202020202020202020;
+                value 0-20;
                 description "Enter fpc slot numbers to be monitored using regular epression";
                 type string;
             }

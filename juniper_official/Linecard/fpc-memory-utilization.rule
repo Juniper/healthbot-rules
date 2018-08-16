@@ -6,9 +6,15 @@ iceberg {
         description "This topic monitors fpc memory, cpu and temperatures";
         synopsis "chassis fpc health analyzer";
         rule check-fpc-memory {
+            /*
+             * unique identifier of the rule is fpc slot number
+             */
             keys fpc;
             synopsis "Fpc memory analyzer";
             description "This rule collects fpc memory statistics periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
             sensor components {
                 synopsis "chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -17,20 +23,9 @@ iceberg {
                     frequency 20s;
                 }
             }
-            field buffer-higher-threshold {
-                constant {
-                    value "{{FPC_Buffer_Higher_Threshold}}";
-                }
-                type integer;
-                description "This field is to set fpc buffer memory higher threshold";
-            }
-            field buffer-lower-threshold {
-                constant {
-                    value "{{FPC_Buffer_Lower_Threshold}}";
-                }
-                type integer;
-                description "This field is to set fpc buffer memory lower threshold";
-            }
+            /*
+             * Fields defined using sensor path
+             */
             field fpc {
                 sensor components {
                     where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]*$/";
@@ -55,6 +50,23 @@ iceberg {
                 type integer;
                 description "This field is to set fpc buffer heap memory";
             }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field buffer-higher-threshold {
+                constant {
+                    value "{{FPC_Buffer_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory higher threshold";
+            }
+            field buffer-lower-threshold {
+                constant {
+                    value "{{FPC_Buffer_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is to set fpc buffer memory lower threshold";
+            }
             field heap-higher-threshold {
                 constant {
                     value "{{FPC_Heap_Higher_Threshold}}";
@@ -69,6 +81,11 @@ iceberg {
                 type integer;
                 description "This field is to set fpc buffer memory lower threshold";
             }
+            /*
+             * When fpc buffer memory utilization($fpc-memory-heap) crosses high threshold then sends anomaly notification and sets color to red.
+             * When fpc buffer memory utilization is below low threshold then sends anomaly notification and sets color to green. When buffer memory
+             * utilization is between low and high threshold then send anomaly notification and sets color to yellow.
+             */
             trigger fpc-buffer-memory-utilization {
                 synopsis "Fpc memory utilization kpi";
                 description "Sets health based on fpc memory utilization threshold.";
@@ -107,6 +124,11 @@ iceberg {
                     }
                 }
             }
+            /*
+             * When fpc heap memory utilization($fpc-memory-heap) crosses high threshold then sends anomaly notification and sets color to red.
+             * When fpc heap memory utilization is below low threshold then sends anomaly notification and sets color to green. When heap memory
+             * utilization is between low and high threshold then send anomaly notification and sets color to yellow.
+             */
             trigger fpc-heap-memory-utilization {
                 synopsis "Fpc heap memory utilization kpi";
                 description "Sets health based on fpc heap memory utilization threshold.";
@@ -145,6 +167,9 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
             variable FPC_Buffer_Higher_Threshold {
                 value 80;
                 description "Enter processes fpc buffer memory maximum threshold value";
