@@ -1,0 +1,36 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-lookup-out {
+            /* Monitors the center chip lookup out errors"; */
+            keys target;
+            sensor center-chip-lookup-out {
+                iAgent {
+                    file chip.yml;
+                    table CChipLoStatsTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-lookup-out-errors {
+                term are-center-chip-lookup-out-errors-non-zero {
+                    when {
+                        greater-than "$cchip-lookup-out-errors" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip lookup out error counters non-zero";
+                        }
+                    }
+                }
+                term center-chip-lookup-out-errors-zero {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+}
+}
