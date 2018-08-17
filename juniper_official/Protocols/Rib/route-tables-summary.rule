@@ -25,25 +25,40 @@ iceberg {
                 }
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined with dynamic threshold ml algorithms
              */
-            field route-count-threshold {
-                constant {
-                    value "{{route_count_threshold}}";
+            field route-count-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 30d;
+                        pattern-periodicity 1h;
+                        field-name "$total-route-count";
+                    }
                 }
-                type integer;
-                description "stores threshold value from playbook variable";
+                type string;
+                description "detects anamoly dynamically using kmeans algorithm";
             }
             /*
              * When route count($total-route-count) of each route table crosses threshold then sends anomaly notification and
              * sets color as red otherwise sets color to green.
              */
             trigger route-table-total-routes-count {
-                description "Sets health based on tables route count threshold";
-                term is-route-table-routes-count-normal {
+                description "Sets health based on tables route count dynamic threshold";
+                term is-route-table-routes-count-abnormal {
                     when {
-                        less-than-or-equal-to "$total-route-count" "$route-count-threshold";
+                        matches-with "$route-count-dynamic-threshold" "^anomaly$" {
+                            time-range 35m;
+                        }
                     }
+                    then {
+                        status {
+                            color red;
+                            message "Anomaly detected: $table-name total route count($total-route-count) is abnormal";
+                        }
+                    }
+                }
+                term route-table-routes-count-abnormal {
                     then {
                         status {
                             color green;
@@ -51,22 +66,6 @@ iceberg {
                         }
                     }
                 }
-                term route-table-routes-count-abnormal {
-                    then {
-                        status {
-                            color red;
-                            message "$table-name total route count($total-route-count) is above threshold($route-count-threshold)";
-                        }
-                    }
-                }
-            }
-            /*
-             * Variables with default values which can be altered while deploying playbook instance
-             */
-            variable route_count_threshold {
-                value 10000;
-                description "Enter tables route count high threshold value";
-                type int;
             }
         }
     }

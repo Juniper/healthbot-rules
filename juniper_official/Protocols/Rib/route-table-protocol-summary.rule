@@ -25,30 +25,37 @@ iceberg {
                 }
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined with dynamic threshold ml algorithms
              */
-            field protocol-route-count-threshold {
-                constant {
-                    value "{{protocol_route_count_threshold}}";
+            field route-count-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 30d;
+                        pattern-periodicity 1h;
+                        field-name "$protocol-route-count";
+                    }
                 }
-                type integer;
-                description "stores threshold value from playbook variable";
+                type string;
+                description "detects anamoly dynamically using kmeans algorithm";
             }
             /*
              * When route count of each protocol($protocol-route-count) of each route table crosses threshold then sends anomaly
              * notification and sets color to red otherwise sets color to green.
              */
             trigger protocol-routes-count {
-                synopsis "Each route table protocol route count check KPI";
-                description "Sets health based on each tables protocol route count threshold";
+                synopsis "Protocol route count check KPI";
+                description "Sets health based on each table's each protocol route count threshold";
                 term is-protocol-route-count-abnormal {
-                    when {
-                        greater-than-or-equal-to "$protocol-route-count" "$protocol-route-count-threshold";
-                    }
+                   when {
+                        matches-with "$route-count-dynamic-threshold" "^anomaly$" {
+                            time-range 35m;
+                            }
+                        }
                     then {
                         status {
                             color red;
-                            message "$table-name:$protocol-name route count($protocol-route-count) is above threshold($protocol-route-count-threshold)";
+                            message "Anomaly detected: $table-name:$protocol-name route count($protocol-route-count) is abnormal";
                         }
                     }
                 }
@@ -56,18 +63,10 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "$table-name:$protocol-name route count($protocol-route-count) is below threshold($protocol-route-count-threshold)";
+                            message "$table-name:$protocol-name route count($protocol-route-count) is normal";
                         }
                     }
                 }
-            }
-            /*
-             * Variables with default values which can be altered while deploying playbook instance
-             */
-            variable protocol_route_count_threshold {
-                value 10000;
-                description "Enter tables protocol route count high threshold value";
-                type int;
             }
         }
     }
