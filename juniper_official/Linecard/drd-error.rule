@@ -1,0 +1,96 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-drd-errors {
+            /* description "Monitors the Drd wan, fabric timeouts and errors"; */
+            keys [ instance target ];
+            sensor center-chip-drd-errors {
+                iAgent {
+                    file chip.yml;
+                    table CChipDRDErrTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-drd-fab-errors {
+                term are-center-chip-drd-fab-errors-present {
+                    when {
+                        greater-than "$cchip-drd-fab-errors" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip drd fab errors present ($cchip-drd-fab-errors)";
+                        }
+                    }
+                }
+                term center-chip-drd-fab-errors-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-drd-fab-timeouts {
+                term are-center-chip-drd-fab-timeouts-present {
+                    when {
+                        greater-than "$cchip-drd-fab-timeouts" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip drd fab timeouts present ($cchip-drd-fab-timeouts)";
+                        }
+                    }
+                }
+                term center-chip-drd-fab-timeouts-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-drd-wan-errors {
+                term are-center-chip-drd-wan-errors-present {
+                    when {
+                        greater-than "$cchip-drd-wan-errors" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip drd wan errors present ($cchip-drd-wan-errors)";
+                        }
+                    }
+                }
+                term center-chip-drd-wan-errors-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-drd-wan-timeouts {
+                term are-center-chip-drd-wan-timeouts-present {
+                    when {
+                        greater-than "$cchip-drd-wan-timeouts" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip drd wan timeouts present ($cchip-drd-wan-timeouts)";
+                        }
+                    }
+                }
+                term center-chip-drd-wan-timeouts-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+}
+}
