@@ -1,0 +1,63 @@
+iceberg {
+    topic protocol.ospf {
+        description "Rules relevant to protocol metrics and in specific pertaining to ospf";
+        rule check-ospf-neighbor-information {
+            /* description "Monitors the OPSF neighbor states"; */
+            keys [ interface-name neighbor-id ];
+            sensor protocol-ospf-neighbor-information {
+                iAgent {
+                    file ospf.yml;
+                    table OspfNeighborTable;
+                    frequency 10s;
+                }
+            }
+            trigger protocol-ospf-neighbor-information-ospf-neighbor-state-2Way {
+                term is-protocol-ospf-neighbor-information-ospf-neighbor-state-2Way {
+                    when {
+                        matches-with "$ospf-neighbor-state" 2Way;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF neighbor is in 2Way state- check the MTU on OSPF interface";
+                        }
+                    }
+                }
+            }
+            trigger protocol-ospf-neighbor-information-ospf-neighbor-state-ExStart {
+                term is-protocol-ospf-neighbor-information-ospf-neighbor-state-ExStart {
+                    when {
+                        matches-with "$ospf-neighbor-state" ExStart;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF neighbor is in ExStart state- check the MTU on OSPF interface";
+                        }
+                    }
+                }
+            }
+            trigger protocol-ospf-neighbor-information-ospf-neighbor-state-full {
+                term is-protocol-ospf-neighbor-information-ospf-neighbor-state-full {
+                    when {
+                        matches-with "$ospf-neighbor-state" Full;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF neighbor is in Full state";
+                        }
+                    }
+                }
+                term protocol-ospf-neighbor-information-ospf-neighbor-state-notfull {
+                    then {
+                        status {
+                            color red;
+                            message "OSPF neighbor is in down state";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
