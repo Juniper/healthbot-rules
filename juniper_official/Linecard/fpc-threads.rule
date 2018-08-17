@@ -1,0 +1,47 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-fpc-threads {
+            keys [ Name target ];
+            description "Monitors the CPU utilization by FPC threads";
+            sensor fpc-threads {
+                iAgent {
+                    file fpc-threads.yml;
+                    table FPCThread;
+                    frequency 60s;
+                }
+            }
+            field linecard-cpu-usage-threshold {
+                constant {
+                    value "{{FPC_CPU_Usage_Threshold}}";
+                }
+            }
+            trigger fpc-threads-cpu-utilization {
+                term is-cpu-utilization-greater-than-threshold {
+                    when {
+                        greater-than "$cpu" "$linecard-cpu-usage-threshold";
+                        does-not-match-with "$Name" Idle;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC thread CPU utilization for $Name ($cpu) is over threshold ($linecard-cpu-usage-threshold)";
+                        }
+                    }
+                }
+                term cpu-utilization-is-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable FPC_CPU_Usage_Threshold {
+                value 80;
+                description "Linecard CPU usage threshold value";
+                type int;
+            }
+        }
+    }
+}

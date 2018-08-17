@@ -1,0 +1,51 @@
+iceberg {
+    topic linecard {
+	description "Rules relevant to metrics on the line-card";
+        rule check-jnh-exceptions {
+            description "Monitors the jnh exception packets";
+            keys [ jnh_instance reason target ];
+            sensor ShowJnhExceptions {
+                iAgent {
+                    file jnh-exceptions.yml;
+                    table ShowJnhExceptions;
+                    frequency 10s;
+                }
+            }
+            field exception-increase-rate {
+                constant {
+                    value "{{EXCEPTION-INCREASE-RATE}}";
+                }
+                type integer;
+                description "This field initializes the exception increase rate";
+            }
+            trigger jnh-packet-drops {
+                term are-jnh-packet-drops-increasing {
+                    when {
+                        min-rate-of-increase "$packets" {
+                            rate "$exception-increase-rate";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "JNH exception $reason is increasing";
+                        }
+                    }
+                }
+                term jnh-packet-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable EXCEPTION-INCREASE-RATE {
+                value 5;
+                description "Exception increase rate";
+                type int;
+            }
+        }
+    }
+}

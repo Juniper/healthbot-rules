@@ -1,0 +1,114 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line card";
+        rule check-fpc-cpu-scheduler-info {
+            keys target;
+            description "Monitors FPC CPU utilization";
+            sensor fpc-cpu-scheduler {
+                iAgent {
+                    file scheduler-info.yml;
+                    table SchedulerCpuTable;
+                    frequency 10s;
+                }
+            }
+            field configured-cputhreshold {
+                constant {
+                    value "{{FPC_CPU_Threshold}}";
+                }
+            }
+            trigger fpc-scheduler-info-five-seconds {
+                term is-utilization-over-5-seconds-greater-than-threshold {
+                    when {
+                        greater-than "$cpu-5-seconds" "$configured-cputhreshold" {
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC 5-second CPU average utilization ($cpu-5-seconds) over threshold ($configured-cputhreshold)";
+                        }
+                    }
+                }
+                term utilization-over-5-seconds-is-under-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger fpc-scheduler-info-one-minute {
+                term is-utilization-over-1-minute-greater-than-threshold {
+                    when {
+                        greater-than "$cpu-1-minute" "$configured-cputhreshold" {
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC 1-minute CPU average utilization ($cpu-1-minute) over threshold ($configured-cputhreshold)";
+                        }
+                    }
+                }
+                term utilization-over-1-minute-is-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger fpc-scheduler-info-one-second {
+                term is-utilization-over-1-second-greater-than-threshold {
+                    when {
+                        greater-than "$cpu-1-second" "$configured-cputhreshold" {
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC 1-second CPU average utilization ($cpu-1-second) over threshold ($configured-cputhreshold)";
+                        }
+                    }
+                }
+                term utilization-over-1-second-is-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger fpc-scheduler-info-ten-seconds {
+                term is-utilization-over-10-seconds-greater-than-threshold {
+                    when {
+                        greater-than "$cpu-10-seconds" "$configured-cputhreshold" {
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC 10-second CPU average utilization ($cpu-10-seconds) over threshold ($configured-cputhreshold)";
+                        }
+                    }
+                }
+                term utilization-over-10-seconds-is-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable FPC_CPU_Threshold {
+                value 80;
+                description "FPC Used CPU threshold value";
+                type int;
+            }
+        }
+    }
+}

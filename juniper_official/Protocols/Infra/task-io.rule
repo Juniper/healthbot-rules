@@ -1,0 +1,60 @@
+iceberg {
+    topic protocol.infra {
+        description "Rules relevant to protocol daemon infrastructure";
+        rule check-task-io-drops {
+            description "Monitors the task IO drops";
+            keys task-name;
+            sensor task-io-drops {
+                iAgent {
+                    file task-io.yml;
+                    table TaskIOTable;
+                    frequency 10s;
+                }
+            }
+            field io-drops-threshold {
+                constant {
+                    value "{{IO_Drops_Threshold}}";
+                }
+            }
+            trigger task-io-drops {
+                term are-task-io-drops-increasing {
+                    when {
+                        min-rate-of-increase "$dropped" {
+                            rate "$io-drops-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Task IO drops ($dropped) increasing";
+                        }
+                    }
+                }
+                term are-task-io-drops-non-zero {
+                    when {
+                        greater-than "$dropped" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Task IO drops ($dropped) non-zero";
+                        }
+                    }
+                }
+                term task-io-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable IO_Drops_Threshold {
+                value 1;
+                description "RPD Task Memory threshold value";
+                type int;
+            }
+        }
+    }
+}
