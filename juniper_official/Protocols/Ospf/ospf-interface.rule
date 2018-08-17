@@ -1,0 +1,55 @@
+iceberg {
+    topic protocol.ospf {
+        description "Rules relevant to protocol metrics and in specific pertaining to ospf";
+        rule check-ospf-interface-information {
+            /* description "Monitors the interface participating in OSPF"; */
+            keys interface-name;
+            sensor protocol-ospf-interface-information {
+                iAgent {
+                    file ospf.yml;
+                    table OspfInterfaceTable;
+                    frequency 10s;
+                }
+            }
+            trigger protocol-ospf-interface-information-interface-address-mask {
+                term is-protocol-ospf-interface-information-interface-address-mask-correct {
+                    when {
+                        matches-with "$interface-address-mask" 255.255.255.0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF interface address mask is $interface-address-mask, check peer interface address mask if OSPF neighbor is not coming up";
+                        }
+                    }
+                }
+            }
+            trigger protocol-ospf-interface-information-interface-mtu {
+                term is-protocol-ospf-interface-information-interface-mtu-correct {
+                    when {
+                        matches-with "$interface-mtu" 1500;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF interface MTU is $interface-mtu, peer OSPF interface MTU should match as well";
+                        }
+                    }
+                }
+            }
+            trigger protocol-ospf-interface-information-interface-type {
+                term is-protocol-ospf-interface-information-ospf-interface-type-lan {
+                    when {
+                        matches-with "$ospf-interface-type" LAN;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF interface type is LAN, check peer interface type if OSPF is down";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
