@@ -1,0 +1,56 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-pt-entries {
+            /* description "Monitors the center chip packet table wan & fabric entries"; */
+            keys target;
+            sensor center-chip-pt-entries {
+                iAgent {
+                    file chip.yml;
+                    table CChipPTStatTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-packet-table-fabric-entries {
+                term are-check-center-chip-packet-table-fabric-entries-depleted {
+                    when {
+                        less-than "$cchip-free-internal-packet-table-fabric" 1000;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip packet table fabric entries depleted ($cchip-free-internal-packet-table-fabric)";
+                        }
+                    }
+                }
+                term center-chip-packet-table-fabric-entries-not-depleted {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-packet-table-wan-entries {
+                term are-center-chip-packet-table-wan-entries-depleted {
+                    when {
+                        less-than "$cchip-free-internal-packet-table-wan" 1000;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip packet table wan entries depleted ($cchip-free-internal-packet-table-wan)";
+                        }
+                    }
+                }
+                term center-chip-packet-table-wan-entries-not-depleted {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+}
+}
