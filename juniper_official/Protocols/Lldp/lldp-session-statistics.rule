@@ -1,0 +1,333 @@
+/*
+ * This playbook checks lldp session statistics and notify in case any of the health monitored field crosses threshold
+ */
+iceberg {
+    topic protocol.lldp {
+        description "This topic is to monitor and notify lldp statitics i.e. neighbor state, frame discards, frame errors, tlv discards and unknown tlvs";
+        synopsis "lldp session statistics analyzer";
+        rule check-lldp-session-statistics {
+            description "This rule collects lldp session statistics(frame&tlv-discards, frame-in&out errors and unknown tlvs) periodically and notifies in case of anomalies";
+            synopsis "lldp session statistics analyzer";
+            /*
+             * unique identifier of the rule is interface name
+             */
+            keys interface-name;
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor lldp-sensor {
+                synopsis "lldp open-config sensor definition";
+                description "/lldp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /lldp/;
+                    frequency 10s;
+                }
+            }
+            /*
+             * Fields defined using sensor path
+             */
+            field frame-discards {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/counters/frame-discard;
+                }
+                type integer;
+                description "This field is for lldp session frame discards";
+            }
+            field frame-error-in {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/counters/frame-error-in;
+                }
+                type integer;
+                description "This field is for lldp session session input frame errors";
+            }
+            field frame-error-out {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/counters/frame-error-out;
+                }
+                type integer;
+                description "This field is for lldp session session output frame errors";
+            }
+            field if-lldp-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/enabled;
+                }
+                type string;
+                description "This field is for local interface lldp state";
+            }
+            field interface-name {
+                sensor lldp-sensor {
+                    where "/lldp/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/lldp/interfaces/interface/@name";
+                }
+                type string;
+                description "This field is for interface name";
+            }
+            field neighbor-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
+                }
+                type string;
+                description "This field is for lldp neighbor state";
+            }
+            field tlv-discards {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/counters/tlv-discard;
+                }
+                type integer;
+                description "This field is for lldp session tlv discards";
+            }
+            field unknown-tlvs {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/counters/tlv-unknown;
+                }
+                type integer;
+                description "This field is for lldp session unknown tlvs";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field frame-discards-threshold {
+                constant {
+                    value "{{frame_discards_threshold}}";
+                }
+                type integer;
+                description "Set lldp session frame discards threshold";
+            }
+            field frame-error-in-threshold {
+                constant {
+                    value "{{frame_error_in_threshold}}";
+                }
+                type integer;
+                description "Set lldp session frame in errors threshold";
+            }
+            field frame-error-out-threshold {
+                constant {
+                    value "{{frame_error_out_threshold}}";
+                }
+                type integer;
+                description "Set lldp session frame out errors threshold";
+            }
+            field tlvs-discards-threshold {
+                constant {
+                    value "{{tlv_discards_threshold}}";
+                }
+                type integer;
+                description "Set lldp session tlv discards threshold";
+            }
+            field unknown-tlvs-threshold {
+                constant {
+                    value "{{unknown_tlvs_threshold}}";
+                }
+                type integer;
+                description "Set lldp session frame discards threshold";
+            }
+            /*
+             * When lldp frame discard($frame-discards) count is greater than threshold for the period of 60 seconds then sends an anomaly
+             * message and sets color to red otherwise sets color to green
+             */
+            trigger frame-discards {
+                synopsis "lldp frame-discards kpi";
+                description "Sets health based on lldp session frame discards count threshold value";
+                term skip-lldp-disabled {
+                    when {
+                        does-not-match-with "$if-lldp-state" true;
+                    }
+                }
+                term are-frame-discars-incrementing {
+                    when {
+                        min-rate-of-increase "$frame-discards" {
+                            rate "$frame-discards-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "frame-discards count is:$frame-discards";
+                        }
+                    }
+                }
+                term no-frame-discards {
+                    then {
+                        status {
+                            color green;
+                            message "frame-discards count is:$frame-discards";
+                        }
+                    }
+                }
+            }
+            /*
+             * When lldp frame input error($frame-error-in) count is greater than threshold for the period of 60 seconds then sends an anomaly
+             * message and sets color to red otherwise sets color to green
+             */
+            trigger frame-error-in {
+                synopsis "lldp frame input errors kpi";
+                description "Sets health based on lldp session frame in error count threshold value";
+                term skip-lldp-disabled {
+                    when {
+                        does-not-match-with "$if-lldp-state" true;
+                    }
+                }
+                term are-frame-error-in-increasing {
+                    when {
+                        min-rate-of-increase "$frame-error-in" {
+                            rate "$frame-error-in-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "frame-error-in count is:$frame-error-in";
+                        }
+                    }
+                }
+                term no-frame-error-in {
+                    then {
+                        status {
+                            color green;
+                            message "frame-error-in count is:$frame-error-in";
+                        }
+                    }
+                }
+            }
+            /*
+             * When lldp frame output error($frame-error-out) count is greater than threshold for the period of 60 seconds then sends an anomaly
+             * message and sets color to red otherwise sets color to green
+             */
+            trigger frame-error-out {
+                synopsis "lldp frame output errors kpi";
+                description "Sets health based on lldp session frame out error count threshold value";
+                term skip-lldp-disabled {
+                    when {
+                        does-not-match-with "$if-lldp-state" true;
+                    }
+                }
+                term are-frame-error-out-increasing {
+                    when {
+                        min-rate-of-increase "$frame-error-out" {
+                            rate "$frame-error-out-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "frame-error-out count is:$frame-error-out";
+                        }
+                    }
+                }
+                term no-frame-error-out {
+                    then {
+                        status {
+                            color green;
+                            message "frame-error-out count is:$frame-error-out";
+                        }
+                    }
+                }
+            }
+            /*
+             * When lldp tlv discard($tlv-discards) count is greater than threshold for the period of 60 seconds then sends an anomaly
+             * message and sets color to red otherwise sets color to green
+             */
+            trigger tlv-discards {
+                synopsis "lldp tlv discards trigger";
+                description "Sets health based on lldp session tlvs discard count threshold value";
+                term skip-lldp-disabled {
+                    when {
+                        does-not-match-with "$if-lldp-state" true;
+                    }
+                }
+                term are-tlv-discards-increasing {
+                    when {
+                        min-rate-of-increase "$tlv-discards" {
+                            rate "$tlvs-discards-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "tlv-discards count is:$tlv-discards";
+                        }
+                    }
+                }
+                term no-tlv-discards {
+                    then {
+                        status {
+                            color green;
+                            message "tlv-discards count is:$tlv-discards";
+                        }
+                    }
+                }
+            }
+            /*
+             * When lldp unknown tlv($unknown-tlvs) count is greater than threshold for the period of 60 seconds then sends anomaly
+             * message and sets color to red otherwise sets color to green
+             */
+            trigger unknown-tlvs {
+                synopsis "lldp unknowk tlvs count kpi";
+                description "Sets health based on lldp session tlvs discard count threshold value";
+                term skip-lldp-disabled {
+                    when {
+                        does-not-match-with "$if-lldp-state" true;
+                    }
+                }
+                term are-unknown-tlvs-increasing {
+                    when {
+                        min-rate-of-increase "$unknown-tlvs" {
+                            rate "$unknown-tlvs-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "unknown-tlvs count is:$unknown-tlvs";
+                        }
+                    }
+                }
+                term no-unknown-tlvs {
+                    then {
+                        status {
+                            color green;
+                            message "unknown-tlvs count is:$unknown-tlvs";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
+            variable frame_discards_threshold {
+                value 1;
+                type int;
+                description "Enter lldp session frame discard count threhold rate of increasing value using regular expression";
+            }
+            variable frame_error_in_threshold {
+                value 1;
+                type int;
+                description "Enter lldp session frame in error count threhold rate of increasing value using regular expression";
+            }
+            variable frame_error_out_threshold {
+                value 1;
+                type int;
+            }
+            variable interface_name {
+                value ".*";
+                type string;
+                description "Enter lldp session frame out error count threhold rate of increasing value using regular expression";
+            }
+            variable tlv_discards_threshold {
+                value 1;
+                type int;
+                description "Enter lldp session tlv discard count threhold rate of increasing value using regular expression";
+            }
+            variable unknown_tlvs_threshold {
+                value 1;
+                type int;
+                description "Enter lldp session unknown tlvs count threhold rate of increasing value using regular expression";
+            }
+        }
+    }
+}

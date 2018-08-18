@@ -1,0 +1,92 @@
+/*
+ *   This rule checks health of each lldp session and notify in case any of the health monitored field crosses threshold
+ */
+iceberg {
+    topic protocol.lldp {
+        description "This topic is to monitor and notify lldp statitics i.e. neighbor state, frame discards, frame errors, tlv discards and unknown tlvs";
+        synopsis "lldp session statistics analyzer";
+        rule check-lldp-session {
+            description "This rule collects lldp session state periodically and notifies in case of anomalies";
+            synopsis "lldp session state analyzer";
+            /*
+             * unique identifier of the rule is interface name
+             */
+            keys interface-name;
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor lldp-sensor {
+                synopsis "lldp open-config sensor definition";
+                description "/lldp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /lldp/;
+                    frequency 10s;
+                }
+            }
+            /*
+             * Fields defined using sensor path
+             */
+            field if-lldp-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/enabled;
+                }
+                type string;
+                description "This field is for local interface lldp state";
+            }
+            field interface-name {
+                sensor lldp-sensor {
+                    where "/lldp/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/lldp/interfaces/interface/@name";
+                }
+                type string;
+                description "This field is for interface name";
+            }
+            field neighbor-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
+                }
+                type string;
+                description "This field is for lldp neighbor state";
+            }
+            /*
+             * When lldp session state($if-lldp-state) is not true then sets lldp session health to red and send a message otherwise sets health to green
+             */
+            trigger lldp-session-state {
+                synopsis "lldp state kpi";
+                description "Ignores lldp disabled interfaces. Sets health based on lldp session state.";
+                term is-lldp-disabled {
+                    when {
+                        does-not-match-with "$if-lldp-state" true;
+                    }
+                }
+                term is-lldp-session-up {
+                    when {
+                        matches-with "$neighbor-state" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $interface-name llpd session is up";
+                        }
+                    }
+                }
+                term lldp-session-down {
+                    then {
+                        status {
+                            color red;
+                            message "Interface-$interface-name llpd session down";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
+            variable interface_name {
+                value ".*";
+                type string;
+                description "Enter specific or all interfaces to be monitored using regular expression";
+            }
+        }
+    }
+}
