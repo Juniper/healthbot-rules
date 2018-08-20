@@ -1,0 +1,116 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-fabric-in-errors {
+            description "Monitors the center chip cell fabric-in cell timeouts,crc error packets,late cells,error cells and malloc drops";
+            keys [ instance target ];
+            sensor center-chip-fabric-in-errors {
+                iAgent {
+                    file chip.yml;
+                    table CChipFiErrTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-fabric-in-cell-timeout {
+                term are-center-chip-fabric-in-cell-timeout-present {
+                    when {
+                        greater-than "$cchip-fi-cell-timeout" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in cell timeouts present ($cchip-fi-cell-timeout)";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-cell-timeout-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-crc-error-packets {
+                term are-center-chip-fabric-in-crc-error-packets-present {
+                    when {
+                        greater-than "$cchip-fi-crc-error-packets" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in crc error packets present ($cchip-fi-crc-error-packets)";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-crc-error-packets-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-error-cells {
+                term are-center-chip-fabric-in-error-cells-present {
+                    when {
+                        greater-than "$cchip-fi-error-cells" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in error cells present ($cchip-fi-error-cells)";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-error-cells-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-late-cells {
+                term are-center-chip-fabric-in-late-cells-present {
+                    when {
+                        greater-than "$cchip-fi-late-cells" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in late cells present ($cchip-fi-late-cells)";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-late-cells-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-malloc-drops {
+                term are-center-chip-fabric-in-malloc-drops-present {
+                    when {
+                        greater-than "$cchip-fi-malloc-drops" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in malloc drops present ($cchip-fi-malloc-drops)";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-malloc-drops-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+}
+}
