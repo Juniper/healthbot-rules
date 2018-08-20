@@ -55,6 +55,16 @@ iceberg {
                     }
                 }
             }
+            variable System_Queue_Drop_Count_Threshold {
+                value 0;
+                description "System queue drop count threshold value";
+                type int;
+            }
+            variable System_Queue_Drop_Rate_Threshold {
+                value 1;
+                description "System queue drop rate threshold value";
+                type int;
+            }
         }
         rule check-system-output-queues {
             description "Monitors packet drops on the output interface";
@@ -64,6 +74,16 @@ iceberg {
                     file system-queues.yml;
                     table SystemQueuesOutTable;
                     frequency 10s;
+                }
+            }
+            field system-queue-drop-count-threshold {
+                constant {
+                    value "{{System_Queue_Drop_Count_Threshold}}";
+                }
+            }
+            field system-queue-drop-rate-threshold {
+                constant {
+                    value "{{System_Queue_Drop_Rate_Threshold}}";
                 }
             }
             trigger system-output-queue-drops {
@@ -113,3 +133,4 @@ iceberg {
         }
     }
 }
+
