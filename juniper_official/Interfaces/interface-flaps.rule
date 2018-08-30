@@ -1,14 +1,34 @@
 /*
- * Detects interface flaps and notifies anomalies.
+ * Detect interface flaps and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ *   2) flaps_threshold, is the threshold that causes the rule to report
+ *      a anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the flap-increases are greater than
+ *      'flaps_threshold' for 60s. If it sees any flaps increase for a
+ *      period of less than 60s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
  */
 iceberg {
     topic interface.statistics {
         description "Monitors interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors and notify anomalies";
         synopsis "Interface statistics analyzer";
         rule check-interface-flaps {
-            synopsis "Link flaps analyzer";
-            description "Collects link flap count periodically and notifies in case flap count increases";
+         
+            synopsis "Link flaps detector";
+            description "Collects link flap count periodically and notifies when flap count increases";
             /*
+             * "Monitors the link flap count on an interface.  Notifies via the
+             * dashboard colors when the flaps increase by {{flaps_threshold}} for
+             * every collected metric during a 60s time range (red).  The color is
+             * set to yellow if we see any flap increase by {{flaps_threshold}}.
+             * Otherwise the color is set to green"
+             * 
              * Use interface name as key for rule
              */
             keys interface-name;
@@ -24,7 +44,8 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules
              */
             field admin-state {
                 sensor interfaces {
@@ -63,7 +84,7 @@ iceberg {
              */
             trigger link-flaps {
                 synopsis "Link flaps KPI";
-                description "Sets health based on link flap count.";
+                description "Sets health based on the change in flap count.";
                 /*
                  * Skips evaluation for admin down interfaces
                  */
@@ -87,13 +108,13 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$interface-name flaps($flaps) continuously";
+                            message "Flaps are increasing continuously on $interface-name, flap count is:$flaps";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the interface flap count increases in absolute.
+                 * when the increase is at least once.
                  */
                 term is-link-fluctuating {
                     when {
@@ -121,17 +142,17 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values. Default values can be altered
-             * while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable flaps_threshold {
                 value 1;
-                description "Enter interface flaps threshold";
+                description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
                 type int;
             }
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
                 type string;
             }
         }
