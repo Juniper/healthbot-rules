@@ -1,40 +1,75 @@
-/* 
- * Health monitoring of selective interfaces based on its description and selective KPIs.
- * Using this playbook any one of the kpi (in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts,
- * out-unicast-pkts, in-errors, out-errors, carrier-transitions) can be monitored.
- * ****Seperate playbook instances to be created for each interface kpi****
+/*
+ * Filters interfaces based on keyword of an interface description. Monitors
+ * only filtered interfaces based on selective KPI.
+ * Using this playbook any one of the interface KPI (in-octets, out-octets,
+ * in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors,
+ * carrier-transitions) will be monitored.
+ *
+ * ****Separate playbook instances to be created for each interface kpi****
+ * By default it monitors input traffic and notifies when utilization is above
+ * threshold
+ * Four inputs control detection
+ *
+ *   1) interface_description, is a regular expression that matches the keyword
+ *      in interface description and filters interfaces that you would like to
+ *      monitor. By default it's '.+', which matches all interfaces contains
+ *      description. Use something like 'core' to match only interfaces which
+ *      contains keyword 'core' in interface description.
+ *
+ *   2) stats_name, is a regular expression that matches the interface KPI
+ *      statistics counter name that you would like to monitor. By default it's
+ *      in-octets, Use proper counter name something like 'out-octets' or
+ *      "in-errors" or "out-errors" etc.
+ *
+ *   3) high_threshold, is the threshold that causes the rule to report
+ *      a anomaly.  By default it's 800000000 octets . This rule will set a
+ *      dashboard color to red when *filtered interfaces* the input traffic
+ *      is above threshold for 60s.
+ *
+ *   4) medium_threshold, is the threshold that causes the rule to report
+ *      a anomaly.  By default it's 500000000 octets . This rule will set a
+ *      dashboard color to yellow when *filtered interfaces* the input traffic
+ *      is above threshold for 60s, otherwise color is set to green.
  */ 
 iceberg {
     topic interface.monitor {
-        description "This topic monitors only interfaces based on its description";
-        synopsis "Interface KPI monitor based on description";
+        description "Monitors only filtered interfaces based on keyword in description";
+        synopsis "Selective interface KPIs monitoring";
         rule check-interface-health {
+            synopsis "Interface KPI monitor based on description";
+            description "Using this rule any one of the interface statistics counter(in and out errors, packets, octets, flaps) will be monitored.";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the interface input traffic. Notifies via the dashboard
+             * colors when the traffic is above {{high_threshold}} for every
+             * collected metric during a 60s time range (red).  The color is
+             * set to yellow when the traffic is above {{medium_threshold}} for
+             * every collected metric during a 60s. Otherwise the color is set
+             * to green.
+             * 
+             * Use interface name as key for rule
              */
             keys interface-name;
-            synopsis "Interface KPI monitor based on description";
-            description "Using this rule any one of the field(in and out errors, packets, octets, flaps can be monitored).";
             /*
              * sensor configuration to get data from network devices
              */
             sensor interfaces {
                 synopsis "Interface open-config sensor definition";
-                description "/interfaces open-config sensor to collect telemetry data from network device";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
                     frequency 30s;
                 }
             }
             /*
-             *  Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field description {
                 sensor interfaces {
                     path /interfaces/interface/state/description;
                 }
                 type string;
-                description "This field is for interface description";
+                description "This field is for interface description.";
             }
             field interface-name {
                 sensor interfaces {
@@ -48,7 +83,7 @@ iceberg {
                     path "/interfaces/interface/state/counters/{{stats_name}}";
                 }
                 type integer;
-                description "This field is for monitored field's stats value";
+                description "Interface statistics counter value.";
             }
             /*
              * Fields defined with variables and constant values
@@ -58,42 +93,49 @@ iceberg {
                     value "{{medium_threshold}}";
                 }
                 type integer;
-                description "This field is for monitored field's medium threshold";
+                description "In error count high threshold.";
             }
             field high-threshold {
                 constant {
                     value "{{high_threshold}}";
                 }
                 type integer;
-                description "This field is for monitored field's high threshold";
+                description "In error count high threshold.";
             }
             field stats-name {
                 constant {
                     value "{{stats_name}}";
                 }
                 type string;
-                description "This field is for monitored field's stats name";
+                description "Interface statistics counter name";
             }
             field user-description {
                 constant {
                     value "{{interface_description}}";
                 }
                 type string;
-                description "This field is for user entered interface description";
+                description "Keyword in interface description.";
             }
             /*
-             * When an interface input octets($stats-value) count crosses high threshold then sends anomaly notification and sets color
-             * to red. When count is below low threshold then sets color to green. When count is between low and high threshold then sends anomaly
-             * notification and sets color to yellow.
+             * Anomaly detection logic.
              */
             trigger interface-stats {
                 synopsis "interface statistics kpi";
                 description "Sets health based on interface statistics threshold.";
+                /*
+                 * Skips evaluation for the interfaces where keyword unmatched 
+                 * in interface description.
+                 */
                 term is-interface-description-not-matching {
                     when {
                         does-not-match-with "$description" "$user-description";
                     }
                 }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface input traffic($stats-value) is above high
+                 * threshold($high-threshold) absolute for period of 60 seconds.
+                 */
                 term is-interface-stats-crossing-high-threshold {
                     when {
                         min-rate-of-increase "$stats-value" {
@@ -108,6 +150,12 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface input traffic($stats-value) is above medium
+                 * threshold($medium-threshold) absolute for period of
+                 * 60 seconds.
+                 */
                 term is-interface-stats-crossing-medium-threshold {
                     when {
                         min-rate-of-increase "$stats-value" {
@@ -122,6 +170,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */
                 term interface-stats-normal {
                     then {
                         status {
@@ -132,26 +183,27 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable high_threshold {
                 value 800000000;
-                description "Enter in octets high threshold value. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
+                description "Interface in traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
                 type int;
             }
             variable interface_description {
-                value "Core|Access";
-                description "Enter interfaces description using regular expression";
+                value ".+";
+                description "Filter interfaces which contains keyword in its description, regular expression, e.g. 'core|edge|access|bng'";
                 type string;
             }
             variable medium_threshold {
                 value 500000000;
-                description "Enter in octets medium threshold value. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
+                description "Interface in traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
                 type int;
             }
             variable stats_name {
                 value "in-octets";
-                description "Enter any one of statistics name(in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors, carrier-transitions) to monitor. Create seperate instance for each kpi";
+                description "Interface statistics counter name(in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors, carrier-transitions) to monitor. Create separate instance for each kpi";
                 type string;
             }
         }
