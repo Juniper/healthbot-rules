@@ -1,30 +1,60 @@
 /*
- * This rule checks interfaces out traffic and notify in case any of the health monitored field crosses threshold
+ * Monitors interface output traffic and notifies when anomalies are found.
+ * Four inputs control detection
+ *
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ *
+ *   2) stats_name, is a regular expression that matches the interface KPI
+ *      statistics counter name that you would like to monitor. By default it's
+ *      out-octets, Use proper counter name something like 'out-pkts' or
+ *      "out-unicast-pkts" or "out-multicast-pkts" etc.
+ *
+ *   3) out_octets_high_threshold, is the threshold that causes the rule to report
+ *      a anomaly.  By default it's 800000000 octets. This rule will set a
+ *      dashboard color to red when *all* the output traffic exceeds threshold
+ *      for 60s. Use 8000000000 octets for 10G & 80000000000 for 100G interface. 
+ *
+ *   4) out_octets_low_threshold, is the threshold that causes the rule to report
+ *      a anomaly.  By default it's 500000000 octets . This rule will set a
+ *      dashboard color to yellow when *all* the output traffic exceeds 
+ *      threshold for 60s, otherwise color is set to green. Use 5000000000
+ *      octets for 10G & 50000000000 for 100G interface. 
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-out-traffic {
+            synopsis "interface output traffic analyzer";
+            description "Collects output traffic(out-octets) periodically and notifies in case of traffic is above threshold";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the interface output traffic. Notifies via the dashboard
+             * colors when the traffic is above {{out_octets_high_threshold}}
+             * for every collected metric during a 60s time range (red).
+             * The color is set to yellow when the traffic is above
+             * {{out_octets_low_threshold}} for every collected metric during 
+             * a 60s. Otherwise the color is set to green.
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
-            synopsis "interface output traffic analyzer";
-            description "This rule collects output traffic(octets) periodically and notifies in case of traffic is above threshold";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 20s;
                 }
             }
             /*
-             *  Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field interface-name {
                 sensor interfaces {
@@ -32,97 +62,112 @@ iceberg {
                     path "/interfaces/interface/@name";
                 }
                 type string;
-                description "This field shows interfaces to be monitored";
+                description "Interfaces to be monitored";
             }
-            field outoctets-stats-value {
+            field out-octets-stats-value {
                 sensor interfaces {
                     path "/interfaces/interface/state/counters/{{outoctets_stats_name}}";
                 }
                 type integer;
+                description "Interface statistics counter (out-octets) value.";
             }
             /*
              * Fields defined with variables and constant values
              */
-            field outoctets-high-threshold {
+            field high-threshold {
                 constant {
-                    value "{{outoctets_high_threshold}}";
+                    value "{{out_octets_high_threshold}}";
                 }
                 type integer;
-                description "This field is for monitored interface field's maximum threshold value";
+                description "Output traffic high threshold.";
             }
-            field outoctets-low-threshold {
+            field low-threshold {
                 constant {
-                    value "{{outoctets_low_threshold}}";
+                    value "{{out_octets_low_threshold}}";
                 }
                 type integer;
-                description "This field is for monitored interface field's minimum threshold value";
+                description "Output traffic low threshold.";
             }
             /*
-             * When an interface output octets($outoctets-stats-value) count crosses high threshold then sends anomaly notification and sets color
-             * to red. When count is below low threshold then sets color to green. When count is between low and high threshold then sends anomaly
-             * notification and sets color to yellow.
+             * Anomaly detection logic.
              */
             trigger out-traffic {
-                synopsis "interface output traffic kpi";
-                description "Sets health based on output traffic threshold.";
+                synopsis "Interface output traffic kpi";
+                description "Sets health based on output traffic exceeds threshold.";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface output traffic($out-octets-stats-value) is above
+                 * high threshold(out_octets_high_threshold) absolute for period
+                 * of 60 seconds.
+                 */           
                 term is-interface-stats-abnormal {
                     when {
-                        min-rate-of-increase "$outoctets-stats-value" {
-                            rate "$outoctets-high-threshold";
+                        min-rate-of-increase "$out-octets-stats-value" {
+                            rate "$high-threshold";
                             time-range 60s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name out traffic is above high threshold($outoctets-high-threshold octets)";
+                            message "$interface-name output traffic is above high threshold($high-threshold octets)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the interface output traffic($out-octets-stats-value) is above
+                 * low threshold(out_octets_low_threshold) absolute for period
+                 * of 60 seconds.
+                 */                   
                 term is-interface-stats-median {
                     when {
-                        min-rate-of-increase "$outoctets-stats-value" {
-                            rate "$outoctets-low-threshold";
+                        min-rate-of-increase "$out-octets-stats-value" {
+                            rate "$low-threshold";
                             time-range 60s;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name out traffic is in medium range(>=$outoctets-low-threshold,<=$outoctets-high-threshold octets)";
+                            message "$interface-name output traffic is in medium range(>=$low-threshold,<=$high-threshold octets)";
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */                 
                 term is-interface-stats-normal {
                     then {
                         status {
                             color green;
-                            message "$interface-name out traffic is below low threshold($outoctets-low-threshold octets)";
+                            message "$interface-name output traffic:$out-octets-stats-value is normal";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interfaces to be monitored";
                 type string;
             }
-            variable outoctets_high_threshold {
+            variable out_octets_high_threshold {
                 value 800000000;
-                description "Enter out octets high threshold value. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
+                description "Interface output traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly.";
                 type int;
             }
-            variable outoctets_low_threshold {
+            variable out_octets_low_threshold {
                 value 500000000;
-                description "Enter out octets low threshold value. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
+                description "Interface output traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly.";
                 type int;
             }
             variable outoctets_stats_name {
-                value in-octets;
-                description "Enter interface filed(out-octets or out-pkts or out-unicast-pkts) to be monitored";
+                value out-octets;
+                description "Interface output traffic counter name";
                 type string;
             }
         }

@@ -1,3 +1,4 @@
+/*
  * Detects interface in errors and notifies when anomalies are found.
  * Two inputs control detection
  * 
@@ -15,7 +16,7 @@
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-in-errors {
             synopsis "Interface in-error analyzer";
@@ -28,18 +29,18 @@ iceberg {
              * in errors increase by {{in_errors_threshold}}. Otherwise the
              * color is set to green.
              * 
-             * Use interface name as key for rule
+             * Use interface name as key for rule.
              */
             keys interface-name;
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
                 synopsis "Interface open-config sensor definition";
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 20s;
                 }
             }
             /*
@@ -112,6 +113,7 @@ iceberg {
                             message "$interface-name in errors($in-errors-count) are intermittent.";
                         }
                     }
+                 }
                 /*
                  * Defaults color to green.
                  */
@@ -135,7 +137,7 @@ iceberg {
             }
             variable in_errors_stats_name {
                 value in-errors;
-                description "Error stats counter name in-errors which is cumilative of in-frame-errors, in-resource-errors, in-giants, in-drops, in-discards and mtu-erros.";
+                description "Error stats counter name in-errors which is cumulative of in-frame-errors, in-resource-errors, in-giants, in-drops, in-discards and mtu-erros.";
                 type string;
             }
             variable interface_name {

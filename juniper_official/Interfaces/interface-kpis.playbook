@@ -1,10 +1,26 @@
 /*
- * This playbook checks health of each interface and notify in case any of the health monitored field crosses threshold
+ * Playbook contains multiple rules which monitor interfaces and notifies when
+ * anomalies are found.
+ * 
+ * 1) Rule check-in-errors, detects the interface in errors and notifies
+      anomalies when error count increases.
+ * 2) Rule check-out-errors, detects the interface out errors and notifies
+      anomalies when error count increases.
+ * 3) Rule check-interface-flaps, detects interface flaps and notifies
+      anomalies when link flap count increases.
+ * 4) Rule check-in-traffic, monitors the interface in errors and notifies
+      anomalies when in traffic exceeds threshold.
+ * 5) Rule check-out-traffic, monitors the interface in errors and notifies
+      anomalies when out traffic exceeds threshold.
+ * 6) Rule check-interface-status, monitors the interface in errors and
+      notifies anomalies when interface link oper status is down.
+ * 7) Rule check-neighbor-state, monitors the interface in errors and notifies
+      anomalies when interface ipv4 neighbor status is not-reachable.
  */
 iceberg {
     playbook interface-kpis-playbook {
         rules [ interface.statistics/check-in-errors interface.statistics/check-in-traffic interface.statistics/check-interface-flaps interface.statistics/check-interface-status interface.statistics/check-neighbor-state interface.statistics/check-out-errors interface.statistics/check-out-traffic ];
-        description "Interface playbook to health check link state, flaps, neighbor state, input & output traffic and errors";
+        description "Interface playbook to check health of links, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface key performance indicators";
     }
 }

@@ -1,37 +1,50 @@
 /*
- * This rule checks each interface neighbor state and notify in case any of the health monitored field crosses threshold
+ * Monitors interface ipv4 neighbor state and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ *
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "This topic is to monitor and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-neighbor-state {
+            synopsis "Interface neighbor state analyzer.";
+            description "Collects interface neighbor state periodically and notifies when neighbor sate is unreachable.";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the interface ipv4 neighbor state. Notifies via the
+             * dashboard colors when the neighbor state {{neighbor-state}} is
+             * is na(red). Sets color to green when neighbor state
+             * {{neighbor-state}} is reachable.
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
-            synopsis "interface neighbor state analyzer";
-            description "This rule collects interface neighbor state periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
-                synopsis "interface open-config sensor definition";
-                description "/interfaces open-config sensor to collect telemetry data from network device";
+                synopsis "Interface open-config sensor definition.";
+                description "Interfaces open-config sensor to collect telemetry data from network device.";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 20s;
                 }
             }
             /*
-             * Fileds defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field admin-state {
                 sensor interfaces {
                     path /interfaces/interface/state/admin-status;
                 }
                 type string;
-                description "This field shows interfaces admin status";
+                description "Interface admin status";
             }
             field interface-name {
                 sensor interfaces {
@@ -39,39 +52,48 @@ iceberg {
                     path "/interfaces/interface/@name";
                 }
                 type string;
-                description "This field shows interfaces to be monitored";
+                description "Interfaces to be monitored";
             }
             field link-state {
                 sensor interfaces {
                     path /interfaces/interface/state/oper-status;
                 }
                 type string;
-                description "This field shows interfaces link operator status";
+                description "Interface operation status";
             }
             field neighbor-state {
                 sensor interfaces {
                     path /interfaces/interface/subinterfaces/subinterface/ipv4/neighbors/neighbor/state/neighbor-state;
                 }
                 type string;
-                description "This field shows interface neighbor state";
+                description "Interface ipv4 neighbor state";
             }
             /*
-             * On working interfaces when ipv4 neighbor($neighbor-state) is not reachable then sends an anomaly notification
-             * and sets color to red, Otherwise sets color to green.
+             * Anomaly detection logic.
              */
             trigger neighbor-state {
                 synopsis "interface neighbor state kpi";
                 description "Sets health based on interface neighbor state.";
                 term is-neighbor-admin-down {
+                /*
+                 * Skips evaluation for admin down state interfaces
+                 */
                     when {
                         matches-with "$admin-state" DOWN;
                     }
                 }
+                /*
+                 * Skips evaluation for operations down state interfaces
+                 */                
                 term is-link-state-down {
                     when {
                         matches-with "$link-state" DOWN;
                     }
                 }
+                /*
+                 * Sets color to green and sends out notification when the
+                 * interface ipv4 neighbor state($neighbor-state) is reachable.
+                 */                    
                 term neighbor-reachable {
                     when {
                         matches-with "$link-state" UP;
@@ -84,6 +106,11 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface ipv4 neighbor state ($neighbor-state) is not
+                 * reachable.
+                 */                
                 term is-neighbor-unreachable {
                     when {
                         matches-with "$neighbor-state" NA;
@@ -97,11 +124,12 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
         }
