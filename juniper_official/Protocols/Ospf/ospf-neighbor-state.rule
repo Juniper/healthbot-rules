@@ -1,0 +1,73 @@
+/*
+ *   This rule checks health of each ospf neigbor state and notify in case any of the health monitored field crosses threshold
+ */
+iceberg {
+    topic protocol.ospf {
+        description "This topic is to monitor ospf neigbor state";
+        synopsis "ospf neighbor status check";
+        rule check-ospf-neighbor-state {
+            description "This rule collects ospf session state periodically and notifies in case of anomalies";
+            synopsis "ospf session state analyzer";
+            /*
+             * unique identifier of the rule is ospf neighbor address
+             */
+            keys Address;
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor ospf-neighbor {
+                synopsis "ospf netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file ospf-neighbor.yml;
+                    table OspfNeighborTable;
+                    frequency 20s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field neighbor-address-expr {
+                constant {
+                    value "{{Neighbor_Address}}";
+                }
+                type string;
+                description "This filed is for ospf neighbor address";
+            }
+            /*
+             * When ospf neighbor state is full then sets color to green and sends message, sets to red when state is not full
+             */
+            trigger ospf-neighbor-state {
+                synopsis "ospf neighbor state kpi";
+                description "Sets health based on ospf neighbor state.";
+                term is-neighbor-full {
+                    when {
+                        matches-with "$neighbor_state" Full;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Ospf neighbor $neighbor_address state is $neighbor_state";
+                        }
+                    }
+                }
+                term is-neighbor-not-full {
+                    then {
+                        status {
+                            color red;
+                            message "Ospf neighbor $neighbor_address state is $neighbor_state";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
+            variable Neighbor_Address {
+                value .*;
+                description "Enter required ospf neighbor ids to be monitored using regular expression";
+                type string;
+            }
+        }
+    }
+}
