@@ -1,22 +1,48 @@
 /*
- * This rule checks system cpu utilization and notify in case any of the health monitored field crosses threshold
+ * Detects RE CPU utilization threshold breaches and notifies when anomalies
+ * are found.
+ * Three inputs control detection
+ * 
+ *   1) re_slot_No, is a regular expression that matches the routing engine
+ *      that you would like to monitor.  By default it's '0-1', which matches
+ *      both the routing engines. Use something like '0' to match only
+ *      routing engine 0.
+ * 
+ *   2) re_cpu_high_threshold, is the threshold that causes the rule to report
+ *      a anomaly. By default it's 80% of CPU utilization. This rule will set a
+ *      dashboard color to red when RE CPU utilization exceeds high threshold
+ *      're_cpu_high_threshold' for 5m.
+ * 
+ *   3) re_cpu_low_threshold, is the threshold that causes the rule to report
+ *      a anomaly. By default it's 50% of CPU utilization. This rule will set a
+ *      dashboard color to yellow when RE CPU utilization exceeds low threshold
+ *      're_cpu_high_threshold' for 5m. Otherwise color is set to green.
  */
 iceberg {
     topic system.cpu {
-        description "This topic monitors system cpu and sends an alert in case utilization is above thresholds";
-        synopsis "system cpu key performance indicators monitoring";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies ";
+        synopsis "System statistics analyzer";
         rule check-system-cpu {
-            description "This rule collects system cpu statistics of REs periodically and notifies in case of anomalies";
-            synopsis "Routing enignes cpu analyzer";
+            description "Collects system RE CPU statistics periodically and notifies anomalies when CPU utilization exceeds threshold.";
+            synopsis "Routing engine CPU analyzer";
             /*
-             * unique identifier of the rule is routing-engine
+             * Monitors *all* the REs CPU utilization. Notifies via the
+             * dashboard colors when the RE CPU utilization exceeds by
+             * {{re_cpu_high_threshold}} for every collected metric during a
+             * 5m time range (red). The color is set to yellow if we see
+             * RE CPU utilization exceeds {{re_cpu_low_threshold}} for every
+             * collected metric during a 5m time range. Otherwise the color is
+             * set to green.
+             * 
+             * Use routing engine name as key for rule.
              */
             keys routing-engine;
             /*
-             * This function required to derive cpu load average utilization value as router provide only cpu idle percent
+             * Router provides RE CPU idle percent hence function hence
+             * function derives used percent.
              */
             function subtract {
-                description "function that tweaks thresholds by subtracting them from 100 so that cpu utilization can be found from cpu-idle%";
+                description "Subtracts cpu-idle% from 100 to get CPU used percent";
                 path system-sensors.py;
                 method subtract;
                 argument threshold {
@@ -24,7 +50,7 @@ iceberg {
                 }
             }
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor components {
                 synopsis "system components open-config sensor definition";
@@ -35,18 +61,19 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field re-cpu-utilization-oc {
                 sensor components {
                     where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
                     path /components/component/properties/property/state/value;
                 }
-                description "This field is for re cpu idle utilization";
+                description "This field is for re CPU idle utilization";
             }
             field routing-engine {
                 sensor components {
-                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    where "/components/component/@name =~ /^Routing Engine[{{re_slot_No}}]*$/";
                     path "/components/component/@name";
                 }
                 description "This field is for re identification";
@@ -62,7 +89,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "This field derives used percentage from idle cpu utilization";
+                description "Derives used percentage from idle CPU utilization";
             }
             /*
              * Fields defined with variables and constant values
@@ -72,23 +99,27 @@ iceberg {
                     value "{{re_cpu_high_threshold}}";
                 }
                 type integer;
-                description "This field is for re cpu utilization high threshold value";
+                description "RE CPU utilization high threshold";
             }
             field re-cpu-utilization-low-threshold {
                 constant {
                     value "{{re_cpu_low_threshold}}";
                 }
                 type integer;
-                description "This field is for re cpu utilization low threshold value";
+                description "RE CPU utilization low threshold";
             }
             /*
-             * CPU health set based on high and low thresholds i.e. When RE cpu utilization($re-cpu-utilization) value
-             * is above high threshold then color is set to red and sends message. Sets color to green when cpu
-             * utilization is below threshold and to yellow when value between low and high threshold.
+             * Anomaly detection logic.
              */
             trigger re-cpu-utilization {
-                synopsis "Routing engine cpu kpi";
-                description "Sets health based on RE cpu utilization thresholds.";
+                synopsis "Routing engine CPU KPI";
+                description "Sets health based on increase in RE CPU utilization.";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the CPU utilization($re-cpu-utilization) exceeds high
+                 * threshold ($re-cpu-utilization-low-threshold) in absolute
+                 * for period of 5 minutes.
+                 */                       
                 term is-re-cpu-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
@@ -99,10 +130,16 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$routing-engine cpu utilization($re-cpu-utilization) is greater than high threshold($re-cpu-utilization-high-threshold)";
+                            message "$routing-engine CPU utilization($re-cpu-utilization) exceeds high threshold($re-cpu-utilization-high-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the CPU utilization($re-cpu-utilization) exceeds low 
+                 * threshold ($re-cpu-utilization-low-threshold) in absolute
+                 * for period of 5 minutes.
+                 */           
                 term is-re-cpu-utilization-median {
                     when {
                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
@@ -113,39 +150,40 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message " $routing-engine cpu utilization($re-cpu-utilization) is in medium range";
+                            message "$routing-engine CPU utilization($re-cpu-utilization) in medium range.";
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */                
                 term re-cpu-utilization-normal {
                     then {
                         status {
                             color green;
-                            message "$routing-engine cpu utilization($re-cpu-utilization) is lesser than low threshold($re-cpu-utilization-low-threshold)";
+                            message "$routing-engine CPU utilization($re-cpu-utilization) is normal.";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance"
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
-            variable RE_Slot_No {
+            variable re_slot_No {
                 value 0-1;
-                description "Enter RE numbers to be monitored i.e. 0 or 1, deafult is set for both REs";
+                description "Routing engine numbers to monitor, regular expression, e.g. '0-1'";
                 type string;
-                description "Enter RE slot numbers using regular expression";
             }
             variable re_cpu_high_threshold {
                 value 80;
-                description "Enter RE cpu utilization maximum threshold value";
+                description "RE CPU utilization high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
-                description "Enter RE cpu high threshol value";
             }
             variable re_cpu_low_threshold {
                 value 50;
-                description "Enter RE cpu utilization maximum threshold value";
+                description "RE CPU utilization low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
-                description "Enter RE cpu low threshol value";
             }
         }
     }
