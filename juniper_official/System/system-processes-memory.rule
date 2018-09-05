@@ -1,19 +1,46 @@
 /*
- *   This rule detects memory leaks as well checks system processes(daemons) memory utilization and notify in case any of the health monitored field crosses threshold
+ * Detects junos processes(daemons) memory utilization threshold breaches and
+ * notifies when anomalies are found.
+ * Three inputs control detection
+ * 
+ *   1) process_name, is a regular expression that matches the daemons that you
+ *      would like to monitor. By default it's '.*', which matches all daemons.
+ *      Use something like 'rpd|dfwd|dcd' to match only routing, firewall and
+ *      interface daemons.
+ * 
+ *   2) process_memory_max_threshold, is the threshold that causes the rule to 
+ *      report a anomaly. By default it's 80% of daemon memory utilization. 
+ *      This rule will set a dashboard color to red when daemon memory 
+ *      utilization exceeds high threshold 'process_memory_max_threshold'
+ *      for period of 5 minutes.
+ * 
+ *   3) process_memory_min_threshold, is the threshold that causes the rule to 
+ *      report a anomaly. By default it's 50% of daemon memory utilization. 
+ *      This rule will set a dashboard color to red when daemon memory 
+ *      utilization exceeds low threshold 'process_memory_min_threshold'
+ *      for period of 5 minutes.
  */
 iceberg {
     topic system.processes {
-        description "This topic is to monitor and notify cpu, memory utilization of junos system processes";
-        synopsis "system processes(daemons) cpu&memory analyzer";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies ";
+        synopsis "System statistics analyzer";
         rule check-process-memory {
-            description "This rule collects system process's memory utilization periodically and notifies in case of anomalies";
-            synopsis "system processes memory utilization analyzer";
+            description "Collects system process's memory utilization periodically and notifies anomalies when daemon memory usage exceeds threshold";
+            synopsis "System processes memory utilization analyzer";
             /*
-             * unique identifier of the rule is junos daemon
+             * Monitors *all* the daemons memory utilization. Notifies via the
+             * dashboard colors when the daemon memory utilization exceeds by
+             * {{process_memory_max_threshold}} for every collected metric
+             * during a 5 minute time range (red). The color is set to yellow
+             * if we see daemon memory utilization exceeds 
+             * {{process_memory_min_threshold}} for every collected metric
+             * during a 5 minutes time range.
+             * 
+             * Use daemon name as key for rule.
              */
             keys daemon;
             /*
-             * This function required to derive memory utilization in percent as router provide values in KB and MB
+             * Function derives memory utilization in percent from KB and MB.
              */
             function isExceeding {
                 description "This function isExceeding returns 'True' if % of size used out of reserved memory is not exceeding the threshold";
@@ -30,7 +57,7 @@ iceberg {
                 }
             }
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor SystemProcExtTable {
                 synopsis "System processes memory iAgent sensor definition";
@@ -42,25 +69,26 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field daemon {
                 sensor SystemProcExtTable {
                     path cmd;
                 }
-                description "This field is to parse all junos processes names";
+                description "Daemon to be monitored";
             }
             field reserved {
                 sensor SystemProcExtTable {
                     path res;
                 }
-                description "This field is for reserved memory";
+                description "Reserved memory of daemon";
             }
             field size {
                 sensor SystemProcExtTable {
                     path size;
                 }
-                description "This field is for processes memory size";
+                description "Daemon memory size";
             }
             /*
              * Fields defined with variables and constant values
@@ -70,32 +98,40 @@ iceberg {
                     value "{{process_memory_max_threshold}}";
                 }
                 type integer;
-                description "This field is for processes memory maximum threshold value";
+                description "Daemon memory max threshold";
             }
             field min-threshold {
                 constant {
                     value "{{process_memory_min_threshold}}";
                 }
                 type integer;
+                description "Daemon memory low threshold";
             }
             field process-name {
                 constant {
                     value "{{process_name}}";
                 }
                 type string;
-                description "This field shows processes to be monitored";
+                description "Selected daemon to be monitored.";
             }
             /*
-             * Daemon's set based on high and low thresholds i.e. When daemons memory utilization value (UDF isExceeding)
-             * is above high threshold then color is set to red and sends message. Sets color to green when memory
-             * utilization is below threshold and to yellow when value between low and high threshold.
+             * Anomaly detection logic.
              */
             trigger processes-memory-utilization {
+                /*
+                 * Skips evaluation for unmonitored daemons
+                 */
                 term skiping-undefined-processes {
                     when {
                         does-not-match-with "$daemon" "$process-name";
                     }
                 }
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the *all* daemon memory usage (isExceeding) exceeds
+                 * low threshold ($max-threshold) in absolute for a period
+                 * of 5 minutes.
+                 */ 
                 term is-memory-utilization-abnormal {
                     when {
                         user-defined-function isExceeding {
@@ -108,10 +144,16 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$daemon memory utilization is above high threshold($max-threshold)";
+                            message "$daemon memory utilization is above high threshold($max-threshold).";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the *all* daemon memory usage (isExceeding) exceeds
+                 * low threshold ($min-threshold) in absolute for a period
+                 * of 5 minutes.
+                 */ 
                 term is-memory-utilization-median {
                     when {
                         user-defined-function isExceeding {
@@ -124,27 +166,28 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "$daemon memory utilization is in medium range(>=$min-threshold, <=$max-threshold)";
+                            message "$daemon memory utilization is in medium range(>=$min-threshold, <=$max-threshold).";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance"
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable process_memory_max_threshold {
                 value 80;
-                description "Enter processes memory maximum threshold values if default value not matches with your requirement";
+                description "Daemon memory maximum threshold: Utilization increase between metrics, before we report anomaly.";
                 type int;
             }
             variable process_memory_min_threshold {
                 value 50;
-                description "Enter processes memory minimum threshold values if default value not matches with your requirement";
+                description "Daemon memory minimum threshold: Utilization increase between metrics, before we report anomaly.";
                 type int;
             }
             variable process_name {
                 value .*;
-                description "Enter processes to be monitored with separator or leave it to default";
+                description "Demon name to monitor, regular regular expression, e.g. 'rpd|dfwd|dcd'.";
                 type string;
             }
         }
