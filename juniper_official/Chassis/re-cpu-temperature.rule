@@ -1,0 +1,119 @@
+/*
+ * This rule checks health of RE CPU temperature and notify in case any of the health monitored fields crosses threshold
+ */
+iceberg {
+    topic chassis.temperatures {
+        description "This topic is to monitor the chassis, fpc, re&re-cpu teparatures in degree C";
+        synopsis "Chassis RE CPU temperature check";
+        rule check-re-cpu-temperature {
+            /*
+             * unique identifier of the rule is re name
+             */
+            keys routing-engine;
+            synopsis "RE CPU temperature analyzer";
+            description "This rule collects RE CPU temperature periodically and notifies in case of anomalies";
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor components {
+                synopsis "chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path
+             */
+            field re-cpu-temperature {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature-cpu'";
+                    path /components/component/properties/property/state/value;
+                }
+                description "This field is to parse re cpu temparature";
+            }
+            field routing-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "This field is for RE identification";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field re-cpu-temperature-high-threshold {
+                constant {
+                    value "{{RE_CPU_Temperature_Higher_Threshold}}";
+                }
+                type integer;
+                description "This field is for re cpu temparature maximum threshold value";
+            }
+            field re-cpu-temperature-low-threshold {
+                constant {
+                    value "{{RE_CPU_Temperature_Lower_Threshold}}";
+                }
+                type integer;
+                description "This field is for re cpu temparature minimum threshold value";
+            }
+            /*
+             * When any of the re cpu temperature($re-cpu-temperature) crosses threshold then sends an anomaly notification and sets color to red.
+             * When temperatue is below threshold then sets color to green. When temperature is between low and high threshold then sends
+             * anomaly notification and sets color to yellow.
+             */
+            trigger re-cpu-temperature {
+                synopsis "RE CPU temperature kpi";
+                description "Sets health based on RE CPU temperature threshold.";
+                term is-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$re-cpu-temperature" "$re-cpu-temperature-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine cpu temperature($re-cpu-temperature degree C) is lesser than low threshold($re-cpu-temperature-low-threshold degree C)";
+                        }
+                    }
+                }
+                term is-temperature-median {
+                    when {
+                        less-than "$re-cpu-temperature" "$re-cpu-temperature-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine cpu temperature($re-cpu-temperature degree C) is in medium range(>=$re-cpu-temperature-low-threshold, <=$re-cpu-temperature-high-threshold)";
+                        }
+                    }
+                }
+                term temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "$routing-engine cpu temperature($re-cpu-temperature degree C) is greater than high threshold($re-cpu-temperature-high-threshold degree C)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
+            variable RE_CPU_Temperature_Higher_Threshold {
+                value 55;
+                description "Enter re cpu temparature maximum threshold value";
+                type int;
+            }
+            variable RE_CPU_Temperature_Lower_Threshold {
+                value 45;
+                description "Enter re cpu temparature minimum threshold value";
+                type int;
+            }
+            variable RE_Slot_No {
+                value 0-1;
+                description "Enter RE numbers to be monitored using regular expression";
+                type string;
+            }
+        }
+    }
+}
