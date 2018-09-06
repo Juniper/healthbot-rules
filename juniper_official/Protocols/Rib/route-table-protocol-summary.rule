@@ -1,0 +1,73 @@
+/*
+ * This rule checks route count of each protocol of each table and notify in case any of the health monitored field crosses threshold
+ */
+iceberg {
+    topic protocol.routesummary {
+        description "This topic has rule on routing table statistics which monitors total-route-count in each routing table";
+        synopsis "Protocol routes and Route table statistics analyzer";
+        rule check-protocol-route-count {
+            /*
+             * unique identifiers of the rule are route tables and protocols
+             */
+            keys [ protocol-name table-name ];
+            synopsis "collects protocols statistics in each routing table";
+            description "collects protocols statistics in each routing table";
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor route-protocol-summary {
+                synopsis "Get routing table protocol statistics";
+                description "Get routing table statistics through -show route summary- command and filters protocols in each routing table";
+                iAgent {
+                    file route-protocol-summary.yml;
+                    table RouteProtocolsTable;
+                    frequency 15m;
+                }
+            }
+            /*
+             * Fields defined with dynamic threshold ml algorithms
+             */
+            field route-count-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 30d;
+                        pattern-periodicity 1h;
+                        field-name "$protocol-route-count";
+                    }
+                }
+                type string;
+                description "detects anamoly dynamically using kmeans algorithm";
+            }
+            /*
+             * When route count of each protocol($protocol-route-count) of each route table crosses threshold then sends anomaly
+             * notification and sets color to red otherwise sets color to green.
+             */
+            trigger protocol-routes-count {
+                synopsis "Protocol route count check KPI";
+                description "Sets health based on each table's each protocol route count threshold";
+                term is-protocol-route-count-abnormal {
+                   when {
+                        matches-with "$route-count-dynamic-threshold" "^anomaly$" {
+                            time-range 35m;
+                            }
+                        }
+                    then {
+                        status {
+                            color red;
+                            message "Anomaly detected: $table-name:$protocol-name route count($protocol-route-count) is abnormal";
+                        }
+                    }
+                }
+                term protocol-route-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$table-name:$protocol-name route count($protocol-route-count) is normal";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

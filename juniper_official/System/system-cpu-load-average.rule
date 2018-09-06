@@ -1,0 +1,274 @@
+/*
+ * This rule checks system cpu load averages(1/5/15 minutes) and notify in case any of the health monitored field crosses threshold
+ */
+iceberg {
+    topic system.cpu {
+        description "This topic monitors system cpu and sends an alert in case utilization is above thresholds";
+        synopsis "system cpu key performance indicators monitoring";
+        rule check-system-cpu-load-average {
+            description "This rule collects RE cpu load average data periodically and notifies in case of anomalies";
+            synopsis "RE cpu load average analyzer";
+            /*
+             * unique identifier of the rule is RE slot
+             */
+            keys slot;
+            /*
+             * This function required to derive cpu load average utilization value as router provide only cpu idle percent
+             */
+            function subtract {
+                description "function that tweaks thresholds by subtracting them from 100 so that cpu utilization can be found from cpu-idle%";
+                path system-sensors.py;
+                method subtract;
+                argument threshold {
+                    mandatory;
+                }
+            }
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor CPUutilizationTable {
+                synopsis "Routing engines CPU iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-cpu.yml;
+                    table CPUutilizationTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using formulae by user-defined function
+             */
+            field cpu-15min {
+                formula {
+                    user-defined-function {
+                        function-name subtract;
+                        argument threshold $cpu-idle-15min;
+                    }
+                }
+                type integer;
+                description "This field derives used percentage from idle cpu utilization";
+            }
+            field cpu-5min {
+                formula {
+                    user-defined-function {
+                        function-name subtract;
+                        argument threshold $cpu-idle-5min;
+                    }
+                }
+                type integer;
+                description "This field derives used percentage from idle cpu utilization";
+            }
+            field cpu-1min {
+                formula {
+                    user-defined-function {
+                        function-name subtract;
+                        argument threshold $cpu-idle-1min;
+                    }
+                }
+                type integer;
+                description "This field derives used percentage from idle cpu utilization";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field cpu-utilization-15min-high-threshold {
+                constant {
+                    value "{{re_cpu_15min_high_threshold}}";
+                }
+                type integer;
+                description "RE cpu utilization 15 minutes load average high threshold";
+            }
+            field cpu-utilization-15min-low-threshold {
+                constant {
+                    value "{{re_cpu_15min_low_threshold}}";
+                }
+                type integer;
+                description "RE cpu utilization 15 minutes load average low threshold";
+            }
+            field cpu-utilization-1min-high-threshold {
+                constant {
+                    value "{{re_cpu_1min_high_threshold}}";
+                }
+                type integer;
+                description "RE cpu utilization 1 minute load average high threshold";
+            }
+            field cpu-utilization-1min-low-threshold {
+                constant {
+                    value "{{re_cpu_1min_low_threshold}}";
+                }
+                type integer;
+                description "RE cpu utilization 1 minute load average low threshold";
+            }
+            field cpu-utilization-5min-high-threshold {
+                constant {
+                    value "{{re_cpu_5min_high_threshold}}";
+                }
+                type integer;
+                description "RE cpu utilization 5 minutes load average high threshold";
+            }
+            field cpu-utilization-5min-low-threshold {
+                constant {
+                    value "{{re_cpu_5min_low_threshold}}";
+                }
+                type integer;
+                description "RE cpu utilization 5 minutes load average low threshold";
+            }  
+            /*
+             * CPU health set based on high and low thresholds i.e. When RE cpu 15 minutes load average($cpu-15min) value
+             * is above high threshold then color is set to red and sends message. Sets color to green when 15 minutes cpu
+             * utilization is below threshold and to yellow when value between low and high threshold.
+             */
+            trigger cpu-utilization-15min {
+                synopsis "RE cpu 15 mins load average kpi";
+                description "Sets health based on RE cpu 15 minutes load average threshold.";
+                term is-cpu-utilization-15min-normal {
+                    when {
+                        less-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Routing Engine$slot 15min cpu utilization($cpu-15min) is lesser than low threshold($cpu-utilization-15min-low-threshold)";
+                        }
+                    }
+                }
+                term is-cpu-utilization-15min-median {
+                    when {
+                        less-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Routing Engine$slot 15min cpu utilization($cpu-15min) is in medium range";
+                        }
+                    }
+                }
+                term cpu-utilization-15min-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "Routing Engine$slot  15min cpu utilization($cpu-15min) is greater than high threshold($cpu-utilization-15min-high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * CPU health set based on high and low thresholds i.e. When RE cpu 1 minute load average($cpu-1min) value
+             * is above high threshold then color is set to red and sends message. Sets color to green when 1 minute cpu
+             * utilization is below threshold and to yellow when value between low and high threshold.
+             */
+            trigger cpu-utilization-1min {
+                synopsis "RE cpu 1 mins load average kpi";
+                description "Sets health based on RE cpu 1 mminute load average threshold.";
+                term is-cpu-utilization-1min-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-high-threshold" {
+                            time-range 3m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Routing Engine$slot 1min cpu utilization($cpu-1min) is greater than high threshold(cpu-utilization-1min-high-threshold)";
+                        }
+                    }
+                }
+                term is-cpu-utilization-1min-median {
+                    when {
+                        greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-low-threshold" {
+                            time-range 3m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Routing Engine$slot  1min cpu utilization($cpu-1min) is in medium range";
+                        }
+                    }
+                }
+                term cpu-utilization-1min-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Routing Engine$slot 1min cpu utilization($cpu-1min) is lesser than low threshold($cpu-utilization-1min-low-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * CPU health set based on high and low thresholds i.e. When RE cpu 5 minutes load average($cpu-5min) value
+             * is above high threshold then color is set to red and sends message. Sets color to green when 5 minutes cpu
+             * utilization is below threshold and to yellow when value between low and high threshold.
+             */
+            trigger cpu-utilization-5min {
+                synopsis "RE cpu 5 mins load average kpi";
+                description "Sets health based on RE cpu 5 mminutes load average threshold.";
+                term is-cpu-utilization-5min-normal {
+                    when {
+                        less-than "$cpu-5min" "$cpu-utilization-5min-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Routing Engine$slot 5min cpu utilization($cpu-5min) is lesser than low threshold($cpu-utilization-5min-low-threshold)";
+                        }
+                    }
+                }
+                term is-cpu-utilization-5min-median {
+                    when {
+                        less-than "$cpu-5min" "$cpu-utilization-5min-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Routing Engine$slot 5min cpu utilization($cpu-5min) is in medium range";
+                        }
+                    }
+                }
+                term cpu-utilization-5min-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "Routing Engine$slot 5min cpu utilization($cpu-5min) is greater than high threshold($cpu-utilization-5min-high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance"
+             */
+            variable re_cpu_15min_high_threshold {
+                value 75;
+                type int;
+                description "Enter re cpu 15 mins load average high threshold value";
+            }
+            variable re_cpu_15min_low_threshold {
+                value 50;
+                type int;
+                description "Enter re cpu 15 mins load average low threshold value";
+            }
+            variable re_cpu_1min_high_threshold {
+                value 85;
+                type int;
+                description "Enter re cpu 1 min load average high threshold value";
+            }
+            variable re_cpu_1min_low_threshold {
+                value 60;
+                type int;
+                description "Enter re cpu 1 mins load average low threshold value";
+            }
+            variable re_cpu_5min_high_threshold {
+                value 80;
+                type int;
+                description "Enter re cpu 5 mins load average high threshold value";
+            }
+            variable re_cpu_5min_low_threshold {
+                value 55;
+                type int;
+                description "Enter re cpu 5 mins load average low threshold value";
+            }
+        }
+    }
+}
