@@ -1,0 +1,81 @@
+/*
+ *  This rule checks health of each bgp session and notify in case any of the health monitored field crosses threshold
+ */
+iceberg {
+    topic protocol.bgp {
+        description "This topic is to monitors and notify bgp sessions statitics i.e. neighbor state, detects flaps, route damping and max received-routes count";
+        synopsis "bgp session statistics analyzer";
+        rule check-bgp-session-state {
+            description "This rule collects bgp session state periodically and notifies in case of anomalies";
+            synopsis "bgp session state analyzer";
+            /*
+             * unique identifier of the rule is bgp neighbor address
+             */
+            keys neighbor-address;
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor bgp-sensor {
+                synopsis "bgp open-config sensor definition";
+                description "/protocol/bgp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
+                    frequency 10s;
+                }
+            }
+            /*
+             * Fields defined using sensor path
+             */
+            field neighbor-address {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "This field is for neighbor address";
+            }
+            field session-state {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "This field is for session status";
+            }
+            /*
+             * When bgp session($session-state) state is established then sets color to green, otherwise send anomaly notification
+             * with current state and sets color to red
+             */
+            trigger neigbor-state {
+                synopsis "bgp session state kpi";
+                description "Sets health based on bgp session state.";
+                term is-neighbor-up {
+                    when {
+                        matches-with "$session-state" ESTABLISHED;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor session up";
+                        }
+                    }
+                }
+                term neighbor-down {
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor session down";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values which can be altered while deploying playbook instance
+             */
+            variable neighbors {
+                value .*;
+                description "Enter neighbor name or address using regular expression";
+                type string;
+            }
+        }
+    }
+}

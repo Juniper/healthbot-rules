@@ -1,0 +1,126 @@
+/*
+ * Checks filesystem storage utilization perioadically and notifies anomaliy
+ * when utilization exceeds threshold.
+ * Two inputs control detection
+ * 
+ *   1) storage_usage_high_threshold, is the threshold that causes the rule to
+ *      report a anomaly.  By default it's 80% of total size. This rule will
+ *      set a dashboard color to red when storage used exceeds
+ *      'storage_usage_high_threshold'.
+ * 
+ *   2) storage_usage_low_threshold, is the threshold that causes the rule to
+ *      report a anomaly. By default it's 50%. This rule will set a dashboard
+ *      color to green when storage used below 'storage_usage_low_threshold'.
+ *      otherwise color is set to yellow as usaged % is between 50% and 80%.
+ */
+iceberg {
+    topic system.storage {
+        description "Monitors system disk partitions mount usage and notify when storage used exceeds threshold";
+        synopsis "System storage usage analyzer";
+        rule check-storage {
+            description "Collects filesystem storage usage periodically and notifies anomaly when used space exceeds threshold";
+            synopsis "system storage usage analyzer";
+            /*
+             * Monitors the filesystem storage used% of system. Notifies via
+             * the dashboard colors when the storage used % exceeds by 
+             * {{storage_usage_high_threshold}} to red. The color is set to 
+             * green if we see used % below {{storage_usage_low_threshold}}.
+             * Otherwise the color is set to yellow
+             * 
+             * Use filesystem mounted path name as key for rule.
+             */
+            keys mounted-on;
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor StorageTable {
+                synopsis "System storage iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-storage.yml;
+                    table StorageTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{storage_usage_high_threshold}}";
+                }
+                type integer;
+                description "Filesystem used storage high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{storage_usage_low_threshold}}";
+                }
+                type integer;
+                description "Filesystem used storage low threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger fs-utilization {
+                synopsis "File system usage kpi";
+                description "Sets health based on file system storage usage.";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the filesystem used % ($used-percent) is greater than 80%.
+                 */               
+                term is-system-storage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used-percent" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$filesystem-name storage used($used-percent) is above ($high-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green and sends out an notification when the
+                 * filesystem used % ($used-percent) is lessthan than 50%.
+                 */                     
+                term is-system-storage-normal {
+                    when {
+                        less-than "$used-percent" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$filesystem-name storage used($used-percent) is normal ($used-percent)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to yellow.
+                 */                
+                term system-storage-median {
+                    then {
+                        status {
+                            color yellow;
+                            message "$filesystem-name storage used($used-percent) is in medium range(>=$low-threshold, <=$high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable storage_usage_high_threshold {
+                value 80;
+                type int;
+                description "Filesystem storage high threshold: Exceeds used % threshold, before we report anomaly";
+            }
+            variable storage_usage_low_threshold {
+                value 50;
+                type int;
+                description "Filesystem storage low threshold: Exceeds used % threshold, before we report anomaly";
+            }
+        }
+    }
+}
