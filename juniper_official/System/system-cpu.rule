@@ -9,26 +9,26 @@
  *      routing engine 0.
  * 
  *   2) re_cpu_high_threshold, is the threshold that causes the rule to report
- *      a anomaly. By default it's 80% of CPU utilization. This rule will set a
- *      dashboard color to red when RE CPU utilization exceeds high threshold
+ *      an anomaly. By default it's 80% of CPU utilization. This rule will set
+ *      a dashboard color to red when RE CPU utilization exceeds high threshold
  *      're_cpu_high_threshold' for period of 5 minutes.
  * 
  *   3) re_cpu_low_threshold, is the threshold that causes the rule to report
- *      a anomaly. By default it's 50% of CPU utilization. This rule will set a
- *      dashboard color to yellow when RE CPU utilization exceeds low threshold
- *      're_cpu_high_threshold' for period of 5 minutes. Otherwise color is set
- *      to green.
+ *      an anomaly. By default it's 50% of CPU utilization. This rule will set 
+ *      a dashboard color to yellow when RE CPU utilization exceeds low 
+ *      threshold 're_cpu_low_threshold' for period of 5 minutes.
+ *      Otherwise color is set to green.
  */
 iceberg {
     topic system.cpu {
-        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies ";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes & queues and notifies anomalies ";
         synopsis "System statistics analyzer";
         rule check-system-cpu {
             description "Collects system RE CPU statistics periodically and notifies anomalies when CPU utilization exceeds threshold.";
             synopsis "Routing engine CPU analyzer";
             /*
-             * Monitors *all* the REs CPU utilization. Notifies via the
-             * dashboard colors when the RE CPU utilization exceeds by
+             * Monitors all the REs CPU utilization. Notifies via the
+             * dashboard colors when the RE CPU utilization exceed by
              * {{re_cpu_high_threshold}} for every collected metric during a
              * 5m time range (red). The color is set to yellow if we see
              * RE CPU utilization exceeds {{re_cpu_low_threshold}} for every
@@ -39,8 +39,8 @@ iceberg {
              */
             keys routing-engine;
             /*
-             * Router provides RE CPU idle percent hence function hence
-             * function derives used percent.
+             * Router provides RE CPU idle percent hence function derives used
+             * percent.
              */
             function subtract {
                 description "Subtracts cpu-idle% from 100 to get CPU used percent";
@@ -70,7 +70,7 @@ iceberg {
                     where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
                     path /components/component/properties/property/state/value;
                 }
-                description "This field is for re CPU idle utilization";
+                description "RE CPU idle utilization";
             }
             field routing-engine {
                 sensor components {
@@ -117,9 +117,9 @@ iceberg {
                 description "Sets health based on increase in RE CPU utilization.";
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the CPU utilization($re-cpu-utilization) exceeds high
-                 * threshold ($re-cpu-utilization-low-threshold) in absolute
-                 * for period of 5 minutes.
+                 * the CPU utilization ($re-cpu-utilization) exceeds high
+                 * threshold ($re-cpu-utilization-low-threshold) for all points
+                 * in a 5 minute period.
                  */                       
                 term is-re-cpu-utilization-abnormal {
                     when {
@@ -137,9 +137,9 @@ iceberg {
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the CPU utilization($re-cpu-utilization) exceeds low 
-                 * threshold ($re-cpu-utilization-low-threshold) in absolute
-                 * for period of 5 minutes.
+                 * when the CPU utilization ($re-cpu-utilization) exceeds low 
+                 * threshold ($re-cpu-utilization-low-threshold) for all points
+                 * in a 5 minute period.
                  */           
                 term is-re-cpu-utilization-median {
                     when {
@@ -151,7 +151,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "$routing-engine CPU utilization($re-cpu-utilization) in medium range.";
+                            message "$routing-engine CPU utilization($re-cpu-utilization) in medium range";
                         }
                     }
                 }
@@ -162,7 +162,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "$routing-engine CPU utilization($re-cpu-utilization) is normal.";
+                            message "$routing-engine CPU utilization($re-cpu-utilization) is normal";
                         }
                     }
                 }
