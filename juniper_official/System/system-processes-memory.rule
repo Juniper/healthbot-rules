@@ -1,5 +1,5 @@
 /*
- * Detects junos processes(daemons) memory utilization threshold breaches and
+ * Detects junos processes (daemons) memory utilization threshold breaches and
  * notifies when anomalies are found.
  * Three inputs control detection
  * 
@@ -8,32 +8,32 @@
  *      Use something like 'rpd|dfwd|dcd' to match only routing, firewall and
  *      interface daemons.
  * 
- *   2) process_memory_max_threshold, is the threshold that causes the rule to 
- *      report a anomaly. By default it's 80% of daemon memory utilization. 
+ *   2) process_memory_high_threshold, is the threshold that causes the rule 
+ *      to report an anomaly. By default it's 80% of daemon memory utilization. 
  *      This rule will set a dashboard color to red when daemon memory 
- *      utilization exceeds high threshold 'process_memory_max_threshold'
- *      for period of 5 minutes.
+ *      utilization exceed high threshold 'process_memory_high_threshold'
+ *      for a period of 5 minutes.
  * 
- *   3) process_memory_min_threshold, is the threshold that causes the rule to 
- *      report a anomaly. By default it's 50% of daemon memory utilization. 
+ *   3) process_memory_low_threshold, is the threshold that causes the rule to
+ *      report an anomaly. By default it's 50% of daemon memory utilization. 
  *      This rule will set a dashboard color to red when daemon memory 
- *      utilization exceeds low threshold 'process_memory_min_threshold'
- *      for period of 5 minutes.
+ *      utilization exceed low threshold 'process_memory_low_threshold'
+ *      for a period of 5 minutes. Otherwise color is set to green.
  */
 iceberg {
     topic system.processes {
-        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies ";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes & queues and notifies anomalies";
         synopsis "System statistics analyzer";
         rule check-process-memory {
-            description "Collects system process's memory utilization periodically and notifies anomalies when daemon memory usage exceeds threshold";
+            description "Collects system process's memory utilization periodically and notifies anomalies when daemon memory usage exceed threshold";
             synopsis "System processes memory utilization analyzer";
             /*
              * Monitors *all* the daemons memory utilization. Notifies via the
-             * dashboard colors when the daemon memory utilization exceeds by
-             * {{process_memory_max_threshold}} for every collected metric
+             * dashboard colors when the daemon memory utilization exceed by
+             * {{process_memory_high_threshold}} for every collected metric
              * during a 5 minute time range (red). The color is set to yellow
-             * if we see daemon memory utilization exceeds 
-             * {{process_memory_min_threshold}} for every collected metric
+             * if we see daemon memory utilization exceed 
+             * {{process_memory_low_threshold}} for every collected metric
              * during a 5 minutes time range.
              * 
              * Use daemon name as key for rule.
@@ -43,7 +43,7 @@ iceberg {
              * Function derives memory utilization in percent from KB and MB.
              */
             function isExceeding {
-                description "This function isExceeding returns 'True' if % of size used out of reserved memory is not exceeding the threshold";
+                description "Function isExceeding returns 'True' if % of size used out of reserved memory is not exceeding the threshold";
                 path system-processes.py;
                 method isExceeding;
                 argument res {
@@ -95,14 +95,14 @@ iceberg {
              */
             field max-threshold {
                 constant {
-                    value "{{process_memory_max_threshold}}";
+                    value "{{process_memory_high_threshold}}";
                 }
                 type integer;
                 description "Daemon memory max threshold";
             }
             field min-threshold {
                 constant {
-                    value "{{process_memory_min_threshold}}";
+                    value "{{process_memory_low_threshold}}";
                 }
                 type integer;
                 description "Daemon memory low threshold";
@@ -118,6 +118,8 @@ iceberg {
              * Anomaly detection logic.
              */
             trigger processes-memory-utilization {
+                synopsis "System prcoesses memory utilization kpi";
+                description "Sets health based on system processes memory utilization.";
                 /*
                  * Skips evaluation for unmonitored daemons
                  */
@@ -128,9 +130,9 @@ iceberg {
                 }
                 /*
                  * Sets color to red and sends out an anomaly notification
-                 * when the *all* daemon memory usage (isExceeding) exceeds
-                 * low threshold ($max-threshold) in absolute for a period
-                 * of 5 minutes.
+                 * when any of the daemon memory usage (isExceeding) exceed
+                 * high threshold ($max-threshold) for all points in a
+                 * 5 minute period.
                  */ 
                 term is-memory-utilization-abnormal {
                     when {
@@ -144,15 +146,15 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$daemon memory utilization is above high threshold($max-threshold).";
+                            message "$daemon memory utilization is above high threshold($max-threshold)";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the *all* daemon memory usage (isExceeding) exceeds
-                 * low threshold ($min-threshold) in absolute for a period
-                 * of 5 minutes.
+                 * when any of the daemon memory usage (isExceeding) exceed
+                 * low threshold ($min-threshold) for all points in a 
+                 * 5 minute period.
                  */ 
                 term is-memory-utilization-median {
                     when {
@@ -166,7 +168,18 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "$daemon memory utilization is in medium range(>=$min-threshold, <=$max-threshold).";
+                            message "$daemon memory utilization is in medium range(>=$min-threshold, <=$max-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 
+                term is-cpu-utilization-normal  {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon memory utilization is normal";
                         }
                     }
                 }
@@ -175,14 +188,14 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable process_memory_max_threshold {
+            variable process_memory_high_threshold {
                 value 80;
-                description "Daemon memory maximum threshold: Utilization increase between metrics, before we report anomaly.";
+                description "Daemon memory high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable process_memory_min_threshold {
+            variable process_memory_low_threshold {
                 value 50;
-                description "Daemon memory minimum threshold: Utilization increase between metrics, before we report anomaly.";
+                description "Daemon memory low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
             variable process_name {

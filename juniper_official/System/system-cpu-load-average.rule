@@ -1,7 +1,7 @@
 /*
  * Detects RE CPU load average utilization(1min/5min/15min) threshold breaches
  * and notifies when anomalies are found.
- * Two inputs control detection for each 1,5&15 minutes CPU load average
+ * Two inputs control detection for each 1,5 & 15 minutes CPU load average
  * utilization KPIs.
  *
  *   1) re_cpu_15min_low_threshold or re_cpu_1min_low_threshold
@@ -10,16 +10,16 @@
  *
  *   2) re_cpu_15min_high_threshold or re_cpu_1min_high_threshold
  *      or re_cpu_5min_high_threshold, is the threshold that causes the rule
- *      to report a anomaly. This rule will set a dashboard color to yellow
+ *      to report an anomaly. This rule will set a dashboard color to yellow
  *      when RE CPU utilization below high threshold. Otherwise color is set
  *      to red.
  */
 iceberg {
     topic system.cpu {
-        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies ";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies";
         synopsis "System statistics analyzer";
         rule check-system-cpu-load-average {
-            description "Collects RE CPU load average data periodically and notifies anomalies when CPU utilization exceeds threshold.";
+            description "Collects RE CPU load average data periodically and notifies anomalies when CPU utilization exceed threshold.";
             synopsis "RE CPU load average analyzer";
             /*
              * Monitors *all* three RE CPU load average CPU utilization KPIs
@@ -57,7 +57,7 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using formulae by user-defined function(UDF)
+             * Fields defined using formulae by user-defined function (UDF)
              */
             field cpu-15min {
                 formula {
@@ -142,8 +142,9 @@ iceberg {
                 description "Sets health based on increase in RE CPU 15 minutes load average utilization.";
                 /*
                  * Sets color to green when the 15min CPU load average
-                 * utilization($cpu-15min) is above 50%.
+                 * utilization ($cpu-15min) is above 50%.
                  */
+                frequency 60s;
                 term is-cpu-utilization-15min-normal {
                     when {
                         less-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-low-threshold";
@@ -178,7 +179,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Routing Engine$slot  15min CPU utilization($cpu-15min) exceeds high threshold($cpu-utilization-15min-high-threshold)";
+                            message "Routing Engine$slot  15min CPU utilization($cpu-15min) exceed high threshold ($cpu-utilization-15min-high-threshold)";
                         }
                     }
                 }
@@ -191,9 +192,10 @@ iceberg {
                 description "Sets health based on increase in RE CPU 1 minute load average utilization.";
                 /*
                  * Sets color to red and sends out an anomaly notification
-                 * when the 1min CPU load average utilization($cpu-1min)
-                 * is above 85% for period of 3 minutes.
+                 * when the 1min CPU load average utilization ($cpu-1min)
+                 * is above 85% for a period of 3 minutes.
                  */
+                frequency 60s;
                 term is-cpu-utilization-1min-abnormal {
                     when {
                         greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-high-threshold" {
@@ -204,14 +206,14 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Routing Engine$slot 1min CPU utilization($cpu-1min) exceeds high threshold(cpu-utilization-1min-high-threshold)";
+                            message "Routing Engine$slot 1min CPU utilization($cpu-1min) exceed high threshold(cpu-utilization-1min-high-threshold)";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the 1min CPU load average utilization($cpu-1min) 
-                 * is above 55% for period of 3 minutes.
+                 * is above 55% for a period of 3 minutes.
                  */
                 term is-cpu-utilization-1min-median {
                     when {
@@ -234,7 +236,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Routing Engine$slot 1min CPU utilization($cpu-1min) is normal.";
+                            message "Routing Engine$slot 1min CPU utilization($cpu-1min) is normal";
                         }
                     }
                 }
@@ -248,7 +250,8 @@ iceberg {
                 /*
                  * Sets color to green when the 5 min CPU load average
                  * utilization($cpu-5min) is below 55%.
-                 */ 
+                 */
+                frequency 60s;
                 term is-cpu-utilization-5min-normal {
                     when {
                         less-than "$cpu-5min" "$cpu-utilization-5min-low-threshold";
@@ -283,7 +286,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Routing Engine$slot 5min CPU utilization($cpu-5min) exceeds high threshold($cpu-utilization-5min-high-threshold)";
+                            message "Routing Engine$slot 5min CPU utilization($cpu-5min) exceed high threshold($cpu-utilization-5min-high-threshold)";
                         }
                     }
                 }

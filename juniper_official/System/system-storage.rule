@@ -4,25 +4,25 @@
  * Two inputs control detection
  * 
  *   1) storage_usage_high_threshold, is the threshold that causes the rule to
- *      report a anomaly.  By default it's 80% of total size. This rule will
- *      set a dashboard color to red when storage used exceeds
+ *      report an anomaly.  By default it's 80% of total size. This rule will
+ *      set a dashboard color to red when storage used exceed
  *      'storage_usage_high_threshold'.
  * 
  *   2) storage_usage_low_threshold, is the threshold that causes the rule to
- *      report a anomaly. By default it's 50%. This rule will set a dashboard
+ *      report an anomaly. By default it's 50%. This rule will set a dashboard
  *      color to green when storage used below 'storage_usage_low_threshold'.
  *      otherwise color is set to yellow as used % is between 50% and 80%.
  */
 iceberg {
     topic system.storage {
-        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies ";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies";
         synopsis "System statistics analyzer";
         rule check-storage {
-            description "Collects filesystem storage usage periodically and notifies anomalies when used space exceeds threshold";
+            description "Collects filesystem storage usage periodically and notifies anomalies when used space exceed threshold";
             synopsis "system storage usage analyzer";
             /*
              * Monitors the filesystem storage used% of system. Notifies via
-             * the dashboard colors when the storage used % exceeds by 
+             * the dashboard colors when the storage used % exceed by 
              * {{storage_usage_high_threshold}} to red. The color is set to 
              * green if we see used % below {{storage_usage_low_threshold}}.
              * Otherwise the color is set to yellow
@@ -68,7 +68,8 @@ iceberg {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the filesystem used % ($used-percent) is greater than 80%.
-                 */               
+                 */
+                frequency 60s;
                 term is-system-storage-abnormal {
                     when {
                         greater-than-or-equal-to "$used-percent" "$high-threshold";
@@ -114,12 +115,12 @@ iceberg {
             variable storage_usage_high_threshold {
                 value 80;
                 type int;
-                description "Filesystem storage high threshold: Exceeds used % threshold, before we report anomaly";
+                description "Filesystem storage high threshold: exceed used % threshold, before we report anomaly";
             }
             variable storage_usage_low_threshold {
                 value 50;
                 type int;
-                description "Filesystem storage low threshold: Exceeds used % threshold, before we report anomaly";
+                description "Filesystem storage low threshold: exceed used % threshold, before we report anomaly";
             }
         }
     }
