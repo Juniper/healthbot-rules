@@ -22,13 +22,13 @@
  *      "in-errors" or "out-errors" etc.
  *
  *   3) high_threshold, is the threshold that causes the rule to report
- *      a anomaly.  By default it's 800000000 octets . This rule will set a
+ *      an anomaly.  By default it's 800000000 octets . This rule will set a
  *      dashboard color to red when *filtered interfaces* the input traffic
  *      is above threshold for 60s. Use 8000000000 octets for 10G & 80000000000
  *      for 100G interface.
  *
  *   4) medium_threshold, is the threshold that causes the rule to report
- *      a anomaly.  By default it's 500000000 octets . This rule will set a
+ *      an anomaly.  By default it's 500000000 octets . This rule will set a
  *      dashboard color to yellow when *filtered interfaces* the input traffic
  *      is above threshold for 60s, otherwise color is set to green. Use
  *      5000000000 octets for 10G & 50000000000 for 100G interface. 
@@ -39,7 +39,7 @@ iceberg {
         synopsis "Selective interface KPIs monitoring";
         rule check-interface-health {
             synopsis "Interface KPI monitor based on description";
-            description "Using this rule any one of the interface statistics counter(in and out errors, packets, octets, flaps) will be monitored.";
+            description "Using this rule any one of the interface statistics counter (in and out errors, packets, octets, flaps) will be monitored.";
             /*
              * Monitors the interface input traffic. Notifies via the dashboard
              * colors when the traffic is above {{high_threshold}} for every
@@ -123,7 +123,7 @@ iceberg {
              */
             trigger interface-stats {
                 synopsis "interface statistics kpi";
-                description "Sets health based on interface statistics exceeds threshold.";
+                description "Sets health based on interface statistics exceed threshold.";
                 /*
                  * Skips evaluation for the interfaces where keyword unmatched 
                  * in interface description.
@@ -135,8 +135,9 @@ iceberg {
                 }
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the interface input traffic($stats-value) is above high
-                 * threshold($high-threshold) absolute for period of 60 seconds.
+                 * the interface input traffic ($stats-value) is above high
+                 * threshold ($high-threshold) for all points in a 60 seconds
+                 * period.
                  */
                 term is-interface-stats-crossing-high-threshold {
                     when {
@@ -153,10 +154,10 @@ iceberg {
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * the interface input traffic($stats-value) is above medium
-                 * threshold($medium-threshold) absolute for period of
-                 * 60 seconds.
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic ($stats-value) exceed
+                 * threshold ($medium-threshold) for all points in 60 seconds
+                 * period.
                  */
                 term is-interface-stats-crossing-medium-threshold {
                     when {

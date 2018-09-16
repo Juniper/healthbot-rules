@@ -12,16 +12,17 @@
  *      in-octets, Use proper counter name something like 'in-pkts' or
  *      "in-unicast-pkts" or "in-multicast-pkts" etc.
  *
- *   3) in_octets_high_threshold, is the threshold that causes the rule to report
- *      a anomaly.  By default it's 800000000 octets . This rule will set a
- *      dashboard color to red when *all* the input traffic is above threshold 
- *      for 60s. Use 8000000000 octets for 10G & 80000000000 for 100G interface.
+ *   3) in_octets_high_threshold, is the threshold that causes the rule to 
+ *      report an anomaly.  By default it's 800000000 octets. This rule will 
+ *      set a dashboard color to red when *all* the input traffic is above 
+ *      threshold for 60 seconds period. Use 8000000000 octets for 10G &
+ *      80000000000 for 100G interface.
  *
- *   4) in_octets_low_threshold, is the threshold that causes the rule to report
- *      a anomaly.  By default it's 500000000 octets . This rule will set a
- *      dashboard color to yellow when *all* the input traffic is above
- *      threshold for 60s, otherwise color is set to green. Use 5000000000
- *      octets for 10G & 50000000000 for 100G interface. 
+ *   4) in_octets_low_threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 60 seconds period, otherwise color is set to green.
+ *      Use 5000000000 octets for 10G & 50000000000 for 100G interface. 
  */
 iceberg {
     topic interface.statistics {
@@ -29,7 +30,7 @@ iceberg {
         synopsis "Interface statistics analyzer";
         rule check-in-traffic {
             synopsis "Interface input traffic analyzer.";
-            description "Collects input traffic(in-octets) periodically and notifies in case of traffic is above threshold";
+            description "Collects input traffic (in-octets) periodically and notifies in case of traffic is above threshold";
             /*
              * Monitors the interface input traffic. Notifies via the dashboard
              * colors when the traffic is above {{in_octets_high_threshold}}
@@ -93,12 +94,12 @@ iceberg {
              */
             trigger in-traffic {
                 synopsis "Interface input traffic kpi";
-                description "Sets health based on input traffic exceeds threshold.";
+                description "Sets health based on input traffic exceed threshold.";
                 /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the interface input traffic($in-octets-stats-value) is above
-                 * high threshold(in_octets_high_threshold) absolute for period
-                 * of 60 seconds.
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-octets-stats-value) is
+                 * abovehigh threshold (in_octets_high_threshold) for all  
+                 * points in a 60 seconds period.
                  */                
                 term is-interface-in-traffic-abnormal {
                     when {
@@ -115,10 +116,10 @@ iceberg {
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * the interface input traffic($in-octets-stats-value) is above
-                 * low threshold(in_octets_low_threshold) absolute for period
-                 * of 60 seconds.
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($in-octets-stats-value) is
+                 * above low threshold (in_octets_low_threshold) for all points 
+                 * in a 60 seconds period.
                  */   
                 term is-interface-in-traffic-median {
                     when {
