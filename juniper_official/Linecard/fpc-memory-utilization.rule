@@ -3,38 +3,38 @@
  * anomalies are found.
  * Five inputs control detection
  * 
- *   1) fpc_slot_no, is a regular expression that matches the linecard
+ *   1) "fpc_slot_no" is a regular expression that matches the linecard
  *      that you would like to monitor.  By default it's '0-20', which matches
  *      FPC 0 to 20 linecards. Use something like '0-3' to match only specific
  *      FPCs i.e. 0 to 3.
  * 
- *   2) fpc_buffer_high_threshold, is the threshold that causes the rule to
+ *   2) "fpc_buffer_high_threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of memory buffer utilization.
  *      This rule will set a dashboard color to red when FPC memory buffer
  *      utilization exceed high threshold 'fpc_buffer_high_threshold' for a
- *      period of 60 seconds.
+ *      period of 3 minutes.
  * 
- *   3) fpc_buffer_low_threshold, is the threshold that causes the rule to
+ *   3) "fpc_buffer_low_threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 50% of memory buffer utilization.
  *      This rule will set a dashboard color to yellow when FPC memory buffer
  *      utilization exceed low threshold 'fpc_buffer_low_threshold' for a
- *      period of 60 seconds.
+ *      period of 3 minutes.
   * 
- *   4) fpc_heap_high_threshold, is the threshold that causes the rule to
+ *   4) "fpc_heap_high_threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of memory heap utilization.
  *      This rule will set a dashboard color to red when FPC memory heap
  *      utilization exceed high threshold 'fpc_heap_high_threshold' for a
- *      period of 60 seconds.
+ *      period of 3 minutes.
  * 
- *   5) fpc_heap_low_threshold, is the threshold that causes the rule to
+ *   5) "fpc_heap_low_threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 50% of memory heap utilization.
  *      This rule will set a dashboard color to yellow when FPC memory heap
  *      utilization exceed low threshold 'fpc_heap_low_threshold' for a
- *      period of 60 seconds.
+ *      period of 3 minutes.
  */
 iceberg {
     topic linecard.fpc {
-        description "Monitors linecards memory, cpu, temperatures and cmerrors and notifies anomalies";
+        description "Monitors linecards memory & cpu and notifies anomalies";
         synopsis "Linecard health analyzer";
         rule check-fpc-memory {
             description "Collects system FPC memory statistics periodically and notifies anomalies when heap and buffer utilization exceed threshold.";
@@ -43,9 +43,9 @@ iceberg {
              * Monitors all the linecards memory utilization. Notifies via the
              * dashboard colors when the linecards memory utilization exceed by
              * {{fpc_buffer_high_threshold}} for every collected metric during a
-             * 60s time range (red). The color is set to yellow if we see
+             * 3m time range (red). The color is set to yellow if we see
              * linecard memory utilization exceed {{fpc_buffer_low_threshold}}
-             * for every collected metric during a 60s time range. Otherwise 
+             * for every collected metric during a 3m time range. Otherwise 
              * the color is set to green.
              * 
              * Use FPC name as key for rule.
@@ -59,7 +59,7 @@ iceberg {
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             /*
@@ -131,12 +131,12 @@ iceberg {
                  * Sets color to red and sends out an anomaly notification when
                  * the line card buffer memory utilization ($fpc-memory-buffer)
                  * exceed high threshold ($buffer-high-threshold) for all
-                 * points in a 60 seconds period.
+                 * points in a 3 minutes period.
                  */
                 term is-fpc-buffer-memory-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-memory-buffer" "$buffer-high-threshold" {
-                            time-range 60s;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -150,13 +150,13 @@ iceberg {
                  * Sets color to yellow and sends out an anomaly notification
                  * when the line card buffer memory utilization
                  * ($fpc-memory-buffer) exceed low threshold
-                 * ($buffer-low-threshold) for all points in a 60 seconds
+                 * ($buffer-low-threshold) for all points in a 3 minutes
                  * period.
                  */ 
                 term is-fpc-buffer-memory-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-memory-buffer" "$buffer-low-threshold" {
-                            time-range 60s;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -188,12 +188,12 @@ iceberg {
                  * Sets color to red and sends out an anomaly notification when
                  * the line card heap memory utilization ($fpc-memory-heap)
                  * exceed high threshold ($heap-high-threshold) for all
-                 * points in a 60 seconds period.
+                 * points in a 3 minutes period.
                  */
                 term is-fpc-heap-memory-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-memory-heap" "$heap-high-threshold" {
-                            time-range 60s;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -207,12 +207,12 @@ iceberg {
                  * Sets color to yellow and sends out an anomaly notification
                  * when the line card heap memory utilization($fpc-memory-heap)
                  * exceed low threshold ($heap-low-threshold) for all points
-                 * in a 60 seconds period.
+                 * in a 3 minutes period.
                  */
                 term is-fpc-heap-memory-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-memory-heap" "$heap-low-threshold" {
-                            time-range 60s;
+                            time-range 3m;
                         }
                     }
                     then {
