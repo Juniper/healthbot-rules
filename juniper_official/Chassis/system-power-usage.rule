@@ -1,18 +1,33 @@
 /*
- *  This rule checks system power usage and notify in case any of the health monitored fields crosses threshold
+ * Detects system power usage threshold breaches and notifies when
+ * anomalies are found.
+ *
+ * One input control detection
+ *
+ *   1) "system_power_usage_threshold" is the threshold that causes the rule to
+ *      report an anomaly. By default it's 80% of system power usage. This rule
+ *      will set a dashboard color to red when system power usage exceed 
+ *      threshold 'system_power_usage_threshold'. Otherwise color is set to
+ *      green.
  */
 iceberg {
     topic chassis.power {
-        description "This topic monitors PEM, zones and overall system power usage";
-        synopsis "Chassis power management kpis";
+        description "Monitors the chassis power usage of whole system, zone & PEMs and notifies anomalies";
+        synopsis "Chassis power manager";
         rule check-system-power-usage {
-            synopsis "Chassis system power manager";
-            description "This rule collects chassis system power usage statistics periodically and notifies in case of anomalies";
+            synopsis "Chassis system power check";
+            description "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold";
             /*
-             * This function required to get remaining power as router provides only used
+             * Monitors system power usage. Notifies via the dashboard colors
+             * when the system power usage exceed by 
+             * {{system_power_usage_threshold}} to red. Otherwise the color is
+             * set to green.
+             *
+             * Router provides power values in number hence function derives
+             * used percent.
              */
             function used-percentage {
-                description "calculates % of power usage out of total available";
+                description "Calculates % of power usage out of total available";
                 path used-percentage.py;
                 method used_percentage;
                 argument total {
@@ -23,18 +38,19 @@ iceberg {
                 }
             }
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor components {
-                synopsis "chassis components sensor definition";
+                synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field power-system-capacity {
                 sensor components {
@@ -42,7 +58,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "stores power system capacity";
+                description "System power capacity";
             }
             field power-system-maximum {
                 sensor components {
@@ -50,7 +66,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "stores max power available for system";
+                description "System max power available";
             }
             field power-system-remaining {
                 sensor components {
@@ -58,7 +74,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "stores remaining power for system";
+                description "System remaining power";
             }
             /*
              * Fields defined using formulae by user-defined function
@@ -72,7 +88,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "stores remaining power for system using udf";
+                description "Stores remaining power for system using udf";
             }
             /*
              * Fields defined with variables and constant values
@@ -82,15 +98,20 @@ iceberg {
                     value "{{system_power_usage_threshold}}";
                 }
                 type integer;
-                description "Set pem power usage threshold";
+                description "System power usage threshold";
             }
             /*
-             * When system remaining power goes below threshold then sends an anomaly notification and sets color to red otherwise
-             * sets color to green
+             * Anomaly logic
              */
             trigger system-power-usage {
-                synopsis "System power usage kpi";
-                description "Sets health based on system power usage threshold.";
+                synopsis "System power usage KPI";
+                description "Sets health based on increasing system power usage.";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the PEM power usage ($system-power-remaining-in-percentage)
+                 * exceed threshold ($system-power-usage-threshold).
+                 */
                 term is-power-usage-abnormal {
                     when {
                         less-than "$system-power-remaining-in-percentage" "$system-power-usage-threshold";
@@ -106,17 +127,18 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "System power usage is normal $system-power-remaining-in-percentage % of power remaining";
+                            message "System power usage is normal. $system-power-remaining-in-percentage% of power remaining";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable system_power_usage_threshold {
                 value 20;
-                description "Enter system remaining power threshold value";
+                description "S remaining power threshold";
                 type int;
             }
         }
