@@ -3,12 +3,12 @@
  * are found.
  * Two inputs control detection
  * 
- *   1) chassis_temperature_low_threshold, is the threshold that causes the
+ *   1) "chassis_temperature_low_threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degree Cecilius of 
  *      chassis temperature. This rule will set a dashboard color to green
  *      when temperature is below low threshold.
  * 
- *   2) chassis_temperature_high_threshold, is the threshold that causes the
+ *   2) "chassis_temperature_high_threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55 degree Cecilius of 
  *      chassis temperature. This rule will set a dashboard color to yellow
  *      when temperature is below high threshold. Otherwise color is set to
@@ -16,7 +16,7 @@
  */
 iceberg {
     topic chassis.temperatures {
-        description "Monitors the chassis environment w.r.t power, fan and temperatures of chassis, REs' & FPCs' and notifies anomalies";
+        description "Monitors the chassis temperatures of whole chassis, REs', FPCs' & RE CPUs and notifies anomalies";
         synopsis "Chassis environment analyzer";
         rule check-chassis-temperature {
             synopsis "Chassis temperature check";
@@ -26,14 +26,14 @@ iceberg {
              * colors when the when chassis temperature is below low threshold
              * {{chassis_temperature_low_threshold}} to green. The color is
              * set to yellow if we see temperature is below high threshold
-             * {{chassis_temperature_low_threshold}}. Otherwise the color is
+             * {{chassis_temperature_high_threshold}}. Otherwise the color is
              * set to red and notify anomaly.
              * 
              * Use chassis name as key for rule.
              */
              keys chassis-name;
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices
              */
             sensor components {
                 synopsis "Chassis components sensor definition";
@@ -98,7 +98,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Chassis ambient temperature ($temperature-ambient degree C) is normal";
+                            message "Chassis ambient temperature is normal";
                         }
                     }
                 }
@@ -114,7 +114,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Chassis ambient temperature($temperature-ambient degree C) is medium";
+                            message "Chassis ambient temperature($temperature-ambient degree C) exceed low threshold";
                         }
                     }
                 }
@@ -125,7 +125,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Chassis ambient temperature($temperature-ambient degree C) is abnormal";
+                            message "Chassis ambient temperature($temperature-ambient degree C) exceed high threshold";
                         }
                     }
                 }

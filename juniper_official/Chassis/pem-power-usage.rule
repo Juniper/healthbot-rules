@@ -1,22 +1,50 @@
 /*
- * This rule checks pem status and power usage and notify in case any of the health monitored fields crosses threshold
+ * Detects PEMs (Power Entry Modules) threshold breaches and notifies when
+ * anomalies are found.
+ *
+ * Detects PEMs state changes and notifies when anomalies are found.
+ *
+ * Detects PEMs temperature changes and notifies when anomalies are found.
+ *
+ * Detects PEMs DC input state changes and notifies when anomalies are found.
+ *
+ * One inputs control detection
+ *
+ *   1) "pem_power_usage_threshold" is the threshold that causes the rule to
+ *      report an anomaly. By default it's 80% of PEM power usage. This rule
+ *      will set a dashboard color to red when PEM power usage exceed high
+ *      threshold 'pem_power_usage_threshold'. Otherwise color is set to green.
  */
 iceberg {
     topic chassis.power {
-        description "This topic monitors PEM, zones and overall system power usage";
-        synopsis "Chassis power management kpis";
+        description "Monitors the chassis power usage of whole system, zone & PEMs and notifies anomalies";
+        synopsis "Chassis power manager";
         rule check-pem-power-usage {
+            synopsis "PEM power check";
+            description "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold";
             /*
-             * unique identifier of the rule is pem slot number
+             * Monitors PEM power usage. Notifies via the dashboard colors when
+             * the PEM power usage exceed by {{pem_power_usage_threshold}} to 
+             * red. Otherwise the color is set to green.
+             *
+             * Monitors PEMs state. Notifies via the dashboard colors when the
+             * PEM state is "ok" to green. Otherwise the color is set to green.
+             *
+             * Monitors PEMs temperature state. Notifies via the dashboard
+             * colors when the temperature state is "ok" to green. Otherwise
+             * the color is set to green.
+             *
+             * Monitors PEMs DC power input state. Notifies via the dashboard
+             * colors when the DC input state is "ok" to green. Otherwise the
+             * color is set to green.
              */
             keys pem-slot;
-            synopsis "Chassis PEM power manager";
-            description "This rule collects chassis PEM power usage statistics periodically and notifies in case of anomalies";
             /*
-             * This function required to get remaining power as router provides only used
+             * Router provides power values in number hence function derives
+             * used percent.
              */
              function used-percentage {
-                description "calculates % of power usage out of total available";
+                description "Calculates % of power usage out of total available";
                 path used-percentage.py;
                 method used_percentage;
                 argument total {
@@ -27,18 +55,19 @@ iceberg {
                 }
             }
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices
              */
             sensor components {
-                synopsis "chassis components sensor definition";
+                synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field fru-model-number {
                 sensor components {
@@ -46,7 +75,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
-                description "stores fru model number";
+                description "FRU model number";
             }
             field pem-slot {
                 sensor components {
@@ -54,7 +83,7 @@ iceberg {
                     path "/components/component/@name";
                 }
                 type string;
-                description "stores all available PEM slots";
+                description "PEM slot to monitor";
             }
             field pem-state {
                 sensor components {
@@ -62,7 +91,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
-                description "stores state of PEMs";
+                description "PEM current state";
             }
             field power-capacity-maximum {
                 sensor components {
@@ -70,7 +99,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "stores max power capacity for PEMs";
+                description "PEM maximum power capacity";
             }
             field power-dc-input {
                 sensor components {
@@ -78,7 +107,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
-                description "stores power input state of PEMs";
+                description "PEM DC input";
             }
             field power-dc-output {
                 sensor components {
@@ -86,7 +115,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "stores power being used by PEMs";
+                description "PEM DC output";
             }
             field temperature-status {
                 sensor components {
@@ -94,7 +123,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
-                description "stores temperature status of PEMs";
+                description "PEM temperature";
             }
             /*
              * Fields defined using formulae by user-defined function
@@ -108,7 +137,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "stores % of power usage by PEMs using udf";
+                description "Stores % of power usage by PEMs using udf";
             }
             /*
              * Fields defined with variables and constant values
@@ -118,14 +147,20 @@ iceberg {
                     value "{{pem_power_usage_threshold}}";
                 }
                 type integer;
-                description "Set pem power usage threshold";
+                description "PEM power usage threshold";
             }
             /*
-             * When power usage is beyond threshold then sends anomaly and sets color to red otherwise sets to green.
+             * PEM power usage anomaly detection logic.
              */
             trigger pem-power-usage {
-                synopsis "chassis PEM power usage kpi";
-                description "Sets health based on PEM power usage.";
+                synopsis "PEM power usage KPI";
+                description "Sets health based increase in PEM power usage.";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the PEM power usagge ($pem-power-usage) exceed threshold
+                 * ($pem-power-usage-threshold).
+                 */ 
                 term is-power-usage-crossing-threshold {
                     when {
                         greater-than "$pem-power-usage" "$pem-power-usage-threshold";
@@ -133,10 +168,13 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$pem-slot power usage($pem-power-usage) is crossing threshold";
+                            message "$pem-slot power usage($pem-power-usage) exceed threshold";
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */ 
                 term power-usage-normal {
                     then {
                         status {
@@ -147,11 +185,15 @@ iceberg {
                 }
             }
             /*
-             * When pem state is offline then sends anomaly and sets color to red otherwise sets to green.
+             * PEM state anomaly detection logic.
              */
             trigger pem-state {
-                synopsis "chassis PEM state kpi";
+                synopsis "PEM state check KPI";
                 description "Sets health based on PEM state.";
+                frequency 60s;
+                /*
+                 * Sets color to green when PEM state ($pem-state) is "online".
+                 */ 
                 term is-pem-online {
                     when {
                         matches-with "$pem-state" Online;
@@ -163,6 +205,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term pem-offline {
                     then {
                         status {
@@ -173,11 +218,16 @@ iceberg {
                 }
             }
             /*
-             * When pem temperatue is not ok then send anomaly and sets color to red otherwise sets to green.
+             * PEM temperature anomaly detection logic.
              */
             trigger pem-temperature-status {
-                synopsis "chassis PEM temperature kpi";
-                description "Sets health based on PEM temperature threshold.";
+                synopsis "PEM temperature KPI";
+                description "Sets health based on PEM temperature state.";
+                frequency 60s;
+                /*
+                 * Sets color to green when PEM temperature
+                 * ($temperature-status) is "ok".
+                 */
                 term is-temperature-status-ok {
                     when {
                         matches-with "$temperature-status" OK;
@@ -189,6 +239,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term temperature-status-not-ok {
                     then {
                         status {
@@ -199,11 +252,16 @@ iceberg {
                 }
             }
             /*
-             * When power dc input not ok then send anomaly and sets color to red otherwise sets to green.
+             * PEM power DC input anomaly detection logic.
              */
             trigger power-dc-input {
-                synopsis "chassis power DC input state kpi";
+                synopsis "PEM power DC input state KPI";
                 description "Sets health based on power DC input state.";
+                frequency 60s;
+                /*
+                 * Sets color to green when PEM DC input ($power-dc-input)
+                 * if "ok".
+                 */
                 term is-power-dc-input-ok {
                     when {
                         matches-with "$power-dc-input" OK;
@@ -215,6 +273,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term is-power-dc-input-not-ok {
                     then {
                         status {
@@ -225,11 +286,12 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable pem_power_usage_threshold {
-                value 888888880;
-                description "Enter PEM power usage threshold value";
+                value 80;
+                description "PEM power usage threshold value";
                 type int;
             }
         }

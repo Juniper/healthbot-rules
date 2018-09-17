@@ -3,17 +3,17 @@
  * anomalies are found.
  * Three inputs control detection
  *
- *   1) re_slot_no, is a regular expression that matches the routing engine
+ *   1) "re_slot_no" is a regular expression that matches the routing engine
  *      that you would like to monitor.  By default it's '0-1', which matches
  *      both the routing engines. Use something like '0' to match only
  *      routing engine 0.
  *
- *   2) re_temperature_low_threshold, is the threshold that causes the
+ *   2) "re_temperature_low_threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degree Cecilius of 
  *      RE temperature. This rule will set a dashboard color to green
  *      when temperature is below low threshold.
  * 
- *   3) re_temperature_high_threshold, is the threshold that causes the
+ *   3) "re_temperature_high_threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
  *      temperature. This rule will set a dashboard color to yellow when
  *      temperature is below high threshold. Otherwise color is set to
@@ -21,7 +21,7 @@
  */
 iceberg {
     topic chassis.temperatures {
-        description "Monitors the chassis environment w.r.t power, fan and temperatures of chassis, REs' & FPCs' and notifies anomalies";
+        description "Monitors the chassis temperatures of whole chassis, REs', FPCs' & RE CPUs and notifies anomalies";
         synopsis "Chassis environment analyzer";
         rule check-re-temperature {
             synopsis "Routing-engine temperature check";
@@ -45,7 +45,7 @@ iceberg {
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             /*
@@ -101,7 +101,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "$routing-engine temperature($re-temperature degree C) is lesser than low threshold($low-threshold degree C)";
+                            message "$routing-engine temperature($re-temperature degree C) is normal";
                         }
                     }
                 }
@@ -117,7 +117,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "$routing-engine temperature($re-temperature degree C) is in medium range(>=$low-threshold, <=$high-threshold degree C)";
+                            message "$routing-engine temperature($re-temperature degree C) exceed low threshold";
                         }
                     }
                 }
@@ -128,7 +128,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$routing-engine temperature($re-temperature degree C) is greater than high threshold($high-threshold degree C)";
+                            message "$routing-engine temperature($re-temperature degree C) exceed high threshold";
                         }
                     }
                 }
@@ -139,7 +139,7 @@ iceberg {
              */
             variable re_slot_no {
                 value 0-1;
-                description "Routing engine numbers to monitor, regular expression, e.g. '0'";
+                description "Routing engine slot numbers to monitor, regular expression, e.g. '0'";
                 type string;
             }
             variable re_temperature_high_threshold {
