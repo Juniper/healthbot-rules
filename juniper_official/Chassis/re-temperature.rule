@@ -1,117 +1,155 @@
 /*
- * This rule checks health of RE temperature and notify in case any of the health monitored fields crosses threshold
+ * Detects routing-engine temperature threshold breaches and notifies when
+ * anomalies are found.
+ * Three inputs control detection
+ *
+ *   1) re_slot_no, is a regular expression that matches the routing engine
+ *      that you would like to monitor.  By default it's '0-1', which matches
+ *      both the routing engines. Use something like '0' to match only
+ *      routing engine 0.
+ *
+ *   2) re_temperature_low_threshold, is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degree Cecilius of 
+ *      RE temperature. This rule will set a dashboard color to green
+ *      when temperature is below low threshold.
+ * 
+ *   3) re_temperature_high_threshold, is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
+ *      temperature. This rule will set a dashboard color to yellow when
+ *      temperature is below high threshold. Otherwise color is set to
+ *      red and notify anomaly.
  */
 iceberg {
     topic chassis.temperatures {
-        description "This topic is to monitor the chassis, fpc, re&re-cpu teparatures in degree C";
-        synopsis "Chassis RE temperature check";
+        description "Monitors the chassis environment w.r.t power, fan and temperatures of chassis, REs' & FPCs' and notifies anomalies";
+        synopsis "Chassis environment analyzer";
         rule check-re-temperature {
+            synopsis "Routing-engine temperature check";
+            description "Collects routing-engine (RE) temperature periodically and notifies anomaly when temperature exceed threshold";
             /*
-             * unique identifier of the rule is re name
+             * Monitors RE temperature. Notifies via the dashboard colors
+             * when the when temperature is below low threshold
+             * {{re_temperature_low_threshold}} to green. The color is set
+             * to yellow if we see temperature is below high threshold
+             * {{re_temperature_high_threshold}}. Otherwise the color is
+             * set to red and notify anomaly.
+             * 
+             * Use routing-engine slot number as key for rule.
              */
             keys routing-engine;
-            synopsis "RE temperature analyzer";
-            description "This rule collects RE temperature periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor components {
-                synopsis "chassis components sensor definition";
+                synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 60s;
+                    frequency 30s;
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field re-temperature {
                 sensor components {
                     where "/components/component/properties/property/@name == 'temperature'";
                     path /components/component/properties/property/state/value;
                 }
-                description "This field is to parse re temparature";
+                description "RE temperature";
             }
             field routing-engine {
                 sensor components {
-                    where "/components/component/@name =~ /^Routing Engine[{{RE_Slot_No}}]*$/";
+                    where "/components/component/@name =~ /^Routing Engine[{{re_slot_no}}]*$/";
                     path "/components/component/@name";
                 }
-                description "This field is for re identification";
+                description "RE name to monitor";
             }
             /*
              * Fields defined with variables and constant values
              */
-            field re-temperature-high-threshold {
+            field high-threshold {
                 constant {
-                    value "{{RE_Temperature_Higher_Threshold}}";
+                    value "{{re_temperature_high_threshold}}";
                 }
                 type integer;
-                description "This field is for re temparature maximum threshold value";
+                description "RE temperature high threshold";
             }
-            field re-temperature-low-threshold {
+            field low-threshold {
                 constant {
-                    value "{{RE_Temperature_Lower_Threshold}}";
+                    value "{{re_temperature_low_threshold}}";
                 }
                 type integer;
-                description "This field is for re temparature minimum threshold value";
+                description "RE temperature low threshold";
             }
             /*
-             * When any of the re temperature($re-temperature) crosses threshold then sends an anomaly notification and sets color to red.
-             * When temperatue is below threshold then sets color to green. When temperature is between low and high threshold then sends
-             * anomaly notification and sets color to yellow.
+             * Anomaly detection logic.
              */
             trigger re-temperature {
-                synopsis "RE temperature kpi";
-                description "Sets health based on RE temperature threshold.";
+                synopsis "RE temperature KPI";
+                description "Sets health based increase in RE temperature.";
+                frequency 60s;
+                /*
+                 * Sets color to green when RE temperature
+                 * re-temperature is below low threshold ($low-threshold).
+                 */ 
                 term is-re-temperature-normal {
                     when {
-                        less-than-or-equal-to "$re-temperature" "$re-temperature-low-threshold";
+                        less-than-or-equal-to "$re-temperature" "$low-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$routing-engine temperature($re-temperature degree C) is lesser than low threshold($re-temperature-low-threshold degree C)";
+                            message "$routing-engine temperature($re-temperature degree C) is lesser than low threshold($low-threshold degree C)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and notify anomaly when RE temperature 
+                 * ($re-temperature) is below high threshold
+                 * ($high-threshold).
+                 */  
                 term is-re-temperature-median {
                     when {
-                        less-than-or-equal-to "$re-temperature" "$re-temperature-high-threshold";
+                        less-than-or-equal-to "$re-temperature" "$high-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$routing-engine temperature($re-temperature degree C) is in medium range(>=$re-temperature-low-threshold, <=$re-temperature-high-threshold degree C)";
+                            message "$routing-engine temperature($re-temperature degree C) is in medium range(>=$low-threshold, <=$high-threshold degree C)";
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term re-temperature-abnormal {
                     then {
                         status {
                             color red;
-                            message "$routing-engine temperature($re-temperature degree C) is greater than high threshold($re-temperature-high-threshold degree C)";
+                            message "$routing-engine temperature($re-temperature degree C) is greater than high threshold($high-threshold degree C)";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
-            variable RE_Slot_No {
+            variable re_slot_no {
                 value 0-1;
-                description "Enter RE numbers using regular expression";
+                description "Routing engine numbers to monitor, regular expression, e.g. '0'";
                 type string;
             }
-            variable RE_Temperature_Higher_Threshold {
+            variable re_temperature_high_threshold {
                 value 55;
-                description "Enter RE temperature high threshold value";
+                description "RE temperature high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable RE_Temperature_Lower_Threshold {
+            variable re_temperature_low_threshold {
                 value 45;
-                description "Enter RE temperature low threshold value";
+                description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
         }

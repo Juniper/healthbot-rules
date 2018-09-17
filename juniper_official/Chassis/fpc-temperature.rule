@@ -1,38 +1,64 @@
 /*
- * This rule checks health of FPC temperature and notify in case any of the health monitored fields crosses threshold
+ * Detects routing-engine temperature threshold breaches and notifies when
+ * anomalies are found.
+ * Three inputs control detection
+ *
+ *   1) re_slot_no, is a regular expression that matches the routing engine
+ *      that you would like to monitor.  By default it's '0-1', which matches
+ *      both the routing engines. Use something like '0' to match only
+ *      routing engine 0.
+ *
+ *   2) fpc_temperature_low_threshold, is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degree Cecilius of 
+ *      FPC temperature. This rule will set a dashboard color to green
+ *      when temperature is below low threshold.
+ * 
+ *   3) fpc_temperature_high_threshold, is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degree Cecilius of FPC 
+ *      temperature. This rule will set a dashboard color to yellow when
+ *      temperature is below high threshold. Otherwise color is set to
+ *      red and notify anomaly.
  */
 iceberg {
     topic chassis.temperatures {
-        description "This topic is to monitor the chassis, fpc, re&re-cpu teparatures in degree C";
-        synopsis "fpc temperature c";
+        description "Monitors the chassis environment w.r.t power, fan and temperatures of chassis, REs' & FPCs' and notifies anomalies";
+        synopsis "Chassis environment analyzer";
         rule check-fpc-temperature {
+            synopsis "FPC temperature check";
+            description "Collects routing-engine (RE) temperature periodically and notifies anomaly when temperature exceed threshold";
             /*
-             * unique identifier of the rule is fpc slot number
+             * Monitors RE temperature. Notifies via the dashboard colors
+             * when the when temperature is below low threshold
+             * {{fpc_temperature_low_threshold}} to green. The color is set
+             * to yellow if we see temperature is below high threshold
+             * {{fpc_temperature_high_threshold}}. Otherwise the color is
+             * set to red and notify anomaly.
+             * 
+             * Use routing-engine slot number as key for rule.
              */
             keys fpc;
-            synopsis "Fpc temperature check";
-            description "This rule collects fpc current temperature periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor components {
-                synopsis "chassis components sensor definition";
+                synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
-                    frequency 20s;
+                    frequency 30s;
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field fpc {
                 sensor components {
-                    where "/components/component/@name =~ /^FPC[{{FPC_Slot_No}}]*$/";
+                    where "/components/component/@name =~ /^FPC[{{fpc_slot_no}}]*$/";
                     path "/components/component/@name";
                 }
                 type string;
-                description "This field is to parse all fpc names";
+                description "FPC name to monitor";
             }
             field fpc-temperature {
                 sensor components {
@@ -40,80 +66,91 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "This field shows fpc temparature to be monitored";
+                description "FPC temperature";
             }
             /*
              * Fields defined with variables and constant values
              */
-            field fpc-temperature-high-threshold {
+            field high-threshold {
                 constant {
-                    value "{{FPC_Temperature_Higher_Threshold}}";
+                    value "{{fpc_temperature_high_threshold}}";
                 }
                 type integer;
-                description "This field is for fpc temparature high threshold value";
+                description "FPC temperature high threshold";
             }
-            field fpc-temperature-low-threshold {
+            field low-threshold {
                 constant {
-                    value "{{FPC_Temperature_Lower_Threshold}}";
+                    value "{{fpc_temperature_low_threshold}}";
                 }
                 type integer;
-                description "This field is for fpc temparature low threshold value";
+                description "FPC temperature low threshold";
             }
             /*
-             * When any of the fpc temperature($fpc-temperature) crosses threshold then sends an anomaly notification and sets color to red.
-             * When temperatue is below threshold then sets color to green. When temperature is between low and high threshold then sends
-             * anomaly notification and sets color to yellow.
+             * Anomaly detection logic.
              */
             trigger fpc-temperature {
-                synopsis "Fpc temperature kpi";
-                description "Sets health based on fpc temperature threshold.";
-                term is-fpc-temperature-normal {
+                synopsis "FPC temperature KPI";
+                description "Sets health based increase in FPC temperature.";
+                frequency 60s;
+                /*
+                 * Sets color to green when FPC temperature
+                 * fpc-temperature is below low threshold ($low-threshold).
+                 */
+                 term is-fpc-temperature-normal {
                     when {
-                        less-than-or-equal-to "$fpc-temperature" "$fpc-temperature-low-threshold";
+                        less-than-or-equal-to "$fpc-temperature" "$low-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$fpc temperature($fpc-temperature degree C) is below low threshold($fpc-temperature-low-threshold degree C)";
+                            message "$fpc temperature($fpc-temperature degree C) is below low threshold($low-threshold degree C)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and notify anomaly when FPC temperature
+                 * ($fpc-temperature) is below high threshold
+                 * ($high-threshold).
+                 */ 
                 term is-fpc-temperature-median {
                     when {
-                        less-than-or-equal-to "$fpc-temperature" "$fpc-temperature-high-threshold";
+                        less-than-or-equal-to "$fpc-temperature" "$high-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$fpc temperature($fpc-temperature degree C) is in medium range(>=$fpc-temperature-low-threshold, <=$fpc-temperature-high-threshold)";
+                            message "$fpc temperature($fpc-temperature degree C) is in medium range(>=$low-threshold, <=$high-threshold)";
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term fpc-temperature-abnormal {
                     then {
                         status {
                             color red;
-                            message "$fpc temperature($fpc-temperature degree C) is above high threshold($fpc-temperature-high-threshold degree C)";
+                            message "$fpc temperature($fpc-temperature degree C) is above high threshold($high-threshold degree C)";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
-            variable FPC_Slot_No {
+            variable fpc_slot_no {
                 value 0-9;
-                description "Enter fpc slot numbers to be monitored with separator using regular expression";
-                type string;
+                description "FPC numbers to monitor, regular expression, e.g. '0'";type string;
             }
-            variable FPC_Temperature_Higher_Threshold {
+            variable fpc_temperature_high_threshold {
                 value 55;
-                description "Enter processes fpc temparature maximum threshold value";
+                description "FPC temperature high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable FPC_Temperature_Lower_Threshold {
+            variable fpc_temperature_low_threshold {
                 value 45;
-                description "Enter processes fpc temparature minimum threshold value";
+                description "FPC temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
         }
