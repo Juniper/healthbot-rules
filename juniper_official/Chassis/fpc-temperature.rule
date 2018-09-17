@@ -1,12 +1,11 @@
 /*
- * Detects routing-engine temperature threshold breaches and notifies when
+ * Detects FPC temperature threshold breaches and notifies when
  * anomalies are found.
  * Three inputs control detection
  *
- *   1) re_slot_no, is a regular expression that matches the routing engine
- *      that you would like to monitor.  By default it's '0-1', which matches
- *      both the routing engines. Use something like '0' to match only
- *      routing engine 0.
+ *   1) fpc_slot_no, is a regular expression that matches the FPCs that you
+ *      would like to monitor.  By default it's '0-20', which matches 0 to 20
+ *      FPC slots. Use something like '0-3' to match only FPC slots 0 to 3.
  *
  *   2) fpc_temperature_low_threshold, is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degree Cecilius of 
@@ -25,7 +24,7 @@ iceberg {
         synopsis "Chassis environment analyzer";
         rule check-fpc-temperature {
             synopsis "FPC temperature check";
-            description "Collects routing-engine (RE) temperature periodically and notifies anomaly when temperature exceed threshold";
+            description "Collects FPC temperature periodically and notifies anomaly when temperature exceed threshold";
             /*
              * Monitors RE temperature. Notifies via the dashboard colors
              * when the when temperature is below low threshold
@@ -140,7 +139,7 @@ iceberg {
              * while deploying playbook instance.
              */
             variable fpc_slot_no {
-                value 0-9;
+                value 0-20;
                 description "FPC numbers to monitor, regular expression, e.g. '0'";type string;
             }
             variable fpc_temperature_high_threshold {
