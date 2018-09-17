@@ -1,17 +1,21 @@
 /*
- * This rule checks health of fan and notify in case any of the health monitored fields crosses threshold
+ * Monitors chassis fan health status and notifies when anomalies are found.
  */
 iceberg {
     topic chassis.fan {
-        description "This topic is to check health of chassis fan";
-        synopsis "chassis fan heath check kpi";
+        description "Monitors the chassis environment w.r.t power, fan and temperatures of chassis, REs' & FPCs and notifies anomalies";
+        synopsis "Chassis environment analyzer";
         rule check-fan-health {
-            /*
-             * unique identifier of the rule is fan name
-             */
-            keys fan-name;
             synopsis "Chassis fan health analyzer";
-            description "This rule collects chassis fan statistics periodically and notifies in case of anomalies";
+            description "Collects chassis fan statistics periodically and notifies anomalies when fan status is NOK";
+            /*
+             * Monitors all the chassis fans. Notifies via the dashboard
+             * colors when the fan status is OK to green. Otherwise the
+             * color is set to red and notify anomaly.
+             * 
+             * Use fan name as key for rule.
+             */
+             keys fan-name;
             /*
              * sensor configuration to get data from network devices
              */
@@ -21,15 +25,19 @@ iceberg {
                 iAgent {
                     file chassis-fan.yml;
                     table ChassisFanTable;
-                    frequency 10s;
+                    frequency 30s;
                 }
             }
             /*
-             * When fan status(fan-status) is not ok then sends an anomaly notification and sets color to red otherwise sets color to green.
+             * Anomaly detection logic.
              */
             trigger fan-status {
-                synopsis "chassis fan health kpi";
-                description "Sets health based on chassis fan status and speed.";
+                synopsis "Chassis fan health KPI";
+                description "Sets health based on chassis fan status and speed";
+                frequency 60s; 
+                /*
+                 * Sets color to green when fan status is OK.
+                 */
                 term is-fan-health-good {
                     when {
                         matches-with "$fan-status" OK;
@@ -41,6 +49,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term is-fan-health-bad {
                     then {
                         status {
