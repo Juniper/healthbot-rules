@@ -1,14 +1,14 @@
 /*
- * Detects system power usage threshold breaches and notifies when
- * anomalies are found.
+ * Detects system power usage threshold breaches and notifies when  anomalies
+ * are found.
  *
  * One input control detection
  *
- *   1) "system_power_usage_threshold" is the threshold that causes the rule to
- *      report an anomaly. By default it's 80% of system power usage. This rule
- *      will set a dashboard color to red when system power usage exceed 
- *      threshold 'system_power_usage_threshold'. Otherwise color is set to
- *      green.
+ *   1) "system_power_remaining_threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 20% of system remaining
+ *      power. This rule will set a dashboard color to red when system 
+ *      remaining power is below threshold 'system_power_remaining_threshold'.
+ *      Otherwise color is set to green.
  */
 iceberg {
     topic chassis.power {
@@ -19,9 +19,9 @@ iceberg {
             description "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold";
             /*
              * Monitors system power usage. Notifies via the dashboard colors
-             * when the system power usage exceed by 
-             * {{system_power_usage_threshold}} to red. Otherwise the color is
-             * set to green.
+             * when the system remaining power is below threshold 
+             * {{system_power_remaining_threshold}} to red. Otherwise the color
+             * is set to green.
              *
              * Router provides power values in number hence function derives
              * used percent.
@@ -95,7 +95,7 @@ iceberg {
              */
             field system-power-usage-threshold {
                 constant {
-                    value "{{system_power_usage_threshold}}";
+                    value "{{system_power_remaining_threshold}}";
                 }
                 type integer;
                 description "System power usage threshold";
@@ -109,8 +109,8 @@ iceberg {
                 frequency 60s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the PEM power usage ($system-power-remaining-in-percentage)
-                 * exceed threshold ($system-power-usage-threshold).
+                 * the system power ($system-power-remaining-in-percentage)
+                 * available is below threshold ($system-power-usage-threshold).
                  */
                 term is-power-usage-abnormal {
                     when {
@@ -136,9 +136,9 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable system_power_usage_threshold {
+            variable system_power_remaining_threshold {
                 value 20;
-                description "S remaining power threshold";
+                description "System remaining power threshold";
                 type int;
             }
         }
