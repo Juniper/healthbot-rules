@@ -1,6 +1,6 @@
 /*
- * Detects PEMs (Power Entry Modules) threshold breaches and notifies when
- * anomalies are found.
+ * Detects PEMs (Power Entry Modules) power usage threshold breaches and
+ * notifies when anomalies are found.
  *
  * Detects PEMs state changes and notifies when anomalies are found.
  *
@@ -8,11 +8,11 @@
  *
  * Detects PEMs DC input state changes and notifies when anomalies are found.
  *
- * One inputs control detection
+ * One input control detection
  *
  *   1) "pem_power_usage_threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of PEM power usage. This rule
- *      will set a dashboard color to red when PEM power usage exceed high
+ *      will set a dashboard color to red when PEM power usage exceed 
  *      threshold 'pem_power_usage_threshold'. Otherwise color is set to green.
  */
 iceberg {
@@ -28,15 +28,17 @@ iceberg {
              * red. Otherwise the color is set to green.
              *
              * Monitors PEMs state. Notifies via the dashboard colors when the
-             * PEM state is "ok" to green. Otherwise the color is set to green.
+             * PEM state is "OK" to green. Otherwise the color is set to green.
              *
              * Monitors PEMs temperature state. Notifies via the dashboard
-             * colors when the temperature state is "ok" to green. Otherwise
+             * colors when the temperature state is "OK" to green. Otherwise
              * the color is set to green.
              *
              * Monitors PEMs DC power input state. Notifies via the dashboard
-             * colors when the DC input state is "ok" to green. Otherwise the
+             * colors when the DC input state is "OK" to green. Otherwise the
              * color is set to green.
+             *
+             * Use PEM slot as key for rule.
              */
             keys pem-slot;
             /*
@@ -55,7 +57,7 @@ iceberg {
                 }
             }
             /*
-             * Sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor components {
                 synopsis "Chassis components sensor definition";
@@ -137,7 +139,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "Stores % of power usage by PEMs using udf";
+                description "Stores % of power usage by PEMs using UDF";
             }
             /*
              * Fields defined with variables and constant values
@@ -154,11 +156,11 @@ iceberg {
              */
             trigger pem-power-usage {
                 synopsis "PEM power usage KPI";
-                description "Sets health based increase in PEM power usage.";
+                description "Sets health based increase in PEM power usage";
                 frequency 60s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the PEM power usagge ($pem-power-usage) exceed threshold
+                 * the PEM power usage ($pem-power-usage) exceed threshold
                  * ($pem-power-usage-threshold).
                  */ 
                 term is-power-usage-crossing-threshold {
@@ -189,7 +191,7 @@ iceberg {
              */
             trigger pem-state {
                 synopsis "PEM state check KPI";
-                description "Sets health based on PEM state.";
+                description "Sets health based on PEM state";
                 frequency 60s;
                 /*
                  * Sets color to green when PEM state ($pem-state) is "online".
@@ -222,11 +224,11 @@ iceberg {
              */
             trigger pem-temperature-status {
                 synopsis "PEM temperature KPI";
-                description "Sets health based on PEM temperature state.";
+                description "Sets health based on PEM temperature state";
                 frequency 60s;
                 /*
                  * Sets color to green when PEM temperature
-                 * ($temperature-status) is "ok".
+                 * ($temperature-status) is "OK".
                  */
                 term is-temperature-status-ok {
                     when {
@@ -256,11 +258,11 @@ iceberg {
              */
             trigger power-dc-input {
                 synopsis "PEM power DC input state KPI";
-                description "Sets health based on power DC input state.";
+                description "Sets health based on power DC input state";
                 frequency 60s;
                 /*
                  * Sets color to green when PEM DC input ($power-dc-input)
-                 * if "ok".
+                 * if "OK".
                  */
                 term is-power-dc-input-ok {
                     when {
@@ -291,7 +293,7 @@ iceberg {
              */
             variable pem_power_usage_threshold {
                 value 80;
-                description "PEM power usage threshold value";
+                description "PEM power usage threshold";
                 type int;
             }
         }
