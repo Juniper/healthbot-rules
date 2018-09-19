@@ -1,10 +1,21 @@
 /*
- * This playbook checks health of bgp sessions and notify in case any of the health monitored field crosses threshold
+ * Playbook contains multiple rules which checks the statistics of BGP neighbor
+ * sessions and notifies when anomalies are found.
+ *
+ * 1) Rule "check-bgp-session-state" detects the BGP neighbor session state
+ *    changes and notify anomalies when session state is down.
+ * 2) Rule "check-bgp-neighbor-flaps" detects the BGP neighbor session flaps
+ *    and notify anomalies when session state is down.
+ * 3) Rule "check-bgp-received-routes" detects the received route count 
+ *    threshold breaches and notify anomalies.
+ * 4) Rule "check-bgp-received-routes-dynamic-threshold" sets the dynamic
+ *    thresholds based on learned data using MI algorithms and detects
+ *    threshold breaches and notify anomalies.
  */
 iceberg {
     playbook bgp-session-stats-playbook {
-        rules [ protocol.bgp/check-bgp-session-state protocol.bgp/check-bgp-neighbor-flaps protocol.bgp/check-bgp-received-routes protocol.bgp/check-bgp-received-routes-dynamic-threshold protocol.bgp/check-bgp-route-flap-damping];
-        description "Bgp session stats playbook checks each table's and protocol's route count and notifies in case route count is above threshold";
-        synopsis "Route table and protocol routes key performance indicators";
+        rules [ protocol.bgp/check-bgp-session-state protocol.bgp/check-bgp-neighbor-flaps protocol.bgp/check-bgp-received-routes protocol.bgp/check-bgp-received-routes-dynamic-threshold];
+        description "Playbook checks the BGP neighbor sessions health and notify anomaly when statistics are unusual";
+        synopsis "BGP neighbor sessions key performance indicators";
     }
 }
