@@ -1,72 +1,89 @@
 /*
- * This rule detects all types of cm errors or alarms notify in case any of the health monitored fields crosses threshold
+ * Detects CM (chassis manager) errors on linecards and notifies when anomalies
+ * are found.
+ * One input control detection
+ * 
+ *   1) "cm_error_threshold" is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when any of the CM error count increases are greater than
+ *      'cm_error_threshold' for 3m period. If it sees any CM error count
+ *      increase for a period of less than 3m, it'll turn the color to yellow,
+ *      otherwise color is set to green.
  */
 iceberg {
     topic linecard.cm-events {
-        description "This topic to detect cm errors and alarms";
-        synopsis "cm-error finder";
+        description "Monitors linecards and detect CM errors and alarms";
+        synopsis "CM error finder";
         rule check-cm-events {
+            synopsis "CM error analyzer";
+            description "Collects CM errors and count periodically and notifies when error count increases";
             /*
-             * unique identifier of the rule is cm error id
+             * Monitors all CM error types and its error count on a linecard.
+             * Notifies via the dashboard colors when the error count increase
+             * by {{cm_error_threshold}} for every collected metric during a
+             * 3m time range (red). The color is set to yellow if we see any
+             * error count increase by {{cm_error_threshold}}. Otherwise the
+             * color is set to green.
+             *
+             * Use CM error ID as key for rule.
              */
             keys cm-error-id;
-            synopsis "cm error analyzer";
-            description "This rule receives cm events periodically and notifies in case of anomalies";
             /*
              * sensor configuration to receive data from network devices
              */
             sensor cm-events-sensor {
-                synopsis "cm error sensor definition";
-                description "/junos/system/cmerror/counters/ native gpb sensor to receive telemetry data from network device";
+                synopsis "CM error sensor definition";
+                description "/junos/system/cmerror/counters/ native GPB sensor to receive telemetry data from network device";
                 native-gpb {
                     sensor-name jnpr_cmerror_data_ext;
                     port 22000;
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field cm-error-id {
                 sensor cm-events-sensor {
                     path error_item.identifier;
                 }
                 type string;
-                description "This field is for error id";
+                description "CM error ID to monitor";
             }
             field fru-slot {
                 sensor cm-events-sensor {
                     path fru_slot;
                 }
                 type integer;
-                description "This field is for fru slot no";
+                description "FRU slot number";
             }
             field cm-error-module-id {
                 sensor cm-events-sensor {
                     path error_item.module_id;
                 }
                 type integer;
-                description "This field is for error module id";
+                description "CM error module ID";
             }
             field cm-error-component-id {
                 sensor cm-events-sensor {
                     path error_item.component_id;
                 }
                 type integer;
-                description "This field is for error component id";
+                description "CM error component ID";
             }
             field cm-error-description {
                 sensor cm-events-sensor {
                     path error_item.description;
                 }
                 type string;
-                description "This field is for error description";
+                description "CM error detailed description";
             }
             field cm-error-occur-count {
                 sensor cm-events-sensor {
                     path error_item.occur_count;
                 }
                 type integer;
-                description "This field is for total cm error count";
+                description "CM error occur count";
             }
             /*
              * Fields defined with variables and constant values
@@ -76,57 +93,70 @@ iceberg {
                     value "{{cm_error_threshold}}";
                 }
                 type integer;
-                description "This field is for cm-errors minimum rate of increase threshold value";
+                description "CM error count increase threshold";
             }
             /*
-             * When cm errors consistently increasing for the period of 60 seconds then sends an anomaly notification and set color to red.
-             * When cm error count increased by one then send an anomaly notification and set color to yelllow otherwise set to green.
+             * Anomaly detection logic.
              */
             trigger cm-errors {
-                synopsis "cm-error kpi";
-                description "Sets health based on cm-error count increase";
+                synopsis "CM error KPI";
+                description "Sets health based on the change in CM error count";
+                frequency 3m;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the CM error ($cm-error-occur-count) increases for all
+                 * points in a 3 minutes period.
+                 */
                 term is-cm-error-count-consistently-increasing {
                     when {
-                        min-rate-of-increase "$cm-error-occur-count" {
-                            rate "$cm-error-threshold";
-                            time-range 60s;
+                        increasing-at-least-by-value "$cm-error-occur-count" {
+                            value "$cm-error-threshold";
+                            time-range 3m;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "cm-error count consistently increasing in fru:$fru-slot module:$cm-error-module-id component:$cm-error-component-id. $cm-error-description error count is:$cm-error-occur-count and crossed threshold";
+                            message "CM errors are increasing continuously on fru:$fru-slot module:$cm-error-module-id component:$cm-error-component-id. $cm-error-description error count is:$cm-error-occur-count";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the increase is at least once.
+                 */
                 term is-cm-error-count-increasing {
                     when {
-                        min-rate-of-increase "$cm-error-occur-count" {
-                            rate "$cm-error-threshold";
+                        increasing-at-least-by-value "$cm-error-occur-count" {
+                            value "$cm-error-threshold";
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "cm-errors increasing in fru:$fru-slot module:$cm-error-module-id component:$cm-error-component-id. $cm-error-description error count is:$cm-error-occur-count and crossed threshold";
+                            message "CM errors are intermittent on fru:$fru-slot module:$cm-error-module-id component:$cm-error-component-id. $cm-error-description error count is:$cm-error-occur-count";
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */
                 term is-cm-error-count-fine {
                     then {
                         status {
                             color green;
-                            message "$cm-error-description count not increased";
+                            message "$cm-error-description count not increasing";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable cm_error_threshold {
                 value 1;
-                description "Enter minimum rate of incresae of cm-errors threshold value";
+                description "CM error threshold: Number of errors increase between metrics, before we report anomaly";
                 type int;
             }
         }
