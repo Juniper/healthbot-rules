@@ -1,19 +1,46 @@
 /*
- *   This rule checks health of all processes(daemons) cpu utilization and notify in case any of the health monitored field crosses threshold
+ * Detects Junos processes (daemons) CPU utilization threshold breaches and
+ * notifies when anomalies are found.
+ * Three inputs control detection
+ * 
+ *   1) process_name, is a regular expression that matches the daemons that you
+ *      would like to monitor. By default it's '.*', which matches all daemons.
+ *      Use something like 'rpd|dfwd|dcd' to match only rotuing, firewall and
+ *      interface daemons.
+ * 
+ *   2) process_cpu_high_threshold, is the threshold that causes the rule to 
+ *      report an anomaly. By default it's 80% of daemon CPU utilization. This
+ *      rule will set a dashboard color to red when daemon CPU utilization
+ *      exceed high threshold 'process_cpu_high_threshold' for period of
+ *      3 minutes.
+ * 
+ *   3) process_cpu_low_threshold, is the threshold that causes the rule to 
+ *      report an anomaly. By default it's 50% of daemon CPU utilization. This
+ *      rule will set a dashboard color to yellow when daemon CPU utilization
+ *      exceed low threshold 'process_cpu_low_threshold' for period of
+ *      3 minutes. Otherwise color is set to green.
  */
 iceberg {
     topic system.processes {
-        description "This topic is to monitor and notify cpu, memory utilization of junos system processes";
-        synopsis "system processes(daemons) cpu&memory analyzer";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes & queues and notifies anomalies";
+        synopsis "System statistics analyzer";
         rule check-process-cpu {
-            description "This rule collects system process's cpu utilization periodically and notifies in case of anomalies";
-            synopsis "system processes cpu analyzer";
+            description "Collects system process's cpu utilization periodically and notifies anomalies when daemon CPU usage exceed threshold";
+            synopsis "System processes cpu analyzer";
             /*
-             * unique identifier of the rule is junos daemon
+             * Monitors *all* the daemons CPU utilization. Notifies via the
+             * dashboard colors when the daemon CPU utilization exceed by
+             * {{process_cpu_high_threshold}} for every collected metric during
+             * a 3 minute time range (red). The color is set to yellow if we
+             * see daemon CPU utilization exceed {{process_cpu_low_threshold}}
+             * for every collected metric during a 3 min time range. Otherwise 
+             * the color is set to green.
+             * 
+             * Use daemon name as key for rule.
              */
             keys daemon;
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor SystemProcExtTable {
                 synopsis "System processes CPU iAgent sensor definition";
@@ -25,57 +52,65 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field cpu-util-percent {
                 sensor SystemProcExtTable {
                     path wcpu;
                 }
-                description "This field shows cpu utilization for corresponding processes";
+                description "Daemon CPU utilization";
             }
             field daemon {
                 sensor SystemProcExtTable {
                     path cmd;
                 }
-                description "This field is to parse all junos processes names";
+                description "Daemon to be monitored";
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined with variables and constant values.
              */
             field max-threshold {
                 constant {
-                    value "{{process_cpu_max_threshold}}";
+                    value "{{process_cpu_high_threshold}}";
                 }
                 type integer;
-                description "This field is for processes cpu maximum threshold value";
+                description "Daemon cpu high threshold";
             }
             field min-threshold {
                 constant {
-                    value "{{process_cpu_min_threshold}}";
+                    value "{{process_cpu_low_threshold}}";
                 }
                 type integer;
-                description "This field is for processes cpu minimum threshold value";
+                description "Daemon cpu low threshold";
             }
             field process-name {
                 constant {
                     value "{{process_name}}";
                 }
                 type string;
-                description "This field shows processes to be monitored";
+                description "Selected daemon to be monitored";
             }
             /*
-             * Daemon's CPU health set based on high and low thresholds i.e. When daemon's cpu utilization($cpu-util-percent) value
-             * is above high threshold then color is set to red and sends message. Sets color to green when daemon's cpu utilization
-             * is below threshold and to yellow when value between low and high threshold.
+             * Anomaly detection logic.
              */
-            trigger processe-cpu-utilization {
-                synopsis "system prcoesses cpu utilization kpi";
-                description "Sets health based on system processes cpu utilization."; 
+            trigger processes-cpu-utilization {
+                synopsis "System prcoesses cpu utilization kpi";
+                description "Sets health based on system processes cpu utilization";
+                /*
+                 * Skips evaluation for unmonitored daemons
+                 */
                 term is-processes-not-found {
                     when {
                         does-not-match-with "$daemon" "$process-name";
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when any of the daemon CPU utilization ($re-cpu-utilization)
+                 * exceed high threshold ($max-threshold) for all points in a
+                 * 3 minute period.
+                 */
                 term is-cpu-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$cpu-util-percent" "$max-threshold" {
@@ -89,6 +124,12 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when any of the daemon CPU utilization ($re-cpu-utilization)
+                 * exceed low threshold ($min-threshold) ffor all points in a
+                 * 3 minute period.
+                 */  
                 term is-cpu-utilization-median {
                     when {
                         greater-than-or-equal-to "$cpu-util-percent" "$min-threshold" {
@@ -98,27 +139,39 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "$daemon cpu utilization:($cpu-util-percent), crossed medium threshold($min-threshold)";
+                            message "$daemon cpu utilization:($cpu-util-percent), is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 
+                term is-cpu-utilization-normal  {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon cpu utilization:($cpu-util-percent), is normal";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance"
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
-            variable process_cpu_max_threshold {
+            variable process_cpu_high_threshold {
                 value 80;
-                description "Enter processes cpu maximum threshold value";
+                description "Daemon cpu high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable process_cpu_min_threshold {
+            variable process_cpu_low_threshold {
                 value 50;
-                description "Enter processes cpu minimum threshold value";
+                description "Daemon cpu low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
             variable process_name {
                 value .*;
-                description "Enter processes to be monitored using regular expression with seperator option";
+                description "Demon name to monitor, regular regular expression, eg 'rpd|dfwd|dcd'";
                 type string;
             }
         }

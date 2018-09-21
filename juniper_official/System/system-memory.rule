@@ -1,22 +1,49 @@
 /*
- *  This rule checks system memory usage and notify in case any of the health monitored field crosses threshold
+ * Detects RE memory buffer utilization threshold breaches and notifies when
+ * anomalies are found.
+ * Three inputs control detection
+ * 
+ *   1) re_slot_No, is a regular expression that matches the routing engine
+ *      that you would like to monitor.  By default it's '0-1', which matches
+ *      both the routing engines. Use something like '0' to match only
+ *      routing engine 0.
+ * 
+ *   2) memory_buffer_re_high_threshold, is the threshold that causes the rule
+ *      to report an anomaly. By default it's 75% of memory utilization. 
+ *      This rule will set a dashboard color to red when RE memory buffer
+ *      utilization exceed high threshold'memory_buffer_re_high_threshold'
+ *      for a period of 5 minutes.
+ * 
+ *   3)  memory_buffer_re_low_threshold, is the threshold that causes the rule
+ *      to report an anomaly. By default it's 50% of memory utilization. 
+ *      This rule will set a dashboard color to red when RE memory buffer
+ *      utilization exceed high threshold'memory_buffer_re_low_threshold'
+ *      for a period of 5 minutes. Otherwise color is set to green.
  */
 iceberg {
     topic system.memory {
-        description "This topic is to monitor and notify  RE system memory";
-        synopsis "RE system memory statistics analyzer";
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies";
+        synopsis "System statistics analyzer";
         rule check-system-memory {
-            description "This rule collects REs system cpu statistics periodically and notifies in case of anomalies";
+            description "Collects REs' system memory statistics periodically and notifies anomaly when memory usage exceed threshold";
             synopsis "RE system memory statistics analyzer";
             /*
-             * unique identifier of the rule is routing-engine
+             * Monitors *all* the REs' memory usage. Notifies via the dashboard
+             * colors when the RE memory buffer utilization exceed by
+             * {{memory_buffer_re_high_threshold}} for every collected metric
+             * during a 5m time range (red). The color is set to yellow if we
+             * see memory usage exceed {{memory_buffer_re_low_threshold} for
+             * every collected metric during a 5m time range. Otherwise the
+             * color is set to green.
+             * 
+             * Use routing engine name as key for rule.
              */
             keys routing-engine;
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor components {
-                synopsis "system components open-config sensor definition";
+                synopsis "System components open-config sensor definition";
                 description "RE system open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
@@ -24,7 +51,8 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field re-memory-buffer {
                 sensor components {
@@ -32,7 +60,7 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "This field is for RE system memory buffer";
+                description "RE system memory buffer value";
             }
             field routing-engine {
                 sensor components {
@@ -40,47 +68,63 @@ iceberg {
                     path "/components/component/@name";
                 }
                 type string;
-                description "This field is for routing-engine";
+                description "Routing engine to be monitored";
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined with variables and constant values.
              */
             field re-memory-buffer-high-threshold {
                 constant {
                     value "{{memory_buffer_re_high_threshold}}";
                 }
                 type integer;
-                description "This field is for RE system memory buffer high threshold";
+                description "RE system memory buffer high threshold";
             }
             field re-memory-buffer-low-threshold {
                 constant {
                     value "{{memory_buffer_re_low_threshold}}";
                 }
                 type integer;
-                description "This field is for RE system memory buffer low threshold";
+                description "RE system memory buffer low threshold";
             }
             /*
-             * Memory health set based on high and low thresholds i.e. When RE memory utilization($re-memory-buffer-utilization) value
-             * is above high threshold then color is set to red and sends message. Sets color to green when memory utilization
-             * is below threshold and to yellow when value between low and high threshold.
+             * Anomaly detection logic.
              */
             trigger re-memory-buffer-utilization {
                 synopsis "RE system memory buffer utilization kpi";
-                description "Sets health based on system memory buffer utilization state.";
-                term is-re-memory-buffer-utilization-normal {
+                description "Sets health based on increase in system memory buffer utilization";
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the system memory usage ($re-memory-buffer) exceed high
+                 * threshold ($re-memory-buffer-high-threshold) for all
+                 * points in a 5 minutes period.
+                 */
+                term is-re-memory-buffer-utilization-abnormal {
                     when {
-                        less-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold";
+                        greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold"{
+                            time-range 5m;
+                            all;
+                        }
                     }
                     then {
                         status {
-                            color green;
-                            message "$routing-engine memory buffer utilization($re-memory-buffer) is lesser than low threshold($re-memory-buffer-low-threshold)";
+                            color red;
+                            message "$routing-engine memory buffer utilization($re-memory-buffer) exceed high threshold($re-memory-buffer-high-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the memory usage ($re-memory-buffer) exceed low
+                 * threshold ($re-memory-buffer-low-threshold) for all
+                 * points in a 5 minutes period.
+                 */
                 term is-re-memory-buffer-utilization-median {
                     when {
-                        less-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold";
+                        greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold"{
+                            time-range 5m;
+                            all;
+                        }
                     }
                     then {
                         status {
@@ -89,33 +133,37 @@ iceberg {
                         }
                     }
                 }
-                term is-re-memory-buffer-utilization-abnormal  {
+                /*
+                 * Defaults color to green.
+                 */ 
+                term is-re-memory-buffer-utilization-normal  {
                     then {
                         status {
-                            color red;
-                            message "$routing-engine memory buffer utilization($re-memory-buffer) is greater than high threshold($re-memory-buffer-high-threshold)";
+                            color green;
+                            message "$routing-engine memory buffer utilization is normal";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance"
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable RE_Slot_No {
                 value 0-1;
                 type string;
-                description "Enter RE slot numbers using regular expression";
+                description "RE slot numbers to monitor, regular expression, e.g. '0'";
                 
             }
             variable memory_buffer_re_high_threshold {
-                value 60;
+                value 75;
                 type int;
-                description "Enter RE memory buffer high threshold value";
+                description "Memory buffer high threshold: Utilization increase between metrics, before we report anomaly";
             }
             variable memory_buffer_re_low_threshold {
-                value 20;
+                value 50;
                 type int;
-                description "Enter RE memory buffer low threshold value";
+                description "Memory buffer low threshold: Utilization increase between metrics, before we report anomaly";
             }
         }
     }
