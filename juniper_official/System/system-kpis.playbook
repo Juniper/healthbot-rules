@@ -1,10 +1,24 @@
 /*
- * This playbook checks health of system and notify in case any of the health monitored field crosses threshld
+ * Playbook contains multiple rules which checks the health of system and
+ * notifies when anomalies are found.
+ * 
+ * 1) Rule check-system-cpu, detects the system cpu utilization threshold
+ *    breaches and notifies anomalies.
+ * 2) Rule check-system-cpu-load-average, detects the system cpu load average
+ *    (1min/5min/15min) utilization threshold breaches and notifies anomalies.
+ * 3) Rule check-system-memory, detects the system memory utilization threshold
+ *    breaches and notifies anomalies.
+ * 4) Rule check-process-cpu, detects the system **all** daemon cpu utilization
+ *    threshold breaches and notifies anomalies.
+ * 5) Rule check-process-memory, detects the system **all** daemon memory
+ *    utilization threshold breaches and notifies anomalies.
+ * 6) Rule check-system-storage, detects the system storage usage of **all**
+ *    mounts threshold breaches and notifies anomalies.
  */
 iceberg {
     playbook system-kpis-playbook {
         rules [ system.cpu/check-system-cpu system.cpu/check-system-cpu-load-average system.memory/check-system-memory system.processes/check-process-cpu system.processes/check-process-memory system.storage/check-storage ];
-        description "This playbook takes min, max thresholds as input and monitors system cpu, memory, storage and junos processes cpu and memory utilization";
+        description "Playbook checks the system health i.e. system cpu, memory, storage and junos processes cpu and memory utilization";
         synopsis "System key performance indicators";
     }
 }
