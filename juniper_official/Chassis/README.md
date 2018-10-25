@@ -10,8 +10,4 @@ defined with default variable values which can be changed while deploying playbo
 
 ## Usage
 
-<<<<<<< HEAD
 Apply the playbook to device-group under playbooks section using healthbot GUI.
-=======
-Apply the playbook to device-group. 
->>>>>>> ff709d758d84c1a35e0701e9cda8e7d40e2c3dfe
