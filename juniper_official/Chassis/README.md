@@ -1,4 +1,9 @@
-# Chassis Management Healthbot Key Performance Indicators (KPIs)
+# Chassis Management Healthbot KPIs
 #
  
-Contains readly consumable healthbot playbooks and rules specific to chassis management. These rules monitor the temperature of the Chassis, Chassis CPU, FPC and power utilization of the chassis. These rules notifies when anomalies are found in any of the specified chassis management functionalities.  Based on the rule, need to provide inputs to find the anomalies. If input parameters are not provided, it takes the default parameters to calculate the anomalies.
+Contains readly consumable healthbot playbooks and rules which are specific to
+chassis key performance indicators(KPIs). Chassis kpi rule collects the statistics
+from network devices then analyzes the data and act. Chassis KPI playbook is set of
+rules, each rule is defined with set of KPIs. Playbook contains chassis temperature,
+routing engine(RE) temperature, RE CPU temperature, FPC temperature, FAN health, PEM
+power usage, Zone power usage and overall system power usage rules.
