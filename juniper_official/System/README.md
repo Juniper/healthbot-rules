@@ -7,3 +7,4 @@ rules, where each rule is defined with a set of KPIs. Playbook contains routing 
 ## Usage
 
 Apply the playbook to device-group under the playbooks section using healthbot GUI.
+

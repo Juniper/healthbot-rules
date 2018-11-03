@@ -1,0 +1,40 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-wan-out {
+            description "Monitors the center chip wan out transmitted packets";
+            keys target;
+            sensor center-chip-wan-out {
+                iAgent {
+                    file chip.yml;
+                    table CChipWoStatsTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-wan-out-packets-sent {
+                term are-center-chip-wan-out-packets-sent-increasing {
+                    when {
+                        min-rate-of-increase "$cchip-wo-packets-sent" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Center chip wan out packets sent incrementing ($cchip-wo-packets-sent)";
+                        }
+                    }
+                }
+                term center-chip-wan-out-packets-sent-not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "Center chip wan out packets sent not incrementing";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

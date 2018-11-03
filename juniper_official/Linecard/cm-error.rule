@@ -1,0 +1,36 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-cm-error-table {
+            /* description "Checks the CM Error table"; */
+            keys [ module target ];
+            sensor CMErrorTable {
+                iAgent {
+                    file cm-error.yml;
+                    table CMErrorTable;
+                    frequency 10s;
+                }
+            }
+            trigger cm-errors-active {
+                term are-cm-errors-active {
+                    when {
+                        greater-than "$errors" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Linecard Chassis Manager for $name has active errors";
+                        }
+                    }
+                }
+                term cm-errors-not-active {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

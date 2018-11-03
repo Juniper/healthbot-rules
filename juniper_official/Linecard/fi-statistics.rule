@@ -1,0 +1,125 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-fabric-in {
+            description "Monitors the center chip fabric-in packets dropped ,error packets, received and sent packets";
+            keys [ instance target ];
+            sensor center-chip-fabric-in {
+                iAgent {
+                    file chip.yml;
+                    table CChipFiStatsTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-fabric-in-dropped {
+                term are-center-chip-fabric-in-dropped-packets-increasing {
+                    when {
+                        min-rate-of-increase "$cchip-fi-packets-dropped" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in dropped counters incrementing ($cchip-fi-packets-dropped)";
+                        }
+                    }
+                }
+                term are-center-chip-fabric-in-dropped-packets-non-zero {
+                    when {
+                        greater-than "$cchip-fi-packets-dropped" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Center chip fabric in dropped counters non-zero";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-dropped-packets-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-error {
+                term are-center-chip-fabric-in-errors-present {
+                    when {
+                        greater-than "$cchip-fi-packets-with-error" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in errors non-zero";
+                        }
+                    }
+                }
+                term center-chip-fabric-in-errors-not-present {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-received {
+                term are-center-chip-fabric-in-received-packets-increasing {
+                    when {
+                        min-rate-of-increase "$cchip-fi-packets-received" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+                term center-chip-fabric-in-received-packets-not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in received counters are NOT increasing";
+                        }
+                    }
+                }
+            }
+            trigger center-chip-fabric-in-sent-ok {
+                term are-center-chip-fabric-in-sent-ok-packets-increasing {
+                    when {
+                        min-rate-of-increase "$cchip-fi-packets-sent-ok" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+                term center-chip-fabric-in-sent-ok-packets-not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "Center chip fabric in sent-ok counters are NOT increasing";
+                        }
+                    }
+                }
+            }
+        }
+        rule sync-ospf-fpc {
+            sensor sync-ospf {
+                iAgent {
+                    file sync-ospf-fpc.yml;
+                    table SyncOspfFpc;
+                    frequency 30s;
+                }
+            }
+        }
+    }
+}

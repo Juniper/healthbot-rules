@@ -1,0 +1,134 @@
+iceberg {
+    topic linecard.ospf {
+        description "Rules relevant to OSPF counters collected from the linecards"; 
+        rule check-ddos-statistics {
+            description "Monitors ospf related distributed denial of service statistics";
+            keys [ group-name protocol-states-locale ];
+            sensor ddosStats {
+                iAgent {
+                    file ddos-statistics.yml;
+                    table ddosStats;
+                    frequency 10s;
+                }
+            }
+            field ddos-drop-rate-threshold {
+                constant {
+                    value "{{DDOS_Drop_Rate_Threshold}}";
+                }
+            }
+            field ddos-drop-count-threshold {
+                constant {
+                    value "{{DDOS_Drop_Count_Threshold}}";
+                }
+            }
+            field ddos-arrival-rate-threshold {
+                constant {
+                    value "{{DDOS_Arrival_Rate_Threshold}}";
+                }
+            }
+            trigger ddos-drops {
+                term is-ddos-drops-increasing {
+                    when {
+                        min-rate-of-increase "$dropped-packets" {
+                            rate "$ddos-drop-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS packet drops ($dropped-packets) increasing";
+                        }
+                    }
+                }
+                term are-ddos-drops-over-threshold {
+                    when {
+                        greater-than "$dropped-packets" "$ddos-drop-count-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DDOS packet drops ($dropped-packets) over threshold ($ddos-drop-count-threshold)";
+                        }
+                    }
+                }
+                term ddos-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger ddos-packet-arrival-rate {
+                term is-max-packet-arrival-rate-greater-than-threshold {
+                    when {
+                        greater-than-or-equal-to "$packet-arrival-rate-max" "$ddos-arrival-rate-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DDOS packet max arrival rate is over threshold ($ddos-arrival-rate-threshold)";
+                        }
+                    }
+                }
+                term max-packet-arrival-rate-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger ddos-packet-dropped-others {
+                term is-ddos-packet-dropped-others-increasing {
+                    when {
+                        min-rate-of-increase "$dropped-packets-others" {
+                            rate "$ddos-drop-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS packet dropped others ($dropped-packets-others) increasing";
+                        }
+                    }
+                }
+                term is-ddos-packet-drop-others-over-threshold {
+                    when {
+                        greater-than "$dropped-packets-others" "$ddos-drop-count-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DDOS packet dropped others ($dropped-packets-others) over threshold ($ddos-drop-count-threshold)";
+                        }
+                    }
+                }
+                term ddos-packet-drop-others-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable DDOS_Drop_Count_Threshold {
+                value 0;
+                description "DDOS drop count threshold value";
+                type int;
+            }
+            variable DDOS_Drop_Rate_Threshold {
+                value 1;
+                description "DDOS drop rate threshold value";
+                type int;
+            }
+            variable DDOS_Arrival_Rate_Threshold {
+                value 1000;
+                description "DDOS arrival rate threshold value";
+                type int;
+            }
+        }
+    }
+}

@@ -1,0 +1,37 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-pci-error-counters {
+            description "Monitors the PCI link status";
+            keys [ pci-address pci-controller-number status-type target ];
+            sensor ShowPciErrorsTable {
+                iAgent {
+                    file pci-error.yml;
+                    table ShowPciErrorsTable;
+                    frequency 10s;
+                }
+            }
+            trigger pci-invalid-status {
+                term is-pci-valid-status {
+                    when {
+                        matches-with "$status-type" Link;
+                        matches-with "$status" 0x00000001;
+                    }
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+                term pci-invalid-status {
+                    then {
+                        status {
+                            color red;
+                            message "PCI Link status error";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

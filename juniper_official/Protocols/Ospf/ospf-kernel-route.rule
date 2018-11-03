@@ -1,0 +1,58 @@
+iceberg {
+    topic protocol.ospf {
+        description "Rules relevant to protocol metrics and in specific pertaining to ospf";
+        rule check-ospf-forwarding-table {
+            keys table-name;
+            description "Checks if the route destination and next hop are correct";
+            sensor protocol-ospf-forwarding-table {
+                iAgent {
+                    file ospf-kernel-route.yml;
+                    table ForwardingTableRouteTable;
+                    frequency 10s;
+                }
+            }
+            trigger protocol-ospf-forwarding-table-route-destination {
+                term is-protocol-ospf-forwarding-table-route-destination-correct {
+                    when {
+                        matches-with "$route-destination" 224.0.0.5/32;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Protocol OSPF forwarding-table Multicast destination is correct";
+                        }
+                    }
+                }
+                term protocol-ospf-forwarding-table-route-destination-incorrect {
+                    then {
+                        status {
+                            color red;
+                            message "Protocol OSPF forwarding-table Multicast destination is incorrect";
+                        }
+                    }
+                }
+            }
+            trigger protocol-ospf-forwarding-table-route-next-hop {
+                term is-protocol-ospf-forwarding-table-route-next-hop-correct {
+                    when {
+                        matches-with "$next-hop-type" mcst;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Protocol OSPF forwarding-table route next-hop is of correct type - Multicast";
+                        }
+                    }
+                }
+                term protocol-ospf-forwarding-table-route-next-hop-incorrect {
+                    then {
+                        status {
+                            color red;
+                            message "Protocol OSPF forwarding-table route next-hop type is incorrect";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

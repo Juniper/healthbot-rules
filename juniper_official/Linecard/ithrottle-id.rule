@@ -1,0 +1,197 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line card";
+        rule check-ithrottle-statistics {
+            description "Monitors throttle statistics such as adjacency ups and downs, starts and stops, disables and enables";
+            keys [ id target ];
+            sensor Ithrottle-ID {
+                iAgent {
+                    file ithrottle.yml;
+                    table IthrottleIDTable;
+                    frequency 10s;
+                }
+            }
+            field ithrottle-lower-rate-threshold {
+                constant {
+                    value "{{FPC_iThrottle_Lower_Rate}}";
+                }
+            }
+            field ithrottle-higher-rate-threshold {
+                constant {
+                    value "{{FPC_iThrottle_Higher_Rate}}";
+                }
+            }
+            trigger adjacency-down {
+                term is-adjacency-down-increasing {
+                    when {
+                        min-rate-of-increase "$AdjDown" {
+                            rate "$ithrottle-higher-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Adjaceny down ($AdjDown) increasing rapidly";
+                        }
+                    }
+                }
+                term adjacency-down-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger adjacency-up {
+                term is-adjacency-up-increasing {
+                    when {
+                        min-rate-of-increase "$AdjUp" {
+                            rate "$ithrottle-higher-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Adjaceny up ($AdjUp) increasing rapidly";
+                        }
+                    }
+                }
+                term adjacency-up-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger checks {
+                term are-checks-increasing {
+                    when {
+                        min-rate-of-increase "$Checks" {
+                            rate "$ithrottle-lower-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Checks ($Checks) increasing";
+                        }
+                    }
+                }
+                term checks-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger disables {
+                term are-disables-increasing {
+                    when {
+                        min-rate-of-increase "$Disables" {
+                            rate "$ithrottle-higher-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Disables ($Disables) increasing rapidly";
+                        }
+                    }
+                }
+                term disable-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger enables {
+                term are-enables-increasing {
+                    when {
+                        min-rate-of-increase "$Enables" {
+                            rate "$ithrottle-higher-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Enables ($Enables) increasing rapidly";
+                        }
+                    }
+                }
+                term enables-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger starts {
+                term are-starts-increasing {
+                    when {
+                        min-rate-of-increase "$Starts" {
+                            rate "$ithrottle-lower-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Starts ($Starts) increasing";
+                        }
+                    }
+                }
+                term starts-are-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            trigger stops {
+                term are-stops-increasing {
+                    when {
+                        min-rate-of-increase "$Stops" {
+                            rate "$ithrottle-lower-rate-threshold";
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Stops ($Stops) increasing";
+                        }
+                    }
+                }
+                term stops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+            variable FPC_iThrottle_Lower_Rate {
+                value 1;
+                description "Linecard interrupt throttle LOW threshold value";
+                type int;
+            }
+            variable FPC_iThrottle_Higher_Rate {
+                value 5;
+                description "Linecard interrupt throttle HIGH threshold value";
+                type int;
+            }
+        }
+    }
+}

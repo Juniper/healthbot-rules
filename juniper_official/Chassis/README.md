@@ -53,4 +53,3 @@ chassis.temperatures/check-chassis-temperature
 chassis.temperatures/check-re-cpu-temperature    
 chassis.temperatures/check-re-temperature   
 
-

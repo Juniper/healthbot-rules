@@ -1,0 +1,36 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-lookup-in {
+            description "Monitors center chip lookup in interrupts counters";
+            keys target;
+            sensor center-chip-lookup-in {
+                iAgent {
+                    file chip.yml;
+                    table CChipLiInterruptStatsTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-lookup-in-interrupts {
+                term are-center-chip-lookup-in-interrupts-non-zero {
+                    when {
+                        greater-than "$cchip-errors-from-lookup-chip" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip lookup in interrupts counters are non-zero";
+                        }
+                    }
+                }
+                term center-chip-lookup-in-interrupts-zero {
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+            }
+        }
+}
+}
