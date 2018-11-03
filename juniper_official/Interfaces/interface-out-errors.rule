@@ -1,19 +1,39 @@
 /*
- * This rule checks interface out errors(all types) and notify in case any of the health monitored field crosses threshold
+ * Detects interface in errors and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ *   2) out_errors_threshold, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the error increases are greater than
+ *      'out_error_threshold' for 60s. If it sees any errors increase for a
+ *      period of less than 60s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-out-errors {
+            synopsis "Interface out-errors analyzer";
+            description "This rule collects interface output error (errors(all), drops, discards, timeouts and runts) periodically and notifies in case of anomalies";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the interface out-errors count on an interface.
+             * Notifies via the dashboard colors when the flaps increase by
+             * {{in_errors_threshold}} for every collected metric during a 60s
+             * time range (red).  The color is set to yellow if we see any
+             * out errors increase by {{out_errors_threshold}}. Otherwise the
+             * color is set to green.
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
-            synopsis "Interface out-errors analyzer";
-            description "This rule collects interface output error(errors(all), drops, discards, timeouts and runts) periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
                 synopsis "interface open-config sensor definition";
@@ -24,7 +44,8 @@ iceberg {
                 }
             }
             /*
-             * Fileds defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field interface-name {
                 sensor interfaces {
@@ -32,11 +53,11 @@ iceberg {
                     path "/interfaces/interface/@name";
                 }
                 type string;
-                description "This field shows interfaces to be monitored";
+                description "Interfaces to be monitored";
             }
-            field outerrors-stats-value {
+            field out-errors-count {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{outerrors_stats_name}}";
+                    path "/interfaces/interface/state/counters/{{out_errors_stats_name}}";
                 }
                 type integer;
                 description "This field shows interface field's value";
@@ -44,73 +65,85 @@ iceberg {
             /*
              * Fields defined with variables and constant values
              */
-            field outerrors-high-threshold {
+            field out-errors-threshold {
                 constant {
-                    value "{{outerrors_high_threshold}}";
+                    value "{{out_errors_threshold}}";
                 }
                 type integer;
-                description "This field is for interface out errors maximum threshold value";
+                description "Out errors count increase threshold";
             }
             /*
-             * When an interface out error($outerrors-stats-value) count crosses threshold for period of 60 seconds then
-             * sends an anomaly notification and sets color to red. When error count increases by one then sends anomaly
-             * notification and sets color to yellow otherwise sets color to green.
+             * Anomaly detection logic.
              */
             trigger out-errors {
                 synopsis "Interface out-errors kpi";
-                description "Sets health based on interface out errors.";
+                description "Sets health based on the change in out-errors count";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface out errors ($out-errors-count) count increases
+                 * for all points in 60 seconds period.
+                 */
+		frequency 20s;
                 term is-interface-out-errors-abnormal {
                     when {
-                        min-rate-of-increase "$outerrors-stats-value" {
-                            rate "$outerrors-high-threshold";
+                        min-rate-of-increase "$out-errors-count" {
+                            rate "$out-errors-threshold";
                             time-range 60s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name out errors($outerrors-stats-value) are above high threshold($outerrors-high-threshold)";
+                            message "Out errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the increase is at least once.
+                 */
                 term is-interface-out-errors-median {
                     when {
-                        min-rate-of-increase "$outerrors-stats-value" {
-                            rate "$outerrors-high-threshold";
+                        min-rate-of-increase "$out-errors-count" {
+                            rate "$out-errors-threshold";
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name out errors($outerrors-stats-value) are abnormal";
+                            message "$interface-name out errors ($out-errors-count) are intermittent";
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */
                 term no-interface-out-errors {
                     then {
                         status {
                             color green;
-                            message "$interface-name out errors($outerrors-stats-value) are below threshold";
+                            message "$interface-name is stable";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
-            variable outerrors_high_threshold {
+            variable out_errors_threshold {
                 value 1;
-                description "Enter interface out-errors maximum threshold value";
+                description "Interface out errors threshold: Number of errors increase between metrics, before we report anomaly";
                 type int;
             }
-            variable outerrors_stats_name {
+            variable out_errors_stats_name {
                 value out-errors;
-                description "Enter any one of interface specific out-error (Errors, Drops, Framing errors, Runts, Policed discards, L3 incompletes, L2 channel errors, L2 mismatch timeouts, FIFO errors, Resource errors) filed to be monitored";
+                description "Error stats counter name out-errors which is cumulative of out-resource-errors, out-drops and out-discards";
                 type string;
             }
         }

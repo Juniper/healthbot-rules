@@ -1,37 +1,49 @@
 /*
- * This rule checks health of each interface state and notify in case any of the health monitored field crosses threshold
+ * Monitors interface link state and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ *
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-interface-status {
+            synopsis "Tnterface state analyzer";
+            description "Collects interface link oper state periodically and notifies when neighbor sate is down";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the interface link oper state. Notifies via the
+             * dashboard colors when the *all* link oper state {{link-state}}
+             * is down (red). Otherwise the color is set to green.
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
-            synopsis "interface input traffic analyzer";
-            description "This rule collects interface state periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
-                synopsis "interface open-config sensor definition";
-                description "/interfaces open-config sensor to collect telemetry data from network device";
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 20s;
                 }
             }
             /*
-             * Fileds defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field admin-state {
                 sensor interfaces {
                     path /interfaces/interface/state/admin-status;
                 }
                 type string;
-                description "This field shows interfaces admin status";
+                description "Interface admin status";
             }
             field interface-name {
                 sensor interfaces {
@@ -39,27 +51,34 @@ iceberg {
                     path "/interfaces/interface/@name";
                 }
                 type string;
-                description "This field shows interfaces to be monitored";
+                description "Interfaces to be monitored";
             }
             field link-state {
                 sensor interfaces {
                     path /interfaces/interface/state/oper-status;
                 }
                 type string;
-                description "This field shows interfaces link operator status";
+                description "Interfaces link operator status";
             }
             /*
-             * When an enabled interface link operator state($link-state) is down then send anomaly notification and sets color to red,
-             * otherwise sets color to green.
+             * Anomaly detection logic.
              */
             trigger link-state {
                 synopsis "link state kpi";
-                description "Sets health based on link state.";
+                description "Sets health based on link state";
+                /*
+                 * Skips evaluation for admin down state interfaces
+                 */
+                frequency 20s;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" DOWN;
                     }
                 }
+                /*
+                 * Sets color to red and sends out anomaly notification when 
+                 * the interface oper state ($link-state) is down.
+                 */                    
                 term is-link-down {
                     when {
                         matches-with "$admin-state" UP;
@@ -72,6 +91,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */                
                 term link-up {
                     then {
                         status {
@@ -82,11 +104,12 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
         }

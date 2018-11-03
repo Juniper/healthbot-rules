@@ -1,44 +1,64 @@
 /*
- * This rule checks interface flap count and notify in case any of the health monitored field crosses threshold
+ * Detects interface flaps and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ *   2) flaps_threshold, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the flap-increases are greater than
+ *      'flaps_threshold' for 60s. If it sees any flaps increase for a
+ *      period of less than 60s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "Monitors interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors and notify anomalies";
         synopsis "Interface statistics analyzer";
         rule check-interface-flaps {
+            synopsis "Link flaps detector";
+            description "Collects link flap count periodically and notifies when flap count increases";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the link flap count on an interface. Notifies via the
+             * dashboard colors when the flaps increase by {{flaps_threshold}}
+             * for every collected metric during a 60s time range (red).
+             * The color is set to yellow if we see any flap increase by
+             * {{flaps_threshold}}. Otherwise the color is set to green
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
-            synopsis "link flaps analyzer";
-            description "This rule collects link flap count periodically and notifies in case flap count increases";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
-                synopsis "interface open-config sensor definition";
-                description "/interfaces open-config sensor to collect telemetry data from network device";
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 20s;
                 }
             }
             /*
-             * Fileds defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field admin-state {
                 sensor interfaces {
                     path /interfaces/interface/state/admin-status;
                 }
                 type string;
-                description "This field shows interfaces admin status";
+                description "Interface admin status";
             }
             field flaps {
                 sensor interfaces {
                     path /interfaces/interface/state/counters/carrier-transitions;
                 }
                 type integer;
-                description "This field shows link flap count";
+                description "Number of interface flaps";
             }
             field interface-name {
                 sensor interfaces {
@@ -46,7 +66,7 @@ iceberg {
                     path "/interfaces/interface/@name";
                 }
                 type string;
-                description "This field shows interfaces to be monitored";
+                description "Interfaces to be monitored";
             }
             /*
              * Fields defined with variables and constant values
@@ -56,35 +76,29 @@ iceberg {
                     value "{{flaps_threshold}}";
                 }
                 type integer;
-                description "This field shows flap count increase threshold";
+                description "Flap count increase threshold";
             }
             /*
-             * When interface carrier-transition($flaps) count increases for period of 60 seconds then sends an anomaly notification
-             * and sets color to red. When flap count increases by one between two time ticks then sends anomaly notification and sets
-             * color to yellow othrwise sets color to green.
+             * Anomaly detection logic.
              */
             trigger link-flaps {
-                synopsis "link flaps kpi";
-                description "Sets health based on link flap count.";
+                synopsis "Link flaps KPI";
+                description "Sets health based on the change in flap count";
+                /*
+                 * Skips evaluation for admin down interfaces
+                 */
+		frequency 20s;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" DOWN;
                     }
                 }
-                term is-link-not-flaping {
-                    when {
-                        max-rate-of-increase "$flaps" {
-                            rate 0;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name flap count is not increasing";
-                        }
-                    }
-                }
-                term is-link-flaping-consistently {
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface carrier-transition ($flaps) count increases for
+                 * all points in a 60 seconds period.
+                 */
+                term is-link-flapping-consistently {
                     when {
                         min-rate-of-increase "$flaps" {
                             rate "$flaps-threshold";
@@ -94,10 +108,14 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "$interface-name flaps($flaps) continously";
+                            message "Flaps are increasing continuously on $interface-name, flap count is:$flaps";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the increase is at least once.
+                 */
                 term is-link-fluctuating {
                     when {
                         min-rate-of-increase "$flaps" {
@@ -111,18 +129,30 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-link-stable {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name is stable";
+                        }
+                    }
+                }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable flaps_threshold {
                 value 1;
-                description "Enter interface flaps threshold";
+                description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
                 type int;
             }
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
                 type string;
             }
         }

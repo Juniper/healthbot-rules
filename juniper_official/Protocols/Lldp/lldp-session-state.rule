@@ -1,37 +1,48 @@
 /*
- *   This rule checks health of each lldp session and notify in case any of the health monitored field crosses threshold
+ * Detects LLDP (session) state changes and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
  */
 iceberg {
     topic protocol.lldp {
-        description "This topic is to monitor and notify lldp statitics i.e. neighbor state, frame discards, frame errors, tlv discards and unknown tlvs";
-        synopsis "lldp session statistics analyzer";
+        description "Monitors lldp statitics i.e. neighbor state, frame discards, frame errors, tlv discards & unknown tlvs and notify anomalies";
+        synopsis "LLDP session statistics analyzer";
         rule check-lldp-session {
-            description "This rule collects lldp session state periodically and notifies in case of anomalies";
-            synopsis "lldp session state analyzer";
+            description "Collects lldp session state periodically and notify anomaly when state is down";
+            synopsis "LLDP session state analyzer";
             /*
-             * unique identifier of the rule is interface name
+             * Monitors the LLDP session state. Notifies via the dashboard
+             * colors when the session state is false and color is set to red.
+             * Otherwise the color is set to green.
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices
              */
             sensor lldp-sensor {
-                synopsis "lldp open-config sensor definition";
+                synopsis "LLDP open-config sensor definition";
                 description "/lldp open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /lldp/;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field if-lldp-state {
                 sensor lldp-sensor {
                     path /lldp/interfaces/interface/state/enabled;
                 }
                 type string;
-                description "This field is for local interface lldp state";
+                description "Local interface LLDP state";
             }
             field interface-name {
                 sensor lldp-sensor {
@@ -39,21 +50,25 @@ iceberg {
                     path "/lldp/interfaces/interface/@name";
                 }
                 type string;
-                description "This field is for interface name";
+                description "Interfaces to be monitored";
             }
             field neighbor-state {
                 sensor lldp-sensor {
                     path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
                 }
                 type string;
-                description "This field is for lldp neighbor state";
+                description "Remote LLDP neighbor state";
             }
             /*
-             * When lldp session state($if-lldp-state) is not true then sets lldp session health to red and send a message otherwise sets health to green
+             * Anomaly detection logic.
              */
             trigger lldp-session-state {
-                synopsis "lldp state kpi";
-                description "Ignores lldp disabled interfaces. Sets health based on lldp session state.";
+                synopsis "LLDP state KPI";
+                description "Sets health based on lldp session state changes and notify anomaly.";
+                frequency 60s;
+                /*
+                 * Sets color to green when LLDP neighbor state is true.
+                 */
                 term is-lldp-disabled {
                     when {
                         does-not-match-with "$if-lldp-state" true;
@@ -70,6 +85,9 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */
                 term lldp-session-down {
                     then {
                         status {
@@ -80,13 +98,14 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable interface_name {
                 value ".*";
                 type string;
-                description "Enter specific or all interfaces to be monitored using regular expression";
-            }
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+           }
         }
     }
 }
