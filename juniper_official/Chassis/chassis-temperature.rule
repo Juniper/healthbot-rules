@@ -1,22 +1,42 @@
 /*
- * This rule checks health of whole chassis temperature and notify in case any of the health monitored fields crosses threshold
+ * Detects chassis temperature threshold breaches and notifies when anomalies
+ * are found.
+ * Two inputs control detection
+ * 
+ *   1) "chassis_temperature_low_threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degree Cecilius of 
+ *      chassis temperature. This rule will set a dashboard color to green
+ *      when temperature is below low threshold.
+ * 
+ *   2) "chassis_temperature_high_threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degree Cecilius of 
+ *      chassis temperature. This rule will set a dashboard color to yellow
+ *      when temperature is below high threshold. Otherwise color is set to
+ *      red and notify anomaly.
  */
 iceberg {
     topic chassis.temperatures {
-        description "This topic is to monitor the chassis, fpc, re&re-cpu teparatures in degree C";
-        synopsis "Chassis temperature check";
+        description "Monitors the chassis temperatures of whole chassis, REs', FPCs' & RE CPUs and notifies anomalies";
+        synopsis "Chassis environment analyzer";
         rule check-chassis-temperature {
+            synopsis "Chassis temperature check";
+            description "Collects chassis temperature periodically and notifies anomalies when temperature exceed threshold";
             /*
-             * unique identifier of the rule is chassis name
+             * Monitors chassis temperature. Notifies via the dashboard
+             * colors when the when chassis temperature is below low threshold
+             * {{chassis_temperature_low_threshold}} to green. The color is
+             * set to yellow if we see temperature is below high threshold
+             * {{chassis_temperature_high_threshold}}. Otherwise the color is
+             * set to red and notify anomaly.
+             * 
+             * Use chassis name as key for rule.
              */
              keys chassis-name;
-            synopsis "Chassis temperature analyzer";
-            description "This rule collects chassis temperature periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices
              */
             sensor components {
-                synopsis "chassis components sensor definition";
+                synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
@@ -24,7 +44,8 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field chassis-name {
                 sensor components {
@@ -32,7 +53,7 @@ iceberg {
                     path "/components/component/@name";
                 }
                 type string;
-                description "stores chassis name";
+                description "chassis name to monitor";
             }
             field temperature-ambient {
                 sensor components {
@@ -40,75 +61,87 @@ iceberg {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
-                description "stores ambient temperature of chassis";
+                description "Chassis temperature";
             }
             /*
              * Fields defined with variables and constant values
              */
-            field chassis-temperature-high-threshold {
+            field high-threshold {
                 constant {
                     value "{{chassis_temperature_high_threshold}}";
                 }
                 type integer;
-                description "This field is for chassis ambient temparature maximum threshold value";
+                description "Chassis ambient temperature high threshold";
             }
-            field chassis-temperature-low-threshold {
+            field low-threshold {
                 constant {
                     value "{{chassis_temperature_low_threshold}}";
                 }
                 type integer;
-                description "This field is for chassis temparature minimum threshold value";
+                description "Chassis ambient temperature low threshold";
             }
             /*
-             * When chassis temperature($temperature-ambient) is above threshold then sends an anomaly notification and sets
-             * color to red. When temperatue is below threshold then sets color to green. When temperature is between low and
-             * high threshold then sends anomaly notification and sets color to yellow.
+             * Anomaly detection logic.
              */
             trigger chassis-ambient-temperature {
-                synopsis "chassis temperature kpi";
-                description "Sets health based on chassis temperature.";
+                synopsis "Chassis temperature KPI";
+                description "Sets health based on increase in chassis temperature";
+                frequency 60s;
+                /*
+                 * Sets color to green when temperature ($temperature-ambient)
+                 * is below low threshold ($low-threshold).
+                 */ 
                 term is-temperature-normal {
                     when {
-                        less-than "$temperature-ambient" "$chassis-temperature-low-threshold";
+                        less-than "$temperature-ambient" "$low-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "Chassis ambient temperature ($temperature-ambient degree C) is normal";
+                            message "Chassis ambient temperature is normal";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and notify anomaly when chassis
+                 * temperature ($temperature-ambient) is below high threshold
+                 * ($high-threshold).
+                 */ 
                 term is-temperature-median {
                     when {
-                        less-than "$temperature-ambient" "$chassis-temperature-high-threshold";
+                        less-than "$temperature-ambient" "$high-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Chassis ambient temperature($temperature-ambient degree C) is medium";
+                            message "Chassis ambient temperature($temperature-ambient degree C) exceed low threshold";
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
                 term temperature-abnormal {
                     then {
                         status {
                             color red;
-                            message "Chassis ambient temperature($temperature-ambient degree C) is abnormal";
+                            message "Chassis ambient temperature($temperature-ambient degree C) exceed high threshold";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable chassis_temperature_high_threshold {
                 value 55;
-                description "Enter chassis temparature maximum threshold value";
+                description "Chassis temperature high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
             variable chassis_temperature_low_threshold {
                 value 45;
-                description "Enter chassis temparature minimum threshold value";
+                description "Chassis temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
         }
