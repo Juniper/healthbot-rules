@@ -1,0 +1,342 @@
+/*
+ * Collects L3VPN protocol status and PE & CE interface statistics and notifies
+ * anomalies when any of the BGP session, CE or PE interface is down.
+ */
+iceberg {
+    topic protocol.l3vpn {
+        description "Collect routing instance and interfaces stats and notify anomalies";
+        synopsis "L3VPN session state analyzer";
+        rule check-l3vpn-state {
+            synopsis "L3VPN session state detector";
+            description "Refer L3VPN peer state, CE and PE interface states from rule get-routing-instance-details & get-interface-details and notify anomalies when flap count increases";
+            rule-frequency 45s;
+            network-rule;
+            /*
+             * Fields defined by collecting values from other rule. Maps the
+             * longer references to the shorter field names used in this rule.
+             */
+            field pe-router-name {
+                constant {
+                    value "{{pe-device-name}}";
+                }
+                type string;
+                description "PE router name to monitor";
+            }
+            field ce-router-name {
+                constant {
+                    value "{{ce-device-name}}";
+                }
+                type string;
+                description "CE router name to monitor";
+            }
+            field instance-ifl-no {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[sub-interface-index='{{pe-ifl-number}}' and interface-name='{{pe-interface-name}}']/sub-interface-index";
+                    time-range 45s;
+                }
+                type integer;
+                description "Routing instance IFL number";
+            }
+            field instance-interface-name {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[interface-name='{{pe-interface-name}}']/interface-name";
+                    time-range 45s;
+                }
+                type string;
+                description "Routing instance interface name";
+            }
+            field instance-interface-status {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[sub-interface-index='{{pe-ifl-number}}' and interface-name='{{pe-interface-name}}']/link-state";
+                    time-range 45s;
+                }
+                type string;
+                description "Routing instance interface status";
+            }
+            field neighbor-session {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-routing-instance-details]/field[neighbor-address='{{customer-neighbor-address}}']/neighbor-address";
+                    time-range 45s;
+                }
+                type string;
+                description "Protocol neighbor address";
+            }
+            field remote-ifl-no {
+                reference {
+                    path "/device-group[device-group-name={{ce-device-group}}]/device[device-id={{ce-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[sub-interface-index='{{ce-ifl-number}}' and interface-name='{{ce-interface-name}}']/sub-interface-index";
+                    time-range 45s;
+                }
+                type integer;
+                description "CE IFL number";
+            }
+            field remote-interface-name {
+                reference {
+                    path "/device-group[device-group-name={{ce-device-group}}]/device[device-id={{ce-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[interface-name='{{ce-interface-name}}']/interface-name";
+                    time-range 45s;
+                }
+                type string;
+                description "CE interface name";
+            }
+            field remote-interface-status {
+                reference {
+                    path "/device-group[device-group-name={{ce-device-group}}]/device[device-id={{ce-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[sub-interface-index='{{ce-ifl-number}}' and interface-name='{{ce-interface-name}}']/link-state";
+                    time-range 45s;
+                }
+                type string;
+                description "CE interface status";
+            }
+            field vpn-name {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-routing-instance-details]/field[instance-name='{{cutomer-vpn-name}}']/instance-name";
+                    time-range 45s;
+                }
+                type string;
+                description "VRF name";
+            }
+            field vpn-state {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-routing-instance-details]/field[neighbor-address='{{customer-neighbor-address}}']/session-state";
+                    time-range 45s;
+                }
+                type string;
+                description "VRF peer state";
+            }
+            trigger l3vpn-ce-interface-state {
+                frequency 60s;
+                term is-ce-interface-up {
+                    when {
+                        matches-with "$remote-interface-status" UP;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "CE interface $remote-interface-name.$remote-ifl-no of router $ce-router-name is UP";
+                        }
+                    }
+                }
+                term vpn-interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "CE interface $remote-interface-name.$remote-ifl-no of router $ce-router-name is $remote-interface-status";
+                        }
+                    }
+                }
+            }
+            trigger l3vpn-pe-interface-state {
+                frequency 60s;
+                term is-pe-interface-up {
+                    when {
+                        matches-with "$instance-interface-status" UP;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is UP";
+                        }
+                    }
+                }
+                term is-pe-interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is $instance-interface-status";
+                        }
+                    }
+                }
+            }
+            trigger l3vpn-state {
+                synopsis "L3VPN session status KPI";
+                description "Sets health based on state change in L3VPN peer, CE interface and PE interface state.";
+                frequency 60s;
+                term is-vpn-session-up {
+                    when {
+                        matches-with "$vpn-state" ESTABLISHED;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is UP";
+                        }
+                    }
+                }
+                term is-vpn-session-down {
+                    then {
+                        status {
+                            color red;
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is $vpn-state";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            
+            variable cutomer-vpn-name {
+                description "VRF name to monitor, regular expression, e.g. 'customer*'";
+                type string;
+            }
+            variable customer-neighbor-address {
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            variable ce-ifl-number {
+                description "CE sub interface number to monitor, regular expression, e.g. '1-10'";
+                type int;
+            }
+            variable ce-interface-name {
+                description "CE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            variable pe-ifl-number {
+                description "PE IFL to monitor, regular expression, e.g. '1-10'";
+                type int;
+            }
+            variable pe-interface-name {
+                description "PE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            variable pe-device-group {
+                description "Router group to monitor, regular expression, e.g. 'edge.*'";
+                type device-group;
+            }
+            variable ce-device-group {
+                description "Router group to monitor, regular expression, e.g. 'edge.*'";
+                type device-group;
+            }
+            variable pe-device-name {
+                description "Router name to monitor, regular expression, e.g. 'edge-router.*'";
+                type device;
+            }
+            variable ce-device-name {
+                description "Router name to monitor, regular expression, e.g. 'edge-router.*'";
+                type device;
+            }
+        }
+        rule get-interface-details {
+            keys [ interface-name sub-interface-index ];
+            /*
+             * Collects all interface and sub-interface(IFL) details periodically
+             *
+             * Use interface-name and  sub-interface-index as keys for rule.
+             */
+            synopsis "Interface details collector.";
+            description "Collects interface and IFL status periodically";
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 30s;
+                }
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces {
+                    path /interfaces/interface/subinterfaces/subinterface/state/oper-status;
+                }
+                type string;
+                description "Sub Interface oper status.";
+            }
+            field sub-interface-index {
+                sensor interfaces {
+                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
+                    path "/interfaces/interface/subinterfaces/subinterface/@index";
+                }
+                type string;
+                description "IFL to be monitored";
+            }
+            variable ifd-name {
+                value .*;
+                description "Interfaces to be monitored, regular expression, eg 'ge-.*';";
+                type string;
+            }
+            variable ifl-no {
+                value .*;
+                description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+                type string;
+            }
+        }
+        rule get-routing-instance-details {
+            keys [ instance-name neighbor-address ];
+            /*
+             * Collects all routing instance details periodically
+             *
+             * Use instance-name and neighbor-address as keys for rule.
+             */
+            synopsis "Routing details collector.";
+            description "Collects routing instance bgp peer status periodically";
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor vpn-sensor {
+                synopsis "Routing instance sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance;
+                    frequency 30s;
+                }
+            }
+            field instance-name {
+                sensor vpn-sensor {
+                    where "/network-instances/network-instance/@instance-name =~ /{{instance}}/";
+                    path "/network-instances/network-instance/@instance-name";
+                }
+                type string;
+                description "Routing Instance to be monitored";
+            }
+            field neighbor-address {
+                sensor vpn-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "Routing instance neighbor to be monitored";
+            }
+            field session-state {
+                sensor vpn-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "Routing instance neighbor state";
+            }
+            variable instance {
+                value .*;
+                description "Routing instance to be monitored, regular expression, eg 'VPN*'";
+                type string;
+            }
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+        }
+    }
+    playbook interface {
+        description "Playbook collects interface details periodically";
+        synopsis "Interface collector";
+        rules protocol.l3vpn/get-interface-details;
+    }
+    playbook vpn {
+        description "Playbook collects routing instance details periodically";
+        synopsis "Routing instance collector";
+        rules protocol.l3vpn/get-routing-instance-details;
+    }
+    playbook vpn-view {
+        description "Playbook checks health of L3VPN session, PE and CE interface status and notify anomaly when statistics are unusual";
+        synopsis "L3VPN network health analyzer";
+        rules protocol.l3vpn/check-l3vpn-state;
+    }
+}
