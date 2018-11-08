@@ -1,22 +1,41 @@
 /*
- *  This rule checks health of each bgp session and notify in case any of the health monitored field crosses threshold
+ * Detects BGP neighbor flaps and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) "neighbors" is a regular expression that matches the BGP neighbors
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all BGP neighbors. Use something like '172.16.*' to match all neighbor
+ *      addresses which are in 172.16.0.0/16 network range.
+ *
+ *   2) "flaps_threshold" is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when any of the BGP neighbor session flap-increases
+ *      are greater than 'flaps_threshold' for 60s. If it sees any flaps
+ *      increase for a period of less than 60s, it'll turn the color to
+ *      yellow, otherwise color is set to green.
  */
 iceberg {
     topic protocol.bgp {
-        description "This topic is to monitors and notify bgp sessions statitics i.e. neighbor state, detects flaps, route damping and max received-routes count";
-        synopsis "bgp session statistics analyzer";
+        description "Monitors BGP sessions statistics i.e. neighbor state, detects flaps, route damping and max received-routes count and notify anomalies";
+        synopsis "BGP session statistics analyzer";
         rule check-bgp-neighbor-flaps {
-            description "This rule collects bgp session carrier-transitions count periodically and notifies in case of anomalies";
-            synopsis "bgp neighbor flaps detector";
+            description "Collects BGP session carrier-transitions count periodically and notify anomalies when flap count increases";
+            synopsis "BGP neighbor flaps detector";
             /*
-             * unique identifier of the rule is bgp neighbor address
+             * Monitors the BGP neighbor sessions. Notifies via the dashboard
+             * colors when the flaps increase by {{flaps_threshold}} for every
+             * collected metric during a 60s time range (red). The color is set
+             * to yellow if we see any flap increase by {{flaps_threshold}}.
+             * Otherwise the color is set to green
+             * 
+             * Use neighbor address as key for rule.
              */
             keys neighbor-address;
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices
              */
             sensor bgp-sensor {
-                synopsis "bgp open-config sensor definition";
+                synopsis "BGP open-config sensor definition";
                 description "/protocol/bgp open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
@@ -24,21 +43,22 @@ iceberg {
                 }
             }
             /*
-             * Fields defined using sensor path
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
             field established-transitions {
                 sensor bgp-sensor {
                     path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/established-transitions;
                 }
                 type integer;
-                description "This field for session down or flap count";
+                description "Number of neighbor session flaps";
             }
             field last-established {
                 sensor bgp-sensor {
                     path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/last-established;
                 }
                 type string;
-                description "This field is for session last established time";
+                description "BGP session last established time";
             }
             field neighbor-address {
                 sensor bgp-sensor {
@@ -46,33 +66,30 @@ iceberg {
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
                 }
                 type string;
-                description "This field is for neighbor address";
+                description "BGP neighbor addresses to monitor";
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined with variables and constant values.
              */
-            field neighbors {
-                constant {
-                    value "{{neighbors}}";
-                }
-                type string;
-                description "This field takes neighbor addresses as an input from user through variable name neighbors";
-            }
             field flap-count-threshold {
                 constant {
-                    value "{{max_route_flap_count_threshold}}";
+                    value "{{flaps_threshold}}";
                 }
                 type integer;
-                description "Set received route count threshold";
+                description "Flap count increase threshold";
             }
             /*
-             * When bgp session flap($flap-count-threshold) count increases for the period of 60 seconds then sends anomaly notification
-             * and sets color to red. When flap count increases between two time ticks then sends anomaly and sets color to yellow otherwise sets
-             * color to green
+             * Anomaly detection logic.
              */
             trigger neigbor-flap {
-                synopsis "bgp neighbor session flaps kpi";
-                description "Sets health based on bgp neighbor session flaps.";
+                synopsis "BGP neighbor session flaps KPI";
+                description "Sets health based on increase in bgp neighbor session flaps";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the BGP neighbor session transition
+                 * ($$established-transitions) count increases in all points in
+                 * a 60 seconds period.
+                 */
                 term is-session-flapping {
                     when {
                         min-rate-of-increase "$established-transitions" {
@@ -87,6 +104,10 @@ iceberg {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the increase is at least once.
+                 */
                 term is-session-inconsistent {
                     when {
                         min-rate-of-increase "$established-transitions" {
@@ -96,10 +117,13 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Neighbor session inconsistant, last-established:$last-established";
+                            message "Neighbor session inconsistent, last-established:$last-established";
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */
                 term is-session-stable {
                     then {
                         status {
@@ -110,17 +134,18 @@ iceberg {
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
             variable neighbors {
                 value .*;
-                description "Enter neighbor name or address using regular expression";
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
                 type string;
             }
-            variable max_route_flap_count_threshold {
+            variable flaps_threshold {
                 value 1;
                 type int;
-                description "Enter route flap count rate of increase threshold value using regular expression";
+                description "BGP neighbor session flaps threshold: Number of flap increase between metrics, before we report anomaly";
             }
         }
     }

@@ -1,47 +1,58 @@
 /*
- * This rule checks interface in errors(all types) and notify in case any of the health monitored field crosses threshold
+ * Detects interface in errors and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) interface_name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ *   2) in_errors_threshold, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the error increases are greater than
+ *      'in_error_threshold' for 60s. If it sees any errors increase for a
+ *      period of less than 60s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
  */
 iceberg {
     topic interface.statistics {
-        description "This topic is to monitor and notify interface statitics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-in-errors {
+            synopsis "Interface in-error analyzer";
+            description "Collects the interface input error (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
             /*
-             * unique identifier of the rule is an interface name
+             * Monitors the interface in-errors count on an interface.
+             * Notifies via the dashboard colors when the flaps increase by
+             * {{in_errors_threshold}} for every collected metric during a 60s
+             * time range (red).  The color is set to yellow if we see any
+             * in errors increase by {{in_errors_threshold}}. Otherwise the
+             * color is set to green.
+             * 
+             * Use interface name as key for rule.
              */
             keys interface-name;
-            synopsis "Interface in-error analyzer";
-            description "This rule collects an interface input error(errors(all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
-                synopsis "interface open-config sensor definition";
-                description "/interfaces open-config sensor to collect telemetry data from network device";
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 20s;
                 }
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
              */
-            field inerrors-high-threshold {
-                constant {
-                    value "{{inerrors_high_threshold}}";
-                }
-                type integer;
-                description "This field is for interface in errors maximum threshold value";
-            }
-            /*
-             * Fileds defined using sensor path
-             */
-            field inerrors-stats-value {
+            field in-errors-count {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{inerrors_stats_name}}";
+                    path "/interfaces/interface/state/counters/{{in_errors_stats_name}}";
                 }
                 type integer;
-                description "This field shows interface field's value";
+                description "Number of in-errors";
             }
             field interface-name {
                 sensor interfaces {
@@ -49,68 +60,90 @@ iceberg {
                     path "/interfaces/interface/@name";
                 }
                 type string;
-                description "This field shows interfaces to be monitored";
+                description "Interfaces to be monitored";
             }
             /*
-             * When an interface in error($inerrors-stats-value) count crosses threshold for period of 60 seconds then
-             * sends an anomaly notification and sets color to red. When error count increases by one then sends anomaly
-             * notification and sets color to yellow otherwise sets color to green.
+             * Fields defined with variables and constant values
+             */
+            field in-errors-threshold {
+                constant {
+                    value "{{in_errors_threshold}}";
+                }
+                type integer;
+                description "In errors count increase threshold";
+            }
+            /*
+             * Anomaly detection logic.
              */
             trigger in-errors {
                 synopsis "Interface in-errors kpi";
-                description "Sets health based on interface in errors.";
+                description "Sets health based on the change in in-errors count";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * interface in errors ($in-errors-count) count increases for 
+                 * all points in 60 seconds period.
+                 */
+  	 	frequency 20s;
                 term is-interface-in-errors-abnormal {
                     when {
-                        min-rate-of-increase "$inerrors-stats-value" {
-                            rate "$inerrors-high-threshold";
+                        min-rate-of-increase "$in-errors-count" {
+                            rate "$in-errors-threshold";
                             time-range 60s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name in errors($inerrors-stats-value) are above high threshold($inerrors-high-threshold)";
+                            message "In errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the increase is at least once.
+                 */
                 term is-interface-in-errors-median {
                     when {
-                        min-rate-of-increase "$inerrors-stats-value" {
-                            rate "$inerrors-high-threshold";
+                        min-rate-of-increase "$in-errors-count" {
+                            rate "$in-errors-threshold";
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name in errors($inerrors-stats-value) are abnormal";
+                            message "$interface-name in errors($in-errors-count) are intermittent";
                         }
                     }
-                }
+                 }
+                /*
+                 * Defaults color to green.
+                 */
                 term no-interface-in-errors {
                     then {
                         status {
                             color green;
-                            message "$interface-name in errors($inerrors-stats-value) are below threshold";
+                            message "$interface-name is stable";
                         }
                     }
                 }
             }
             /*
-             * Variables with default values which can be altered while deploying playbook instance
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
              */
-            variable inerrors_high_threshold {
+            variable in_errors_threshold {
                 value 1;
-                description "Enter interface in-errors maximum threshold value";
+                description "Interface in errors threshold: Number of errors increase between metrics, before we report anomaly";
                 type int;
             }
-            variable inerrors_stats_name {
+            variable in_errors_stats_name {
                 value in-errors;
-                description "Enter any one of interface specific in-error (Errors, Drops, Framing errors, Runts, Policed discards, L3 incompletes, L2 channel errors, L2 mismatch timeouts, FIFO errors, Resource errors) to be monitored. ";
+                description "Error stats counter name in-errors which is cumulative of in-frame-errors, in-resource-errors, in-giants, in-drops, in-discards and mtu-erros";
                 type string;
             }
             variable interface_name {
                 value ".*";
-                description "Enter interface names to be monitored in regular expression";
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
         }
