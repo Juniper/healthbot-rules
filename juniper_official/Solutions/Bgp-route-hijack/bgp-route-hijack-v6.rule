@@ -1,0 +1,123 @@
+/*
+ * Collects bgp session statistics and notifies when bgp v4 route hijacks.
+ */
+ iceberg {
+    topic protocol.bgp {
+        description "Detects ipv4 and ipv6 bgp route hijacks";
+        synopsis "Bgp route hijack detector";
+        rule check-route-hijacking-v6 {
+            description "Checks bgp ipv6 route hijacks";
+            synopsis "IPv4 bgp route hijack detector";
+            keys prefix;
+            rule-frequency 60s;
+            sensor bgp-v6 {
+                synopsis "BGP openconfig sensor";
+                description "Sensor configuration to get bgp data from network devices";
+                open-config {
+                    sensor-name /bgp-rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/;
+                    frequency 20s;
+                }
+            }
+            field as-path {
+                sensor bgp-v6 {
+                    path /bgp-rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/attributes/as-path;
+                }
+                type string;
+                description "As-path information";
+            }
+            field as-path-expr {
+                constant {
+                    value "{{ipv6_as_path}}";
+                }
+                type string;
+                description "As-path-expression to match and compare";
+            }
+            field community {
+                sensor bgp-v6 {
+                    path /bgp-rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/attributes/community;
+                }
+                type string;
+                description "Route BGP community information";
+            }
+            field community-expr {
+                constant {
+                    value "{{ipv6_community}}";
+                }
+                type string;
+                description "community-expression to match and compare";
+            }
+            field prefix {
+                sensor bgp-v6 {
+                    path /bgp-rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/prefix;
+                }
+                type string;
+                description "IPv6 route prefix information";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger route-hijacking {
+                synopsis "BGP IPv6 route hijack KPI";
+                description "Sets health based on the expected as-path and community information of received routes";
+                /*
+                 * Sets color to red when as-path is not matching with as path
+                 * expression. Sets color to yellow when specific routes find,
+                 * othewise sets color to green
+                 */
+                frequency 60s;
+                /*
+                 *Term checks if as-path is as expected if not update status to red indicating route hijack
+                 */
+                term hijacking {
+                    when {
+                        does-not-match-with "$as-path" "$as-path-expr";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Detected route hijacking";
+                        }
+                    }
+                }
+                /*
+                 * Term checks if community is more specific and update status to yellow
+                 */
+                term more-specific-route-v6 {
+                    when {
+                        matches-with "$community" "$community-expr";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Seen more specific v6 routes";
+                        }
+                    }
+                }
+                /*
+                 * Default term when there is no route hijacking 
+                 */
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "All well";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables to take inputs while deploying playbook
+             */
+            variable ipv6_as_path {
+                value ""
+                type string;
+                description "Enter ipv4 as-path that is expected, e.g. 6451[23]$";
+            }
+            variable ipv6_community {
+                value ""
+                type string;
+                description "Enter community that is expected, e.g ^64512:9999$";
+            }
+        }
+    }
+}

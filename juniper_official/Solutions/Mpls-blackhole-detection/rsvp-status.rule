@@ -1,0 +1,37 @@
+iceberg {
+    topic linecard.jnh-exception-packets {
+        description "Detects MPLS LSP blackhole";
+        synopsis "MPLS blackhole detector";
+        rule check-rsvp {
+            description "Collects RSVP statistics and analyzes";
+            synopsis "RSVP statistics analyzer";
+            keys [ destination-address name source-address ];
+            sensor RsvpSessionTable {
+                synopsis "Netconf rpc sensor definition";
+                description "Netconf sensor uses get-rsvp-session-information rpc";
+                iAgent {
+                    file rsvpsession.yml;
+                    table RsvpSessionTable;
+                    frequency 30s;
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rsvp-state {
+                synopsis "RSVP KPI";
+                description "Sets health based rsvp session statistics";
+                frequency 30s;
+                term rsvp {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP Session Captured. $label_in";
+                        }
+                    }
+                }
+            }
+        }
+    }                                   
+}
+ 

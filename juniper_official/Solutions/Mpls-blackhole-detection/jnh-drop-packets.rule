@@ -1,0 +1,71 @@
+iceberg {
+    topic linecard.jnh-exception-packets {
+    description "Detects MPLS LSP blackhole";
+    synopsis "MPLS blackhole detector";
+        rule check-drop-packets {
+            description "Collects jnh exception traces from line cards and analyzes";
+            synopsis "Jnh exception traces analyzer";
+            function getlabel {
+                description "Function finds label which comes after pattern 8847 in any of the argument line";
+                path mplslabel.py;
+                method getmplslabel;
+                argument packet0;
+                argument packet1;
+                argument packet2;
+                argument packet3;
+                argument packet4;
+            }
+            sensor ShowJnhExceptions {
+                synopsis "Netconf cli sensor definition";
+                description "Uses show jnh exceptions-traces cli command to get data from network devices";
+                iAgent {
+                    file jnhexceptionpkt.yml;
+                    table ShowJnhExceptions;
+                    frequency 30s;
+                }
+            }
+            field label {
+                description "Uses UDF to get label which comes after pattern 8847";
+                formula {
+                    user-defined-function {
+                        function-name getlabel;
+                        argument packet0 "$packets_00";
+                        argument packet1 "$packets_10";
+                        argument packet2 "$packets_20";
+                        argument packet3 "$packets_30";
+                        argument packet4 "$packets_40";
+                    }
+                }
+            }
+            field name {
+                description "Collecting label name from rule check-rsvp";
+                reference {
+                    path "/topic[topic-name='linecard.jnh-exception-packets']/rule[rule-name=check-rsvp]/field[label_in='$label']/name";
+                }
+            }
+            field source-address {
+                description "Collecting RSVP session ip from rule check-rsvp";
+                reference {             
+                    path "/topic[topic-name='linecard.jnh-exception-packets']/rule[rule-name=check-rsvp]/field[label_in='$label']/source-address";
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger dropped-packets {
+                synopsis "Jnh packet drops KPI";
+                description "Sets health based jnh packet drop count increase";
+                frequency 30s;
+                term pktdrop {
+                    then {
+                        status {
+                            color red;
+                            message "dropping packet";
+                        }
+                    }
+                }
+            }
+        }
+    }                                   
+}
+ 

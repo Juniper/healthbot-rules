@@ -1,0 +1,94 @@
+/*
+ * Detects microburst in all monitored interface egress queues.
+ */
+iceberg {
+    topic queue.microburst {
+        description "Interface egress queues microburst detection";
+        synopsis "Microburst detector";
+        rule check-queue {
+            description "Collects all interfaces egress queues data using gpb sensor and detects microbursts";
+            keys [ if-name queue-no ];
+            sensor jnpr_qmon_ext {
+                synopsis "Qmon native gpb sensor";
+                description "Sensor configuration to get bgp data from network devices";
+                native-gpb {
+                    sensor-name jnpr_qmon_ext;
+                    port 22000;
+                }
+            }
+            /*
+             * Sensor and constant fields
+             */
+            field if-name {
+                sensor jnpr_qmon_ext {
+                    where "queue_monitor_element_info.if_name =~ /{{if_name_expr}}/";
+                    path queue_monitor_element_info.if_name;
+                }
+                type string;
+                description "Interface name to monitor";
+            }
+            field microburst {
+                formula {
+                    microburst {
+                        if-name "$if-name";
+                        queue-no "$queue-no";
+                    }
+                }
+                type integer;
+                description "Derives microburst valu";
+            }
+            field queue-no {
+                sensor jnpr_qmon_ext {
+                    where "queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number =~ /{{queue_no_expr}}/";
+                    path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number;
+                }
+                type string;
+                description "Queue name or number to monitor";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger microburst {
+                synopsis "Microburst KPI";
+                description "Sets health based on the increase in microburst count";
+                term green {
+                    when {
+                        equal-to "$microburst" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No Microburst seen";
+                        }
+                    }
+                }
+                term red {
+                    when {
+                        matches-with True True;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Microburst detected";
+                        }
+                    }
+                }
+            }
+            variable if_name_expr {
+                value .*;
+                type string;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+            }
+            variable queue_no_expr {
+                value .*;
+                type int;
+                description "Queue number to monitor, regular expression, eg '1|2'";
+            }
+        }
+    }
+    playbook microburst-playbook {
+        description "Playbook detects microbursts on interface egress queues";
+        synopsis "Microburst detector";
+        rules queue.microburst/check-queue;
+    }
+}
