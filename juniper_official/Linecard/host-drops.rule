@@ -1,0 +1,40 @@
+iceberg {
+    topic linecard {
+        description "Rules relevant to metrics on the line-card";
+        rule check-center-chip-host-path {
+            description "Monitors the center chip hostpath drops";
+            keys [ instance target ];
+            sensor center-chip-host-path {
+                iAgent {
+                    file chip.yml;
+                    table CChipHostDropTable;
+                    frequency 10s;
+                }
+            }
+            trigger center-chip-host-path-drops {
+                term are-center-chip-host-path-drops-increasing {
+                    when {
+                        min-rate-of-increase "$cchip-host-path-drops" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Center chip host path drops incrementing ($cchip-host-path-drops)";
+                        }
+                    }
+                }
+               term center-chip-host-path-drops-not-increasing {
+                    then {
+                        status {
+                            color green;
+                            message "Center chip host path drops not incrementing";
+                        }
+                    }
+                }
+            }
+        }
+}
+}

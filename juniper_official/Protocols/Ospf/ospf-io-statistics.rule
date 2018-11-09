@@ -1,0 +1,61 @@
+iceberg {
+    topic protocol.ospf {
+        description "Rules relevant to protocol metrics and in specific pertaining to ospf";
+        rule check-ospf-io-statistics-information {
+            description "Monitors OSPF's I/O statistics";
+            keys packets-read;
+            sensor protocol-ospf-io-statistics-information {
+                iAgent {
+                    file ospf.yml;
+                    table OspfIoStat;
+                    frequency 10s;
+                }
+            }
+            trigger protocol-ospf-io-statistics-information-ospf-error-count {
+                term is-protocol-ospf-io-statistics-information-ospf-error-reported {
+                    when {
+                        matches-with "$ospf-error" no-error;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "RPD OSPF IO is not reporting any errors";
+                        }
+                    }
+                }
+                term protocol-ospf-io-statistics-information-ospf-error-reported {
+                    then {
+                        status {
+                            color red;
+                            message "RPD OSPF IO is reporting errors";
+                        }
+                    }
+                }
+            }
+            trigger protocol-ospf-io-statistics-information-packet-read {
+                term is-protocol-ospf-io-statistics-information-ospf-io-packet-read-increasing {
+                    when {
+                        min-rate-of-increase "$packets-read" {
+                            rate 1;
+                            time-range 50s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "RPD OSPF IO module is functioning ";
+                        }
+                    }
+                }
+                term protocol-ospf-io-statistics-information-ospf-io-packet-read-not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "RPD OSPF IO module is not functioning";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

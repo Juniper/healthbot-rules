@@ -1,22 +1,30 @@
 /*
- * This rule checks route count of each route table and notify in case any of the health monitored field crosses threshold
+ * Dynamically sets the route count threshold for each route table and notify
+ * anomaly when route count is aberrant.
  */
 iceberg {
     topic protocol.routesummary {
-        description "This topic has rule on routing table statistics which monitors total-route-count in each routing table";
-        synopsis "Protocol routes and Route table statistics analyzer";
+        description "Monitors each routing table and each protocol route count and sets dynamic thresholds and notify anomaly when route count is abnormal";
+        synopsis "RIB route tables and protocols statistics analyzer";
         rule check-ascertain-routes {
+            synopsis "Routing table statistics analyzer";
+            description "Collects total-route-count of each routing table and sets dynamic thresholds and notify anomaly when route count is abnormal";
             /*
-             * unique identifier of the rule is route table
+             * Monitors all the routing tables route count. Sets dynamic
+             * threshold using k-means machine learning algorithm based
+             * on learned data. Notifies via dashboard colors when the route
+             * count of each table exceed or drop for every collected metric
+             * during a 35 minute time range (red). Otherwise the color is
+             * set to green.
+             * 
+             * Use table-name name as key for rule.
              */
             keys table-name;
-            synopsis "Routing table statistics analyzer";
-            description "This rule collects total-route-count in each routing table and notify in case route count crosses threshold";
             /*
-             * sensor configuration to get data from network devices
+             * Sensor configuration to get data from network devices
              */
             sensor route-summary {
-                synopsis "Get routing table statistics";
+                synopsis "Get routing table statistics using iAgent sensor";
                 description "Get routing table statistics through -show route summary- command";
                 iAgent {
                     file route-summary.yml;
@@ -25,7 +33,7 @@ iceberg {
                 }
             }
             /*
-             * Fields defined with dynamic threshold ml algorithms
+             * Fields defined with dynamic threshold ML algorithms
              */
             field route-count-dynamic-threshold {
                 formula {
@@ -37,15 +45,21 @@ iceberg {
                     }
                 }
                 type string;
-                description "detects anamoly dynamically using kmeans algorithm";
+                description "Detects anomaly dynamically using kmeans algorithm";
             }
             /*
-             * When route count($total-route-count) of each route table crosses threshold then sends anomaly notification and
-             * sets color as red otherwise sets color to green.
+             * Anomaly detection logic.
              */
             trigger route-table-total-routes-count {
-                description "Sets health based on tables route count dynamic threshold";
-                term is-route-table-routes-count-abnormal {
+                synopsis "Routing table route count KPI";
+                description "Sets health based on increase or drop in route count of each routing table";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the route count of each routing table exceed or drop
+                 * ($route-count-dynamic-threshold result contains ^anomaly$)
+                 * for all points in a 35 minutes period.
+                 */
+                 term is-route-table-routes-count-abnormal {
                     when {
                         matches-with "$route-count-dynamic-threshold" "^anomaly$" {
                             time-range 35m;
@@ -58,7 +72,10 @@ iceberg {
                         }
                     }
                 }
-                term route-table-routes-count-abnormal {
+                /*
+                 * Defaults color to green.
+                 */  
+                term route-table-routes-count-normal {
                     then {
                         status {
                             color green;

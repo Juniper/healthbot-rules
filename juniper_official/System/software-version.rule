@@ -1,0 +1,78 @@
+iceberg {
+    topic system {
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-version {
+            description "Validates the product name and Junos version";
+            keys host-name;
+            sensor product-and-junos-version {
+                iAgent {
+                    file software-version.yml;
+                    table SoftwareVersionTable;
+                    frequency 60s;
+                }
+            }
+            field configured-product-value {
+                constant {
+                    value "{{Product_Value}}";
+                }
+            }
+            field configured-software-version-value {
+                constant {
+                    value "{{Software_Version_Value}}";
+                }
+            }
+            trigger product-name {
+                term is-product-model-valid {
+                    when {
+                        matches-with "$product" "$configured-product-value";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Device product model is valid ($configured-product-value)";
+                        }
+                    }
+                }
+                term unauthorized-product-model-used {
+                    then {
+                        status {
+                            color red;
+                            message "Unauthorized product ($product) is being used";
+                        }
+                    }
+                }
+            }
+            trigger software-version {
+                term is-junos-version-correct {
+                    when {
+                        matches-with "$version" "$configured-software-version-value";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Junos version $configured-software-version-value is being used";
+                        }
+                    }
+                }
+                term unauthorized-junos-version-used {
+                    then {
+                        status {
+                            color red;
+                            message "Unauthorized Junos version ($version) is being used";
+                        }
+                    }
+                }
+            }
+            variable Product_Value {
+                value mx960;
+                description "Product model the system should be";
+                type string;
+            }
+            variable Software_Version_Value {
+                value mx960;
+                description "Software Version the system should have";
+                type string;
+            }
+        }
+    }
+}
