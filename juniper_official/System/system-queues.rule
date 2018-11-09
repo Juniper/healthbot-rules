@@ -1,10 +1,14 @@
 iceberg {
     topic system {
         description "Rules relevant to metrics and KPI of the system";
+        synopsis "Packet drops on the input interface analyzer";
         rule check-system-input-queues {
-            description "Monitors packet drops on the input interface";
             keys interface;
+            synopsis "Packet drops on the input interface analyzer";
+            description "Monitors packet drops on the input interface";
             sensor system-input-queues {
+                synopsis "Input interface packet drops iAgent sensor definition";
+                description "Netconf CLI show system queues to collect data from network device";
                 iAgent {
                     file system-queues.yml;
                     table SystemQueuesINTable;
@@ -13,18 +17,22 @@ iceberg {
             }
             field system-queue-drop-count-threshold {
                 constant {
-                    value "{{System_Queue_Drop_Count_Threshold}}";
+                    value "{{system_queue_drop_count_threshold}}";
                 }
+                description "System queue drop count threshold for input interface";
             }
             field system-queue-drop-rate-threshold {
                 constant {
-                    value "{{System_Queue_Drop_Rate_Threshold}}";
+                    value "{{system_queue_drop_rate_threshold}}";
                 }
+                description "System queue drop rate threshold for input interface";
             }
             trigger system-input-queue-drops {
+                synopsis "System input queue drops kpi";
+                description "sets health based on input queue drops";
                 term are-system-input-queue-drops-increasing {
                     when {
-                        min-rate-of-increase "$drops" {
+                        min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$system-queue-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -55,21 +63,24 @@ iceberg {
                     }
                 }
             }
-            variable System_Queue_Drop_Count_Threshold {
+            variable system_queue_drop_count_threshold {
                 value 0;
                 description "System queue drop count threshold value";
                 type int;
             }
-            variable System_Queue_Drop_Rate_Threshold {
+            variable system_queue_drop_rate_threshold {
                 value 1;
                 description "System queue drop rate threshold value";
                 type int;
             }
         }
         rule check-system-output-queues {
-            description "Monitors packet drops on the output interface";
             keys interface;
+            synopsis "Packet drops on the output interface analyzer";
+            description "Monitors packet drops on the output interface";
             sensor system-output-queues {
+                synopsis "Input interface packet drops iAgent sensor definition";
+                description "Netconf CLI show system queues to collect data from network device";
                 iAgent {
                     file system-queues.yml;
                     table SystemQueuesOutTable;
@@ -78,18 +89,22 @@ iceberg {
             }
             field system-queue-drop-count-threshold {
                 constant {
-                    value "{{System_Queue_Drop_Count_Threshold}}";
+                    value "{{system_queue_drop_count_threshold}}";
                 }
+                description "System queue drop count threshold for output interface";
             }
             field system-queue-drop-rate-threshold {
                 constant {
-                    value "{{System_Queue_Drop_Rate_Threshold}}";
+                    value "{{system_queue_drop_rate_threshold}}";
                 }
+                description "System queue drop rate threshold for output interface";
             }
             trigger system-output-queue-drops {
+                synopsis "System output queue drops kpi";
+                description "sets health based on output queue drops";
                 term are-system-output-queue-drops-increasing {
                     when {
-                        min-rate-of-increase "$drops" {
+                        min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$system-queue-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -120,12 +135,12 @@ iceberg {
                     }
                 }
             }
-            variable System_Queue_Drop_Count_Threshold {
+            variable system_queue_drop_count_threshold {
                 value 0;
                 description "System queue drop count threshold value";
                 type int;
             }
-            variable System_Queue_Drop_Rate_Threshold {
+            variable system_queue_drop_rate_threshold {
                 value 1;
                 description "System queue drop rate threshold value";
                 type int;
@@ -133,4 +148,3 @@ iceberg {
         }
     }
 }
-

@@ -1,10 +1,14 @@
 iceberg {
     topic system {
         description "Rules relevant to metrics and KPI of the system";
+        synopsis "System storage analyzer";
         rule check-system-storage-capacity {
-            description "Monitors the system storage capacity";
             keys filesystem-name;
+            synopsis "System storage capacity analyzer";
+            description "Monitors the system storage capacity";
             sensor system-storage-capacity {
+                synopsis "System storage capacity iAgent sensor definition";
+                description "Netconf rpc get-system-storage to collect data from network device";
                 iAgent {
                     file system-storage-capacity.yml;
                     table systemStorage;
@@ -15,8 +19,11 @@ iceberg {
                 constant {
                     value "{{Storage_Usage_Threshold}}";
                 }
+                description "System storage threshold value";
             }
             trigger system-storage-capacity {
+                synopsis "system storage usage kpi";
+                description "sets health based on system storage usage";
                 term is-system-storage-capacity-greater-than-threshold {
                     when {
                         greater-than "$system-storage-capacity" "$configured-storage-usage-threshold";

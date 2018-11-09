@@ -1,30 +1,38 @@
 iceberg {
     topic linecard {
         description "Rules relevant to metrics on the line card";
+        synopsis "Throttle statistics analyzer";
         rule check-ithrottle-statistics {
-            description "Monitors throttle statistics such as adjacency ups and downs, starts and stops, disables and enables";
             keys [ id target ];
-            sensor Ithrottle-ID {
+            synopsis "Throttle statistics analyzer";
+            description "Monitors throttle statistics such as adjacency ups and downs, starts and stops, disables and enables";
+            sensor ithrottle-id {
+                synopsis "iAgent sensor definition";
+                description "Netconf command show ithrottle iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file ithrottle.yml;
                     table IthrottleIDTable;
                     frequency 10s;
                 }
             }
-            field ithrottle-lower-rate-threshold {
-                constant {
-                    value "{{FPC_iThrottle_Lower_Rate}}";
-                }
-            }
             field ithrottle-higher-rate-threshold {
                 constant {
                     value "{{FPC_iThrottle_Higher_Rate}}";
                 }
+                description "This field is for ithrottle higher threshold";
+            }
+            field ithrottle-lower-rate-threshold {
+                constant {
+                    value "{{FPC_iThrottle_Lower_Rate}}";
+                }
+                description "This field is forithrottle lower threshold";
             }
             trigger adjacency-down {
+                synopsis "Adjacency down kpi";
+                description "Sets health based on adjacency down";
                 term is-adjacency-down-increasing {
                     when {
-                        min-rate-of-increase "$AdjDown" {
+                        min-rate-of-increase "$AdjDown" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
@@ -45,9 +53,11 @@ iceberg {
                 }
             }
             trigger adjacency-up {
+                synopsis "Adjacency up kpi";
+                description "Sets health based on adjacency up";
                 term is-adjacency-up-increasing {
                     when {
-                        min-rate-of-increase "$AdjUp" {
+                        min-rate-of-increase "$AdjUp" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
@@ -68,9 +78,11 @@ iceberg {
                 }
             }
             trigger checks {
+                synopsis "ithrottle rate of increase kpi";
+                description "Sets health based on ithrottle rate of increaes";
                 term are-checks-increasing {
                     when {
-                        min-rate-of-increase "$Checks" {
+                        min-rate-of-increase "$Checks" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-lower-rate-threshold";
                             time-range 50s;
                         }
@@ -91,9 +103,11 @@ iceberg {
                 }
             }
             trigger disables {
+                synopsis "iThrottle disable kpi";
+                description "Sets health based on ithrottle disable";
                 term are-disables-increasing {
                     when {
-                        min-rate-of-increase "$Disables" {
+                        min-rate-of-increase "$Disables" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
@@ -114,9 +128,11 @@ iceberg {
                 }
             }
             trigger enables {
+                synopsis "iThrottle enable kpi";
+                description "Sets health based on ithrottle enable";
                 term are-enables-increasing {
                     when {
-                        min-rate-of-increase "$Enables" {
+                        min-rate-of-increase "$Enables" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
                             time-range 50s;
                         }
@@ -137,9 +153,11 @@ iceberg {
                 }
             }
             trigger starts {
+                synopsis "iThrottle starts kpi";
+                description "Sets health based on ithrottle starts";
                 term are-starts-increasing {
                     when {
-                        min-rate-of-increase "$Starts" {
+                        min-rate-of-increase "$Starts" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-lower-rate-threshold";
                             time-range 50s;
                         }
@@ -160,9 +178,11 @@ iceberg {
                 }
             }
             trigger stops {
+                synopsis "iThrottle stops kpi";
+                description "Sets health based on ithrottle stops";
                 term are-stops-increasing {
                     when {
-                        min-rate-of-increase "$Stops" {
+                        min-rate-of-increase "$Stops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-lower-rate-threshold";
                             time-range 50s;
                         }
@@ -182,14 +202,14 @@ iceberg {
                     }
                 }
             }
-            variable FPC_iThrottle_Lower_Rate {
-                value 1;
-                description "Linecard interrupt throttle LOW threshold value";
-                type int;
-            }
             variable FPC_iThrottle_Higher_Rate {
                 value 5;
                 description "Linecard interrupt throttle HIGH threshold value";
+                type int;
+            }
+            variable FPC_iThrottle_Lower_Rate {
+                value 1;
+                description "Linecard interrupt throttle LOW threshold value";
                 type int;
             }
         }

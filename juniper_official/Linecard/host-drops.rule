@@ -1,10 +1,14 @@
 iceberg {
     topic linecard {
         description "Rules relevant to metrics on the line-card";
+        synopsis "Center chip hostpath analyzer";
         rule check-center-chip-host-path {
-            description "Monitors the center chip hostpath drops";
             keys [ instance target ];
+            synopsis "Center chip hostpath analyzer";
+            description "Monitors the center chip hostpath drops";
             sensor center-chip-host-path {
+                synopsis "Center chip sensor definition";
+                description "Netconf command iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file chip.yml;
                     table CChipHostDropTable;
@@ -12,9 +16,11 @@ iceberg {
                 }
             }
             trigger center-chip-host-path-drops {
+                synopsis "Chip host path drops kpi";
+                description "Sets health based on chip host path drops";
                 term are-center-chip-host-path-drops-increasing {
                     when {
-                        min-rate-of-increase "$cchip-host-path-drops" {
+                        min-rate-of-increase "$cchip-host-path-drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 50s;
                         }
@@ -26,7 +32,7 @@ iceberg {
                         }
                     }
                 }
-               term center-chip-host-path-drops-not-increasing {
+                term center-chip-host-path-drops-not-increasing {
                     then {
                         status {
                             color green;
@@ -36,5 +42,5 @@ iceberg {
                 }
             }
         }
-}
+    }
 }

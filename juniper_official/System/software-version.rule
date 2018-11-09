@@ -1,10 +1,14 @@
 iceberg {
     topic system {
         description "Rules relevant to metrics and KPI of the system";
+        synopsis "System product name and software version analyzer";
         rule check-version {
             description "Validates the product name and Junos version";
+            synopsis "System product name and software version analyzer";
             keys host-name;
             sensor product-and-junos-version {
+                description "Netconf rpc get-software-information to collect data from network device";
+                synopsis "System product namd and software version iAgent sensor definition";
                 iAgent {
                     file software-version.yml;
                     table SoftwareVersionTable;
@@ -12,16 +16,20 @@ iceberg {
                 }
             }
             field configured-product-value {
+               description "System product model like MX240 or MX480 or MX960"; 
                 constant {
                     value "{{Product_Value}}";
                 }
             }
             field configured-software-version-value {
+               description "System software version";
                 constant {
                     value "{{Software_Version_Value}}";
                 }
             }
             trigger product-name {
+                description "sets health based on product model";
+                synopsis "system product model kpi";
                 term is-product-model-valid {
                     when {
                         matches-with "$product" "$configured-product-value";
@@ -43,6 +51,8 @@ iceberg {
                 }
             }
             trigger software-version {
+                description "sets health based on software version";
+                synopsis "system software version kpi";
                 term is-junos-version-correct {
                     when {
                         matches-with "$version" "$configured-software-version-value";

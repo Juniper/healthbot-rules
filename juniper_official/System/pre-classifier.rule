@@ -1,30 +1,38 @@
 iceberg {
     topic linecard {
-	description "Rules pertaining to the performance of the PFE";
+        description "Rules pertaining to the performance of the PFE";
+        synopsis "PFE performance kpi";
         rule check-pre-classifier-dropped-packets {
-            description "Monitors the rate of increase of packets dropped by the pre-classifier";
             keys [ id port precl_index target ];
-            sensor PreClStatsTable {
+            synopsis "Pre-classifier packer drop analyzer";
+            description "Monitors the rate of increase of packets dropped by the pre-classifier";
+            sensor preclstatstable {
+                synopsis "pre-classifier iAgent sensor definition";
+                description "CLI show precl-eng to collect data from network device";
                 iAgent {
                     file pre-classifier.yml;
                     table PreClStatsTable;
                     frequency 10s;
                 }
             }
-            field linecard-pre-classifier-rate-threshold {
-                constant {
-                    value "{{FPC_PreClassifier_Rate_Threshold}}";
-                }
-            }
             field linecard-pre-classifier-count-threshold {
                 constant {
                     value "{{FPC_PreClassifier_Count_Threshold}}";
                 }
+                description "Linecard pre-classifier count threshold value";
+            }
+            field linecard-pre-classifier-rate-threshold {
+                constant {
+                    value "{{FPC_PreClassifier_Rate_Threshold}}";
+                }
+                description "Linecard pre-classifier rate threshold value";
             }
             trigger pre-classifier-packet-drops {
+                synopsis "pre-classifier kpi";
+                description "sets health based on pre-classifier packet drop";
                 term is-packet-drop-increasing {
                     when {
-                        min-rate-of-increase "$dropped-packets" {
+                        min-rate-of-increase "$dropped-packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$linecard-pre-classifier-rate-threshold";
                             time-range 50s;
                         }
@@ -32,11 +40,11 @@ iceberg {
                     then {
                         status {
                             color red;
-			    message "Pre-classifier dropped packets ($dropped-packets) increasing";
+                            message "Pre-classifier dropped packets ($dropped-packets) increasing";
                         }
                     }
                 }
-		term is-packet-drop-non-zero {
+                term is-packet-drop-non-zero {
                     when {
                         greater-than "$dropped-packets" "$linecard-pre-classifier-count-threshold";
                     }
@@ -51,19 +59,19 @@ iceberg {
                     then {
                         status {
                             color green;
-			    message "Pre-classifier packet drops not increasing";
+                            message "Pre-classifier packet drops not increasing";
                         }
                     }
                 }
             }
-            variable FPC_PreClassifier_Rate_Threshold {
-                value 1;
-                description "Linecard Pre-Classifier drop rate threshold value";
-                type int;
-            }
             variable FPC_PreClassifier_Count_Threshold {
                 value 1;
                 description "Linecard Pre-Classifier drop count threshold value";
+                type int;
+            }
+            variable FPC_PreClassifier_Rate_Threshold {
+                value 1;
+                description "Linecard Pre-Classifier drop rate threshold value";
                 type int;
             }
         }

@@ -1,9 +1,14 @@
-version "18.1I20171121_0736_rsankar [rsankar]";
-iceberg:iceberg {
-    topic ospf {
+iceberg {
+    topic protocol.ospf {
+        description "This topic is to monitors and notify ospf packets received and sent";
+        synopsis "ospf session statistics analyzer";
         rule pfe-ddos-policer {
-            keys [ location target protocol ];
-            sensor DdosPolicerStatsTable {
+            keys [ location protocol target ];
+            synopsis "ospf session ddos analyzer";
+            description "This rule collects ospf ddos policer stats periodically and notifies in case of anomalies";
+            sensor ddospolicerstatstable {
+                synopsis "ospf netconf based iAgent sensor definition";
+                description "Netconf command show ddos policer stats iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file pfe-ddos-policer.yml;
                     table DdosPolicerStatsTable;
@@ -11,6 +16,8 @@ iceberg:iceberg {
                 }
             }
             trigger arrival {
+                synopsis "ospf hello packets kpi";
+                description "Sets health based on ospf packets received.";
                 term nothing-arrived {
                     when {
                         equal-to "$pass" 0;
@@ -24,7 +31,7 @@ iceberg:iceberg {
                 }
                 term incrementing {
                     when {
-                        min-rate-of-increase "$pass" {
+                        min-rate-of-increase "$pass" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 60s;
                         }
@@ -49,9 +56,11 @@ iceberg:iceberg {
                 }
             }
             trigger drop {
+                synopsis "ospf hello packets kpi";
+                description "Sets health based on ospf packets dropped.";
                 term drops-increasing {
                     when {
-                        min-rate-of-increase "$drop" {
+                        min-rate-of-increase "$drop" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 60s;
                         }
@@ -76,6 +85,8 @@ iceberg:iceberg {
                 }
             }
             trigger pass-versus-arrival {
+                synopsis "ospf hello packets kpi";
+                description "Sets health based on ospf packets arrive rate.";
                 term equal {
                     when {
                         equal-to "$arrival_rate" "$pass_rate";
