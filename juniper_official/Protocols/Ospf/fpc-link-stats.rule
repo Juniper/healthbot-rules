@@ -1,9 +1,14 @@
-version "18.1I20171121_0736_rsankar [rsankar]";
-iceberg:iceberg {
-    topic ospf {
+iceberg {
+    topic protocol.ospf {
+        description "This topic is to monitors and notify OSPF sessions hello packet statitics";
+        synopsis "ospf session hello statistics analyzer";
         rule fpc-link-stats {
             keys target;
-            sensor FPCLinkStats {
+            synopsis "ospf session hello statistics analyzer";
+            description "This topic is to monitors and notify OSPF sessions hello packet statitics";
+            sensor fpclinkstats {
+                synopsis "iAgent sensor definition";
+                description "Netconf command show link stats iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file fpc_link_stats.yml;
                     table FPCLinkStats;
@@ -11,9 +16,11 @@ iceberg:iceberg {
                 }
             }
             trigger ospf-hello-increasing {
+                synopsis "OSPF hello packet kpi";
+                description "Sets health based on OSPF hello packets received";
                 term monotonically-increasing {
                     when {
-                        min-rate-of-increase "$OSPF_Hello" {
+                        min-rate-of-increase "$OSPF_Hello" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 60s;
                         }

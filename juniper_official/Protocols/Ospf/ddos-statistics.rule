@@ -1,35 +1,44 @@
 iceberg {
     topic linecard.ospf {
-        description "Rules relevant to OSPF counters collected from the linecards"; 
+        description "This topic is to monitors and notify OSPF distributed denial of service counters collected from the linecards";
+        synopsis "OSPF distributed denial of service statistics analyzer";
         rule check-ddos-statistics {
-            description "Monitors ospf related distributed denial of service statistics";
             keys [ group-name protocol-states-locale ];
-            sensor ddosStats {
+            synopsis "OSPF distributed denial of service statistics analyzer";
+            description "Monitors ospf related distributed denial of service statistics";
+            sensor ddosstats {
+                synopsis "ddos statistics sensor definition";
+                description "Netconf rpc get-ddos-ospf-information iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file ddos-statistics.yml;
                     table ddosStats;
                     frequency 10s;
                 }
             }
-            field ddos-drop-rate-threshold {
+            field ddos-arrival-rate-threshold {
                 constant {
-                    value "{{DDOS_Drop_Rate_Threshold}}";
+                    value "{{DDOS_Arrival_Rate_Threshold}}";
                 }
+                description "This field is for ddos arive rate threshold";
             }
             field ddos-drop-count-threshold {
                 constant {
                     value "{{DDOS_Drop_Count_Threshold}}";
                 }
+                description "This field is for ddos drop count threshold";
             }
-            field ddos-arrival-rate-threshold {
+            field ddos-drop-rate-threshold {
                 constant {
-                    value "{{DDOS_Arrival_Rate_Threshold}}";
+                    value "{{DDOS_Drop_Rate_Threshold}}";
                 }
+                description "This field is for ddos drop rate threshold";
             }
             trigger ddos-drops {
+                synopsis "DDOS packet drops kpi";
+                description "Sets health based on DDOS packet drop rate";
                 term is-ddos-drops-increasing {
                     when {
-                        min-rate-of-increase "$dropped-packets" {
+                        min-rate-of-increase "$dropped-packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ddos-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -61,6 +70,8 @@ iceberg {
                 }
             }
             trigger ddos-packet-arrival-rate {
+                synopsis "DDOS packet arrival kpi";
+                description "Sets health based on DDOS packet arrival rate";
                 term is-max-packet-arrival-rate-greater-than-threshold {
                     when {
                         greater-than-or-equal-to "$packet-arrival-rate-max" "$ddos-arrival-rate-threshold";
@@ -81,9 +92,11 @@ iceberg {
                 }
             }
             trigger ddos-packet-dropped-others {
+                synopsis "DDOS packet drop other kpi";
+                description "Sets health based on DDOS packet drop others";
                 term is-ddos-packet-dropped-others-increasing {
                     when {
-                        min-rate-of-increase "$dropped-packets-others" {
+                        min-rate-of-increase "$dropped-packets-others" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ddos-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -114,6 +127,11 @@ iceberg {
                     }
                 }
             }
+            variable DDOS_Arrival_Rate_Threshold {
+                value 1000;
+                description "DDOS arrival rate threshold value";
+                type int;
+            }
             variable DDOS_Drop_Count_Threshold {
                 value 0;
                 description "DDOS drop count threshold value";
@@ -122,11 +140,6 @@ iceberg {
             variable DDOS_Drop_Rate_Threshold {
                 value 1;
                 description "DDOS drop rate threshold value";
-                type int;
-            }
-            variable DDOS_Arrival_Rate_Threshold {
-                value 1000;
-                description "DDOS arrival rate threshold value";
                 type int;
             }
         }

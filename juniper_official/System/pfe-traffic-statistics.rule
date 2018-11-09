@@ -1,31 +1,39 @@
 iceberg {
     topic linecard {
         description "Rules relevant to linecards";
+        synopsis "Linecard drops, discards and ospf hello analyzer";
         rule check-pfe-traffic-statistics {
-            description "Monitors PFE traffic statistics such as fabric drops, host path hardware drops, info cell discards, OSPF hello counts";
             /* The key should be removed when we fix the bug requiring a key for every rule */
             keys ospf-hello-count;
-            sensor pfeStats {
+            synopsis "Linecard drops, discards and ospf hello analyzer";
+            description "Monitors PFE traffic statistics such as fabric drops, host path hardware drops, info cell discards, OSPF hello counts";
+            sensor pfestats {
+                synopsis "PFE traffic statistics iAgent sensor definition";
+                description "Netconf rpc get-pfe-statistics to collect data from network device";
                 iAgent {
                     file pfe-traffic-statistics.yml;
                     table pfeStats;
                     frequency 10s;
                 }
             }
-            field pfe-drop-rate-threshold {
-                constant {
-                    value "{{PFE_Drop_Rate_Threshold}}";
-                }
-            }
             field pfe-drop-count-threshold {
                 constant {
                     value "{{PFE_Drop_Count_Threshold}}";
                 }
+                description "Linecard PFE drop count threshold";
+            }
+            field pfe-drop-rate-threshold {
+                constant {
+                    value "{{PFE_Drop_Rate_Threshold}}";
+                }
+                description "Linecard PFE drop rate threshold";
             }
             trigger fabric-drops {
+                synopsis "Linecard fabric drops kpi";
+                description "sets system health based on fabric drops";
                 term are-fabric-drops-increasing {
                     when {
-                        min-rate-of-increase "$fabric-drops" {
+                        min-rate-of-increase "$fabric-drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -58,9 +66,11 @@ iceberg {
                 }
             }
             trigger host-path-hardware-drops {
+                synopsis "Linecard hardware drops kpi";
+                description "sets system health based on linecard hardware drops";
                 term are-host-path-drops-increasing {
                     when {
-                        min-rate-of-increase "$host-path-hardware-drops" {
+                        min-rate-of-increase "$host-path-hardware-drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -93,9 +103,11 @@ iceberg {
                 }
             }
             trigger info-cell-discard {
+                synopsis "Linecard cell discords kpi";
+                description "sets system health based on linecard cell discards";
                 term are-info-cell-discards-increasing {
                     when {
-                        min-rate-of-increase "$info-cell-discards" {
+                        min-rate-of-increase "$info-cell-discards" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -128,9 +140,11 @@ iceberg {
                 }
             }
             trigger ospf-hello-count {
+                synopsis "OSPF protocols kpi";
+                description "sets system health based on ospf hello count";
                 term are-ospf-hello-counts-increasing {
                     when {
-                        min-rate-of-increase "$ospf-hello-count" {
+                        min-rate-of-increase "$ospf-hello-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 50s;
                         }
@@ -151,14 +165,14 @@ iceberg {
                     }
                 }
             }
-            variable PFE_Drop_Rate_Threshold {
-                value 1;
-                description "PFE Statistics drop counter rate threshold value";
-                type int;
-            }
             variable PFE_Drop_Count_Threshold {
                 value 0;
                 description "PFE Statistics drop counter threshold value";
+                type int;
+            }
+            variable PFE_Drop_Rate_Threshold {
+                value 1;
+                description "PFE Statistics drop counter rate threshold value";
                 type int;
             }
         }
