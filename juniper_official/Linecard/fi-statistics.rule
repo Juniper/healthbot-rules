@@ -1,10 +1,14 @@
 iceberg {
     topic linecard {
         description "Rules relevant to metrics on the line-card";
+        synopsis "center chip fabric-in packets statistics analyzer";
         rule check-center-chip-fabric-in {
-            description "Monitors the center chip fabric-in packets dropped ,error packets, received and sent packets";
             keys [ instance target ];
+            synopsis "center chip fabric-in packets statistics analyzer";
+            description "Monitors the center chip fabric-in packets dropped ,error packets, received and sent packets";
             sensor center-chip-fabric-in {
+                synopsis "center chip fabric iAgent sensor definition";
+                description "Netconf command iAgent sensor to collect telemetry data from network device;";
                 iAgent {
                     file chip.yml;
                     table CChipFiStatsTable;
@@ -12,9 +16,11 @@ iceberg {
                 }
             }
             trigger center-chip-fabric-in-dropped {
+                synopsis "center chip fabric kpi";
+                description "Sets health based on center chip fabric dropped packets ";
                 term are-center-chip-fabric-in-dropped-packets-increasing {
                     when {
-                        min-rate-of-increase "$cchip-fi-packets-dropped" {
+                        min-rate-of-increase "$cchip-fi-packets-dropped" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 50s;
                         }
@@ -46,6 +52,8 @@ iceberg {
                 }
             }
             trigger center-chip-fabric-in-error {
+                synopsis "center chip fabric kpi";
+                description "Sets health based on center chip fabric in errors";
                 term are-center-chip-fabric-in-errors-present {
                     when {
                         greater-than "$cchip-fi-packets-with-error" 0;
@@ -66,9 +74,11 @@ iceberg {
                 }
             }
             trigger center-chip-fabric-in-received {
+                synopsis "center chip fabric in received packets kpi";
+                description "Sets health based on center chip fabric in received packets";
                 term are-center-chip-fabric-in-received-packets-increasing {
                     when {
-                        min-rate-of-increase "$cchip-fi-packets-received" {
+                        min-rate-of-increase "$cchip-fi-packets-received" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 50s;
                         }
@@ -89,9 +99,11 @@ iceberg {
                 }
             }
             trigger center-chip-fabric-in-sent-ok {
+                synopsis "center chip fabric in sent kpi";
+                description "Sets health based on center chip fabric in sent packets";
                 term are-center-chip-fabric-in-sent-ok-packets-increasing {
                     when {
-                        min-rate-of-increase "$cchip-fi-packets-sent-ok" {
+                        min-rate-of-increase "$cchip-fi-packets-sent-ok" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
                             time-range 50s;
                         }
@@ -113,7 +125,11 @@ iceberg {
             }
         }
         rule sync-ospf-fpc {
+            synopsis "ospf session state analyzer";
+            description "This rule collects ospf statistics periodically and notifies in case of anomalies;";
             sensor sync-ospf {
+                synopsis "ospf iAgent sensor definition";
+                description "Netconf command iAgent sensor to collect telemetry data from network device;";
                 iAgent {
                     file sync-ospf-fpc.yml;
                     table SyncOspfFpc;

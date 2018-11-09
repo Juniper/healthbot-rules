@@ -1,10 +1,14 @@
 iceberg {
     topic linecard {
-	description "Rules relevant to metrics on the line-card";
+        description "Rules relevant to metrics on the line-card";
+        synopsis "JNH packet drop analyzer";
         rule check-jnh-exceptions {
-            description "Monitors the jnh exception packets";
             keys [ jnh_instance reason target ];
-            sensor ShowJnhExceptions {
+            synopsis "JNH packet drop analyzer";
+            description "Monitors the jnh exception packets";
+            sensor showjnhexceptions {
+                synopsis "iAgent sensor definition";
+                description "Netconf command show jnh  iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file jnh-exceptions.yml;
                     table ShowJnhExceptions;
@@ -19,9 +23,11 @@ iceberg {
                 description "This field initializes the exception increase rate";
             }
             trigger jnh-packet-drops {
+                synopsis "JNH packet drop kpi";
+                description "Sets health based on JNH packet drop";
                 term are-jnh-packet-drops-increasing {
                     when {
-                        min-rate-of-increase "$packets" {
+                        min-rate-of-increase "$packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$exception-increase-rate";
                             time-range 50s;
                         }

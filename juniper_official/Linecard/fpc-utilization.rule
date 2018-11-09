@@ -1,32 +1,41 @@
 iceberg {
     topic linecard {
-    description "Rules relevant to metrics on the line-card";
+        description "Rules relevant to metrics on the line-card";
+        synopsis "Linecard FPC, heap and CPU analyzer";
         rule check-fpc-utilization-information {
-	    description "Monitors FPC buffer, heap and cpu utilization";
             keys slot;
-            sensor FPCCPUHEAPutilizationTable {
+            synopsis "Linecard FPC, heap and CPU analyzer";
+            description "Monitors FPC buffer, heap and cpu utilization";
+            sensor fpccpuheaputilizationtable {
+                synopsis "iAgent sensor definition";
+                description "Netconf rpc get-fpc-information iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file fpc-utilization.yml;
                     table FPCCPUHEAPutilizationTable;
                     frequency 10s;
                 }
             }
+            field linecard-buffer-usage-threshold {
+                constant {
+                    value "{{FPC_Buffer_Usage_Threshold}}";
+                }
+                description "This field is for buffer usage threshold";
+            }
             field linecard-cpu-usage-threshold {
                 constant {
                     value "{{FPC_CPU_Usage_Threshold}}";
                 }
+                description "This field is for linecard cpu usage threshold";
             }
             field linecard-heap-usage-threshold {
                 constant {
                     value "{{FPC_Heap_Usage_Threshold}}";
                 }
-            }
-            field linecard-buffer-usage-threshold {
-                constant {
-                    value "{{FPC_Buffer_Usage_Threshold}}";
-                }
+                description "This field is for linecard heap usage threshold";
             }
             trigger fpc-buffer-memory-utilization {
+                synopsis "Linecard buffer memory kpi";
+                description "Sets health based on linecard buffer memory";
                 term is-buffer-memory-utilization-greater-than-threshold {
                     when {
                         greater-than "$memory-buffer-utilization" "$linecard-buffer-usage-threshold";
@@ -47,11 +56,13 @@ iceberg {
                 }
             }
             trigger fpc-cpu-utilization {
+                synopsis "Linecard cpu utilization kpi";
+                description "Sets health based on linecard cpu utilization";
                 term is-cpu-utilization-greater-than-80 {
                     when {
                         greater-than "$cpu-total" "$linecard-cpu-usage-threshold" {
-			time-range 60s;
-			}
+                            time-range 60s;
+                        }
                     }
                     then {
                         status {
@@ -65,29 +76,36 @@ iceberg {
                         status {
                             color green;
                         }
-                    }                   
-                }                       
-            }                           
+                    }
+                }
+            }
             trigger fpc-heap-memory-utilization {
+                synopsis "Linecard heap memory kpi";
+                description "Sets health based on linecard heap memory utilization";
                 term is-heap-memory-utilization-greater-than-threshold {
-                    when {              
+                    when {
                         greater-than "$memory-heap-utilization" "$linecard-heap-usage-threshold";
-                    }                   
-                    then {              
-                        status {        
-                            color red;  
+                    }
+                    then {
+                        status {
+                            color red;
                             message "FPC heap memory utilization ($memory-heap-utilization) is over threshold ($linecard-heap-usage-threshold)";
-                        }               
-                    }                   
-                }                       
-                term heap-memory-utilization-less-than-threshold {    
-                    then {              
-                        status {        
+                        }
+                    }
+                }
+                term heap-memory-utilization-less-than-threshold {
+                    then {
+                        status {
                             color green;
-                        }               
-                    }                   
-                }                       
-            }                           
+                        }
+                    }
+                }
+            }
+            variable FPC_Buffer_Usage_Threshold {
+                value 80;
+                description "Linecard Buffer Memory usage threshold value";
+                type int;
+            }
             variable FPC_CPU_Usage_Threshold {
                 value 80;
                 description "Linecard CPU usage threshold value";
@@ -98,11 +116,6 @@ iceberg {
                 description "Linecard Heap Memory usage threshold value";
                 type int;
             }
-            variable FPC_Buffer_Usage_Threshold {
-                value 80;
-                description "Linecard Buffer Memory usage threshold value";
-                type int;
-            }
-        }                               
-    }                                   
+        }
+    }
 }

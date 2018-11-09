@@ -1,10 +1,14 @@
 iceberg {
     topic linecard {
         description "Rules relevant to metrics on the line-card";
+        synopsis "Linecard statistics analyzer";
         rule check-traffic-offload-engine-status {
-            description "Monitors  TOE packets, Asic blocks, Wedge declaration, Wedge window size, Ucode, Hostpath app status";
             keys [ asic_instance asic_type pfe_instance stream_id target toe_instance ];
+            synopsis "TOE packets analyzer";
+            description "Monitors  TOE packets, Asic blocks, Wedge declaration, Wedge window size, Ucode, Hostpath app status";
             sensor ospf-traffic-offload-engine-status {
+                synopsis "iAgent sensor description";
+                description "Netconf command show toe pfe  iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file toe-pfe.yml;
                     table ShowToePfeTable;
@@ -12,6 +16,8 @@ iceberg {
                 }
             }
             trigger toe-hostpath-app-status {
+                synopsis "TOE host path app status kpi";
+                description "Sets health based on toe host path app status";
                 term is-toe-hostpath-app-running {
                     when {
                         matches-with "$toe-driver-host-path-app-running" true;
@@ -33,6 +39,8 @@ iceberg {
                 }
             }
             trigger toe-packet-reception {
+                synopsis "TOE packet reception kpi";
+                description "Sets health based on TOE packet reception";
                 term are-toe-packets-received {
                     when {
                         matches-with "$toe-packets-received" true;
@@ -54,6 +62,8 @@ iceberg {
                 }
             }
             trigger toe-to-asic-blockage {
+                synopsis "TOE asic blockage kpi";
+                description "Sets health based on asic blockage";
                 term is-asic-to-not-blocked {
                     when {
                         matches-with "$to-asic-not-blocked" true;
@@ -75,6 +85,8 @@ iceberg {
                 }
             }
             trigger toe-ucode-status {
+                synopsis "TOE ucode status kpi";
+                description "Sets health based on TOE ucode status";
                 term has-toe-ucode-not-halted {
                     when {
                         matches-with "$toe-ucode-not-halted" true;
@@ -96,6 +108,8 @@ iceberg {
                 }
             }
             trigger toe-wedge-declaration {
+                synopsis "TOE wedge declaration kpi";
+                description "Sets health based on TOE wedge declaration";
                 term has-wedge-not-been-declared {
                     when {
                         matches-with "$wedge-not-declared" true;
@@ -117,6 +131,8 @@ iceberg {
                 }
             }
             trigger wedge-window-size {
+                synopsis "TOE wedge window size kpi";
+                description "Sets health based on TOE wedge window size";
                 term is-wedge-window-size-0 {
                     when {
                         matches-with "$wedge-window-size-0" true;
