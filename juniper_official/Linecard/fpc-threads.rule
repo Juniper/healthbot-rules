@@ -1,10 +1,14 @@
 iceberg {
     topic linecard {
         description "Rules relevant to metrics on the line-card";
+        synopsis "Linecard CPU usage analyzer";
         rule check-fpc-threads {
             keys [ Name target ];
+            synopsis "Linecard CPU usage analyzer";
             description "Monitors the CPU utilization by FPC threads";
             sensor fpc-threads {
+                synopsis "iAgent sensor definition";
+                description "Netconf show threads command iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file fpc-threads.yml;
                     table FPCThread;
@@ -15,8 +19,11 @@ iceberg {
                 constant {
                     value "{{FPC_CPU_Usage_Threshold}}";
                 }
+                description "This field is for linecard CPU usage threshold";
             }
             trigger fpc-threads-cpu-utilization {
+                synopsis "Linecard cpu usage kpi";
+                description "detects anamoly dynamically using linecard usage threshold";
                 term is-cpu-utilization-greater-than-threshold {
                     when {
                         greater-than "$cpu" "$linecard-cpu-usage-threshold";

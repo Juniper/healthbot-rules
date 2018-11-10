@@ -1,10 +1,14 @@
 iceberg {
     topic system {
         description "Rules relevant to metrics and KPI of the system";
+        synopsis "Routing Engine CPU utilization kpi";
         rule check-routing-engine-cpu-utilization {
-            description "Monitors the routing engine's cpu utilization";
             keys slot;
-            sensor REutlizationTable {
+            synopsis "Routing Engine CPU utilization analyzer";
+            description "Monitors the routing engine's cpu utilization";
+            sensor reutilizationtable {
+                synopsis "Routing engine CPU utilization iAgent sensor definition";
+                description "Netconf rpc get-route-engine-information to collect data from network device";
                 iAgent {
                     file re-cpu-utilization.yml;
                     table REutlizationTable;
@@ -15,8 +19,11 @@ iceberg {
                 constant {
                     value "{{RE_CPU_Idle_Threshold}}";
                 }
+                description "Routing Engine CPU idle threshold";
             }
             trigger routing-engine-cpu-utilization-idle-15min {
+                synopsis "Routing engine CPU kpi";
+                description "sets health based on Routing engine CPU utilization for 15 minutes";
                 term is-15min-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-15-min" "$re-cpu-idle-threshold";
@@ -37,6 +44,8 @@ iceberg {
                 }
             }
             trigger routing-engine-cpu-utilization-idle-1min {
+                synopsis "Routing engine CPU kpi";
+                description "sets health based on Routing engine CPU utilization for 1 minute";
                 term is-1min-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-1-min" "$re-cpu-idle-threshold";
@@ -57,6 +66,8 @@ iceberg {
                 }
             }
             trigger routing-engine-cpu-utilization-idle-5-sec {
+                synopsis "Routing engine CPU kpi";
+                description "sets health based on Routing engine CPU utilization for 5 seconds";
                 term is-5sec-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-5-sec" "$re-cpu-idle-threshold";
@@ -77,6 +88,8 @@ iceberg {
                 }
             }
             trigger routing-engine-cpu-utilization-idle-5min {
+                synopsis "Routing engine CPU kpi";
+                description "sets health based on Routing engine CPU utilization for 5 minutes";
                 term is-5min-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-5-min" "$re-cpu-idle-threshold";

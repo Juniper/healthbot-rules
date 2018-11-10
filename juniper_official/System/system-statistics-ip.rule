@@ -3,8 +3,11 @@ iceberg {
         description "Rules relevant to metrics and KPI of the system";
         rule check-system-statistics-ip {
             description "Monitors incoming ip no socket buffer drops";
+            synopsis "Incoming raw ip packets analyzer";
             keys incoming-rawip-packets-dropped-no-socket-buffer;
             sensor system-statistics-ip {
+                description "Netconf rpc get-statistics-information to collect data from network device";
+                synopsis "Ip packets dropped no socket buffer iAgent sensor definition";
                 iAgent {
                     file system-statistics-ip.yml;
                     table systemStatisticsIP;
@@ -12,17 +15,21 @@ iceberg {
                 }
             }
             field configured-packets-dropped-count-threshold {
+                description "IP no socket buffer count threshold";
                 constant {
                     value "{{IP_No_Socket_Buffer_Count_Threshold}}";
                 }
             }
             field configured-packets-dropped-rate-threshold {
+                description "IP no socket buffer rate threshold";
                 constant {
                     value "{{IP_No_Socket_Buffer_Rate_Threshold}}";
                 }
             }
             trigger incoming-raw-ip-no-socket-buffer-packets-dropped {
-                term are-incoming-ip-no-socket-buffer-drops-increasing-over-threshold-rate {
+                description "sets health based on ip no socket buffer drop";
+                synopsis "ip no socket buffer drop kpi";
+                term are-incoming-ip-no-socket-drops-increasing-over-threshold-rate {
                     when {
                         min-rate-of-increase "$system-statistics-ip-no-socket-buffer" {
                             rate "$configured-packets-dropped-rate-threshold";
@@ -36,7 +43,7 @@ iceberg {
                         }
                     }
                 }
-                term are-incoming-ip-no-socket-buffer-drops-larger-than-threshold {
+                term are-incoming-ip-no-buffer-drops-larger-than-threshold {
                     when {
                         greater-than "$system-statistics-ip-no-socket-buffer" "$configured-packets-dropped-count-threshold";
                     }
@@ -47,7 +54,7 @@ iceberg {
                         }
                     }
                 }
-                term incoming-ip-no-socket-buffer-drops-not-increasing-above-configured-rate {
+                term incoming-ip-no-buffer-drops-not-increasing-above-configured-rate {
                     then {
                         status {
                             color green;

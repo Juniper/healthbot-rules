@@ -1,10 +1,14 @@
 iceberg {
     topic protocol.infra {
         description "Rules relevant to protocol daemon infrastructure";
+        synopsis "Task I/O statistics analyzer";
         rule check-task-io-drops {
-            description "Monitors the task IO drops";
             keys task-name;
+            synopsis "Task I/O statistics analyzer";
+            description "Monitors the task IO drops";
             sensor task-io-drops {
+                synopsis "show task io sensor definition";
+                description "Netconfig command show task io iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file task-io.yml;
                     table TaskIOTable;
@@ -15,11 +19,14 @@ iceberg {
                 constant {
                     value "{{IO_Drops_Threshold}}";
                 }
+                description "This field is for IO drops threshold";
             }
             trigger task-io-drops {
+                synopsis "task io drops kpi";
+                description "Sets health based on task ip drops threshold value";
                 term are-task-io-drops-increasing {
                     when {
-                        min-rate-of-increase "$dropped" {
+                        min-rate-of-increase "$dropped" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$io-drops-threshold";
                             time-range 50s;
                         }

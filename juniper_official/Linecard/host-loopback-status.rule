@@ -1,58 +1,66 @@
 iceberg {
-topic interface {
-    description "Rules relevant to metrics and KPI on the interfaces";
-    rule check-host-loopback-status {
-        description "Monitors the host loopback to detected wedges, toolkit errors";
-        keys target;
-        sensor HostlbStatusSummaryTable {
-            iAgent {
-                file host-loopback-status.yml;
-                table HostlbStatusSummaryTable;
-                frequency 10s;
-            }
-        }
-        trigger detected-wedges {
-            term are-detected-wedges-present {
-                when {
-                    matches-with "$no-detected-wedges" true;
+    topic interface {
+        description "Rules relevant to metrics and KPI on the interfaces";
+        synopsis "Host loopback analyzer";
+        rule check-host-loopback-status {
+            keys target;
+            synopsis "Host loopback analyzer";
+            description "Monitors the host loopback to detected wedges, toolkit errors";
+            sensor hostlbstatussummarytable {
+                synopsis "iAgent  sensor definition";
+                description "Netconf command show host_loopback status-summary iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file host-loopback-status.yml;
+                    table HostlbStatusSummaryTable;
+                    frequency 10s;
                 }
-                then {
-                    status {
-                        color green;
-                        message "No detected host loopback wedges";
+            }
+            trigger detected-wedges {
+                synopsis "Host loopback wedges kpi";
+                description "Sets health based on host loopack wedges";
+                term are-detected-wedges-present {
+                    when {
+                        matches-with "$no-detected-wedges" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No detected host loopback wedges";
+                        }
+                    }
+                }
+                term detected-wedges-present {
+                    then {
+                        status {
+                            color red;
+                            message "Detected a host loopback wedge";
+                        }
                     }
                 }
             }
-            term detected-wedges-present {
-                then {
-                    status {
-                        color red;
-			message "Detected a host loopback wedge";
+            trigger toolkit-errors {
+                synopsis "Host loopback toolkit error kpi";
+                description "Sets health based on host loopback toolkit errors";
+                term are-toolkit-errors-present {
+                    when {
+                        matches-with "$no-toolkit-errors" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No detected toolkit errors";
+                        }
                     }
                 }
-            }
-        }
-        trigger toolkit-errors {
-            term are-toolkit-errors-present {
-                when {
-                    matches-with "$no-toolkit-errors" true;
-                }
-                then {
-                    status {
-                        color green;
-                        message "No detected toolkit errors";
-                    }
-                }
-            }
-            term toolkit-errors-present {
-                then {
-                    status {
-                        color red;
-			message "Detected a toolkit error";
+                term toolkit-errors-present {
+                    then {
+                        status {
+                            color red;
+                            message "Detected a toolkit error";
+                        }
                     }
                 }
             }
         }
     }
-}
 }
