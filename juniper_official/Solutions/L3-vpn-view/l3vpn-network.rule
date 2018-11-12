@@ -80,7 +80,7 @@ iceberg {
             }
             field vpn-name {
                 reference {
-                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-routing-instance-details]/field[instance-name='{{cutomer-vpn-name}}']/instance-name";
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-routing-instance-details]/field[instance-name='{{customer-vpn-name}}']/instance-name";
                 }
                 type string;
                 description "VRF name";
@@ -165,7 +165,7 @@ iceberg {
              * while deploying playbook instance.
              */
             
-            variable cutomer-vpn-name {
+            variable customer-vpn-name {
                 description "VRF name to monitor, regular expression, e.g. 'customer*'";
                 type string;
             }
@@ -314,20 +314,5 @@ iceberg {
                 type string;
             }
         }
-    }
-    playbook interface {
-        description "Playbook collects interface details periodically";
-        synopsis "Interface collector";
-        rules protocol.l3vpn/get-interface-details;
-    }
-    playbook vpn {
-        description "Playbook collects routing instance details periodically";
-        synopsis "Routing instance collector";
-        rules protocol.l3vpn/get-routing-instance-details;
-    }
-    playbook vpn-view {
-        description "Playbook checks health of L3VPN session, PE and CE interface status and notify anomaly when statistics are unusual";
-        synopsis "L3VPN network health analyzer";
-        rules protocol.l3vpn/check-l3vpn-state;
     }
 }
