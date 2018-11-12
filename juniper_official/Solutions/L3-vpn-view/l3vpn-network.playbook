@@ -1,0 +1,22 @@
+/*
+ * Collects L3VPN protocol status and PE & CE interface statistics and notifies
+ * anomalies when any of the BGP session, CE or PE interface is down.
+ *
+ * Rule get-interface-details, collects interface statistics.
+ * Rule get-routing-instance-details, collects routing instance details
+ *
+ * Network rule check-l3vpn-state, Analyzes the routing instance, PE and CE
+ * interface status and notifies anomalies when any of the state is down.
+ */
+iceberg {
+    playbook get-vpn-stats {
+        description "Playbook collects interface and routing instance details periodically";
+        synopsis "Interface and routing instance collector";
+        rules [protocol.l3vpn/get-interface-details protocol.l3vpn/get-routing-instance-details];
+    }
+    playbook vpn-view {
+        description "Playbook checks health of L3VPN session, PE and CE interface status and notify anomaly when statistics are unusual";
+        synopsis "L3VPN network health analyzer";
+        rules protocol.l3vpn/check-l3vpn-state;
+    }
+}
