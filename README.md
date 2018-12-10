@@ -40,7 +40,8 @@ Submit only the .conf files
   - From your fork open a pull request to the development branch
 
 **NOTE** 
-Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
+- Rules can get promoted from “community-contribution” to “juniper-official” based on field feedback and its applicability 
+- Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
 
 # Automated Testing
 
