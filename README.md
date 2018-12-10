@@ -6,7 +6,7 @@ Submit only the .conf files
 # How to contribute
 
 ### Juniper Employees
-- Subscribe to 'jfit-rules-official' alias on jam.juniper.net
+- Subscribe to 'healthbot-rules-official' alias on jam.juniper.net
 - Create a personal fork of the project on Github
 - Clone the fork on your local machine. Your remote repo on Github is called origin
 - Add the original repository as a remote called upstream
