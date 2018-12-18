@@ -2,16 +2,16 @@
  * Detects interface in errors and notifies when anomalies are found.
  * Two inputs control detection
  * 
- *   1) interface_name, is a regular expression that matches the
+ *   1) interface-name-variable, is a regular expression that matches the
  *      interfaces that you would like to monitor.  By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
  * 
- *   2) out_errors_threshold, is the threshold that causes the rule to report
+ *   2) out-errors-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
  *      color to red when *all* the error increases are greater than
- *      'out_error_threshold' for 60s. If it sees any errors increase for a
- *      period of less than 60s, it'll turn the color to yellow,
+ *      'out-errors-threshold-variable' for 180s. If it sees any errors increase for a
+ *      period of less than 180s, it'll turn the color to yellow,
  *      otherwise color is set to green.
  */
 iceberg {
@@ -24,9 +24,9 @@ iceberg {
             /*
              * Monitors the interface out-errors count on an interface.
              * Notifies via the dashboard colors when the flaps increase by
-             * {{in_errors_threshold}} for every collected metric during a 60s
+             * {{out-errors-threshold-variable}} for every collected metric during a 180s
              * time range (red).  The color is set to yellow if we see any
-             * out errors increase by {{out_errors_threshold}}. Otherwise the
+             * out errors increase by {{out-errors-threshold-variable}}. Otherwise the
              * color is set to green.
              * 
              * Use interface name as key for rule.
@@ -40,7 +40,7 @@ iceberg {
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             /*
@@ -49,7 +49,7 @@ iceberg {
              */
             field interface-name {
                 sensor interfaces {
-                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -57,7 +57,7 @@ iceberg {
             }
             field out-errors-count {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{out_errors_stats_name}}";
+                    path "/interfaces/interface/state/counters/{{out-errors-stats-name-variable}}";
                 }
                 type integer;
                 description "This field shows interface field's value";
@@ -67,7 +67,7 @@ iceberg {
              */
             field out-errors-threshold {
                 constant {
-                    value "{{out_errors_threshold}}";
+                    value "{{out-errors-threshold-variable}}";
                 }
                 type integer;
                 description "Out errors count increase threshold";
@@ -81,14 +81,14 @@ iceberg {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the interface out errors ($out-errors-count) count increases
-                 * for all points in 60 seconds period.
+                 * for all points in 180 seconds period.
                  */
-		frequency 20s;
+		frequency 60s;
                 term is-interface-out-errors-abnormal {
                     when {
-                        min-rate-of-increase "$out-errors-count" {
-                            rate "$out-errors-threshold";
-                            time-range 60s;
+                        increasing-at-least-by-value "$out-errors-count" {
+                            value "$out-errors-threshold";
+                            time-range 180s;
                         }
                     }
                     then {
@@ -104,8 +104,8 @@ iceberg {
                  */
                 term is-interface-out-errors-median {
                     when {
-                        min-rate-of-increase "$out-errors-count" {
-                            rate "$out-errors-threshold";
+                        increasing-at-least-by-value "$out-errors-count" {
+                            value "$out-errors-threshold";
                         }
                     }
                     then {
@@ -131,17 +131,17 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable interface_name {
+            variable interface-name-variable {
                 value ".*";
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
-            variable out_errors_threshold {
+            variable out-errors-threshold-variable {
                 value 1;
                 description "Interface out errors threshold: Number of errors increase between metrics, before we report anomaly";
                 type int;
             }
-            variable out_errors_stats_name {
+            variable out-errors-stats-name-variable {
                 value out-errors;
                 description "Error stats counter name out-errors which is cumulative of out-resource-errors, out-drops and out-discards";
                 type string;

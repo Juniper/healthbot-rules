@@ -2,25 +2,25 @@
  * Monitors interface output traffic and notifies when anomalies are found.
  * Four inputs control detection
  *
- *   1) interface_name, is a regular expression that matches the
+ *   1) interface-name-variable, is a regular expression that matches the
  *      interfaces that you would like to monitor.  By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
  *
- *   2) stats_name, is a regular expression that matches the interface KPI
+ *   2) out-octets-stats-name, is a regular expression that matches the interface KPI
  *      statistics counter name that you would like to monitor. By default it's
  *      out-octets, Use proper counter name something like 'out-pkts' or
  *      "out-unicast-pkts" or "out-multicast-pkts" etc.
  *
- *   3) out_octets_high_threshold, is the threshold that causes the rule to report
+ *   3) out-octets-high-threshold, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 800000000 octets. This rule will set a
  *      dashboard color to red when *all* the output traffic exceed threshold
- *      for 60s. Use 8000000000 octets for 10G & 80000000000 for 100G interface. 
+ *      for 180s. Use 8000000000 octets for 10G & 80000000000 for 100G interface. 
  *
- *   4) out_octets_low_threshold, is the threshold that causes the rule to report
+ *   4) out-octets-low-threshold, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 500000000 octets . This rule will set a
  *      dashboard color to yellow when *all* the output traffic exceed 
- *      threshold for 60s, otherwise color is set to green. Use 5000000000
+ *      threshold for 180s, otherwise color is set to green. Use 5000000000
  *      octets for 10G & 50000000000 for 100G interface. 
  */
 iceberg {
@@ -32,11 +32,11 @@ iceberg {
             description "Collects output traffic(out-octets) periodically and notifies in case of traffic is above threshold";
             /*
              * Monitors interface output traffic. Notifies via the dashboard
-             * colors when the traffic is above {{out_octets_high_threshold}}
-             * for every collected metric during a 60s time range (red).
+             * colors when the traffic is above {{out-octets-high-threshold}}
+             * for every collected metric during a 180s time range (red).
              * The color is set to yellow when the traffic is above
-             * {{out_octets_low_threshold}} for every collected metric during
-             * a 60s. Otherwise the color is set to green.
+             * {{out-octets-low-threshold}} for every collected metric during
+             * a 180s. Otherwise the color is set to green.
              * 
              * Use interface name as key for rule.
              */
@@ -49,7 +49,7 @@ iceberg {
                 description "/interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             /*
@@ -58,7 +58,7 @@ iceberg {
              */
             field interface-name {
                 sensor interfaces {
-                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -66,7 +66,7 @@ iceberg {
             }
             field out-octets-stats-value {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{outoctets_stats_name}}";
+                    path "/interfaces/interface/state/counters/{{out-octets-stats-name}}";
                 }
                 type integer;
                 description "Interface statistics counter (out-octets) value";
@@ -76,14 +76,14 @@ iceberg {
              */
             field high-threshold {
                 constant {
-                    value "{{out_octets_high_threshold}}";
+                    value "{{out-octets-high-threshold}}";
                 }
                 type integer;
                 description "Output traffic high threshold";
             }
             field low-threshold {
                 constant {
-                    value "{{out_octets_low_threshold}}";
+                    value "{{out-octets-low-threshold}}";
                 }
                 type integer;
                 description "Output traffic low threshold";
@@ -97,15 +97,15 @@ iceberg {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the interface output traffic ($out-octets-stats-value) is
-                 * above high threshold (out_octets_high_threshold) for all
-                 * points in 60 seconds period.
+                 * above high threshold (out-octets-high-threshold) for all
+                 * points in 180 seconds period.
                  */           
-		frequency 20s;
+		frequency 60s;
                 term is-interface-stats-abnormal {
                     when {
-                        min-rate-of-increase "$out-octets-stats-value" {
-                            rate "$high-threshold";
-                            time-range 60s;
+                        increasing-at-least-by-value "$out-octets-stats-value" {
+                            value "$high-threshold";
+                            time-range 180s;
                         }
                     }
                     then {
@@ -118,14 +118,14 @@ iceberg {
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface output traffic ($out-octets-stats-value)
-                 * is above low threshold (out_octets_low_threshold) for all
-                 * points in 60 seconds period.
+                 * is above low threshold (out-octets-low-threshold) for all
+                 * points in 180 seconds period.
                  */                   
                 term is-interface-stats-median {
                     when {
-                        min-rate-of-increase "$out-octets-stats-value" {
-                            rate "$low-threshold";
-                            time-range 60s;
+                        increasing-at-least-by-value "$out-octets-stats-value" {
+                            value "$low-threshold";
+                            time-range 180s;
                         }
                     }
                     then {
@@ -151,22 +151,22 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable interface_name {
+            variable interface-name-variable {
                 value ".*";
                 description "Interfaces to be monitored";
                 type string;
             }
-            variable out_octets_high_threshold {
+            variable out-octets-high-threshold {
                 value 800000000;
                 description "Interface output traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
                 type int;
             }
-            variable out_octets_low_threshold {
+            variable out-octets-low-threshold {
                 value 500000000;
                 description "Interface output traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
                 type int;
             }
-            variable outoctets_stats_name {
+            variable out-octets-stats-name {
                 value out-octets;
                 description "Interface output traffic counter name";
                 type string;

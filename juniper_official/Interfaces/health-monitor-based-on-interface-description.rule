@@ -10,24 +10,24 @@
  * threshold
  * Four inputs control detection
  *
- *   1) interface_description, is a regular expression that matches the keyword
+ *   1) interface-description, is a regular expression that matches the keyword
  *      in interface description and filters interfaces that you would like to
  *      monitor. By default it's '.+', which matches all interfaces contains
  *      description. Use something like 'core' to match only interfaces which
  *      contains keyword 'core' in interface description.
  *
- *   2) stats_name, is a regular expression that matches the interface KPI
+ *   2) stats-name-variable, is a regular expression that matches the interface KPI
  *      statistics counter name that you would like to monitor. By default it's
  *      in-octets, Use proper counter name something like 'out-octets' or
  *      "in-errors" or "out-errors" etc.
  *
- *   3) high_threshold, is the threshold that causes the rule to report
+ *   3) high-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 800000000 octets . This rule will set a
  *      dashboard color to red when *filtered interfaces* the input traffic
  *      is above threshold for 60s. Use 8000000000 octets for 10G & 80000000000
  *      for 100G interface.
  *
- *   4) medium_threshold, is the threshold that causes the rule to report
+ *   4) medium-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 500000000 octets . This rule will set a
  *      dashboard color to yellow when *filtered interfaces* the input traffic
  *      is above threshold for 60s, otherwise color is set to green. Use
@@ -42,9 +42,9 @@ iceberg {
             description "Using this rule any one of the interface statistics counter (in and out errors, packets, octets, flaps) will be monitored";
             /*
              * Monitors the interface input traffic. Notifies via the dashboard
-             * colors when the traffic is above {{high_threshold}} for every
+             * colors when the traffic is above {{high-threshold-variable}} for every
              * collected metric during a 60s time range (red).  The color is
-             * set to yellow when the traffic is above {{medium_threshold}} for
+             * set to yellow when the traffic is above {{medium-threshold-variable}} for
              * every collected metric during a 60s. Otherwise the color is set
              * to green.
              * 
@@ -59,7 +59,7 @@ iceberg {
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             /*
@@ -82,7 +82,7 @@ iceberg {
             }
             field stats-value {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{stats_name}}";
+                    path "/interfaces/interface/state/counters/{{stats-name-variable}}";
                 }
                 type integer;
                 description "Interface statistics counter (in-octets) value";
@@ -92,28 +92,28 @@ iceberg {
              */
             field medium-threshold {
                 constant {
-                    value "{{medium_threshold}}";
+                    value "{{medium-threshold-variable}}";
                 }
                 type integer;
                 description "In error count high threshold";
             }
             field high-threshold {
                 constant {
-                    value "{{high_threshold}}";
+                    value "{{high-threshold-variable}}";
                 }
                 type integer;
                 description "In error count high threshold";
             }
             field stats-name {
                 constant {
-                    value "{{stats_name}}";
+                    value "{{stats-name-variable}}";
                 }
                 type string;
                 description "Interface statistics counter name";
             }
             field user-description {
                 constant {
-                    value "{{interface_description}}";
+                    value "{{interface-description}}";
                 }
                 type string;
                 description "Keyword in interface description";
@@ -124,6 +124,7 @@ iceberg {
             trigger interface-stats {
                 synopsis "interface statistics kpi";
                 description "Sets health based on interface statistics exceed threshold";
+		frequency 60s;
                 /*
                  * Skips evaluation for the interfaces where keyword unmatched 
                  * in interface description.
@@ -141,9 +142,9 @@ iceberg {
                  */
                 term is-interface-stats-crossing-high-threshold {
                     when {
-                        min-rate-of-increase "$stats-value" {
-                            rate "$high-threshold";
-                            time-range 60s;
+                        increasing-at-least-by-value "$stats-value" {
+                            value "$high-threshold";
+                            time-range 180s;
                         }
                     }
                     then {
@@ -161,9 +162,9 @@ iceberg {
                  */
                 term is-interface-stats-crossing-medium-threshold {
                     when {
-                        min-rate-of-increase "$stats-value" {
-                            rate "$medium-threshold";
-                            time-range 60s;
+                        increasing-at-least-by-value "$stats-value" {
+                            value "$medium-threshold";
+                            time-range 180s;
                         }
                     }
                     then {
@@ -189,22 +190,22 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable high_threshold {
+            variable high-threshold-variable {
                 value 800000000;
                 description "Interface in traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
                 type int;
             }
-            variable interface_description {
+            variable interface-description {
                 value ".+";
                 description "Filter interfaces which contains keyword in its description, regular expression, e.g. 'core|edge|access|bng'";
                 type string;
             }
-            variable medium_threshold {
+            variable medium-threshold-variable {
                 value 500000000;
                 description "Interface in traffic medium threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
                 type int;
             }
-            variable stats_name {
+            variable stats-name-variable {
                 value "in-octets";
                 description "Interface statistics counter name(in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors, carrier-transitions) to monitor. Create separate instance for each kpi";
                 type string;
