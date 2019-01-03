@@ -12,12 +12,12 @@ iceberg {
                 iAgent {
                     file jnh-ifd-stream.yml;
                     table ShowJnhIfdStream;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field linecard-jnh-ifd-stream-increase-rate {
                 constant {
-                    value "{{FPC_JNH_IFD_Stream_Increase_Rate}}";
+                    value "{{fpc-jnh-ifd-stream-increase-rate}}";
                 }
                 type integer;
                 description "This field is for JNH ifd stream increase rate";
@@ -25,12 +25,13 @@ iceberg {
             trigger jnh-ifd-stream-packets {
                 synopsis "JNH IFD stream kpi";
                 description "Sets health based on JNH ifd stream increase rate";
+                frequency 60s;
                 term are-jnh-ifd-stream-packets-increasing-over-threshold {
                     when {
                         does-not-match-with "$counter" rx.;
                         min-rate-of-increase "$packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$linecard-jnh-ifd-stream-increase-rate";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -48,7 +49,7 @@ iceberg {
                     }
                 }
             }
-            variable FPC_JNH_IFD_Stream_Increase_Rate {
+            variable fpc-jnh-ifd-stream-increase-rate {
                 value 1;
                 description "Linecard JNH IFD Stream Increase Rate Threshold Value";
                 type int;
