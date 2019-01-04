@@ -18,18 +18,19 @@ iceberg {
             field configured-product-value {
                description "System product model like MX240 or MX480 or MX960"; 
                 constant {
-                    value "{{Product_Value}}";
+                    value "{{product-value}}";
                 }
             }
             field configured-software-version-value {
                description "System software version";
                 constant {
-                    value "{{Software_Version_Value}}";
+                    value "{{software-version-value}}";
                 }
             }
             trigger product-name {
                 description "sets health based on product model";
                 synopsis "system product model kpi";
+                frequency 60s;
                 term is-product-model-valid {
                     when {
                         matches-with "$product" "$configured-product-value";
@@ -53,6 +54,7 @@ iceberg {
             trigger software-version {
                 description "sets health based on software version";
                 synopsis "system software version kpi";
+                frequency 60s;
                 term is-junos-version-correct {
                     when {
                         matches-with "$version" "$configured-software-version-value";
@@ -73,12 +75,12 @@ iceberg {
                     }
                 }
             }
-            variable Product_Value {
+            variable product-value {
                 value mx960;
                 description "Product model the system should be";
                 type string;
             }
-            variable Software_Version_Value {
+            variable software-version-value {
                 value mx960;
                 description "Software Version the system should have";
                 type string;

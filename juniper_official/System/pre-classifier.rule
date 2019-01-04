@@ -12,29 +12,30 @@ iceberg {
                 iAgent {
                     file pre-classifier.yml;
                     table PreClStatsTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field linecard-pre-classifier-count-threshold {
                 constant {
-                    value "{{FPC_PreClassifier_Count_Threshold}}";
+                    value "{{fpc-preclassifier-count-threshold}}";
                 }
                 description "Linecard pre-classifier count threshold value";
             }
             field linecard-pre-classifier-rate-threshold {
                 constant {
-                    value "{{FPC_PreClassifier_Rate_Threshold}}";
+                    value "{{fpc-preclassifier-rate-threshold}}";
                 }
                 description "Linecard pre-classifier rate threshold value";
             }
             trigger pre-classifier-packet-drops {
                 synopsis "pre-classifier kpi";
                 description "sets health based on pre-classifier packet drop";
+                frequency 60s;
                 term is-packet-drop-increasing {
                     when {
                         min-rate-of-increase "$dropped-packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$linecard-pre-classifier-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -64,12 +65,12 @@ iceberg {
                     }
                 }
             }
-            variable FPC_PreClassifier_Count_Threshold {
+            variable fpc-preclassifier-count-threshold {
                 value 1;
                 description "Linecard Pre-Classifier drop count threshold value";
                 type int;
             }
-            variable FPC_PreClassifier_Rate_Threshold {
+            variable fpc-preclassifier-rate-threshold {
                 value 1;
                 description "Linecard Pre-Classifier drop rate threshold value";
                 type int;

@@ -11,29 +11,30 @@ iceberg {
                 iAgent {
                     file pfe-traffic-statistics.yml;
                     table pfeStats;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field pfe-drop-count-threshold {
                 constant {
-                    value "{{PFE_Drop_Count_Threshold}}";
+                    value "{{pfe-drop-count-threshold-input}}";
                 }
                 description "Linecard PFE drop count threshold";
             }
             field pfe-drop-rate-threshold {
                 constant {
-                    value "{{PFE_Drop_Rate_Threshold}}";
+                    value "{{pfe-drop-rate-threshold-input}}";
                 }
                 description "Linecard PFE drop rate threshold";
             }
             trigger fabric-drops {
                 synopsis "Linecard fabric drops kpi";
                 description "sets system health based on fabric drops";
+                frequency 60s;
                 term are-fabric-drops-increasing {
                     when {
                         min-rate-of-increase "$fabric-drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -66,11 +67,12 @@ iceberg {
             trigger host-path-hardware-drops {
                 synopsis "Linecard hardware drops kpi";
                 description "sets system health based on linecard hardware drops";
+                frequency 60s;
                 term are-host-path-drops-increasing {
                     when {
                         min-rate-of-increase "$host-path-hardware-drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -103,11 +105,12 @@ iceberg {
             trigger info-cell-discard {
                 synopsis "Linecard cell discords kpi";
                 description "sets system health based on linecard cell discards";
+                frequency 60s;
                 term are-info-cell-discards-increasing {
                     when {
                         min-rate-of-increase "$info-cell-discards" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -140,11 +143,12 @@ iceberg {
             trigger ospf-hello-count {
                 synopsis "OSPF protocols kpi";
                 description "sets system health based on ospf hello count";
+                frequency 60s;
                 term are-ospf-hello-counts-increasing {
                     when {
                         min-rate-of-increase "$ospf-hello-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -163,12 +167,12 @@ iceberg {
                     }
                 }
             }
-            variable PFE_Drop_Count_Threshold {
+            variable pfe-drop-count-threshold-input {
                 value 0;
                 description "PFE Statistics drop counter threshold value";
                 type int;
             }
-            variable PFE_Drop_Rate_Threshold {
+            variable pfe-drop-rate-threshold-input {
                 value 1;
                 description "PFE Statistics drop counter rate threshold value";
                 type int;

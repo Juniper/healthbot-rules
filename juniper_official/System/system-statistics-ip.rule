@@ -1,6 +1,7 @@
 iceberg {
     topic system.statistics {
         description "Rules relevant to metrics and KPI of the system";
+        synopsis "Incoming raw ip packets analyzer";
         rule check-system-statistics-ip {
             description "Monitors incoming ip no socket buffer drops";
             synopsis "Incoming raw ip packets analyzer";
@@ -11,29 +12,30 @@ iceberg {
                 iAgent {
                     file system-statistics-ip.yml;
                     table systemStatisticsIP;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field configured-packets-dropped-count-threshold {
                 description "IP no socket buffer count threshold";
                 constant {
-                    value "{{IP_No_Socket_Buffer_Count_Threshold}}";
+                    value "{{ip-no-socket-buffer-count-threshold}}";
                 }
             }
             field configured-packets-dropped-rate-threshold {
                 description "IP no socket buffer rate threshold";
                 constant {
-                    value "{{IP_No_Socket_Buffer_Rate_Threshold}}";
+                    value "{{ip-no-socket-buffer-rate-threshold}}";
                 }
             }
             trigger incoming-raw-ip-no-socket-buffer-packets-dropped {
                 description "sets health based on ip no socket buffer drop";
                 synopsis "ip no socket buffer drop kpi";
+                frequency 60s;
                 term are-incoming-ip-no-socket-drops-increasing-over-threshold-rate {
                     when {
                         min-rate-of-increase "$system-statistics-ip-no-socket-buffer" {
                             rate "$configured-packets-dropped-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -62,12 +64,12 @@ iceberg {
                     }
                 }
             }
-            variable IP_No_Socket_Buffer_Count_Threshold {
+            variable ip-no-socket-buffer-count-threshold {
                 value 0;
                 description "System raw IP no socket buffer count threshold value";
                 type int;
             }
-            variable IP_No_Socket_Buffer_Rate_Threshold {
+            variable ip-no-socket-buffer-rate-threshold {
                 value 1;
                 description "System raw IP no socket buffer rate threshold value";
                 type int;

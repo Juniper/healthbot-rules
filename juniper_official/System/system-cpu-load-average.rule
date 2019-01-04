@@ -4,12 +4,12 @@
  * Two inputs control detection for each 1,5 & 15 minutes CPU load average
  * utilization KPIs.
  *
- *   1) re_cpu_15min_low_threshold or re_cpu_1min_low_threshold
- *      or re_cpu_5min_low_threshold, is the threshold will set a dashboard
+ *   1) re-cpu-15min-low-threshold or re-cpu-1min-low-threshold
+ *      or re-cpu-5min-low-threshold, is the threshold will set a dashboard
  *      color to green when RE CPU utilization below low threshold.
  *
- *   2) re_cpu_15min_high_threshold or re_cpu_1min_high_threshold
- *      or re_cpu_5min_high_threshold, is the threshold that causes the rule
+ *   2) re-cpu-15min-high-threshold or re-cpu-1min-high-threshold
+ *      or re-cpu-5min-high-threshold, is the threshold that causes the rule
  *      to report an anomaly. This rule will set a dashboard color to yellow
  *      when RE CPU utilization below high threshold. Otherwise color is set
  *      to red. 
@@ -47,12 +47,12 @@ iceberg {
             /*
              * Sensor configuration to get data from network devices
              */
-            sensor CPUutilizationTable {
+            sensor cpuutilizationtable {
                 synopsis "Routing engines CPU iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
                 iAgent {
                     file system-cpu.yml;
-                    table CPUutilizationTable;
+                    table cpuutilizationtable;
                     frequency 60s;
                 }
             }
@@ -94,42 +94,42 @@ iceberg {
              */
             field cpu-utilization-15min-high-threshold {
                 constant {
-                    value "{{re_cpu_15min_high_threshold}}";
+                    value "{{re-cpu-15min-high-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization 15 minutes load average high threshold";
             }
             field cpu-utilization-15min-low-threshold {
                 constant {
-                    value "{{re_cpu_15min_low_threshold}}";
+                    value "{{re-cpu-15min-low-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization 15 minutes load average low threshold";
             }
             field cpu-utilization-1min-high-threshold {
                 constant {
-                    value "{{re_cpu_1min_high_threshold}}";
+                    value "{{re-cpu-1min-high-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization 1 minute load average high threshold";
             }
             field cpu-utilization-1min-low-threshold {
                 constant {
-                    value "{{re_cpu_1min_low_threshold}}";
+                    value "{{re-cpu-1min-low-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization 1 minute load average low threshold";
             }
             field cpu-utilization-5min-high-threshold {
                 constant {
-                    value "{{re_cpu_5min_high_threshold}}";
+                    value "{{re-cpu-5min-high-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization 5 minutes load average high threshold";
             }
             field cpu-utilization-5min-low-threshold {
                 constant {
-                    value "{{re_cpu_5min_low_threshold}}";
+                    value "{{re-cpu-5min-low-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization 5 minutes load average low threshold";
@@ -161,7 +161,7 @@ iceberg {
                  * when the 15min CPU load average utilization ($cpu-15min)
                  * is below 75%.
                  */
-                term is-cpu-utilization-15min-median {
+                term is-cpu-utilization-15min-middle {
                     when {
                         less-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-high-threshold";
                     }
@@ -215,7 +215,7 @@ iceberg {
                  * when the 1min CPU load average utilization($cpu-1min) 
                  * is above 55% for a period of 3 minutes.
                  */
-                term is-cpu-utilization-1min-median {
+                term is-cpu-utilization-1min-middle {
                     when {
                         greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-low-threshold" {
                         time-range 3m;
@@ -268,7 +268,7 @@ iceberg {
                  * when the 5 min CPU load average utilization($cpu-5min)
                  * is below 80%.
                  */ 
-                term is-cpu-utilization-5min-median {
+                term is-cpu-utilization-5min-middle {
                     when {
                         less-than "$cpu-5min" "$cpu-utilization-5min-high-threshold";
                     }
@@ -295,32 +295,32 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable re_cpu_15min_high_threshold {
+            variable re-cpu-15min-high-threshold {
                 value 75;
                 type int;
                 description "RE CPU 15 min load average high threshold";
             }
-            variable re_cpu_15min_low_threshold {
+            variable re-cpu-15min-low-threshold {
                 value 50;
                 type int;
                 description "RE CPU 15 min load average low threshold";
             }
-            variable re_cpu_1min_high_threshold {
+            variable re-cpu-1min-high-threshold {
                 value 85;
                 type int;
                 description "RE CPU 1 min load average high threshold";
             }
-            variable re_cpu_1min_low_threshold {
+            variable re-cpu-1min-low-threshold {
                 value 60;
                 type int;
                 description "RE CPU 1 min load average low threshold";
             }
-            variable re_cpu_5min_high_threshold {
+            variable re-cpu-5min-high-threshold {
                 value 80;
                 type int;
                 description "RE CPU 5 min load average high threshold";
             }
-            variable re_cpu_5min_low_threshold {
+            variable re-cpu-5min-low-threshold {
                 value 55;
                 type int;
                 description "RE CPU 5 min load average low threshold";

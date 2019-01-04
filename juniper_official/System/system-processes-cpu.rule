@@ -3,21 +3,21 @@
  * notifies when anomalies are found.
  * Three inputs control detection
  * 
- *   1) process_name, is a regular expression that matches the daemons that you
+ *   1) process-name-input, is a regular expression that matches the daemons that you
  *      would like to monitor. By default it's '.*', which matches all daemons.
  *      Use something like 'rpd|dfwd|dcd' to match only rotuing, firewall and
  *      interface daemons.
  * 
- *   2) process_cpu_high_threshold, is the threshold that causes the rule to 
+ *   2) process-cpu-high-threshold, is the threshold that causes the rule to 
  *      report an anomaly. By default it's 80% of daemon CPU utilization. This
  *      rule will set a dashboard color to red when daemon CPU utilization
- *      exceed high threshold 'process_cpu_high_threshold' for period of
+ *      exceed high threshold 'process-cpu-high-threshold' for period of
  *      3 minutes.
  * 
- *   3) process_cpu_low_threshold, is the threshold that causes the rule to 
+ *   3) process-cpu-low-threshold, is the threshold that causes the rule to 
  *      report an anomaly. By default it's 50% of daemon CPU utilization. This
  *      rule will set a dashboard color to yellow when daemon CPU utilization
- *      exceed low threshold 'process_cpu_low_threshold' for period of
+ *      exceed low threshold 'process-cpu-low-threshold' for period of
  *      3 minutes. Otherwise color is set to green.
  */
 iceberg {
@@ -30,9 +30,9 @@ iceberg {
             /*
              * Monitors *all* the daemons CPU utilization. Notifies via the
              * dashboard colors when the daemon CPU utilization exceed by
-             * {{process_cpu_high_threshold}} for every collected metric during
+             * {{process-cpu-high-threshold}} for every collected metric during
              * a 3 minute time range (red). The color is set to yellow if we
-             * see daemon CPU utilization exceed {{process_cpu_low_threshold}}
+             * see daemon CPU utilization exceed {{process-cpu-low-threshold}}
              * for every collected metric during a 3 min time range. Otherwise 
              * the color is set to green.
              * 
@@ -42,7 +42,7 @@ iceberg {
             /*
              * Sensor configuration to get data from network devices.
              */
-            sensor SystemProcExtTable {
+            sensor systemprocexttable {
                 synopsis "System processes CPU iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
                 iAgent {
@@ -56,13 +56,13 @@ iceberg {
              * to the shorter field names used in the rules.
              */
             field cpu-util-percent {
-                sensor SystemProcExtTable {
+                sensor systemprocexttable {
                     path wcpu;
                 }
                 description "Daemon CPU utilization";
             }
             field daemon {
-                sensor SystemProcExtTable {
+                sensor systemprocexttable {
                     path cmd;
                 }
                 description "Daemon to be monitored";
@@ -72,21 +72,21 @@ iceberg {
              */
             field max-threshold {
                 constant {
-                    value "{{process_cpu_high_threshold}}";
+                    value "{{process-cpu-high-threshold}}";
                 }
                 type integer;
                 description "Daemon cpu high threshold";
             }
             field min-threshold {
                 constant {
-                    value "{{process_cpu_low_threshold}}";
+                    value "{{process-cpu-low-threshold}}";
                 }
                 type integer;
                 description "Daemon cpu low threshold";
             }
             field process-name {
                 constant {
-                    value "{{process_name}}";
+                    value "{{process-name-input}}";
                 }
                 type string;
                 description "Selected daemon to be monitored";
@@ -97,6 +97,7 @@ iceberg {
             trigger processes-cpu-utilization {
                 synopsis "System prcoesses cpu utilization kpi";
                 description "Sets health based on system processes cpu utilization";
+                frequency 60s;
                 /*
                  * Skips evaluation for unmonitored daemons
                  */
@@ -130,7 +131,7 @@ iceberg {
                  * exceed low threshold ($min-threshold) ffor all points in a
                  * 3 minute period.
                  */  
-                term is-cpu-utilization-median {
+                term is-cpu-utilization-middle {
                     when {
                         greater-than-or-equal-to "$cpu-util-percent" "$min-threshold" {
                             time-range 3m;
@@ -139,7 +140,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "$daemon cpu utilization:($cpu-util-percent), is in medium range";
+                            message "$daemon cpu utilization:($cpu-util-percent), is in middle range";
                         }
                     }
                 }
@@ -159,17 +160,17 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable process_cpu_high_threshold {
+            variable process-cpu-high-threshold {
                 value 80;
                 description "Daemon cpu high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable process_cpu_low_threshold {
+            variable process-cpu-low-threshold {
                 value 50;
                 description "Daemon cpu low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable process_name {
+            variable process-name-input {
                 value .*;
                 description "Demon name to monitor, regular regular expression, eg 'rpd|dfwd|dcd'";
                 type string;
