@@ -53,11 +53,12 @@ iceberg {
                 description "Interfaces to be monitored";
             }
             field neighbor-state {
-                sensor lldp-sensor {
-                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
+                reference {
+                    path "/topic[topic-name='protocol.lldp']/rule[rule-name='get-lldp-state']/field[interface-name='$interface-name']/neighbor-capability-state";
+                    time-range 60s;
                 }
                 type string;
-                description "Remote LLDP neighbor state";
+                description "LLDP neighbor state";
             }
             /*
              * Anomaly detection logic.
@@ -69,11 +70,6 @@ iceberg {
                 /*
                  * Sets color to green when LLDP neighbor state is true.
                  */
-                term is-lldp-disabled {
-                    when {
-                        does-not-match-with "$if-lldp-state" true;
-                    }
-                }
                 term is-lldp-session-up {
                     when {
                         matches-with "$neighbor-state" true;
@@ -106,6 +102,39 @@ iceberg {
                 type string;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
            }
+        }
+        rule get-lldp-state {
+            keys interface-name;
+            synopsis "LLDP neighbor state collector";
+            description "Collects lldp session state periodically";
+            sensor lldp-sensor {
+                synopsis "LLDP open-config sensor definition";
+                description "/lldp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /lldp/;
+                    frequency 55s;
+                }
+            }
+            field interface-name {
+                sensor lldp-sensor {
+                    where "/lldp/interfaces/interface/@name =~ /{{interface_name}}/";
+                    path "/lldp/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field neighbor-capability-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
+                }
+                type string;
+                description "Remote LLDP neighbor state";
+            }
+            variable interface_name {
+                value .*;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
+            }
         }
     }
 }
