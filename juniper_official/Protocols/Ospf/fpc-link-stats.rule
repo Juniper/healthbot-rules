@@ -12,17 +12,18 @@ iceberg {
                 iAgent {
                     file fpc_link_stats.yml;
                     table FPCLinkStats;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             trigger ospf-hello-increasing {
                 synopsis "OSPF hello packet kpi";
                 description "Sets health based on OSPF hello packets received";
+                frequency 60s;
                 term monotonically-increasing {
                     when {
                         min-rate-of-increase "$OSPF_Hello" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
-                            time-range 60s;
+                            time-range 5m;
                         }
                     }
                     then {
