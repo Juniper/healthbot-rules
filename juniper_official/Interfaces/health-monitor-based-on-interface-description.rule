@@ -31,15 +31,13 @@
  *      an anomaly.  By default it's 500000000 octets . This rule will set a
  *      dashboard color to yellow when *filtered interfaces* the input traffic
  *      is above threshold for 60s, otherwise color is set to green. Use
- *      5000000000 octets for 10G & 50000000000 for 100G interface. 
- */ 
+ *      5000000000 octets for 10G & 50000000000 for 100G interface.
+ */
 iceberg {
-    topic interface.monitor {
+    topic interface.monitor-test {
         description "Monitors only filtered interfaces based on keyword in description";
         synopsis "Selective interface KPIs monitoring";
         rule check-interface-health {
-            synopsis "Interface KPI monitor based on description";
-            description "Using this rule any one of the interface statistics counter (in and out errors, packets, octets, flaps) will be monitored";
             /*
              * Monitors the interface input traffic. Notifies via the dashboard
              * colors when the traffic is above {{high-threshold-variable}} for every
@@ -47,10 +45,12 @@ iceberg {
              * set to yellow when the traffic is above {{medium-threshold-variable}} for
              * every collected metric during a 60s. Otherwise the color is set
              * to green.
-             * 
+             *
              * Use interface name as key for rule.
              */
             keys interface-name;
+            synopsis "Interface KPI monitor based on description";
+            description "Using this rule any one of the interface statistics counter (in and out errors, packets, octets, flaps) will be monitored";
             /*
              * Sensor configuration to get data from network devices.
              */
@@ -73,19 +73,19 @@ iceberg {
                 type string;
                 description "This field is for interface description";
             }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold-variable}}";
+                }
+                type integer;
+                description "In error count high threshold";
+            }
             field interface-name {
                 sensor interfaces {
                     path "/interfaces/interface/@name";
                 }
                 type string;
                 description "This field is interface name";
-            }
-            field stats-value {
-                sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{stats-name-variable}}";
-                }
-                type integer;
-                description "Interface statistics counter (in-octets) value";
             }
             /*
              * Fields defined with variables and constant values
@@ -97,19 +97,19 @@ iceberg {
                 type integer;
                 description "In error count high threshold";
             }
-            field high-threshold {
-                constant {
-                    value "{{high-threshold-variable}}";
-                }
-                type integer;
-                description "In error count high threshold";
-            }
             field stats-name {
                 constant {
                     value "{{stats-name-variable}}";
                 }
                 type string;
                 description "Interface statistics counter name";
+            }
+            field stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{stats-name-variable}}";
+                }
+                type integer;
+                description "Interface statistics counter (in-octets) value";
             }
             field user-description {
                 constant {
@@ -124,9 +124,9 @@ iceberg {
             trigger interface-stats {
                 synopsis "interface statistics kpi";
                 description "Sets health based on interface statistics exceed threshold";
-		frequency 60s;
+                frequency 60s;
                 /*
-                 * Skips evaluation for the interfaces where keyword unmatched 
+                 * Skips evaluation for the interfaces where keyword unmatched
                  * in interface description.
                  */
                 term is-interface-description-not-matching {
@@ -140,7 +140,7 @@ iceberg {
                  * threshold ($high-threshold) for all points in a 60 seconds
                  * period.
                  */
-                term is-interface-stats-crossing-high-threshold {
+                term is-interface-stats-increasing-high-threshold {
                     when {
                         increasing-at-least-by-value "$stats-value" {
                             value "$high-threshold";
@@ -160,7 +160,7 @@ iceberg {
                  * threshold ($medium-threshold) for all points in 60 seconds
                  * period.
                  */
-                term is-interface-stats-crossing-medium-threshold {
+                term is-interface-stats-increasing-medium-threshold {
                     when {
                         increasing-at-least-by-value "$stats-value" {
                             value "$medium-threshold";
@@ -196,7 +196,7 @@ iceberg {
                 type int;
             }
             variable interface-description {
-                value ".+";
+                value .+;
                 description "Filter interfaces which contains keyword in its description, regular expression, e.g. 'core|edge|access|bng'";
                 type string;
             }
@@ -206,7 +206,7 @@ iceberg {
                 type int;
             }
             variable stats-name-variable {
-                value "in-octets";
+                value in-octets;
                 description "Interface statistics counter name(in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors, carrier-transitions) to monitor. Create separate instance for each kpi";
                 type string;
             }
