@@ -1,161 +1,35 @@
 iceberg {
-    topic chassis.network-services {
-        rule backup-re-cli {
-            sensor backup-re-cli {
+    topic chassis.networkservices {
+        rule netsvc-rule {
+            sensor netsvc-sensor {
                 iAgent {
                     file netsvc.yml;
-                    table BackupReCliTable;
-                    frequency 30s;
+                    table NetSvcTable;
+                    frequency 60s;
                 }
             }
-            trigger is-enhanced-ip {
-                term enhanced-ip {
+            trigger netsvc-sync {
+                term synched {
                     when {
-                        matches-with "$output" "Network Services Mode: Enhanced-IP";
+                        matches-with "$netsvc_sync" True;
                     }
                     then {
                         status {
                             color green;
-                            message "backup RE cli network-services is enhanced-ip";
                         }
                     }
                 }
                 term else {
-                    then {
-                        status {
-                            color red;
-                            message "backup RE cli network-services is NOT enhanced-ip";
-                        }
-                    }
-                }
-            }
-        }
-        rule backup-re-sysctl {
-            sensor backup-re-sysctl {
-                iAgent {
-                    file netsvc.yml;
-                    table BackupReSysctlTable;
-                    frequency 30s;
-                }
-            }
-            trigger is-enhanced-ip {
-                term enhanced-ip {
                     when {
-                        matches-with "$output" "net.netsvc: 2";
+                        matches-with "$netsvc_sync" False;
+                        exists "$proposed_action";
                     }
-                    then {
-                        status {
-                            color green;
-                            message "backup RE sysctl network-services is enhanced-ip";
-                        }
-                    }
-                }
-                term else {
                     then {
                         status {
                             color red;
-                            message "backup RE sysctl network-services is NOT enhanced-ip";
+                            message "$proposed_action";
                         }
                     }
-                }
-            }
-        }
-        rule fpc-network-services {
-            sensor fpc-network-services {
-                iAgent {
-                    file netsvc.yml;
-                    table FpcTable;
-                    frequency 30s;
-                }
-            }
-            trigger is-enhanced-ip {
-                term enhanced-ip {
-                    when {
-                        matches-with "$static_mcast_mode" true;
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "fpc network-services is enhanced-ip";
-                        }
-                    }
-                }
-                term else {
-                    then {
-                        status {
-                            color red;
-                            message "fpc network-services is NOT enhanced-ip";
-                        }
-                    }
-                }
-            }
-        }
-        rule master-re-cli {
-            sensor master-re-cli {
-                iAgent {
-                    file netsvc.yml;
-                    table MasterReCliTable;
-                    frequency 30s;
-                }
-            }
-            trigger is-enhanced-ip {
-                term enhanced-ip {
-                    when {
-                        matches-with "$output" "Network Services Mode: Enhanced-IP";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "master RE cli network-services is enhanced-ip";
-                        }
-                    }
-                }
-                term else {
-                    then {
-                        status {
-                            color red;
-                            message "master RE cli network-services is NOT enhanced-ip";
-                        }
-                    }
-                }
-            }
-        }
-        rule master-re-sysctl {
-            sensor master-re-sysctl {
-                iAgent {
-                    file netsvc.yml;
-                    table MasterReSysctlTable;
-                    frequency 30s;
-                }
-            }
-            trigger is-enhanced-ip {
-                term enhanced-ip {
-                    when {
-                        matches-with "$output" "net.netsvc: 2";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "master RE sysctl network-services is enhanced-ip";
-                        }
-                    }
-                }
-                term else {
-                    then {
-                        status {
-                            color red;
-                            message "master RE sysctl network-services is NOT enhanced-ip";
-                        }
-                    }
-                }
-            }
-        }
-        rule online-mpc {
-            sensor online-mpc {
-                iAgent {
-                    file online_mpc.yml;
-                    table MpcTable;
-                    frequency 30s;
                 }
             }
         }
