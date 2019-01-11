@@ -1,12 +1,12 @@
 # How to write rules
 
-Please follow the DATA model user guide present [here](https://junipernetworks.sharepoint.com/:w:/r/sites/iceberg-dev-planner/_layouts/15/doc.aspx?sourcedoc=%7B2ea1add1-e2c7-405d-9ae8-a4ca9bcbc793%7D&action=edit&uid=%7B2EA1ADD1-E2C7-405D-9AE8-A4CA9BCBC793%7D&ListItemId=69&ListId=%7BF3778718-EBDE-41A7-8C45-A231942D80E7%7D&odsp=1&env=prod).
+Please follow the DATA model user guide present [here](https://www.juniper.net/documentation/en_US/healthbot/help/information-products/pathway-pages/topic-131332.html).
 Submit only the .conf files
 
 # How to contribute
 
 ### Juniper Employees
-- Subscribe to 'jfit-rules-official' alias on jam.juniper.net
+- Subscribe to 'healthbot-rules-official' alias on jam.juniper.net
 - Create a personal fork of the project on Github
 - Clone the fork on your local machine. Your remote repo on Github is called origin
 - Add the original repository as a remote called upstream
@@ -40,7 +40,8 @@ Submit only the .conf files
   - From your fork open a pull request to the development branch
 
 **NOTE** 
-Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
+- Rules can get promoted from “community-contribution” to “juniper-official” based on field feedback and its applicability 
+- Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
 
 # Automated Testing
 
