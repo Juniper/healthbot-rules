@@ -104,6 +104,24 @@ iceberg {
                 description "Sets health based on increase in received routes on neighbor session";
                 frequency 60s;
                 /*
+                 * Sets color to yellow when sufficient data not available to 
+                 * train algorithm. DT function returns values are -1|0|1.
+                 * -1 internal error, 0 no-anomaly and 1 anomaly.
+                 */
+                term is-sufficient-data-available-to-analyze {
+                    when {
+                        matches-with "$received-routes-dynamic-threshold" -1 {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Sufficient data not available to train algorithm, wait for learning period completion";
+                        }
+                    }
+                }
+                /*
                  * Sets color to red when received routes count 
                  * ($received-routes) on each neighbor session exceed dynamic
                  * threshold and notify anomaly. DT function returns values are
