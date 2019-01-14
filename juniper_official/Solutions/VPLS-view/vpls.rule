@@ -1,0 +1,54 @@
+iceberg {
+    topic protocol.vpls {
+        rule check-vpls-status {
+            keys instance-name;
+            sensor protocol-vpls-status {
+                iAgent {
+                    file vpls.yml;
+                    table VplsConnectionTable;
+                    frequency 10s;
+                }
+            }
+        }
+        rule vplsview {
+            rule-frequency 60s;
+            network-rule;
+            field vpls-name {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name=protocol.vpls]/rule[rule-name=check-vpls-status]/instance-name";
+                }
+            }
+            field vpls-status {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name=protocol.vpls]/rule[rule-name=check-vpls-status]/vpls_status";
+                }
+            }
+            trigger vpls-state {
+                term check-if-vpls-up {
+                    when {
+                        matches-with "$vpls-status" Up;
+                    }
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+                term check-if-vpls-down {
+                    then {
+                        status {
+                            color red;
+                            message "VPLS status is $vpls-status for $vpls-name";
+                        }
+                    }
+                }
+            }
+            variable pe-device-group {
+                type device-group;
+            }
+            variable pe-device-name {
+                type device;
+            }
+        }
+    }
+}
