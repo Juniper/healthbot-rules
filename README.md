@@ -15,8 +15,8 @@ Submit only the .conf files
   - You must be a juniper employee.
   - Subscribe to 'healthbot-rules-official' alias on [jam.juniper.net](jam.juniper.net/)
   - Your latest commit on the pull request must be a verified commit and must be signed with your juniper employee email id. Follow the below section for signing a commit.
-  - Rules can get promoted from “community-contribution” to “juniper-official” based on field feedback and its applicability 
-  - Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
+- Rules can get promoted from “community-contribution” to “juniper-official” based on field feedback and its applicability 
+- Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
 
 ### Signing a commit
 - Follow the steps from [here](https://help.github.com/articles/generating-a-new-gpg-key/) to generate and add gpg key to your github user account. Use your internal juniper email address for the key. 
