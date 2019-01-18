@@ -9,7 +9,7 @@ iceberg {
         rule check-l3vpn-state {
             synopsis "L3VPN session state detector";
             description "Refer L3VPN peer state, CE and PE interface states from rule get-routing-instance-details & get-interface-details and notify anomalies when flap count increases";
-            rule-frequency 45s;
+            rule-frequency 75s;
             network-rule;
             /*
              * Fields defined by collecting values from other rule. Maps the
@@ -93,7 +93,7 @@ iceberg {
                 description "VRF peer state";
             }
             trigger l3vpn-ce-interface-state {
-                frequency 60s;
+                frequency 75s;
                 term is-ce-interface-up {
                     when {
                         matches-with "$remote-interface-status" UP;
@@ -115,7 +115,7 @@ iceberg {
                 }
             }
             trigger l3vpn-pe-interface-state {
-                frequency 60s;
+                frequency 75s;
                 term is-pe-interface-up {
                     when {
                         matches-with "$instance-interface-status" UP;
@@ -139,7 +139,7 @@ iceberg {
             trigger l3vpn-state {
                 synopsis "L3VPN session status KPI";
                 description "Sets health based on state change in L3VPN peer, CE interface and PE interface state.";
-                frequency 60s;
+                frequency 75s;
                 term is-vpn-session-up {
                     when {
                         matches-with "$vpn-state" ESTABLISHED;
@@ -223,7 +223,7 @@ iceberg {
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field interface-name {
@@ -277,7 +277,7 @@ iceberg {
                 description "Open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /network-instances/network-instance;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field instance-name {
