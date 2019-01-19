@@ -2,37 +2,37 @@
  * Detects LLDP (session) state changes and notifies when anomalies are found.
  * Six inputs control detection
  * 
- *   1) "interface_name" is a regular expression that matches the
+ *   1) "if-name" is a regular expression that matches the
  *      interfaces that you would like to monitor.  By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
  *
- *   2) "frame_discards_threshold" is the threshold that causes the rule to 
+ *   2) "frame-discards-threshold" is the threshold that causes the rule to 
  *      report an anomaly. By default it's 1. This rule will set a dashboard
  *      color to red when LLDP frame discards are greater than 
- *      'frame_discards_threshold' for 3 minutes period, otherwise color is set
+ *      'frame-discards-threshold' for 3 minutes period, otherwise color is set
  *      to green.
  *
- *   3) "frame_error_in_threshold" is the threshold that causes the rule to
+ *   3) "frame-error-in-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 1. This rule will set a dashboard
  *      color to red when LLDP frame in errors are greater than 
- *      'frame_error_in_threshold' for 3 minutes period, otherwise color is set
+ *      'frame-error-in-threshold' for 3 minutes period, otherwise color is set
  *      to green.
  *
- *   4) "frame_error_out_threshold"is the threshold that causes the rule to 
+ *   4) "frame-error-out-threshold"is the threshold that causes the rule to 
  *      report an anomaly. By default it's 1. This rule will set a dashboard
  *      color to red when LLDP frame out errors are greater than 
- *      'frame_error_out_threshold' for 3 minutes period, otherwise color is 
+ *      'frame-error-out-threshold' for 3 minutes period, otherwise color is 
  *      set to green.
  *
- *   5) "tlv_discards_threshold" is the threshold that causes the rule to report
+ *   5) "tlv-discards-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 1. This rule will set a dashboard color
- *      to red when TLV discards are greater than 'tlv_discards_threshold'
+ *      to red when TLV discards are greater than 'tlv-discards-threshold'
  *       for 3 minutes period, otherwise color is set to green.
  *
- *   6) "unknown_tlvs_threshold" is the threshold that causes the rule to report
+ *   6) "unknown-tlvs-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 1. This rule will set a dashboard color to
- *      red when unknown TLV count is greater than 'unknown_tlvs_threshold' 
+ *      red when unknown TLV count is greater than 'unknown-tlvs-threshold' 
  *      for 3 minutes period, otherwise color is set to green.
  */
 iceberg {
@@ -45,27 +45,27 @@ iceberg {
             /*
              * Monitors the LLDP session statistics. Notifies via the dashboard
              * colors when the frame discards increase by
-             * {{frame_discards_threshold}} for  every collected metric during
+             * {{frame-discards-threshold}} for  every collected metric during
              * a 3ms time range (red). Otherwise the color is set to green.
              *
              * Monitors the LLDP session statistics. Notifies via the dashboard
              * colors when the frame in errors increase by
-             * {{frame_error_in_threshold}} for  every collected metric during
+             * {{frame-error-in-threshold}} for  every collected metric during
              * a 3ms time range (red). Otherwise the color is set to green.
              *
              * Monitors the LLDP session statistics. Notifies via the dashboard
              * colors when the frame out errors increase by
-             * {{frame_error_out_threshold}} for  every collected metric during
+             * {{frame-error-out-threshold}} for  every collected metric during
              * a 3ms time range (red). Otherwise the color is set to green.
              *
              * Monitors the LLDP session statistics. Notifies via the dashboard
              * colors when the TLV discards increase by
-             * {{tlv_discards_threshold}} for  every collected metric during
+             * {{tlv-discards-threshold}} for  every collected metric during
              * a 3ms time range (red). Otherwise the color is set to green.
              *
              * Monitors the LLDP session statistics. Notifies via the dashboard
              * colors when the unknown TLVs count increase by
-             * {{unknown_tlvs_threshold}} for  every collected metric during
+             * {{unknown-tlvs-threshold}} for  every collected metric during
              * a 3ms time range (red). Otherwise the color is set to green.
              * 
              * Use interface name as key for rule.
@@ -116,18 +116,11 @@ iceberg {
             }
             field interface-name {
                 sensor lldp-sensor {
-                    where "/lldp/interfaces/interface/@name =~ /{{interface_name}}/";
+                    where "/lldp/interfaces/interface/@name =~ /{{if-name}}/";
                     path "/lldp/interfaces/interface/@name";
                 }
                 type string;
                 description "Interfaces to be monitored";
-            }
-            field neighbor-state {
-                sensor lldp-sensor {
-                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
-                }
-                type string;
-                description "LLDP neighbor state";
             }
             field tlv-discards {
                 sensor lldp-sensor {
@@ -148,35 +141,35 @@ iceberg {
              */
             field frame-discards-threshold {
                 constant {
-                    value "{{frame_discards_threshold}}";
+                    value "{{frame-discards-threshold}}";
                 }
                 type integer;
                 description "Frame discards threshold";
             }
             field frame-error-in-threshold {
                 constant {
-                    value "{{frame_error_in_threshold}}";
+                    value "{{frame-error-in-threshold}}";
                 }
                 type integer;
                 description "Frame in errors threshold";
             }
             field frame-error-out-threshold {
                 constant {
-                    value "{{frame_error_out_threshold}}";
+                    value "{{frame-error-out-threshold}}";
                 }
                 type integer;
                 description "Frame out errors threshold";
             }
             field tlvs-discards-threshold {
                 constant {
-                    value "{{tlv_discards_threshold}}";
+                    value "{{tlv-discards-threshold}}";
                 }
                 type integer;
                 description "TLV discards threshold";
             }
             field unknown-tlvs-threshold {
                 constant {
-                    value "{{unknown_tlvs_threshold}}";
+                    value "{{unknown-tlvs-threshold}}";
                 }
                 type integer;
                 description "Unknown TLV discards threshold";
@@ -190,6 +183,7 @@ iceberg {
                 /*
                  * Skips evaluation for LLDP state disabled interfaces
                  */
+                frequency 3m;
                 term skip-lldp-disabled {
                     when {
                         does-not-match-with "$if-lldp-state" true;
@@ -235,6 +229,7 @@ iceberg {
                 /*
                  * Skips evaluation for LLDP state disabled interfaces
                  */
+                frequency 3m;
                 term skip-lldp-disabled {
                     when {
                         does-not-match-with "$if-lldp-state" true;
@@ -280,6 +275,7 @@ iceberg {
                 /*
                  * Skips evaluation for LLDP state disabled interfaces
                  */
+                frequency 3m;
                 term skip-lldp-disabled {
                     when {
                         does-not-match-with "$if-lldp-state" true;
@@ -325,6 +321,7 @@ iceberg {
                 /*
                  * Skips evaluation for LLDP state disabled interfaces
                  */
+                frequency 3m;
                 term skip-lldp-disabled {
                     when {
                         does-not-match-with "$if-lldp-state" true;
@@ -370,6 +367,7 @@ iceberg {
                 /*
                  * Skips evaluation for LLDP state disabled interfaces
                  */
+                frequency 3m;
                 term skip-lldp-disabled {
                     when {
                         does-not-match-with "$if-lldp-state" true;
@@ -410,32 +408,32 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable frame_discards_threshold {
+            variable frame-discards-threshold {
                 value 1;
                 type int;
                 description "Frame discards threshold: Increase between metrics, before we report anomaly";
             }
-            variable frame_error_in_threshold {
+            variable frame-error-in-threshold {
                 value 1;
                 type int;
                 description "Frame in error threshold: Increase between metrics, before we report anomaly";
             }
-            variable frame_error_out_threshold {
+            variable frame-error-out-threshold {
                 value 1;
                 type int;
                 description "Frame out error threshold: Increase between metrics, before we report anomaly";
             }
-            variable interface_name {
+            variable if-name {
                 value ".*";
                 type string;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
             }
-            variable tlv_discards_threshold {
+            variable tlv-discards-threshold {
                 value 1;
                 type int;
                 description "TLV discard threshold: Increase between metrics, before we report anomaly";
             }
-            variable unknown_tlvs_threshold {
+            variable unknown-tlvs-threshold {
                 value 1;
                 type int;
                 description "Unknown TLVs threshold: Increase between metrics, before we report anomaly";

@@ -9,12 +9,12 @@
  *      all BGP neighbors. Use something like '172.16.*' to match all neighbor
  *      addresses which are in 172.16.0.0/16 network range.
  *
- *   2) "routing_instance" is the variable that filters the routing instances.
+ *   2) "routing-instance" is the variable that filters the routing instances.
  *      By default it's ".*", which matches neighbors in all routing instances.
  *      Use something like "master" to match neighbors belongs to only master
  *      routing instance.
  *
- *   3) "addr_table" is the variable that filters the routing address table.
+ *   3) "addr-table" is the variable that filters the routing address table.
  *      By default it's ".+", which matches all address tables. Use something 
  *      like "IPV4_UNICAST" to match only received routes belongs to IPV4
  *      unicast address table.
@@ -43,7 +43,7 @@ iceberg {
                 description "/protocol/bgp open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             /*
@@ -52,7 +52,7 @@ iceberg {
              */
             field instance-name {
                 sensor bgp-sensor {
-                    where "/network-instances/network-instance/@instance-name =~ /{{routing_instance}}/";
+                    where "/network-instances/network-instance/@instance-name =~ /{{routing-instance}}/";
                     path "/network-instances/network-instance/@instance-name";
                 }
                 type string;
@@ -68,7 +68,7 @@ iceberg {
             }
             field address-table {
                 sensor bgp-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr_table}}/";
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr-table}}/";
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name";
                 }
                 type string;
@@ -93,7 +93,7 @@ iceberg {
                         field-name "$received-routes";
                     }
                 }
-                type string;
+                type integer;
                 description "Dynamically sets threshold using kmeans algorithm";
             }
             /*
@@ -102,15 +102,34 @@ iceberg {
             trigger received-routes-dynamic-threshold {
                 synopsis "BGP max received routes KPI";
                 description "Sets health based on increase in received routes on neighbor session";
-                frequency 30s;
+                frequency 60s;
                 /*
-                 * Sets color to red when received routes count
+                 * Sets color to yellow when sufficient data not available to 
+                 * train algorithm. DT function returns values are -1|0|1.
+                 * -1 internal error, 0 no-anomaly and 1 anomaly.
+                 */
+                term is-sufficient-data-available-to-analyze {
+                    when {
+                        matches-with "$received-routes-dynamic-threshold" -1 {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Sufficient data not available to train algorithm, wait for learning period completion";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when received routes count 
                  * ($received-routes) on each neighbor session exceed dynamic
-                 * threshold and notify anomaly.
+                 * threshold and notify anomaly. DT function returns values are
+                 * -1|0|1. -1 internal error, 0 no-anomaly and 1 anomaly.
                  */
                 term is-rcd-route-count-above-threshold {
                     when {
-                        matches-with "$received-routes-dynamic-threshold" "^anomaly$" {
+                        matches-with "$received-routes-dynamic-threshold" 1 {
                             time-range 5m;
                         }
                     }
@@ -138,7 +157,7 @@ iceberg {
              * while deploying playbook instance.
              */
             
-            variable routing_instance {
+            variable routing-instance {
                 value .*;
                 type string;
                 description "Routing instance specific neighbors, regular expression, e.g. 'master'";
@@ -148,7 +167,7 @@ iceberg {
                 description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
                 type string;
             }
-            variable addr_table {
+            variable addr-table {
                 value .+;
                 type string;
                 description "Address table specific routes, regular expression, e.g. 'IPV4_UNICAST'";

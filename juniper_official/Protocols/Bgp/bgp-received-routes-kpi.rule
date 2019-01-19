@@ -8,20 +8,20 @@
  *      all BGP neighbors. Use something like '172.16.*' to match all neighbor
  *      addresses which are in 172.16.0.0/16 network range.
  *
- *   2) "routing_instance" is the variable that filters the routing instances.
+ *   2) "routing-instance" is the variable that filters the routing instances.
  *      By default it's ".*", which matches neighbors in all routing instances.
  *      Use something like "master" to match neighbors belongs to only master
  *      routing instance.
  *
- *   3) "addr_table" is the variable that filters the routing address table.
+ *   3) "addr-table" is the variable that filters the routing address table.
  *      By default it's ".+", which matches all address tables. Use something 
  *      like "IPV4_UNICAST" to match only received routes belongs to IPV4
  *      unicast address table.
  *
- *   4) "max_received_route_count_threshold" is the threshold that causes the
+ *   4) "max-received-route-count-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 10000. This rule will set
  *      a dashboard color to red when received route count exceed threshold
- *      (max_received_route_count_threshold), otherwise color is set to green.
+ *      (max-received-route-count-threshold), otherwise color is set to green.
  */
 iceberg {
     topic protocol.bgp {
@@ -48,7 +48,7 @@ iceberg {
                 description "/protocol/bgp open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             /*
@@ -57,7 +57,7 @@ iceberg {
              */
             field instance-name {
                 sensor bgp-sensor {
-                    where "/network-instances/network-instance/@instance-name =~ /{{routing_instance}}/";
+                    where "/network-instances/network-instance/@instance-name =~ /{{routing-instance}}/";
                     path "/network-instances/network-instance/@instance-name";
                 }
                 type string;
@@ -73,7 +73,7 @@ iceberg {
             }
             field address-table {
                 sensor bgp-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr_table}}/";
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr-table}}/";
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name";
                 }
                 type string;
@@ -91,7 +91,7 @@ iceberg {
              */
             field received-route-count-threshold {
                 constant {
-                    value "{{max_received_route_count_threshold}}";
+                    value "{{max-received-route-count-threshold}}";
                 }
                 type integer;
                 description "Received routes count increase threshold";
@@ -102,7 +102,7 @@ iceberg {
             trigger received-routes {
                 synopsis "BGP max received routes KPI";
                 description "Sets health based on increase in received routes on neighbor session";
-                frequency 30s;
+                frequency 60s;
                 /*
                  * Sets color to red when received routes count
                  * ($received-routes) exceed threshold
@@ -135,7 +135,7 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable routing_instance {
+            variable routing-instance {
                 value .*;
                 type string;
                 description "Routing instance specific neighbors, regular expression, e.g. 'master'";
@@ -145,12 +145,12 @@ iceberg {
                 description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
                 type string;
             }
-            variable addr_table {
+            variable addr-table {
                 value .+;
                 type string;
                 description "Address table specific routes, regular expression, e.g. 'IPV4_UNICAST'";
             }
-            variable max_received_route_count_threshold {
+            variable max-received-route-count-threshold {
                 value 10000;
                 type int;
                 description "BGP neighbor session received routes threshold: Number of received route count increase between metrics, before we report anomaly";

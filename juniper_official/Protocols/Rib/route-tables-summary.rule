@@ -44,7 +44,7 @@ iceberg {
                         field-name "$total-route-count";
                     }
                 }
-                type string;
+                type integer;
                 description "Detects anomaly dynamically using kmeans algorithm";
             }
             /*
@@ -54,14 +54,33 @@ iceberg {
                 synopsis "Routing table route count KPI";
                 description "Sets health based on increase or drop in route count of each routing table";
                 /*
+                 * Sets color to yellow and sends out an anomaly notification 
+                 * when sufficient data not available to train algorithm.
+                 * ($route-count-dynamic-threshold result contains -1).
+                 */
+                 frequency 15m;
+                 term is-sufficient-data-available-to-analyze {
+                    when {
+                        matches-with "$route-count-dynamic-threshold" -1 {
+                            time-range 35m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Sufficient data not available to train algorithm, wait for learning period completion";
+                        }
+                    }
+                }
+                /*
                  * Sets color to red and sends out an anomaly notification when
                  * the route count of each routing table exceed or drop
-                 * ($route-count-dynamic-threshold result contains ^anomaly$)
+                 * ($route-count-dynamic-threshold result contains 1)
                  * for all points in a 35 minutes period.
                  */
                  term is-route-table-routes-count-abnormal {
                     when {
-                        matches-with "$route-count-dynamic-threshold" "^anomaly$" {
+                        matches-with "$route-count-dynamic-threshold" 1 {
                             time-range 35m;
                         }
                     }

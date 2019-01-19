@@ -9,13 +9,12 @@
             description "Checks bgp ipv6 route hijacks";
             synopsis "IPv4 bgp route hijack detector";
             keys prefix;
-            rule-frequency 60s;
             sensor bgp-v6 {
                 synopsis "BGP openconfig sensor";
                 description "Sensor configuration to get bgp data from network devices";
                 open-config {
                     sensor-name /bgp-rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             field as-path {
@@ -27,7 +26,7 @@
             }
             field as-path-expr {
                 constant {
-                    value "{{ipv6_as_path}}";
+                    value "{{ipv6-as-path}}";
                 }
                 type string;
                 description "As-path-expression to match and compare";
@@ -41,7 +40,7 @@
             }
             field community-expr {
                 constant {
-                    value "{{ipv6_community}}";
+                    value "{{ipv6-community}}";
                 }
                 type string;
                 description "community-expression to match and compare";
@@ -108,12 +107,12 @@
             /*
              * Variables to take inputs while deploying playbook
              */
-            variable ipv6_as_path {
+            variable ipv6-as-path {
                 value ""
                 type string;
                 description "Enter ipv4 as-path that is expected, e.g. 6451[23]$";
             }
-            variable ipv6_community {
+            variable ipv6-community {
                 value ""
                 type string;
                 description "Enter community that is expected, e.g ^64512:9999$";

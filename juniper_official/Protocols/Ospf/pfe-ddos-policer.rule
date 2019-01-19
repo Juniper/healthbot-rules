@@ -12,12 +12,13 @@ iceberg {
                 iAgent {
                     file pfe-ddos-policer.yml;
                     table DdosPolicerStatsTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             trigger arrival {
                 synopsis "ospf hello packets kpi";
                 description "Sets health based on ospf packets received.";
+                frequency 60s;
                 term nothing-arrived {
                     when {
                         equal-to "$pass" 0;
@@ -31,9 +32,9 @@ iceberg {
                 }
                 term incrementing {
                     when {
-                        min-rate-of-increase "$pass" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$pass" { 
                             rate 1;
-                            time-range 60s;
+                            time-range 5m;
                         }
                     }
                     then {
@@ -58,11 +59,12 @@ iceberg {
             trigger drop {
                 synopsis "ospf hello packets kpi";
                 description "Sets health based on ospf packets dropped.";
+                frequency 60s;
                 term drops-increasing {
                     when {
                         min-rate-of-increase "$drop" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
-                            time-range 60s;
+                            time-range 5m;
                         }
                     }
                     then {
@@ -87,6 +89,7 @@ iceberg {
             trigger pass-versus-arrival {
                 synopsis "ospf hello packets kpi";
                 description "Sets health based on ospf packets arrive rate.";
+                frequency 60s;
                 term equal {
                     when {
                         equal-to "$arrival_rate" "$pass_rate";
