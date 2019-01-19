@@ -3,33 +3,33 @@
  * anomalies are found.
  * Five inputs control detection
  * 
- *   1) "fpc_slot_no" is a regular expression that matches the linecard
+ *   1) "fpc-slot-no" is a regular expression that matches the linecard
  *      that you would like to monitor.  By default it's '0-20', which matches
  *      FPC 0 to 20 linecards. Use something like '0-3' to match only specific
  *      FPCs i.e. 0 to 3.
  * 
- *   2) "fpc_buffer_high_threshold" is the threshold that causes the rule to
+ *   2) "fpc-buffer-high-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of memory buffer utilization.
  *      This rule will set a dashboard color to red when FPC memory buffer
- *      utilization exceed high threshold 'fpc_buffer_high_threshold' for a
+ *      utilization exceed high threshold 'fpc-buffer-high-threshold' for a
  *      period of 3 minutes.
  * 
- *   3) "fpc_buffer_low_threshold" is the threshold that causes the rule to
+ *   3) "fpc-buffer-low-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 50% of memory buffer utilization.
  *      This rule will set a dashboard color to yellow when FPC memory buffer
- *      utilization exceed low threshold 'fpc_buffer_low_threshold' for a
+ *      utilization exceed low threshold 'fpc-buffer-low-threshold' for a
  *      period of 3 minutes.
   * 
- *   4) "fpc_heap_high_threshold" is the threshold that causes the rule to
+ *   4) "fpc-heap-high-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of memory heap utilization.
  *      This rule will set a dashboard color to red when FPC memory heap
- *      utilization exceed high threshold 'fpc_heap_high_threshold' for a
+ *      utilization exceed high threshold 'fpc-heap-high-threshold' for a
  *      period of 3 minutes.
  * 
- *   5) "fpc_heap_low_threshold" is the threshold that causes the rule to
+ *   5) "fpc-heap-low-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 50% of memory heap utilization.
  *      This rule will set a dashboard color to yellow when FPC memory heap
- *      utilization exceed low threshold 'fpc_heap_low_threshold' for a
+ *      utilization exceed low threshold 'fpc-heap-low-threshold' for a
  *      period of 3 minutes.
  */
 iceberg {
@@ -42,9 +42,9 @@ iceberg {
             /*
              * Monitors all the linecards memory utilization. Notifies via the
              * dashboard colors when the linecards memory utilization exceed by
-             * {{fpc_buffer_high_threshold}} for every collected metric during a
+             * {{fpc-buffer-high-threshold}} for every collected metric during a
              * 3m time range (red). The color is set to yellow if we see
-             * linecard memory utilization exceed {{fpc_buffer_low_threshold}}
+             * linecard memory utilization exceed {{fpc-buffer-low-threshold}}
              * for every collected metric during a 3m time range. Otherwise 
              * the color is set to green.
              * 
@@ -68,7 +68,7 @@ iceberg {
              */
             field fpc {
                 sensor components {
-                    where "/components/component/@name =~ /^FPC[{{fpc_slot_no}}]*$/";
+                    where "/components/component/@name =~ /^FPC{{fpc-slot-no}}$/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -95,28 +95,28 @@ iceberg {
              */
             field buffer-high-threshold {
                 constant {
-                    value "{{fpc_buffer_high_threshold}}";
+                    value "{{fpc-buffer-high-threshold}}";
                 }
                 type integer;
                 description "FPC buffer utilization high threshold";
             }
             field buffer-low-threshold {
                 constant {
-                    value "{{fpc_buffer_low_threshold}}";
+                    value "{{fpc-buffer-low-threshold}}";
                 }
                 type integer;
                 description "FPC buffer utilization low threshold";
             }
             field heap-high-threshold {
                 constant {
-                    value "{{fpc_heap_high_threshold}}";
+                    value "{{fpc-heap-high-threshold}}";
                 }
                 type integer;
                 description "FPC heap utilization high threshold";
             }
             field heap-low-threshold {
                 constant {
-                    value "{{fpc_heap_low_threshold}}";
+                    value "{{fpc-heap-low-threshold}}";
                 }
                 type integer;
                 description "FPC heap utilization low threshold";
@@ -127,6 +127,7 @@ iceberg {
             trigger fpc-buffer-memory-utilization {
                 synopsis "FPC memory utilization KPI";
                 description "Sets health based on increase in fpc buffer memory utilization";
+                frequency 60s; 
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the line card buffer memory utilization ($fpc-memory-buffer)
@@ -184,6 +185,7 @@ iceberg {
             trigger fpc-heap-memory-utilization {
                 synopsis "FPC heap memory utilization KPI";
                 description "Sets health based on increase in fpc heap memory utilization";
+                frequency 60s; 
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the line card heap memory utilization ($fpc-memory-heap)
@@ -238,28 +240,28 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable fpc_buffer_high_threshold {
+            variable fpc-buffer-high-threshold {
                 value 80;
                 description "FPC buffer utilization high threshold: Utilization increase between metrics, before we report anomaly"
                 type int;
             }
-            variable fpc_buffer_low_threshold{
+            variable fpc-buffer-low-threshold{
                 value 50;
                 description "FPC buffer utilization low threshold: Utilization increase between metrics, before we report anomaly"
                 type int;
             }
-            variable fpc_heap_high_threshold {
+            variable fpc-heap-high-threshold {
                 value 80;
                 description "FPC heap utilization high threshold: Utilization increase between metrics, before we report anomaly"
                 type int;
             }
-            variable fpc_heap_low_threshold {
+            variable fpc-heap-low-threshold {
                 value 50;
                 description "FPC heap utilization low threshold: Utilization increase between metrics, before we report anomaly"
                 type int;
             }
-            variable fpc_slot_no {
-                value 0-20;
+            variable fpc-slot-no {
+                value [0-9]*;
                 description "FPC slot to monitor, regular expression, e.g. '0-3'";
                 type string;
             }

@@ -12,29 +12,30 @@ iceberg {
                 iAgent {
                     file ithrottle.yml;
                     table IthrottleIDTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field ithrottle-higher-rate-threshold {
                 constant {
-                    value "{{FPC_iThrottle_Higher_Rate}}";
+                    value "{{fpc-ithrottle-higher-rate}}";
                 }
                 description "This field is for ithrottle higher threshold";
             }
             field ithrottle-lower-rate-threshold {
                 constant {
-                    value "{{FPC_iThrottle_Lower_Rate}}";
+                    value "{{fpc-ithrottle-lower-rate}}";
                 }
                 description "This field is forithrottle lower threshold";
             }
             trigger adjacency-down {
                 synopsis "Adjacency down kpi";
                 description "Sets health based on adjacency down";
+                frequency 60s;
                 term is-adjacency-down-increasing {
                     when {
                         min-rate-of-increase "$AdjDown" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -55,11 +56,12 @@ iceberg {
             trigger adjacency-up {
                 synopsis "Adjacency up kpi";
                 description "Sets health based on adjacency up";
+                frequency 60s;
                 term is-adjacency-up-increasing {
                     when {
                         min-rate-of-increase "$AdjUp" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -80,11 +82,12 @@ iceberg {
             trigger checks {
                 synopsis "ithrottle rate of increase kpi";
                 description "Sets health based on ithrottle rate of increaes";
+                frequency 60s;
                 term are-checks-increasing {
                     when {
                         min-rate-of-increase "$Checks" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-lower-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -105,11 +108,12 @@ iceberg {
             trigger disables {
                 synopsis "iThrottle disable kpi";
                 description "Sets health based on ithrottle disable";
+                frequency 60s;
                 term are-disables-increasing {
                     when {
                         min-rate-of-increase "$Disables" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -130,11 +134,12 @@ iceberg {
             trigger enables {
                 synopsis "iThrottle enable kpi";
                 description "Sets health based on ithrottle enable";
+                frequency 60s;
                 term are-enables-increasing {
                     when {
                         min-rate-of-increase "$Enables" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-higher-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -155,11 +160,12 @@ iceberg {
             trigger starts {
                 synopsis "iThrottle starts kpi";
                 description "Sets health based on ithrottle starts";
+                frequency 60s;
                 term are-starts-increasing {
                     when {
                         min-rate-of-increase "$Starts" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-lower-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -180,11 +186,12 @@ iceberg {
             trigger stops {
                 synopsis "iThrottle stops kpi";
                 description "Sets health based on ithrottle stops";
+                frequency 60s;
                 term are-stops-increasing {
                     when {
                         min-rate-of-increase "$Stops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ithrottle-lower-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -202,12 +209,12 @@ iceberg {
                     }
                 }
             }
-            variable FPC_iThrottle_Higher_Rate {
+            variable fpc-ithrottle-higher-rate {
                 value 5;
                 description "Linecard interrupt throttle HIGH threshold value";
                 type int;
             }
-            variable FPC_iThrottle_Lower_Rate {
+            variable fpc-ithrottle-lower-rate {
                 value 1;
                 description "Linecard interrupt throttle LOW threshold value";
                 type int;

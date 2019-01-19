@@ -17,19 +17,20 @@ iceberg {
             }
             field free-virtual-memory-threshold {
                 constant {
-                    value "{{Virtual_Memory_Threshold}}";
+                    value "{{virtual-memory-threshold}}";
                 }
                 description "This field is for Virtual memory threshold";
             }
             field interrupt-rate-threshold {
                 constant {
-                    value "{{Interrupt_Rate_Threshold}}";
+                    value "{{interrupt-rate-threshold-value}}";
                 }
                 description "This field is for Interrupt rate threshold";
             }
             trigger interrupt-rate {
                 synopsis "virtual memory interrupt rate kpi";
                 description "Sets health based on virtual memory interrupt rate";
+                frequency 60s;
                 term is-interrupt-rate-greater-than-threshold {
                     when {
                         greater-than "$interrupt-rate" "$interrupt-rate-threshold";
@@ -52,6 +53,7 @@ iceberg {
             trigger vm-kmem-map-free {
                 synopsis "Virtual memory kpi";
                 description "Sets health based on Free virtual memory";
+                frequency 60s;
                 term is-virtual-memory-lower-than-threshold {
                     when {
                         less-than "$vm-kmem-map-free" "$free-virtual-memory-threshold";
@@ -71,14 +73,14 @@ iceberg {
                     }
                 }
             }
-            variable Interrupt_Rate_Threshold {
+            variable interrupt-rate-threshold-value {
                 value 500;
                 description "System Interrupt Rate threshold value";
                 type int;
             }
-            variable Virtual_Memory_Threshold {
+            variable virtual-memory-threshold {
                 value 1000000000;
-                description "Free Virtual Memory threshold value";
+                description "Free Virtual Memory threshold value in bytes";
                 type int;
             }
         }

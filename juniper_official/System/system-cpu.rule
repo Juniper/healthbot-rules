@@ -3,20 +3,20 @@
  * are found.
  * Three inputs control detection
  * 
- *   1) re_slot_No, is a regular expression that matches the routing engine
+ *   1) re-slot-no, is a regular expression that matches the routing engine
  *      that you would like to monitor.  By default it's '0-1', which matches
  *      both the routing engines. Use something like '0' to match only
  *      routing engine 0.
  * 
- *   2) re_cpu_high_threshold, is the threshold that causes the rule to report
+ *   2) re-cpu-high-threshold, is the threshold that causes the rule to report
  *      an anomaly. By default it's 80% of CPU utilization. This rule will set
  *      a dashboard color to red when RE CPU utilization exceeds high threshold
- *      're_cpu_high_threshold' for a period of 5 minutes.
+ *      're-cpu-high-threshold' for a period of 5 minutes.
  * 
- *   3) re_cpu_low_threshold, is the threshold that causes the rule to report
+ *   3) re-cpu-low-threshold, is the threshold that causes the rule to report
  *      an anomaly. By default it's 50% of CPU utilization. This rule will set 
  *      a dashboard color to yellow when RE CPU utilization exceeds low 
- *      threshold 're_cpu_low_threshold' for a period of 5 minutes.
+ *      threshold 're-cpu-low-threshold' for a period of 5 minutes.
  *      Otherwise color is set to green.
  */
 iceberg {
@@ -29,9 +29,9 @@ iceberg {
             /*
              * Monitors all the REs CPU utilization. Notifies via the
              * dashboard colors when the RE CPU utilization exceed by
-             * {{re_cpu_high_threshold}} for every collected metric during a
+             * {{re-cpu-high-threshold}} for every collected metric during a
              * 5m time range (red). The color is set to yellow if we see
-             * RE CPU utilization exceeds {{re_cpu_low_threshold}} for every
+             * RE CPU utilization exceeds {{re-cpu-low-threshold}} for every
              * collected metric during a 5m time range. Otherwise the color is
              * set to green.
              * 
@@ -74,7 +74,7 @@ iceberg {
             }
             field routing-engine {
                 sensor components {
-                    where "/components/component/@name =~ /^Routing Engine[{{re_slot_No}}]*$/";
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
                     path "/components/component/@name";
                 }
                 description "RE name to monitor";
@@ -97,14 +97,14 @@ iceberg {
              */
             field re-cpu-utilization-high-threshold {
                 constant {
-                    value "{{re_cpu_high_threshold}}";
+                    value "{{re-cpu-high-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization high threshold";
             }
             field re-cpu-utilization-low-threshold {
                 constant {
-                    value "{{re_cpu_low_threshold}}";
+                    value "{{re-cpu-low-threshold}}";
                 }
                 type integer;
                 description "RE CPU utilization low threshold";
@@ -115,6 +115,7 @@ iceberg {
             trigger re-cpu-utilization {
                 synopsis "Routing engine CPU KPI";
                 description "Sets health based on increase in RE CPU utilization";
+                frequency 60s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the CPU utilization ($re-cpu-utilization) exceeds high
@@ -141,7 +142,7 @@ iceberg {
                  * threshold ($re-cpu-utilization-low-threshold) for all points
                  * in a 5 minute period.
                  */           
-                term is-re-cpu-utilization-median {
+                term is-re-cpu-utilization-middle {
                     when {
                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
                             time-range 5m;
@@ -171,17 +172,17 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable re_slot_No {
+            variable re-slot-no {
                 value 0-1;
                 description "Routing engine numbers to monitor, regular expression, e.g. '0'";
                 type string;
             }
-            variable re_cpu_high_threshold {
+            variable re-cpu-high-threshold {
                 value 80;
                 description "RE CPU utilization high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable re_cpu_low_threshold {
+            variable re-cpu-low-threshold {
                 value 50;
                 description "RE CPU utilization low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;

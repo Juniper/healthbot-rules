@@ -12,22 +12,23 @@ iceberg {
                 iAgent {
                     file scheduler-info.yml;
                     table SchedulerCpuTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field configured-cputhreshold {
                 constant {
-                    value "{{FPC_CPU_Threshold}}";
+                    value "{{fpc-cpu-threshold}}";
                 }
                 description "This field is for cpu threshold";
             }
             trigger fpc-scheduler-info-five-seconds {
                 synopsis "Five seconds CPU threshold kpi";
                 description "Sets health based on five seconds FPC CPU statistics";
+                frequency 60s;
                 term is-utilization-over-5-seconds-greater-than-threshold {
                     when {
                         greater-than "$cpu-5-seconds" "$configured-cputhreshold" {
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -48,10 +49,11 @@ iceberg {
             trigger fpc-scheduler-info-one-minute {
                 synopsis "One minute CPU threshold kpi";
                 description "Sets health based on one minute FPC CPU statistics";
+                frequency 60s;
                 term is-utilization-over-1-minute-greater-than-threshold {
                     when {
                         greater-than "$cpu-1-minute" "$configured-cputhreshold" {
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -72,10 +74,11 @@ iceberg {
             trigger fpc-scheduler-info-one-second {
                 synopsis "One second CPU threshold kpi";
                 description "Sets health based on one second FPC CPU statistics";
+                frequency 60s;
                 term is-utilization-over-1-second-greater-than-threshold {
                     when {
                         greater-than "$cpu-1-second" "$configured-cputhreshold" {
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -96,10 +99,11 @@ iceberg {
             trigger fpc-scheduler-info-ten-seconds {
                 synopsis "Ten seconds CPU threshold kpi";
                 description "Sets health based on ten seconds  CPU statistics";
+                frequency 60s;
                 term is-utilization-over-10-seconds-greater-than-threshold {
                     when {
                         greater-than "$cpu-10-seconds" "$configured-cputhreshold" {
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -117,7 +121,7 @@ iceberg {
                     }
                 }
             }
-            variable FPC_CPU_Threshold {
+            variable fpc-cpu-threshold {
                 value 80;
                 description "FPC Used CPU threshold value";
                 type int;

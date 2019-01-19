@@ -2,7 +2,7 @@
  * Monitors interface ipv4 neighbor state and notifies when anomalies are found.
  * One input control detection
  * 
- *   1) interface_name, is a regular expression that matches the
+ *   1) interface-name-variable, is a regular expression that matches the
  *      interfaces that you would like to monitor.  By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
@@ -32,7 +32,7 @@ iceberg {
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             /*
@@ -48,7 +48,7 @@ iceberg {
             }
             field interface-name {
                 sensor interfaces {
-                    where "/interfaces/interface/@name =~ /{{interface_name}}/";
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -74,7 +74,7 @@ iceberg {
             trigger neighbor-state {
                 synopsis "interface neighbor state kpi";
                 description "Sets health based on interface neighbor state";
-                frequency 20s;
+                frequency 60s;
                 term is-neighbor-admin-down {
                 /*
                  * Skips evaluation for admin down state interfaces
@@ -128,7 +128,7 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable interface_name {
+            variable interface-name-variable {
                 value ".*";
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;

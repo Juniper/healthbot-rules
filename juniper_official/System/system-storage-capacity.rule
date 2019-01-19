@@ -12,18 +12,19 @@ iceberg {
                 iAgent {
                     file system-storage-capacity.yml;
                     table systemStorage;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field configured-storage-usage-threshold {
                 constant {
-                    value "{{Storage_Usage_Threshold}}";
+                    value "{{storage-usage-threshold}}";
                 }
                 description "System storage threshold value";
             }
             trigger system-storage-capacity {
                 synopsis "system storage usage kpi";
                 description "sets health based on system storage usage";
+                frequency 60s;
                 term is-system-storage-capacity-greater-than-threshold {
                     when {
                         greater-than "$system-storage-capacity" "$configured-storage-usage-threshold";
@@ -45,7 +46,7 @@ iceberg {
                     }
                 }
             }
-            variable Storage_Usage_Threshold {
+            variable storage-usage-threshold {
                 value 80;
                 description "System storage used capacity threshold value";
                 type int;

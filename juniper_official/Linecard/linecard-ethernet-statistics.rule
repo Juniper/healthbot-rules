@@ -12,17 +12,18 @@ iceberg {
                 iAgent {
                     file linecard-ethernet-statistics.yml;
                     table EthernetDevicesStatistics;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             trigger linecard-ethernet-port-errors {
                 synopsis "Linecard ethernet port error kpi";
                 description "Sets health based on linecard ethernet port error";
+                frequency 60s;
                 term are-any-errors-increasing {
                     when {
                         min-rate-of-increase "@all-error-counters" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate 1;
-                            time-range 60s;
+                            time-range 360s;
                             any;
                         }
                     }

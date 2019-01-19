@@ -12,18 +12,19 @@ iceberg {
                 iAgent {
                     file re-cpu-utilization.yml;
                     table REutlizationTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field re-cpu-idle-threshold {
                 constant {
-                    value "{{RE_CPU_Idle_Threshold}}";
+                    value "{{re-cpu-idle-threshold-input}}";
                 }
                 description "Routing Engine CPU idle threshold";
             }
             trigger routing-engine-cpu-utilization-idle-15min {
                 synopsis "Routing engine CPU kpi";
                 description "sets health based on Routing engine CPU utilization for 15 minutes";
+                frequency 60s;
                 term is-15min-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-15-min" "$re-cpu-idle-threshold";
@@ -46,6 +47,7 @@ iceberg {
             trigger routing-engine-cpu-utilization-idle-1min {
                 synopsis "Routing engine CPU kpi";
                 description "sets health based on Routing engine CPU utilization for 1 minute";
+                frequency 60s;
                 term is-1min-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-1-min" "$re-cpu-idle-threshold";
@@ -68,6 +70,7 @@ iceberg {
             trigger routing-engine-cpu-utilization-idle-5-sec {
                 synopsis "Routing engine CPU kpi";
                 description "sets health based on Routing engine CPU utilization for 5 seconds";
+                frequency 60s;
                 term is-5sec-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-5-sec" "$re-cpu-idle-threshold";
@@ -90,6 +93,7 @@ iceberg {
             trigger routing-engine-cpu-utilization-idle-5min {
                 synopsis "Routing engine CPU kpi";
                 description "sets health based on Routing engine CPU utilization for 5 minutes";
+                frequency 60s;
                 term is-5min-cpu-idle-less-than-threshold {
                     when {
                         less-than "$cpu-idle-5-min" "$re-cpu-idle-threshold";
@@ -109,7 +113,7 @@ iceberg {
                     }
                 }
             }
-            variable RE_CPU_Idle_Threshold {
+            variable re-cpu-idle-threshold-input {
                 value 20;
                 description "Routing-Engine CPU Idle threshold value";
                 type int;

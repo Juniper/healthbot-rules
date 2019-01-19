@@ -12,29 +12,30 @@ iceberg {
                 iAgent {
                     file system-queues.yml;
                     table SystemQueuesINTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field system-queue-drop-count-threshold {
                 constant {
-                    value "{{system_queue_drop_count_threshold}}";
+                    value "{{queue-drop-count-threshold}}";
                 }
                 description "System queue drop count threshold for input interface";
             }
             field system-queue-drop-rate-threshold {
                 constant {
-                    value "{{system_queue_drop_rate_threshold}}";
+                    value "{{queue-drop-rate-threshold}}";
                 }
                 description "System queue drop rate threshold for input interface";
             }
             trigger system-input-queue-drops {
                 synopsis "System input queue drops kpi";
                 description "sets health based on input queue drops";
+                frequency 60s;
                 term are-system-input-queue-drops-increasing {
                     when {
                         min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$system-queue-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -63,12 +64,12 @@ iceberg {
                     }
                 }
             }
-            variable system_queue_drop_count_threshold {
+            variable queue-drop-count-threshold {
                 value 0;
                 description "System queue drop count threshold value";
                 type int;
             }
-            variable system_queue_drop_rate_threshold {
+            variable queue-drop-rate-threshold {
                 value 1;
                 description "System queue drop rate threshold value";
                 type int;
@@ -84,29 +85,30 @@ iceberg {
                 iAgent {
                     file system-queues.yml;
                     table SystemQueuesOutTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field system-queue-drop-count-threshold {
                 constant {
-                    value "{{system_queue_drop_count_threshold}}";
+                    value "{{queue-drop-count-threshold}}";
                 }
                 description "System queue drop count threshold for output interface";
             }
             field system-queue-drop-rate-threshold {
                 constant {
-                    value "{{system_queue_drop_rate_threshold}}";
+                    value "{{queue-drop-rate-threshold}}";
                 }
                 description "System queue drop rate threshold for output interface";
             }
             trigger system-output-queue-drops {
                 synopsis "System output queue drops kpi";
                 description "sets health based on output queue drops";
+                frequency 60s;
                 term are-system-output-queue-drops-increasing {
                     when {
                         min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$system-queue-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -135,12 +137,12 @@ iceberg {
                     }
                 }
             }
-            variable system_queue_drop_count_threshold {
+            variable queue-drop-count-threshold {
                 value 0;
                 description "System queue drop count threshold value";
                 type int;
             }
-            variable system_queue_drop_rate_threshold {
+            variable queue-drop-rate-threshold {
                 value 1;
                 description "System queue drop rate threshold value";
                 type int;

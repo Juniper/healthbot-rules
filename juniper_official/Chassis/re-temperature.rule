@@ -3,17 +3,17 @@
  * anomalies are found.
  * Three inputs control detection
  *
- *   1) "re_slot_no" is a regular expression that matches the routing engine
+ *   1) "re-slot-no" is a regular expression that matches the routing engine
  *      that you would like to monitor.  By default it's '0-1', which matches
  *      both the routing engines. Use something like '0' to match only
  *      routing engine 0.
  *
- *   2) "re_temperature_low_threshold" is the threshold that causes the
+ *   2) "re-temperature-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degree Cecilius of 
  *      RE temperature. This rule will set a dashboard color to green
  *      when temperature is below low threshold.
  * 
- *   3) "re_temperature_high_threshold" is the threshold that causes the
+ *   3) "re-temperature-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
  *      temperature. This rule will set a dashboard color to yellow when
  *      temperature is below high threshold. Otherwise color is set to
@@ -29,9 +29,9 @@ iceberg {
             /*
              * Monitors RE temperature. Notifies via the dashboard colors
              * when the when temperature is below low threshold
-             * {{re_temperature_low_threshold}} to green. The color is set
+             * {{re-temperature-low-threshold}} to green. The color is set
              * to yellow if we see temperature is below high threshold
-             * {{re_temperature_high_threshold}}. Otherwise the color is
+             * {{re-temperature-high-threshold}}. Otherwise the color is
              * set to red and notify anomaly.
              * 
              * Use routing-engine slot number as key for rule.
@@ -61,7 +61,7 @@ iceberg {
             }
             field routing-engine {
                 sensor components {
-                    where "/components/component/@name =~ /^Routing Engine[{{re_slot_no}}]*$/";
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
                     path "/components/component/@name";
                 }
                 description "RE name to monitor";
@@ -71,14 +71,14 @@ iceberg {
              */
             field high-threshold {
                 constant {
-                    value "{{re_temperature_high_threshold}}";
+                    value "{{re-temperature-high-threshold}}";
                 }
                 type integer;
                 description "RE temperature high threshold";
             }
             field low-threshold {
                 constant {
-                    value "{{re_temperature_low_threshold}}";
+                    value "{{re-temperature-low-threshold}}";
                 }
                 type integer;
                 description "RE temperature low threshold";
@@ -137,17 +137,17 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable re_slot_no {
+            variable re-slot-no {
                 value 0-1;
                 description "Routing engine slot numbers to monitor, regular expression, e.g. '0'";
                 type string;
             }
-            variable re_temperature_high_threshold {
+            variable re-temperature-high-threshold {
                 value 55;
                 description "RE temperature high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable re_temperature_low_threshold {
+            variable re-temperature-low-threshold {
                 value 45;
                 description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;

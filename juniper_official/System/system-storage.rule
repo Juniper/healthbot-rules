@@ -3,14 +3,14 @@
  * anomalies are found.
  * Two inputs control detection
  * 
- *   1) storage_usage_high_threshold, is the threshold that causes the rule to
+ *   1) storage-usage-high-threshold, is the threshold that causes the rule to
  *      report an anomaly.  By default it's 80% of total size. This rule will
  *      set a dashboard color to red when storage used exceed
- *      'storage_usage_high_threshold'.
+ *      'storage-usage-high-threshold'.
  * 
- *   2) storage_usage_low_threshold, is the threshold that causes the rule to
+ *   2) storage-usage-low-threshold, is the threshold that causes the rule to
  *      report an anomaly. By default it's 50%. This rule will set a dashboard
- *      color to green when storage used below 'storage_usage_low_threshold'.
+ *      color to green when storage used below 'storage-usage-low-threshold'.
  *      otherwise color is set to yellow as used % is between 50% and 80%.
  */
 iceberg {
@@ -23,8 +23,8 @@ iceberg {
             /*
              * Monitors the filesystem storage used% of system. Notifies via
              * the dashboard colors when the storage used % exceed by 
-             * {{storage_usage_high_threshold}} to red. The color is set to 
-             * green if we see used % below {{storage_usage_low_threshold}}.
+             * {{storage-usage-high-threshold}} to red. The color is set to 
+             * green if we see used % below {{storage-usage-low-threshold}}.
              * Otherwise the color is set to yellow
              * 
              * Use filesystem mounted path name as key for rule.
@@ -33,7 +33,7 @@ iceberg {
             /*
              * Sensor configuration to get data from network devices
              */
-            sensor StorageTable {
+            sensor storagetable {
                 synopsis "System storage iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
                 iAgent {
@@ -47,14 +47,14 @@ iceberg {
              */
             field high-threshold {
                 constant {
-                    value "{{storage_usage_high_threshold}}";
+                    value "{{storage-usage-high-threshold}}";
                 }
                 type integer;
                 description "Filesystem used storage high threshold";
             }
             field low-threshold {
                 constant {
-                    value "{{storage_usage_low_threshold}}";
+                    value "{{storage-usage-low-threshold}}";
                 }
                 type integer;
                 description "Filesystem used storage low threshold";
@@ -99,11 +99,11 @@ iceberg {
                 /*
                  * Defaults color to yellow.
                  */                
-                term system-storage-median {
+                term system-storage-middle {
                     then {
                         status {
                             color yellow;
-                            message "$filesystem-name storage used($used-percent) is in medium range(>=$low-threshold, <=$high-threshold)";
+                            message "$filesystem-name storage used($used-percent) is in middle range(>=$low-threshold, <=$high-threshold)";
                         }
                     }
                 }
@@ -112,12 +112,12 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable storage_usage_high_threshold {
+            variable storage-usage-high-threshold {
                 value 80;
                 type int;
                 description "Filesystem storage high threshold: exceed used % threshold, before we report anomaly";
             }
-            variable storage_usage_low_threshold {
+            variable storage-usage-low-threshold {
                 value 50;
                 type int;
                 description "Filesystem storage low threshold: exceed used % threshold, before we report anomaly";

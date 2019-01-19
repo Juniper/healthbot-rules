@@ -1,16 +1,24 @@
-version "18.1I20171121_0736_rsankar [rsankar]";
-iceberg:iceberg {
-    topic pfe-generic {
+iceberg {
+    topic linecard.fpc {
+        description "Monitors FPC memory usage percentage and notifies anomalies";
+        synopsis "FPC memory analyzer";
         rule fpc-memory {
-            keys [ id target name ];
-            sensor FpcMemory {
+            keys [ id name target ];
+            synopsis "FPC memory analyzer";
+            description "Monitors FPC memory usage percentage and notifies anomalies";
+            sensor fpcmemory {
+                synopsis "FPC components open-config sensor definition";
+                description "FPC system open-config sensor to collect telemetry data from network device";
                 iAgent {
                     file fpc_memory.yml;
                     table FpcMemory;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             trigger memory-usage-percentage {
+                synopsis "PFE memory buffer utilization kpi";
+                description "Sets health based on increase in FPC memory buffer utilization";
+                frequency 60s;
                 term way-over-limit {
                     when {
                         greater-than "$perc" 90;
@@ -48,4 +56,3 @@ iceberg:iceberg {
         }
     }
 }
-
