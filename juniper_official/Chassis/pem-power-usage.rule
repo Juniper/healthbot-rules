@@ -10,10 +10,10 @@
  *
  * One input control detection
  *
- *   1) "pem_power_usage_threshold" is the threshold that causes the rule to
+ *   1) "pem-power-usage-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of PEM power usage. This rule
  *      will set a dashboard color to red when PEM power usage exceed 
- *      threshold 'pem_power_usage_threshold'. Otherwise color is set to green.
+ *      threshold 'pem-power-usage-threshold'. Otherwise color is set to green.
  */
 iceberg {
     topic chassis.power {
@@ -24,7 +24,7 @@ iceberg {
             description "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold";
             /*
              * Monitors PEM power usage. Notifies via the dashboard colors when
-             * the PEM power usage exceed by {{pem_power_usage_threshold}} to 
+             * the PEM power usage exceed by {{pem-power-usage-threshold}} to 
              * red. Otherwise the color is set to green.
              *
              * Monitors PEMs state. Notifies via the dashboard colors when the
@@ -71,14 +71,6 @@ iceberg {
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */
-            field fru-model-number {
-                sensor components {
-                    where "/components/component/properties/property/@name == 'fru-model-number'";
-                    path /components/component/properties/property/state/value;
-                }
-                type string;
-                description "FRU model number";
-            }
             field pem-slot {
                 sensor components {
                     where "/components/component/@name =~/^PEM[0-9]$/";
@@ -146,7 +138,7 @@ iceberg {
              */
             field pem-power-usage-threshold {
                 constant {
-                    value "{{pem_power_usage_threshold}}";
+                    value "{{pem-power-usage-threshold}}";
                 }
                 type integer;
                 description "PEM power usage threshold";
@@ -291,9 +283,9 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable pem_power_usage_threshold {
+            variable pem-power-usage-threshold {
                 value 80;
-                description "PEM power usage threshold";
+                description "PEM power usage threshold percentage";
                 type int;
             }
         }

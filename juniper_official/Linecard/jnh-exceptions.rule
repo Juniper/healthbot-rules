@@ -12,12 +12,12 @@ iceberg {
                 iAgent {
                     file jnh-exceptions.yml;
                     table ShowJnhExceptions;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field exception-increase-rate {
                 constant {
-                    value "{{EXCEPTION-INCREASE-RATE}}";
+                    value "{{exception-increase-rate-input}}";
                 }
                 type integer;
                 description "This field initializes the exception increase rate";
@@ -25,11 +25,12 @@ iceberg {
             trigger jnh-packet-drops {
                 synopsis "JNH packet drop kpi";
                 description "Sets health based on JNH packet drop";
+                frequency 60s;
                 term are-jnh-packet-drops-increasing {
                     when {
                         min-rate-of-increase "$packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$exception-increase-rate";
-                            time-range 50s;
+                            time-range 300s;
                         }
                     }
                     then {
@@ -47,7 +48,7 @@ iceberg {
                     }
                 }
             }
-            variable EXCEPTION-INCREASE-RATE {
+            variable exception-increase-rate-input {
                 value 5;
                 description "Exception increase rate";
                 type int;

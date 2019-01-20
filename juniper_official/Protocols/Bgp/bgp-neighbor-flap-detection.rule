@@ -7,10 +7,10 @@
  *      all BGP neighbors. Use something like '172.16.*' to match all neighbor
  *      addresses which are in 172.16.0.0/16 network range.
  *
- *   2) "flaps_threshold" is the threshold that causes the rule to report
+ *   2) "flaps-threshold" is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
  *      color to red when any of the BGP neighbor session flap-increases
- *      are greater than 'flaps_threshold' for 60s. If it sees any flaps
+ *      are greater than 'flaps-threshold' for 60s. If it sees any flaps
  *      increase for a period of less than 60s, it'll turn the color to
  *      yellow, otherwise color is set to green.
  */
@@ -23,9 +23,9 @@ iceberg {
             synopsis "BGP neighbor flaps detector";
             /*
              * Monitors the BGP neighbor sessions. Notifies via the dashboard
-             * colors when the flaps increase by {{flaps_threshold}} for every
+             * colors when the flaps increase by {{flaps-threshold}} for every
              * collected metric during a 60s time range (red). The color is set
-             * to yellow if we see any flap increase by {{flaps_threshold}}.
+             * to yellow if we see any flap increase by {{flaps-threshold}}.
              * Otherwise the color is set to green
              * 
              * Use neighbor address as key for rule.
@@ -73,7 +73,7 @@ iceberg {
              */
             field flap-count-threshold {
                 constant {
-                    value "{{flaps_threshold}}";
+                    value "{{flaps-threshold}}";
                 }
                 type integer;
                 description "Flap count increase threshold";
@@ -84,6 +84,7 @@ iceberg {
             trigger neigbor-flap {
                 synopsis "BGP neighbor session flaps KPI";
                 description "Sets health based on increase in bgp neighbor session flaps";
+                frequency 30s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the BGP neighbor session transition
@@ -142,7 +143,7 @@ iceberg {
                 description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
                 type string;
             }
-            variable flaps_threshold {
+            variable flaps-threshold {
                 value 1;
                 type int;
                 description "BGP neighbor session flaps threshold: Number of flap increase between metrics, before we report anomaly";

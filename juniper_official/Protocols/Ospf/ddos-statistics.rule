@@ -12,35 +12,36 @@ iceberg {
                 iAgent {
                     file ddos-statistics.yml;
                     table ddosStats;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field ddos-arrival-rate-threshold {
                 constant {
-                    value "{{DDOS_Arrival_Rate_Threshold}}";
+                    value "{{ddos-arrival-rate-threshold}}";
                 }
                 description "This field is for ddos arive rate threshold";
             }
             field ddos-drop-count-threshold {
                 constant {
-                    value "{{DDOS_Drop_Count_Threshold}}";
+                    value "{{ddos-drop-count-threshold}}";
                 }
                 description "This field is for ddos drop count threshold";
             }
             field ddos-drop-rate-threshold {
                 constant {
-                    value "{{DDOS_Drop_Rate_Threshold}}";
+                    value "{{ddos-drop-rate-threshold}}";
                 }
                 description "This field is for ddos drop rate threshold";
             }
             trigger ddos-drops {
                 synopsis "DDOS packet drops kpi";
                 description "Sets health based on DDOS packet drop rate";
+                frequency 60s;
                 term is-ddos-drops-increasing {
                     when {
                         min-rate-of-increase "$dropped-packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ddos-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 5m;
                         }
                     }
                     then {
@@ -72,6 +73,7 @@ iceberg {
             trigger ddos-packet-arrival-rate {
                 synopsis "DDOS packet arrival kpi";
                 description "Sets health based on DDOS packet arrival rate";
+                frequency 60s;
                 term is-max-packet-arrival-rate-greater-than-threshold {
                     when {
                         greater-than-or-equal-to "$packet-arrival-rate-max" "$ddos-arrival-rate-threshold";
@@ -94,11 +96,12 @@ iceberg {
             trigger ddos-packet-dropped-others {
                 synopsis "DDOS packet drop other kpi";
                 description "Sets health based on DDOS packet drop others";
+                frequency 60s;
                 term is-ddos-packet-dropped-others-increasing {
                     when {
                         min-rate-of-increase "$dropped-packets-others" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ddos-drop-rate-threshold";
-                            time-range 50s;
+                            time-range 5m;
                         }
                     }
                     then {
@@ -122,22 +125,24 @@ iceberg {
                 term ddos-packet-drop-others-not-increasing {
                     then {
                         status {
+                        
+                        
                             color green;
                         }
                     }
                 }
             }
-            variable DDOS_Arrival_Rate_Threshold {
+            variable ddos-arrival-rate-threshold {
                 value 1000;
                 description "DDOS arrival rate threshold value";
                 type int;
             }
-            variable DDOS_Drop_Count_Threshold {
+            variable ddos-drop-count-threshold {
                 value 0;
                 description "DDOS drop count threshold value";
                 type int;
             }
-            variable DDOS_Drop_Rate_Threshold {
+            variable ddos-drop-rate-threshold {
                 value 1;
                 description "DDOS drop rate threshold value";
                 type int;

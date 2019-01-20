@@ -3,20 +3,26 @@ iceberg {
         description "Rules relevant to protocol metrics and in specific pertaining to ospf";
         rule check-ospf-statistics-information {
             description "Monitors the transmission and reception of hello packets";
+            synopsis "ospf hello statistics analyzer";
             keys ospf-packet-type;
             sensor protocol-ospf-statistics-information {
+                synopsis "OSPF iAgent sensor definition";
+                description "Netconfig rpc get-ospf-neighbor-information iAgent sensor to collect telemetry data from network device";
                 iAgent {
                     file ospf.yml;
                     table OspfStats;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             trigger protocol-ospf-statistics-information-hello-received {
-                term is-protocol-ospf-statistics-information-ospf-hello-receive-increasing {
+                synopsis "ospf hello received statistics kpi";
+                description "Sets health based on ospf hello received statistics";
+                frequency 60s;
+                term is-ospf-hello-receive-increasing {
                     when {
                         min-rate-of-increase "$hello-received" {
                             rate 1;
-                            time-range 50s;
+                            time-range 5m;
                         }
                     }
                     then {
@@ -26,7 +32,7 @@ iceberg {
                         }
                     }
                 }
-                term protocol-ospf-statistics-information-ospf-hello-receive-not-increasing {
+                term is-ospf-hello-receive-not-increasing {
                     then {
                         status {
                             color red;
@@ -36,11 +42,14 @@ iceberg {
                 }
             }
             trigger protocol-ospf-statistics-information-hello-sent {
-                term is-protocol-ospf-statistics-information-ospf-hello-sent-increasing {
+                synopsis "ospf hello sent statistics kpi";
+                description "Sets health based on ospf hello sent statistics";
+                frequency 60s;
+                term is-ospf-hello-sent-increasing {
                     when {
                         min-rate-of-increase "$hello-sent" {
                             rate 1;
-                            time-range 50s;
+                            time-range 5m;
                         }
                     }
                     then {
@@ -50,7 +59,7 @@ iceberg {
                         }
                     }
                 }
-                term protocol-ospf-statistics-information-ospf-hello-sent-not-increasing {
+                term is-ospf-hello-sent-not-increasing {
                     then {
                         status {
                             color red;

@@ -12,17 +12,18 @@ iceberg {
                 iAgent {
                     file chip.yml;
                     table CChipFiStatsTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             trigger center-chip-fabric-in-dropped {
                 synopsis "center chip fabric kpi";
                 description "Sets health based on center chip fabric dropped packets ";
+                frequency 60s; 
                 term are-center-chip-fabric-in-dropped-packets-increasing {
                     when {
-                        min-rate-of-increase "$cchip-fi-packets-dropped" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate 1;
-                            time-range 50s;
+                        increasing-at-least-by-value "$cchip-fi-packets-dropped" {
+                            value 1;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -54,6 +55,7 @@ iceberg {
             trigger center-chip-fabric-in-error {
                 synopsis "center chip fabric kpi";
                 description "Sets health based on center chip fabric in errors";
+                frequency 60s; 
                 term are-center-chip-fabric-in-errors-present {
                     when {
                         greater-than "$cchip-fi-packets-with-error" 0;
@@ -76,11 +78,12 @@ iceberg {
             trigger center-chip-fabric-in-received {
                 synopsis "center chip fabric in received packets kpi";
                 description "Sets health based on center chip fabric in received packets";
+                frequency 60s; 
                 term are-center-chip-fabric-in-received-packets-increasing {
                     when {
-                        min-rate-of-increase "$cchip-fi-packets-received" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate 1;
-                            time-range 50s;
+                        increasing-at-least-by-value "$cchip-fi-packets-received" {
+                            value 1;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -101,11 +104,12 @@ iceberg {
             trigger center-chip-fabric-in-sent-ok {
                 synopsis "center chip fabric in sent kpi";
                 description "Sets health based on center chip fabric in sent packets";
+                frequency 60s;
                 term are-center-chip-fabric-in-sent-ok-packets-increasing {
                     when {
-                        min-rate-of-increase "$cchip-fi-packets-sent-ok" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate 1;
-                            time-range 50s;
+                        increasing-at-least-by-value "$cchip-fi-packets-sent-ok" {
+                            value 1;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -133,7 +137,7 @@ iceberg {
                 iAgent {
                     file sync-ospf-fpc.yml;
                     table SyncOspfFpc;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
         }

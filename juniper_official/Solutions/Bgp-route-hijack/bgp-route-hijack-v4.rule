@@ -9,13 +9,12 @@ iceberg {
             description "Checks bgp ipv4 route hijack";
             synopsis "IPv4 bgp route hijack detector";
             keys prefix;
-            rule-frequency 60s;
             sensor bgp-v4 {
                 synopsis "BGP openconfig sensor";
                 description "Sensor configuration to get bgp data from network devices";
                 open-config {
                     sensor-name /bgp-rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             field as-path {
@@ -27,7 +26,7 @@ iceberg {
             }
             field as-path-expr {
                 constant {
-                    value "{{ipv4_as_path}}";
+                    value "{{ipv4-as-path}}";
                 }
                 type string;
                 description "As-path-expression to match and compare";
@@ -41,7 +40,7 @@ iceberg {
             }
             field community-expr {
                 constant {
-                    value "{{ipv4_community}}";
+                    value "{{ipv4-community}}";
                 }
                 type string;
                 description "community-expression to match and compare";
@@ -108,12 +107,12 @@ iceberg {
             /*
              * Variables to take inputs while deploying playbook
              */
-            variable ipv4_as_path {
+            variable ipv4-as-path {
                 value ""
                 type string;
                 description "Enter ipv4 as-path that is expected, e.g. 6451[23]$";
             }
-            variable ipv4_community {
+            variable ipv4-community {
                 value ""
                 type string;
                 description "Enter community that is expected, e.g ^64512:9999$";
