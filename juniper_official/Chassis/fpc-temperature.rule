@@ -3,16 +3,16 @@
  * anomalies are found.
  * Three inputs control detection
  *
- *   1) "fpc_slot_no" is a regular expression that matches the FPCs that you
+ *   1) "fpc-slot-no" is a regular expression that matches the FPCs that you
  *      would like to monitor.  By default it's '0-20', which matches 0 to 20
  *      FPC slots. Use something like '0-3' to match only FPC slots 0 to 3.
  *
- *   2) "fpc_temperature_low_threshold" is the threshold that causes the
+ *   2) "fpc-temperature-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degree Cecilius of 
  *      FPC temperature. This rule will set a dashboard color to green
  *      when temperature is below low threshold.
  * 
- *   3) "fpc_temperature_high_threshold" is the threshold that causes the
+ *   3) "fpc-temperature-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55 degree Cecilius of FPC 
  *      temperature. This rule will set a dashboard color to yellow when
  *      temperature is below high threshold. Otherwise color is set to
@@ -28,9 +28,9 @@ iceberg {
             /*
              * Monitors FPC temperature. Notifies via the dashboard colors
              * when the when temperature is below low threshold
-             * {{fpc_temperature_low_threshold}} to green. The color is set
+             * {{fpc-temperature-low-threshold}} to green. The color is set
              * to yellow if we see temperature is below high threshold
-             * {{fpc_temperature_high_threshold}}. Otherwise the color is
+             * {{fpc-temperature-high-threshold}}. Otherwise the color is
              * set to red and notify anomaly.
              * 
              * Use routing-engine slot number as key for rule.
@@ -53,7 +53,7 @@ iceberg {
              */
             field fpc {
                 sensor components {
-                    where "/components/component/@name =~ /^FPC[{{fpc_slot_no}}]*$/";
+                    where "/components/component/@name =~ /^FPC{{fpc-slot-no}}$/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -72,14 +72,14 @@ iceberg {
              */
             field high-threshold {
                 constant {
-                    value "{{fpc_temperature_high_threshold}}";
+                    value "{{fpc-temperature-high-threshold}}";
                 }
                 type integer;
                 description "FPC temperature high threshold";
             }
             field low-threshold {
                 constant {
-                    value "{{fpc_temperature_low_threshold}}";
+                    value "{{fpc-temperature-low-threshold}}";
                 }
                 type integer;
                 description "FPC temperature low threshold";
@@ -138,18 +138,19 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable fpc_slot_no {
-                value 0-20;
-                description "FPC slot to monitor, regular expression, e.g. '0'";type string;
+            variable fpc-slot-no {
+                value "[0-9]*";
+                description "FPC slot to monitor, regular expression, e.g. '0'";
+		type string;
             }
-            variable fpc_temperature_high_threshold {
+            variable fpc-temperature-high-threshold {
                 value 55;
-                description "FPC temperature high threshold: Utilization increase between metrics, before we report anomaly";
+                description "FPC temperature high threshold, We report anomaly if it is more than this value";
                 type int;
             }
-            variable fpc_temperature_low_threshold {
+            variable fpc-temperature-low-threshold {
                 value 45;
-                description "FPC temperature low threshold: Utilization increase between metrics, before we report anomaly";
+                description "FPC temperature low threshold, We report anomaly if it is more than this value";
                 type int;
             }
         }

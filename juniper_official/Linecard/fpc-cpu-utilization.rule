@@ -3,20 +3,20 @@
  * anomalies are found.
  * Three inputs control detection
  * 
- *   1) "fpc_slot_no" is a regular expression that matches the linecard
+ *   1) "fpc-slot-no" is a regular expression that matches the linecard
  *      that you would like to monitor.  By default it's '0-20', which matches
  *      FPC 0 to 20 linecards. Use something like '0-3' to match only specific
  *      FPCs i.e. 0 to 3.
  * 
- *   2) "fpc_cpu_high_threshold" is the threshold that causes the rule to report
+ *   2) "fpc-cpu-high-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 80% of CPU utilization. This rule will set
  *      a dashboard color to red when FPC CPU utilization exceed high threshold
- *      'fpc_cpu_high_threshold' for a period of 3 minutes.
+ *      'fpc-cpu-high-threshold' for a period of 3 minutes.
  * 
- *   3) "fpc_cpu_low_threshold" is the threshold that causes the rule to report
+ *   3) "fpc-cpu-low-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 50% of CPU utilization. This rule will set 
  *      a dashboard color to yellow when RE CPU utilization exceed low 
- *      threshold 'fpc_cpu_low_threshold' for a period of 3 minutes.
+ *      threshold 'fpc-cpu-low-threshold' for a period of 3 minutes.
  *      Otherwise color is set to green.
  */
 iceberg {
@@ -29,9 +29,9 @@ iceberg {
             /*
              * Monitors all the linecards CPU utilization. Notifies via the
              * dashboard colors when the linecards CPU utilization exceed by
-             * {{fpc_cpu_high_threshold}} for every collected metric during a
+             * {{fpc-cpu-high-threshold}} for every collected metric during a
              * 3m time range (red). The color is set to yellow if we see
-             * linecard CPU utilization exceed {{fpc_cpu_low_threshold}} for
+             * linecard CPU utilization exceed {{fpc-cpu-low-threshold}} for
              * every collected metric during a 3m time range. Otherwise the
              * color is set to green.
              * 
@@ -55,7 +55,7 @@ iceberg {
              */
             field fpc {
                 sensor components {
-                    where "/components/component/@name =~ /^FPC[{{fpc_slot_no}}]:CPU$/";
+                    where "/components/component/@name =~ /^FPC{{fpc-slot-no}}:CPU$/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -73,14 +73,14 @@ iceberg {
              */
             field high-threshold {
                 constant {
-                    value "{{fpc_cpu_high_threshold}}";
+                    value "{{fpc-cpu-high-threshold}}";
                 }
                 type integer;
                 description "FPC CPU utilization high threshold";
             }
             field low-threshold {
                 constant {
-                    value "{{fpc_cpu_low_threshold}}";
+                    value "{{fpc-cpu-low-threshold}}";
                 }
                 type integer;
                 description "FPC CPU utilization low threshold";
@@ -91,6 +91,7 @@ iceberg {
             trigger fpc-cpu-utilization {
                 synopsis "FPC CPU utilization KPI";
                 description "Sets health based on increase in FPC CPU utilization";
+                frequency 60s; 
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the line card CPU utilization ($re-cpu-utilization) exceed
@@ -145,18 +146,18 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable fpc_cpu_high_threshold {
+            variable fpc-cpu-high-threshold {
                 value 80;
                 description "FPC CPU utilization high threshold: Utilization increase between metrics, before we report anomaly"
                 type int;
             }
-            variable fpc_cpu_low_threshold {
+            variable fpc-cpu-low-threshold {
                 value 50;
                 description "FPC CPU utilization low threshold: Utilization increase between metrics, before we report anomaly"
                 type int;
             }
-            variable fpc_slot_no {
-                value 0-20;
+            variable fpc-slot-no {
+                value "[0-9]*";
                 description "FPC slot to monitor, regular expression, e.g. '0-3'";
                 type string;
             }
