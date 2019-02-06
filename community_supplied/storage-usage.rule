@@ -1,0 +1,84 @@
+iceberg {
+    topic snmp.storage {
+        rule storage-usage {
+            keys hrStorageIndex;
+            function storage-percentage {
+                path used-percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
+            }
+            sensor hrStorageTable {
+                snmp {
+                    table .1.3.6.1.2.1.25.2.3;
+                    frequency 300s;
+                }
+            }
+            field hrStorageDescr {
+                sensor hrStorageTable {
+                    path hrStorageDescr;
+                }
+                type string;
+            }
+            field hrStorageIndex {
+                sensor hrStorageTable {
+                    path hrStorageIndex;
+                }
+                type string;
+            }
+            field hrStorageSize {
+                sensor hrStorageTable {
+                    path hrStorageSize;
+                }
+                type integer;
+            }
+            field hrStorageUsed {
+                sensor hrStorageTable {
+                    path hrStorageUsed;
+                }
+                type integer;
+            }
+            field storage_percentage {
+                formula {
+                    user-defined-function {
+                        function-name storage-percentage;
+                        argument total "$hrStorageSize";
+                        argument used "$hrStorageUsed";
+                    }
+                }
+                type integer;
+            }
+            trigger check_storage_space {
+                frequency 300s;
+                term term_space_ok {
+                    when {
+                        less-than "$storage_percentage" 70;
+                        not-equal-to "$storage_percentage" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$hrStorageDescr has $hrStorageUsed used over $hrStorageSize";
+                        }
+                    }
+                }
+                term term_space_warning {
+                    when {
+                        greater-than-or-equal-to "$storage_percentage" 70;
+                        less-than "$storage_percentage" 100;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$hrStorageDescr has $hrStorageUsed used over $hrStorageSize";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

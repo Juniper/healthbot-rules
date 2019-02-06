@@ -1,0 +1,77 @@
+iceberg {
+    topic snmp.vlan {
+        rule vlan-status {
+            keys vlanNbr;
+            sensor vlan-status {
+                snmp {
+                    table .1.3.6.1.4.1.2636.3.40.1.5.1.6;
+                    frequency 300s;
+                }
+            }
+            field ifAdminStatus {
+                sensor vlan-status {
+                    path jnxExVlanInterfaceAdminStatus;
+                }
+                type integer;
+                description "up or down";
+            }
+            field ifOperStatus {
+                sensor vlan-status {
+                    path jnxExVlanInterfaceOperStatus;
+                }
+                type integer;
+            }
+            field ipAddr {
+                sensor vlan-status {
+                    path jnxExVlanInterfaceIpAddress;
+                }
+                type string;
+            }
+            field vlanNbr {
+                sensor vlan-status {
+                    path jnxExVlanInterfaceDescription;
+                }
+                type string;
+            }
+            trigger vlan_state {
+                frequency 300s;
+                term vlan_upup {
+                    when {
+                        equal-to "$ifAdminStatus" 1;
+                        equal-to "$ifOperStatus" 1;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$jnxExVlanInterfaceDescription OperStatus is up and AdminStatus is up";
+                        }
+                    }
+                }
+                term vlan_up_down {
+                    when {
+                        equal-to "$ifAdminStatus" 0;
+                        equal-to "$ifOperStatus" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$jnxExVlanInterfaceDescription OperStatus is up and AdminStatus is down";
+                        }
+                    }
+                }
+                term vlan_down_down {
+                    when {
+                        equal-to "$ifAdminStatus" 0;
+                        equal-to "$ifOperStatus" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$jnxExVlanInterfaceDescription OperStatus is down and AdminStatus is down";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
