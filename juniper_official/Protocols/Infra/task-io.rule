@@ -12,7 +12,7 @@ iceberg {
                 iAgent {
                     file task-io.yml;
                     table TaskIOTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
             }
             field io-drops-threshold {
@@ -24,11 +24,12 @@ iceberg {
             trigger task-io-drops {
                 synopsis "task io drops kpi";
                 description "Sets health based on task ip drops threshold value";
+                frequency 60s;
                 term are-task-io-drops-increasing {
                     when {
                         min-rate-of-increase "$dropped" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$io-drops-threshold";
-                            time-range 50s;
+                            time-range 5m;
                         }
                     }
                     then {

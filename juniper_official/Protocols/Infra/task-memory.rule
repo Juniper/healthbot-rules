@@ -25,9 +25,10 @@ iceberg {
             trigger percentage-of-task-memory-in-use {
                 synopsis "Task memory in use kpi";
                 description "Sets health based on task memory in use";
-                term is-percentage-of-task-memory-in-use-greater-than-80 {  
+                frequency 60s;
+                term is-task-memory-in-use-above-threshold {  
                     when {
-                        greater-than-or-equal-to "$in-use-percent" 80;
+                        greater-than-or-equal-to "$in-use-percent" memory-threshold;
                     }
                     then {
                         status {
@@ -36,7 +37,7 @@ iceberg {
                         }
                     }
                 }
-                term percentage-of-task-memory-in-use-lesser-than-equal-to-80 {
+                term task-memory-in-use-normal {
                     then {
                         status {
                             color green;
