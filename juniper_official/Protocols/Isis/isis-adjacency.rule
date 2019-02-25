@@ -1,0 +1,72 @@
+iceberg {
+    rule check-isis-adjacencies {
+        keys [ instance-id interface-id system-id ];
+        sensor isis-sensor {
+            open-config {
+                sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/;
+                frequency 10s;
+            }
+        }
+        field adjacency-state {
+            sensor isis-sensor {
+                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-state;
+            }
+            type string;
+        }
+        field instance-id {
+            sensor isis-sensor {
+                where "/network-instances/network-instance/@instance-name =~ /{{instance-name}}/";
+                path "/network-instances/network-instance/@instance-name";
+            }
+            type string;
+        }
+        field interface-id {
+            sensor isis-sensor {
+                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+            }
+            type string;
+        }
+        field system-id {
+            sensor isis-sensor {
+                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id =~ /{{system-name}}/";
+                path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id";
+            }
+            type string;
+        }
+        trigger isis-adjacency-state {
+            frequency 60s;
+            term is-adjacency-ip {
+                when {
+                    matches-with "$adjacency-state" up;
+                }
+                then {
+                    status {
+                        color green;
+                        message " ISIS adjacency state of routing-instance $instance-id, interface $interface-id and system-id $system-id  is $adjacency-state";
+                    }
+                }
+            }
+            term is-adjacency-state-down {
+                then {
+                    status {
+                        color red;
+                        message " ISIS adjacency state of routing-instance $instance-id, interface $interface-id and system-id $system-id  is $adjacency-state";
+                    }
+                }
+            }
+        }
+        variable instance-name {
+            value .*;
+            type string;
+        }
+        variable interface-name {
+            value .*;
+            type string;
+        }
+        variable system-name {
+            value .*;
+            type string;
+        }
+    }
+}
