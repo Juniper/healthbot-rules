@@ -1,257 +1,378 @@
-iceberg {
-    rule check-isis-statistics {
-        keys interface-name;
-        sensor isis-sensor {
-            open-config {
-                sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/;
-                frequency 10s;
-            }
-        }
-        field csnp-drops {
+/*
+ * Detects ISIS packet drops and notifies when anomalies are found.
+ * Two input control detection
+ * 
+ *   1) drops-threshold, is the threshold that causes the rule to report an
+ *      anomaly. By default it's 1. This rule will set a dashboard color to
+ *      red when packet drop count is greater than 'drops-threshold' for 3
+ *      minutes period, otherwise color is set to green.
+ *
+ *   2) interface-name, is a regular expression that matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'ge.*' to match only ISIS
+ *      adjacencies contains gigabit ethernet interfaces.
+ *
+ */
+ iceberg {
+    topic protocol.isis {
+        description "Monitors isis statitics i.e. adjacency state& statistics and notify anomalies";
+        synopsis "ISIS adjacency statistics analyzer";
+        rule check-isis-statistics {
+            description "Collects ISIS session statistics(lsp, csnp, esh, iih, ish, psnp and unknown drops) periodically and notify anomaly when breaches threshold";
+            synopsis "ISIS adjacency statistics analyzer";
+            /*
+             * Monitors ISIS adjacency statistics. Notifies via the dashboard
+             * colors when the lsp, csnp, esh, iih, ish, psnp and unknown drops
+             * increase by {{drops-threshold}} for  every collected metric during
+             * a 3ms time range (red). Otherwise the color is set to green.
+             * 
+             * Use interface name as key for rule.
+             */
+            keys interface-name;
+            /*
+             * Sensor configuration to get data from network devices
+             */
             sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/csnp/state/dropped;
-            }
-            type integer;
-        }
-        field esh-drops {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/esh/state/dropped;
-            }
-            type integer;
-        }
-        field iih-drops {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/iih/state/dropped;
-            }
-            type integer;
-        }
-        field interface-name {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
-            }
-            type string;
-            description 1;
-        }
-        field ish-drops {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/ish/state/dropped;
-            }
-            type integer;
-        }
-        field lsp-drops {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/lsp/state/dropped;
-            }
-            type integer;
-        }
-        field psnp-drops {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/psnp/state/dropped;
-            }
-            type integer;
-        }
-        field threshold {
-            constant {
-                value "{{drops-threshold}}";
-            }
-            type integer;
-        }
-        field unknown-drops {
-            sensor isis-sensor {
-                where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
-                path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/unknown/state/dropped;
-            }
-            type integer;
-        }
-        trigger csnp-drops {
-            frequency 60s;
-            term csnp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$csnp-drops" {
-                        value "$threshold";
-                        time-range 3m;
-                    }
-                }
-                then {
-                    status {
-                        color red;
-                        message "CSNP packet drops $lsp-drops are increasing on $interface-name";
-                    }
+                synopsis "ISIS open-config sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/;
+                    frequency 60s;
                 }
             }
-            term csnp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "CSNP packet drops $lsp-drops are not increasing on $interface-name";
-                    }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field csnp-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/csnp/state/dropped;
                 }
+                type integer;
+                description "Number of csnp drops";
             }
-        }
-        trigger esh-drops {
-            frequency 60s;
-            term lsp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$esh-drops" {
-                        value "$threshold";
-                        time-range 3m;
-                    }
+            field esh-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/esh/state/dropped;
                 }
-                then {
-                    status {
-                        color red;
-                        message "LSP packet drops $esh-drops are increasing on $interface-name";
-                    }
-                }
+                type integer;
+                description "Number of esh drops";
             }
-            term lsp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "LSP packet drops $esh-drops are not increasing on $interface-name";
-                    }
+            field iih-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/iih/state/dropped;
                 }
+                type integer;
+                description "Number of iih drops";
             }
-        }
-        trigger iih-drops {
-            frequency 60s;
-            term lsp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$iih-drops" {
-                        value "$threshold";
-                        time-range 3m;
+            field interface-name {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field ish-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/ish/state/dropped;
+                }
+                type integer;
+                description "Number of ish drops";
+            }
+            field lsp-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/lsp/state/dropped;
+                }
+                type integer;
+                description "Number of lsp drops";
+            }
+            field psnp-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/psnp/state/dropped;
+                }
+                type integer;
+                description "Number of psnp drops";
+            }
+            field threshold {
+                constant {
+                    value "{{drops-threshold}}";
+                }
+                type integer;
+                description "Packet drops threshold";
+            }
+            field unknown-drops {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/unknown/state/dropped;
+                }
+                type integer;
+                description "Number of unknown drops";
+            }
+            /*
+             * Anomaly detection logic to detect frame discards
+             */
+            trigger csnp-drops {
+                synopsis "ISIS csnp drops kpi";
+                description "Sets health based on increase in ISIS session's csnp drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the csnp drop ($csnp-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term csnp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$csnp-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CSNP packet drops $lsp-drops are increasing on $interface-name";
+                        }
                     }
                 }
-                then {
-                    status {
-                        color red;
-                        message "LSP packet drops $iih-drops are increasing on $interface-name";
+                /*
+                 * Defaults color to green.
+                 */
+                term csnp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "CSNP packet drops $lsp-drops are not increasing on $interface-name";
+                        }
                     }
                 }
             }
-            term lsp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "LSP packet drops $iih-drops are not increasing on $interface-name";
+            trigger esh-drops {
+                synopsis "ISIS esh drops kpi";
+                description "Sets health based on increase in ISIS session's esh drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the esh drop ($esh-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term lsp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$esh-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ESH packet drops $esh-drops are increasing on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term lsp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "ESH packet drops $esh-drops are not increasing on $interface-name";
+                        }
                     }
                 }
             }
-        }
-        trigger ish-drops {
-            frequency 60s;
-            term lsp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$ish-drops" {
-                        value "$threshold";
-                        time-range 3m;
+            trigger iih-drops {
+                synopsis "ISIS iih drops kpi";
+                description "Sets health based on increase in ISIS session's iih drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the iih drop ($iih-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term lsp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$iih-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "IIH packet drops $iih-drops are increasing on $interface-name";
+                        }
                     }
                 }
-                then {
-                    status {
-                        color red;
-                        message "LSP packet drops $ish-drops are increasing on $interface-name";
-                    }
-                }
-            }
-            term lsp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "LSP packet drops $ish-drops are not increasing on $interface-name";
-                    }
-                }
-            }
-        }
-        trigger lsp-drops {
-            frequency 60s;
-            term lsp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$lsp-drops" {
-                        value "$threshold";
-                        time-range 3m;
-                    }
-                }
-                then {
-                    status {
-                        color red;
-                        message "LSP packet drops $lsp-drops are increasing on $interface-name";
+                /*
+                 * Defaults color to green.
+                 */
+                term lsp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "IIH packet drops $iih-drops are not increasing on $interface-name";
+                        }
                     }
                 }
             }
-            term lsp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "LSP packet drops $lsp-drops are not increasing on $interface-name";
+            trigger ish-drops {
+                synopsis "ISIS ish drops kpi";
+                description "Sets health based on increase in ISIS session's ish drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the ish drop ($ish-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term lsp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$ish-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ISH packet drops $ish-drops are increasing on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term lsp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "ISH packet drops $ish-drops are not increasing on $interface-name";
+                        }
                     }
                 }
             }
-        }
-        trigger psnp-drops {
-            frequency 60s;
-            term lsp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$psnp-drops" {
-                        value "$threshold";
-                        time-range 3m;
+            trigger lsp-drops {
+                synopsis "ISIS lsp drops kpi";
+                description "Sets health based on increase in ISIS session's lsp drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the lsp drop ($lsp-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term lsp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$lsp-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "LSP packet drops $lsp-drops are increasing on $interface-name";
+                        }
                     }
                 }
-                then {
-                    status {
-                        color red;
-                        message "LSP packet drops $psnp-drops are increasing on $interface-name";
-                    }
-                }
-            }
-            term lsp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "LSP packet drops $psnp-drops are not increasing on $interface-name";
-                    }
-                }
-            }
-        }
-        trigger unknown-drops {
-            frequency 60s;
-            term lsp-drops-increasing {
-                when {
-                    increasing-at-least-by-value "$unknown-drops" {
-                        value "$threshold";
-                        time-range 3m;
-                    }
-                }
-                then {
-                    status {
-                        color red;
-                        message "LSP packet drops $unknown-drops are increasing on $interface-name";
+                /*
+                 * Defaults color to green.
+                 */
+                term lsp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "LSP packet drops $lsp-drops are not increasing on $interface-name";
+                        }
                     }
                 }
             }
-            term lsp-drops-normal {
-                then {
-                    status {
-                        color green;
-                        message "LSP packet drops $unknown-drops are not increasing on $interface-name";
+            trigger psnp-drops {
+                synopsis "ISIS psnp drops kpi";
+                description "Sets health based on increase in ISIS session's psnp drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the psnp drop ($psnp-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term lsp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$psnp-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PSNP packet drops $psnp-drops are increasing on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term lsp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "PSNP packet drops $psnp-drops are not increasing on $interface-name";
+                        }
                     }
                 }
             }
-        }
-        variable drops-threshold {
-            value 1;
-            type int;
-        }
-        variable interface-name {
-            value .*;
-            type string;
+            trigger unknown-drops {
+                synopsis "ISIS unknown drops kpi";
+                description "Sets health based on increase in ISIS session's unknown drop count and notify anomaly";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * unknown drop ($unknown-drops) count increases in all points
+                 * in a 3 minute period.
+                 */
+                term lsp-drops-increasing {
+                    when {
+                        increasing-at-least-by-value "$unknown-drops" {
+                            value "$threshold";
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Unknown packet drops $unknown-drops are increasing on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term lsp-drops-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Unknown packet drops $unknown-drops are not increasing on $interface-name";
+                        }
+                    }
+                }
+            }
+            variable drops-threshold {
+                value 1;
+                type int;
+                description "Packet drops threshold: Increase between metrics, before we report anomaly";
+            }
+            variable interface-name {
+                value .*;
+                type string;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+            }
         }
     }
 }
