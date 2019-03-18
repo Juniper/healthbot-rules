@@ -2,26 +2,26 @@
  * Monitors sub interface output traffic and notifies when anomalies are found.
  * Five inputs control detection
  *
- *   1) interface_name, is a regular expression that matches the interfaces
+ *   1) ifd-name, is a regular expression that matches the interfaces
  *      that you would like to monitor.  By default it's '.*', which matches
  *      all interfaces. Use something like 'ge.*' to match only gigabit
  *      ethernet interfaces. 
  *
- *   2) ifl_no, is a regular expression that matches the IFL index number that
+ *   2) ifl-no, is a regular expression that matches the IFL index number that
  *      you would like to monitor.  By default it's '.*', which matches all
  *      interfaces. Use something like '0-10*' to match only 0 to 10 IFLs.
  *
- *   3) stats_name, is a regular expression that matches the sub interface KPI
+ *   3) stats-name, is a regular expression that matches the sub interface KPI
  *      statistics counter name that you would like to monitor. By default it's
  *      out-octets, Use proper counter name something like 'out-pkts' or
  *      "out-unicast-pkts" or "out-multicast-pkts" etc.
  *
- *   4) out_octets_high_threshold, is the threshold that causes the rule to
+ *   4) out-octets-high-threshold, is the threshold that causes the rule to
  *      report an anomaly.  By default it's 80000000 octets (80 MB). This rule
  *      will set a dashboard color to red when *all* the output traffic is above
  *      threshold for 60 seconds period. 
  *
- *   5) out_octets_low_threshold, is the threshold that causes the rule to
+ *   5) out-octets-low-threshold, is the threshold that causes the rule to
  *      report an anomaly.  By default it's 50000000 (50 MB)octets . This rule
  *      will set a dashboard color to yellow when *all* the output traffic is
  *      above threshold for 60 seconds period, otherwise color is set to green.
@@ -35,10 +35,10 @@ iceberg {
             description "Collects output traffic (out-octets) periodically and notifies in case of traffic is above threshold";
             /*
              * Monitors the interface output traffic. Notifies via the dashboard
-             * colors when the traffic is above {{out_octets_high_threshold}}
+             * colors when the traffic is above {{out-octets-high-threshold}}
              * for every collected metric during a 60s time range (red).
              * The color is set to yellow when the traffic is above
-             * {{out_octets_low_threshold}} for every collected metric during
+             * {{out-octets-low-threshold}} for every collected metric during
              * a 60s. Otherwise the color is set to green.
              *
              * Use interface name as key for rule.
@@ -61,14 +61,14 @@ iceberg {
              */
             field out-octets-stats-value {
                 sensor interfaces {
-                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{stats_name}}";
+                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{stats-name}}";
                 }
                 type integer;
                 description "Sub Interface statistics counter (out-octets) value.";
             }
             field interface-name {
                 sensor interfaces {
-                    where "/interfaces/interface/@name =~ /{{ifd_name}}/";
+                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -76,7 +76,7 @@ iceberg {
             }
             field sub-interface-index {
                 sensor interfaces {
-                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl_no}}/";
+                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
                     path "/interfaces/interface/subinterfaces/subinterface/@index";
                 }
                 type string;
@@ -87,14 +87,14 @@ iceberg {
              */
             field high-threshold {
                 constant {
-                    value "{{out_octets_high_threshold}}";
+                    value "{{out-octets-high-threshold}}";
                 }
                 type integer;
                 description "Output traffic high threshold.";
             }
             field low-threshold {
                 constant {
-                    value "{{out_octets_low_threshold}}";
+                    value "{{out-octets-low-threshold}}";
                 }
                 type integer;
                 description "Output traffic low threshold.";
@@ -108,7 +108,7 @@ iceberg {
                 /*
                  * Sets color to red and sends out an anomaly notification
                  * when the interface output traffic ($out-octets-stats-value) is
-                 * above high threshold (out_octets_high_threshold) for all
+                 * above high threshold (out-octets-high-threshold) for all
                  * points in a 60 seconds period.
                  */
                 frequency 20s;
@@ -129,7 +129,7 @@ iceberg {
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface output traffic($out-octets-stats-value) is
-                 * above low threshold (out_octets_low_threshold) for all points
+                 * above low threshold (out-octets-low-threshold) for all points
                  * in a 60 seconds period.
                  */
                 term is-interface-out-traffic-median {
@@ -162,27 +162,27 @@ iceberg {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable out_octets_high_threshold {
+            variable out-octets-high-threshold {
                 value 80000000;
                 description "Sub Interface output traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 80000000 octets (80 MB)";
                 type int;
             }
-            variable out_octets_low_threshold {
+            variable out-octets-low-threshold {
                 value 50000000;
                 description "Sub Interface output traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 50000000 octets (50 MB)";
                 type int;
             }
-            variable stats_name {
+            variable stats-name {
                 value out-octets;
                 description "Sub Interface output traffic counter name";
                 type string;
             }
-            variable ifd_name {
+            variable ifd-name {
                 value ".*";
                 description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
                 type string;
             }
-            variable ifl_no {
+            variable ifl-no {
                 value ".*";
                 description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
                 type string;
