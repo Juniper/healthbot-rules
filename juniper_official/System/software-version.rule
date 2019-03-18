@@ -3,12 +3,12 @@ iceberg {
         description "Rules relevant to metrics and KPI of the system";
         synopsis "System product name and software version analyzer";
         rule check-version {
-            keys host-name;
-            synopsis "System product name and software version analyzer";
             description "Validates the product name and Junos version";
+            synopsis "System product name and software version analyzer";
+            keys host-name;
             sensor product-and-junos-version {
-                synopsis "System product namd and software version iAgent sensor definition";
                 description "Netconf rpc get-software-information to collect data from network device";
+                synopsis "System product namd and software version iAgent sensor definition";
                 iAgent {
                     file software-version.yml;
                     table SoftwareVersionTable;
@@ -16,20 +16,20 @@ iceberg {
                 }
             }
             field configured-product-value {
+               description "System product model like MX240 or MX480 or MX960"; 
                 constant {
                     value "{{product-value}}";
                 }
-                description "System product model like MX240 or MX480 or MX960";
             }
             field configured-software-version-value {
+               description "System software version";
                 constant {
                     value "{{software-version-value}}";
                 }
-                description "System software version";
             }
             trigger product-name {
-                synopsis "system product model kpi";
                 description "sets health based on product model";
+                synopsis "system product model kpi";
                 frequency 60s;
                 term is-product-model-valid {
                     when {
@@ -38,7 +38,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Device product model is valid ($product)";
+                            message "Device product model is valid ($configured-product-value)";
                         }
                     }
                 }
@@ -52,8 +52,8 @@ iceberg {
                 }
             }
             trigger software-version {
-                synopsis "system software version kpi";
                 description "sets health based on software version";
+                synopsis "system software version kpi";
                 frequency 60s;
                 term is-junos-version-correct {
                     when {
@@ -62,7 +62,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Junos version $version is being used";
+                            message "Junos version $configured-software-version-value is being used";
                         }
                     }
                 }
@@ -76,12 +76,12 @@ iceberg {
                 }
             }
             variable product-value {
-                value .*;
+                value mx960;
                 description "Product model the system should be";
                 type string;
             }
             variable software-version-value {
-                value .*;
+                value 17.4R1;
                 description "Software Version the system should have";
                 type string;
             }
