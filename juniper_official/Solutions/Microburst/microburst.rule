@@ -7,8 +7,9 @@ iceberg {
         synopsis "Microburst detector";
         rule check-queue {
             description "Collects all interfaces egress queues data using gpb sensor and detects microbursts";
+            synopsis " Microbust detector"
             keys [ if-name queue-no ];
-            sensor jnpr_qmon_ext {
+            sensor jnpr-qmon-ext {
                 synopsis "Qmon native gpb sensor";
                 description "Sensor configuration to get bgp data from network devices";
                 native-gpb {
@@ -20,8 +21,8 @@ iceberg {
              * Sensor and constant fields
              */
             field if-name {
-                sensor jnpr_qmon_ext {
-                    where "queue_monitor_element_info.if_name =~ /{{if_name_expr}}/";
+                sensor jnpr-qmon-ext {
+                    where "queue_monitor_element_info.if_name =~ /{{if-name-expr}}/";
                     path queue_monitor_element_info.if_name;
                 }
                 type string;
@@ -38,8 +39,8 @@ iceberg {
                 description "Derives microburst value";
             }
             field queue-no {
-                sensor jnpr_qmon_ext {
-                    where "queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number =~ /{{queue_no_expr}}/";
+                sensor jnpr-qmon-ext {
+                    where "queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number =~ /{{queue-no-expr}}/";
                     path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number;
                 }
                 type string;
@@ -75,12 +76,12 @@ iceberg {
                     }
                 }
             }
-            variable if_name_expr {
+            variable if-name-expr {
                 value .*;
                 type string;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
             }
-            variable queue_no_expr {
+            variable queue-no-expr {
                 value .*;
                 type string;
                 description "Queue number or name to monitor, regular expression, eg '1|2'";
