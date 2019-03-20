@@ -30,7 +30,7 @@
                  iAgent {
                      file fib.yml;
                      table FibSummaryTable;
-                     frequency 60s;
+                     frequency 15m;
                  }
              }
             /*
@@ -57,7 +57,7 @@
              }
              field route-table-type {
                  sensor fib-sensor {
-                     where "route-table-type =~ /{{table-type}}/";
+                     where "route-table-type =~ /^{{table-type}}$/";
                      path route-table-type;
                  }
                  type string;
@@ -65,7 +65,7 @@
              }
              field table-name {
                  sensor fib-sensor {
-                     where "table-name =~ /{{route-table-name}}/";
+                     where "table-name =~ /^{{route-table-name}}$/";
                      path table-name;
                  }
                  type string;
@@ -73,7 +73,7 @@
              }
              field address-family {
                  sensor fib-sensor {
-                     where "address-family =~ /{{route-address-family}}/";
+                     where "address-family =~ /^{{route-address-family}}$/";
                      path address-family;
                  }
                  type string;
@@ -83,16 +83,16 @@
              * Anomaly detection logic.
              */
              trigger fib-route-count {
-                 frequency 60s;
+                 frequency 15m;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * route count ($route-count) exceeds static threshold for all
-                 * points in a 5 minutes period.
+                 * points in a 30 minutes period.
                  */
                  term is-route-count-abnormal {
                      when {
                          greater-than-or-equal-to "$route-count" "$threshold" {
-                             time-range 5m;
+                             time-range 30m;
                          }
                      }
                      then {
@@ -105,13 +105,13 @@
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the route count of each routing table exceed or drop
-                 * ($dt-route-count result contains 1) for all points in a 5
+                 * ($dt-route-count result contains 1) for all points in a 30
                  * minutes period.
                  */
                  term is-route-count-above-dt {
                      when {
                          equal-to "$dt-route-count" 1 {
-                             time-range 5m;
+                             time-range 30m;
                          }
                      }
                      then {
