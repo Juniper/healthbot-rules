@@ -1,0 +1,192 @@
+/*
+ * Monitors sub interface input traffic and notifies when anomalies are found.
+ * Five inputs control detection
+ *
+ *   1) ifd-name, is a regular expression that matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'ge.*' to match only gigabit
+ *      ethernet interfaces. 
+ *
+ *   2) ifl-no, is a regular expression that matches the IFL index number that
+ *      you would like to monitor.  By default it's '.*', which matches all
+ *      interfaces. Use something like '0-10*' to match only 0 to 10 IFLs.
+ *
+ *   3) stats-name, is a regular expression that matches the sub interface KPI
+ *      statistics counter name that you would like to monitor. By default it's
+ *      in-octets, Use proper counter name something like 'in-pkts' or
+ *      "in-unicast-pkts" or "in-multicast-pkts" etc.
+ *
+ *   4) in-octets-high-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 80000000 octets (80 MB). This rule
+ *      will set a dashboard color to red when *all* the input traffic is above
+ *      threshold for 60 seconds period. 
+ *
+ *   5) in-octets-low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 50000000 (50 MB)octets . This rule
+ *      will set a dashboard color to yellow when *all* the input traffic is
+ *      above threshold for 60 seconds period, otherwise color is set to green.
+ */
+iceberg {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Sub Interface statistics analyzer";
+        rule check-ifl-in-traffic {
+            synopsis "Sub Interface input traffic analyzer.";
+            description "Collects input traffic (in-octets) periodically and notifies in case of traffic is above threshold";
+            /*
+             * Monitors the interface input traffic. Notifies via the dashboard
+             * colors when the traffic is above {{in-octets-high-threshold}}
+             * for every collected metric during a 60s time range (red).
+             * The color is set to yellow when the traffic is above
+             * {{in-octets-low-threshold}} for every collected metric during
+             * a 60s. Otherwise the color is set to green.
+             *
+             * Use interface name as key for rule.
+             */
+            keys [interface-name sub-interface-index];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces {
+                synopsis "Sub Interface open-config sensor definition";
+                description "Sub Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 20s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field in-octets-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{stats-name}}";
+                }
+                type integer;
+                description "Sub Interface statistics counter (in-octets) value.";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field sub-interface-index {
+                sensor interfaces {
+                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
+                    path "/interfaces/interface/subinterfaces/subinterface/@index";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{in-octets-high-threshold}}";
+                }
+                type integer;
+                description "Input traffic high threshold.";
+            }
+            field low-threshold {
+                constant {
+                    value "{{in-octets-low-threshold}}";
+                }
+                type integer;
+                description "Input traffic low threshold.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger in-traffic {
+                synopsis "Sub Interface input traffic kpi";
+                description "Sets health based on input traffic exceed threshold.";
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-octets-stats-value) is
+                 * abovehigh threshold (in-octets-high-threshold) for all
+                 * points in a 60 seconds period.
+                 */
+                frequency 20s;
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        min-rate-of-increase "$in-octets-stats-value" {
+                            rate "$high-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name.$sub-interface-index input traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($in-octets-stats-value) is
+                 * above low threshold (in-octets-low-threshold) for all points
+                 * in a 60 seconds period.
+                 */
+                term is-interface-in-traffic-median {
+                    when {
+                        min-rate-of-increase "$in-octets-stats-value" {
+                            rate "$low-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name.$sub-interface-index input traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name.$sub-interface-index input traffic:$in-octets-stats-value is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable in-octets-high-threshold {
+                value 80000000;
+                description "Sub Interface input traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 80000000 octets (80 MB)";
+                type int;
+            }
+            variable in-octets-low-threshold {
+                value 50000000;
+                description "Sub Interface input traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 50000000 octets (50 MB)";
+                type int;
+            }
+            variable stats-name {
+                value in-octets;
+                description "Sub Interface input traffic counter name";
+                type string;
+            }
+            variable ifd-name {
+                value ".*";
+                description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            variable ifl-no {
+                value ".*";
+                description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+                type string;
+            }
+        }
+    }
+}

@@ -1,0 +1,128 @@
+/*
+ * Checks system total input and output packets count periodically and 
+ * notifies anomaly when total input and output packets count is abnormal.
+ * Two dynamic inputs control detection
+ * 
+ *   1) traffic-diff-threshold, is the threshold that causes the rule to
+ *      report a anomaly. This rule will set a dashboard color to red when
+ *      system input($pfe-input-packets) and output ($pfe-output-packets)
+ *      traffic difference exceeds static threshold 'traffic-diff-threshold'.
+ * 
+ */
+iceberg {
+    topic system.traffic {   
+        description "This topic is to monitor system total input and output packets usage and notify in case difference in io traffic is above static and dynamic threshold";
+        synopsis "System total Input and output packets analyzer";
+        rule check-system-traffic {
+            synopsis "system traffic statistics analyzer";
+            description "Collects system total io packets and notifies in case of anomalies when io traffic difference is above static and dynamic threshold";
+            /*
+             * Monitors the system total input and output packets periodically. Notifies via
+             * the dashboard colors when total input and output packets count is abnormal.
+             * Anomaly is calculated based on algorithm k-means with learning-period of 24 Hours
+             * and pattern-periodicity is 1 Hour. This rule will set a dashboard color to red when
+             * system output packets count exceeds 'dynamic-output-threshold'.
+             */
+
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            function traffic_diff {
+                description "Function traffic_diff returns io traffic difference";
+                path traffic_diff.py;
+                method traffic_diff;
+                argument inpkts {
+                    mandatory;
+                }
+                argument outpkts {
+                    mandatory;
+                }
+            }               
+            sensor SystemStatistics {
+                synopsis "System traffic iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file traffic-statistics.yml;
+                    table SystemStatisticsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and values are calculated based on k-means algorithm
+             */
+            field threshold {
+                constant {
+                    value "{{traffic-diff-threshold}}";
+                }
+                type float;
+            }
+            field traffic-difference {
+                formula {
+                    user-defined-function {
+                        function-name traffic_diff;
+                        argument inpkts "$pfe-input-packets";
+                        argument outpkts "$pfe-output-packets";
+                    }
+                }
+                type integer;
+            }
+            field traffic-diff-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$traffic-difference";
+                    }
+                }
+                description "Dynamic system total input threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger compare-in-out-traffic {
+                frequency 60s;
+                term traffic-mismatch-static {
+                    when {
+                        greater-than-or-equal-to "$traffic-difference" "$threshold" {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Difference($traffic-difference %) in input($pfe-input-packets pkts) and output($pfe-output-packets pkts) traffic exceeds $threshold";
+                        }
+                    }
+                }
+                term traffic-mismatch-dynamic {
+                    when {
+                         equal-to "$traffic-diff-dynamic-threshold" 1 {
+                             time-range 5m;
+                         }
+                     }
+                    then {
+                        status {
+                            color yellow;
+                            message "Difference($traffic-difference %) in input($pfe-input-packets pkts) and output($pfe-output-packets pkts) traffic exceeds dynamic threshold";
+                        }
+                    }
+                }
+                term traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Difference($traffic-difference %) in input($pfe-input-packets pkts) and output($pfe-output-packets pkts) traffic is normal";
+                        }
+                    }
+                }
+            }
+            variable traffic-diff-threshold {
+                value 15;
+                type float;
+                description "Iinput and ouput traffic difference threshold";
+            }             
+        }
+    }
+}
+
