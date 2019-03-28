@@ -1,0 +1,255 @@
+iceberg {
+    topic service.protocols {
+        description "Rules related to PPPoE statistics monitoring of a JUNOS Broadband Network Gateway (BNG)";
+        synopsis "BNG PPPoE error statistics monitoring rules";
+        rule pppoe-error-statistics {
+            synopsis "Monitors PPPoE error statistics";
+            description "Collects the PPPoE error periodically and notifies in case of anomalies";
+            sensor pppoe-error-statistics {
+                synopsis "subscriber-management open-config sensor definition";
+                description "subscriber-management open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/client-protocols/pppoe/statistics;
+                    frequency 60s;
+                }
+            }
+            field ac-error-received {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/ac-error-received;
+                }
+                type integer;
+                description "Number of ac-error-received";
+            }
+            field ac-error-sent {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/ac-error-sent;
+                }
+                type integer;
+                description "Number of ac-error-sent";
+            }
+            field generic-error-received {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/generic-error-received;
+                }
+                type integer;
+                description "Number of generic-error-received";
+            }
+            field generic-error-sent {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/generic-error-sent;
+                }
+                type integer;
+                description "Number of generic-error-sent";
+            }
+            field malformed-packets-rec {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/malformed-packets-received;
+                }
+                type integer;
+                description "Number of malformed-packets-rec";
+            }
+            field service-error-received {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/service-error-received;
+                }
+                type integer;
+                description service-error-received;
+            }
+            field service-error-sent {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/service-error-sent;
+                }
+                type integer;
+                description "Number of service-error-sent";
+            }
+            field unknown-packets-received {
+                sensor pppoe-error-statistics {
+                    path /junos/system/subscriber-management/client-protocols/pppoe/statistics/unknown-packets-received;
+                }
+                type integer;
+                description "Number of unknown-packets-received";
+            }
+            trigger ac-error-received {
+                synopsis "PPPoE ac-error-received kpi";
+                description "Sets health based on the change in ac-error-received count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$ac-error-received" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics ac-error-received is increasing. Current value : $ac-error-received";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "PPPoE error statistics ac-error-received is not increasing. Current value : $ac-error-received";
+                        }
+                    }
+                }
+            }
+            trigger ac-error-sent {
+                synopsis "PPPoE ae-error-sent kpi";
+                description "Sets health based on the change in ae-error-sent count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$ac-error-sent" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics ac-error-sent is increasing. Current value : $ac-error-sent";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "PPPoE error statistics ac-error-sent is not increasing. Current value : $ac-error-sent";
+                        }
+                    }
+                }
+            }
+            trigger generic-error-received {
+                synopsis "PPPoE generic-error-received kpi";
+                description "Sets health based on the change in generic-error-received count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$generic-error-received" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics generic-error-received is increasing. Current value : $generic-error-received";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "PPPoE error statistics generic-error-received is not increasing. Current value : $generic-error-received";
+                        }
+                    }
+                }
+            }
+            trigger generic-error-sent {
+                synopsis "PPPoE generic-error-sent kpi";
+                description "Sets health based on the change in generic-error-sent count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$generic-error-sent" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics generic-error-sent is increasing. Current value : $generic-error-sent";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "PPPoE error statistics generic-error-sent is not increasing. Current value : $generic-error-sent";
+                        }
+                    }
+                }
+            }
+            trigger malformed-packets-rec {
+                synopsis "PPPoE malformed-packets-rec kpi";
+                description "Sets health based on the change in malformed-packets-rec count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$malformed-packets-rec" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics malformed-packets-recived is increasing. Current value : $malformed-packets-rec";
+                        }
+                    }
+                }
+            }
+            trigger service-error-received {
+                synopsis "PPPoE service-error-received kpi";
+                description "Sets health based on the change in service-error-received count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$service-error-received" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics service-error-received is increasing. Current value : $service-error-received";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "PPPoE error statistics service-error-received is not increasing. Current value : $service-error-received";
+                        }
+                    }
+                }
+            }
+            trigger service-error-sent {
+                synopsis "PPPoE service-error-sent kpi";
+                description "Sets health based on the change in service-error-sent count";
+                frequency 90s;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$service-error-sent" {
+                            value 10;
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PPPoE error statistics service-error-sent is increasing. Current value : $service-error-sent";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "PPPoE error statistics service-error-sent is not increasing. Current value : $service-error-sent";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

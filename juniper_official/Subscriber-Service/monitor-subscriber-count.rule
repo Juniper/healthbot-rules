@@ -1,0 +1,109 @@
+iceberg {
+    topic service.subscribers {
+        description "Rules related to subscribers count of a JUNOS Broadband Network Gateway (BNG)";
+        synopsis "BNG subscribers count monitoring rules";
+        rule monitor-subscriber-count {
+            synopsis "subscribers count statistics analyzer";
+            description "This rule collects total subscribers and notifies in case of anomalies";
+            sensor total-subscribers {
+                synopsis "subscriber-management open-config sensor definition";
+                description "subscriber-management open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor/chassis;
+                    frequency 60s;
+                }
+            }
+            field subscriber-count-maximum {
+                constant {
+                    value "{{subscriber-count-max}}";
+                }
+                type integer;
+                description "maximum total subscribers count";
+            }
+            field subscriber-count-minimum {
+                constant {
+                    value "{{subscriber-count-min}}";
+                }
+                type integer;
+                description "minimum total subscribers count";
+            }
+            field total-subscriber-count {
+                sensor total-subscribers {
+                    path /junos/system/subscriber-management/infra/resource-monitor/chassis/current-subscriber-count;
+                }
+                type integer;
+                description "Number of subscribers in chassis";
+            }
+            field total-subscribers-pred {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$total-subscriber-count";
+                    }
+                }
+                type integer;
+                description "Dynamic subscribers count threshold";
+            }
+            trigger total-subscribers-count {
+                synopsis "subscribers count threshold";
+                description "Sets health based on subscribers count";
+                frequency 90s;
+                term subscriber-abnormal-gr {
+                    when {
+                        greater-than "$total-subscriber-count" "$subscriber-count-maximum";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Total subscriber count is abnormal. Current total subscriber count is : $total-subscriber-count";
+                        }
+                    }
+                }
+                term subscriber-abnormal-ls {
+                    when {
+                        less-than "$total-subscriber-count" "$subscriber-count-minimum";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Total subscriber count is abnormal. Current total subscriber count is : $total-subscriber-count";
+                        }
+                    }
+                }
+                term subscriber-abnormal-ml {
+                    when {
+                        equal-to "$total-subscribers-pred" 1 {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Total subscriber count is abnormal according to ML algorithm. Current total subscriber count is : $total-subscriber-count";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "Total subscriber count is normal. Current total subscriber count is : $total-subscriber-count";
+                        }
+                    }
+                }
+            }
+            variable subscriber-count-max {
+                value 60000;
+                description "maximum total subscribers count";
+                type int;
+            }
+            variable subscriber-count-min {
+                value 10000;
+                description "Minimum total subscribers count count";
+                type int;
+            }
+        }
+    }
+}
