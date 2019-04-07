@@ -35,6 +35,21 @@ iceberg {
             /*
              * Fields defined with dynamic threshold ML algorithms
              */
+            field table-name {
+                sensor route-summary {
+                    where "table-name =~ /^{{route-table-name}}$/";
+                    path table-name;
+                }
+                type string;
+                description "Route-table to monitor";
+            }
+            field threshold {
+                constant {
+                    value "{{route-count-threshold}}";
+                }
+                type integer;
+                description "Route count static threshold";
+            }
             field route-count-dynamic-threshold {
                 formula {
                     dynamic-threshold {
@@ -54,55 +69,65 @@ iceberg {
                 synopsis "Routing table route count KPI";
                 description "Sets health based on increase or drop in route count of each routing table";
                 /*
-                 * Sets color to yellow and sends out an anomaly notification 
-                 * when sufficient data not available to train algorithm.
-                 * ($route-count-dynamic-threshold result contains -1).
+                 * Sets color to red and sends out an anomaly notification 
+                 * when route-count is above static $threshold.
                  */
                  frequency 15m;
-                 term is-sufficient-data-available-to-analyze {
-                    when {
-                        matches-with "$route-count-dynamic-threshold" -1 {
-                            time-range 35m;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "Sufficient data not available to train algorithm, wait for learning period completion";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the route count of each routing table exceed or drop
-                 * ($route-count-dynamic-threshold result contains 1)
-                 * for all points in a 35 minutes period.
-                 */
-                 term is-route-table-routes-count-abnormal {
-                    when {
-                        matches-with "$route-count-dynamic-threshold" 1 {
-                            time-range 35m;
+                 term is-route-count-abnormal {
+                    when {              
+                        greater-than-or-equal-to "$total-route-count" "$threshold" {
+                            time-range 30m;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Anomaly detected: $table-name total route count($total-route-count) is abnormal";
+                            message "Anomaly detected: Route table($table-name) total route count($total-route-count) is abnormal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the route count of each routing table exceed or drop
+                 * ($route-count-dynamic-threshold result contains 1)
+                 * for all points in a 35 minutes period.
+                 */
+                term above-dynamic-threshold {
+                    when {
+                        equal-to "$route-count-dynamic-threshold" 1 {
+                            time-range 30m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Route table($table-name) total route count($total-route-count) is above dynamic threshold";
                         }
                     }
                 }
                 /*
                  * Defaults color to green.
                  */  
-                term route-table-routes-count-normal {
+                term route-count-normal {
                     then {
                         status {
                             color green;
-                            message "$table-name total route count($total-route-count) is normal";
+                            message "Route table($table-name) total route count($total-route-count) is normal";
                         }
                     }
                 }
             }
+            variable route-count-threshold {
+                value 10000;
+                type int;
+                description "Route table's route-count threshold";
+            }
+            variable route-table-name {
+                value .+;
+                description "Route table specific routes, regular expression, e.g. 'inet.0|inet6.0|vpn_1.inet6.0'";
+                type string;            
+            }
         }
     }
 }
+
