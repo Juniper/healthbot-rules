@@ -41,7 +41,7 @@ iceberg {
                 type integer;
                 description "Number of generic-error-sent";
             }
-            field malformed-packets-rec {
+            field malformed-pkts-rx {
                 sensor pppoe-error-statistics {
                     path /junos/system/subscriber-management/client-protocols/pppoe/statistics/malformed-packets-received;
                 }
@@ -177,13 +177,13 @@ iceberg {
                     }
                 }
             }
-            trigger malformed-packets-rec {
-                synopsis "PPPoE malformed-packets-rec kpi";
-                description "Sets health based on the change in malformed-packets-rec count";
+            trigger malformed-packets-rx {
+                synopsis "PPPoE malformed-packets-recived kpi";
+                description "Sets health based on the change in malformed-packets-recived count";
                 frequency 90s;
                 term is-error-increasing {
                     when {
-                        increasing-at-least-by-value "$malformed-packets-rec" {
+                        increasing-at-least-by-value "$malformed-pkts-rx" {
                             value 10;
                             time-range 3m;
                         }
@@ -191,7 +191,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "PPPoE error statistics malformed-packets-recived is increasing. Current value : $malformed-packets-rec";
+                            message "PPPoE error statistics malformed-packets-recived is increasing. Current value : $malformed-pkts-rx";
                         }
                     }
                 }
