@@ -1,5 +1,5 @@
 /*
- * Detects BGP neighbor received route count threshold breaches and notifies
+ * Detects BGP neighbor advertised route count threshold breaches and notifies
  * when anomalies are found.
  * Four inputs control detection
  * 
@@ -15,26 +15,26 @@
  *
  *   3) "addr-table" is the variable that filters the routing address table.
  *      By default it's ".+", which matches all address tables. Use something 
- *      like "IPV4_UNICAST" to match only received routes belongs to IPV4
+ *      like "IPV4_UNICAST" to match only advertised routes belongs to IPV4
  *      unicast address table.
  *
- *   4) "max-received-route-count-threshold" is the threshold that causes the
+ *   4) "max-advertised-route-count-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 10000. This rule will set
- *      a dashboard color to red when received route count exceed threshold
- *      (max-received-route-count-threshold), otherwise color is set to green.
+ *      a dashboard color to red when advertised route count exceed threshold
+ *      (max-advertised-route-count-threshold), otherwise color is set to green.
  */
 iceberg {
     topic protocol.bgp {
-        description "Monitors BGP sessions statistics i.e. neighbor state, detects flaps, route damping and max received-routes count and notify anomalies";
+        description "Monitors BGP sessions statistics i.e. neighbor state, detects flaps, route damping and max advertised-routes count and notify anomalies";
         synopsis "BGP session statistics analyzer";
-        rule check-bgp-received-routes {
-            description "Collects BGP session received routes count periodically and notifies anomaly when received route count exceed threshold";
-            synopsis "BGP received routes analyzer";
+        rule check-bgp-advertised-routes {
+            description "Collects BGP session advertised routes count periodically and notifies anomaly when advertised route count exceed threshold";
+            synopsis "BGP advertised routes analyzer";
             /*
-             * Monitors the BGP received routes on neighbor session. Notifies
-             * via the dashboard colors when the received routes
-             * ($received-routes) count exceed threshold
-             * (received-route-count-threshold) and the color is set to red.
+             * Monitors the BGP advertised routes on neighbor session. Notifies
+             * via the dashboard colors when the advertised routes
+             * ($advertised-routes) count exceed threshold
+             * (advertised-route-count-threshold) and the color is set to red.
              * Otherwise then color is set to green.
              * 
              * Use neighbor-address and address-table as keys for rule.
@@ -79,33 +79,33 @@ iceberg {
                 type string;
                 description "Address-table to find table specific prefixes";
             }
-            field received-routes {
+            field advertised-routes {
                 sensor bgp-sensor {
-                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received;
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/sent;
                 }
                 type integer;
-                description "Number of received routes";
+                description "Number of advertised routes";
             }
             /*
              * Fields defined with variables and constant values
              */
-            field received-route-count-threshold {
+            field advertised-route-count-threshold {
                 constant {
-                    value "{{max-received-route-count-threshold}}";
+                    value "{{max-advertised-route-count-threshold}}";
                 }
                 type integer;
-                description "Received routes count increase threshold";
+                description "Advertised routes count increase threshold";
             }
             /*
              * Fields defined with formulas and dynamic thresholds
              */
-            field received-routes-dynamic-threshold {
+            field advertised-routes-dynamic-threshold {
                 formula {
                     dynamic-threshold {
                         algorithm k-means;
                         learning-period 7d;
                         pattern-periodicity 1h;
-                        field-name "$received-routes";
+                        field-name "$advertised-routes";
                     }
                 }
                 type integer;
@@ -114,41 +114,41 @@ iceberg {
             /*
              * Anomaly detection logic.
              */
-            trigger received-routes {
-                synopsis "BGP max received routes KPI";
-                description "Sets health based on increase in received routes on neighbor session";
+            trigger advertised-routes {
+                synopsis "BGP max advertised routes KPI";
+                description "Sets health based on increase in advertised routes on neighbor session";
                 frequency 60s;
                 /*
-                 * Sets color to red when received routes count
-                 * ($received-routes) exceed threshold
-                 * ($received-route-count-threshold) and notify anomaly.
+                 * Sets color to red when advertised routes count
+                 * ($advertised-routes) exceed threshold
+                 * ($advertised-route-count-threshold) and notify anomaly.
                  */
                 term above-static-threshold {
                     when {
-                        greater-than-or-equal-to "$received-routes" $received-route-count-threshold;
+                        greater-than-or-equal-to "$advertised-routes" $advertised-route-count-threshold;
                     }
                     then {
                         status {
                             color red;
-                            message "Received route count($received-routes) exceed static threshold";
+                            message "Advertised route count($advertised-routes) exceed static threshold";
                         }
                     }
                 }
                 /*
-                 * Sets color to yellow when received routes count
-                 * ($received-routes) exceed dynamic threshold
-                 * ($received-routes-dynamic-threshold) and notify anomaly.
+                 * Sets color to yellow when advertised routes count
+                 * ($advertised-routes) exceed dynamic threshold
+                 * ($advertised-routes-dynamic-threshold) and notify anomaly.
                  */
                 term above-dynamic-threshold {
                     when {
-                        equal-to "$received-routes-dynamic-threshold" 1 {
+                        equal-to "$advertised-routes-dynamic-threshold" 1 {
                             time-range 5m;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "Received route count($received-routes) exceed dynamic threshold";
+                            message "Advertised route count($advertised-routes) exceed dynamic threshold";
                         }
                     }
                 }
@@ -159,7 +159,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Received route count($received-routes) is normal";
+                            message "Advertised route count($advertised-routes) is normal";
                         }
                     }
                 }
@@ -183,72 +183,10 @@ iceberg {
                 type string;
                 description "Address table specific routes, regular expression, e.g. 'IPV4_UNICAST'";
             }
-            variable max-received-route-count-threshold {
+            variable max-advertised-route-count-threshold {
                 value 10000;
                 type int;
-                description "BGP neighbor session received routes threshold: Number of received route count increase between metrics, before we report anomaly";
-            }
-            rule-properties {
-                version 2;
-                contributor juniper;
-                supported-healthbot-version 1.0.1;
-                catalogue {
-                    tier 1;
-                }
-                supported-devices {
-                    juniper {
-                        operating-system junos {
-                            products MX {
-                                releases 17.2R1 {
-                                    release-support min-supported-release;
-                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
-                                }
-                            }
-                            products PTX {
-                                releases 17.2R1 {
-                                    release-support min-supported-release;
-                                    platform [ PTX5000 PTX1000 PTX10000 ];
-                                }
-                            }
-                            products QFX {
-                                releases 17.2R1 {
-                                    release-support min-supported-release;
-                                    platform [ QFX10000 QFX5200 ];
-                                }
-                                releases 17.3R1 {
-                                    release-support min-supported-release;
-                                    platform QFX5110;
-                                }
-                                releases 18.1R1 {
-                                    release-support min-supported-release;
-                                    platform QFX5100;
-                                }
-                                releases 18.3R1 {
-                                    release-support min-supported-release;
-                                    platform QFX5120-48Y;
-                                }
-                            }
-                            products EX {
-                                releases 17.3R1 {
-                                    release-support min-supported-release;
-                                    platform EX9200;
-                                }
-                                releases 18.3R1 {
-                                    release-support min-supported-release;
-                                    platform EX4650;
-                                }
-                                releases 18.4R1 {
-                                    release-support min-supported-release;
-                                    platform EX4600;
-                                }
-                            }
-                        }
-                    }
-                    other-vendor cisco {
-                        vendor-name cisco;
-                        operating-system IOS-XR;
-                    }
-                }
+                description "BGP neighbor session advertised routes threshold: Number of advertised route count increase between metrics, before we report anomaly";
             }
         }
     }
