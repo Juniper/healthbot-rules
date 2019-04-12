@@ -48,6 +48,13 @@ iceberg {
                 type integer;
                 description "Number of malformed-packets-rec";
             }
+            field min-rate-of-increase {
+                constant {
+                    value "{{min-value-of-increase}}";
+                }
+                type integer;
+                description "Minimum value of increase in 3 minutes";
+            }
             field service-error-received {
                 sensor pppoe-error-statistics {
                     path /junos/system/subscriber-management/client-protocols/pppoe/statistics/service-error-received;
@@ -76,7 +83,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$ac-error-received" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -103,7 +110,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$ac-error-sent" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -130,7 +137,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$generic-error-received" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -157,7 +164,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$generic-error-sent" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -184,7 +191,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$malformed-pkts-rx" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -203,7 +210,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$service-error-received" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -230,7 +237,7 @@ iceberg {
                 term is-error-increasing {
                     when {
                         increasing-at-least-by-value "$service-error-sent" {
-                            value 10;
+                            value "$min-rate-of-increase";
                             time-range 3m;
                         }
                     }
@@ -249,6 +256,11 @@ iceberg {
                         }
                     }
                 }
+            }
+            variable min-value-of-increase {
+                value 10;
+                description "Minimum value of increase in 3 minutes";
+                type int;
             }
         }
     }
