@@ -1,0 +1,177 @@
+/*
+ * Dynamically sets BGP received route count threshold on each neighbor and
+ * notify anomaly when significant amount of increase or drop in received
+ * routes count.
+ * Three inputs control detection
+ * 
+ *   1) "neighbors" is a regular expression that matches the BGP neighbors
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all BGP neighbors. Use something like '172.16.*' to match all neighbor
+ *      addresses which are in 172.16.0.0/16 network range.
+ *
+ *   2) "routing-instance" is the variable that filters the routing instances.
+ *      By default it's ".*", which matches neighbors in all routing instances.
+ *      Use something like "master" to match neighbors belongs to only master
+ *      routing instance.
+ *
+ *   3) "addr-table" is the variable that filters the routing address table.
+ *      By default it's ".+", which matches all address tables. Use something 
+ *      like "IPV4_UNICAST" to match only received routes belongs to IPV4
+ *      unicast address table.
+ */
+iceberg {
+    topic protocol.bgp {
+        description "Monitors BGP sessions statistics i.e. neighbor state, detects flaps, route damping and max received-routes count and notify anomalies";
+        synopsis "BGP session statistics analyzer";
+        rule check-bgp-received-routes-dynamic-threshold {
+            description "Collects BGP session received routes count periodically and sets dynamic thresholds and notify anomaly when received route count increases or decreases";
+            synopsis "BGP received routes analyzer using dynamic thresholds";
+            /*
+             * Monitors the BGP received routes on neighbor session. Notifies
+             * via the dashboard colors when the received routes
+             * ($received-routes) count exceed or drop dynamic threshold and 
+             * the color is set to red. Otherwise then color is set to green.
+             * 
+             * Use neighbor-address and address-table as keys for rule.
+             */
+            keys [address-table neighbor-address];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor bgp-sensor {
+                synopsis "BGP open-config sensor definition";
+                description "/protocol/bgp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field instance-name {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/@instance-name =~ /{{routing-instance}}/";
+                    path "/network-instances/network-instance/@instance-name";
+                }
+                type string;
+                description "Routing instance to find neighbor's parent instance";
+            }
+            field neighbor-address {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "BGP neighbor addresses to monitor";
+            }
+            field address-table {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr-table}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name";
+                }
+                type string;
+                description "Address-table to find table specific prefixes";
+            }
+            field received-routes {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received;
+                }
+                type integer;
+                description "Number of received routes";
+            }
+            /*
+             * Fields defined with formulas and dynamic thresholds
+             */
+            field received-routes-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$received-routes";
+                    }
+                }
+                type integer;
+                description "Dynamically sets threshold using kmeans algorithm";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger received-routes-dynamic-threshold {
+                synopsis "BGP max received routes KPI";
+                description "Sets health based on increase in received routes on neighbor session";
+                frequency 60s;
+                /*
+                 * Sets color to yellow when sufficient data not available to 
+                 * train algorithm. DT function returns values are -1|0|1.
+                 * -1 internal error, 0 no-anomaly and 1 anomaly.
+                 */
+                term is-sufficient-data-available-to-analyze {
+                    when {
+                        matches-with "$received-routes-dynamic-threshold" -1 {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Sufficient data not available to train algorithm, wait for learning period completion";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when received routes count 
+                 * ($received-routes) on each neighbor session exceed dynamic
+                 * threshold and notify anomaly. DT function returns values are
+                 * -1|0|1. -1 internal error, 0 no-anomaly and 1 anomaly.
+                 */
+                term is-rcd-route-count-above-threshold {
+                    when {
+                        matches-with "$received-routes-dynamic-threshold" 1 {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Received route count($received-routes) is abnormal";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */                 
+                term rcd-route-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Received route count($received-routes) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            
+            variable routing-instance {
+                value .*;
+                type string;
+                description "Routing instance specific neighbors, regular expression, e.g. 'master'";
+            }
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            variable addr-table {
+                value .+;
+                type string;
+                description "Address table specific routes, regular expression, e.g. 'IPV4_UNICAST'";
+            }
+        }
+    }
+}
