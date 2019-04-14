@@ -6,16 +6,30 @@ iceberg {
         description "Interface egress queues microburst detection";
         synopsis "Microburst detector";
         rule check-queue {
-            description "Collects all interfaces egress queues data using gpb sensor and detects microbursts";
-            synopsis " Microbust detector"
             keys [ if-name queue-no ];
+            synopsis " Microbust detector";
+            description "Collects all interfaces egress queues data using gpb sensor and detects microbursts";
             sensor jnpr-qmon-ext {
                 synopsis "Qmon native gpb sensor";
                 description "Sensor configuration to get bgp data from network devices";
                 native-gpb {
                     sensor-name jnpr_qmon_ext;
-                    port 22000;
+                    port 22000; ## Warning: 'port' is deprecated
                 }
+            }
+            field buffer-percentage {
+                sensor jnpr-qmon-ext {
+                    path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.peak_buffer_occupancy_percent;
+                }
+                type float;
+                description "Interface egress buffer percent";
+            }
+            field egress-packets {
+                sensor jnpr-qmon-ext {
+                    path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.packets;
+                }
+                type float;
+                description "Interface egress packets";
             }
             /*
              * Sensor and constant fields
@@ -33,6 +47,8 @@ iceberg {
                     microburst {
                         if-name "$if-name";
                         queue-no "$queue-no";
+                        percentage "$buffer-percentage";
+                        packets "$egress-packets";
                     }
                 }
                 type integer;
@@ -78,13 +94,13 @@ iceberg {
             }
             variable if-name-expr {
                 value .*;
-                type string;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
             }
             variable queue-no-expr {
                 value .*;
-                type string;
                 description "Queue number or name to monitor, regular expression, eg '1|2'";
+                type string;
             }
         }
     }
