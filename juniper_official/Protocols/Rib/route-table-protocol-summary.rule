@@ -29,7 +29,7 @@ iceberg {
                 iAgent {
                     file route-protocol-summary.yml;
                     table RouteProtocolsTable;
-                    frequency 15m;
+                    frequency 10m;
                 }
             }
             /*
@@ -81,7 +81,7 @@ iceberg {
                  * when protocol's route-count is above static $threshold for
                  * all points in a 35 minutes period.
                  */
-                 frequency 15m;
+                 frequency 10m;
                 term above-static-threshold {
                     when {
                         greater-than-or-equal-to "$protocol-route-count" "$threshold" {
@@ -125,7 +125,7 @@ iceberg {
                         }
                     }
                 }
-            }
+            }         
             variable route-count-threshold {
                 value 10000;
                 description "Route table's route-count threshold";
@@ -140,6 +140,59 @@ iceberg {
                 value .+;
                 description "Route table specific routes, regular expression, e.g. 'inet.0|inet6.0|vpn_1.inet6.0'";
                 type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files route-protocol-summary.yml;
+                }
             }
         }
     }

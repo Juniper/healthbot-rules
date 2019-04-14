@@ -29,7 +29,7 @@ iceberg {
                 iAgent {
                     file route-summary.yml;
                     table RouteSummaryTable;
-                    frequency 15m;
+                    frequency 10m;
                 }
             }
             /*
@@ -72,7 +72,7 @@ iceberg {
                  * Sets color to red and sends out an anomaly notification 
                  * when route-count is above static $threshold.
                  */
-                 frequency 15m;
+                 frequency 10m;
                  term is-route-count-abnormal {
                     when {              
                         greater-than-or-equal-to "$total-route-count" "$threshold" {
@@ -125,7 +125,60 @@ iceberg {
             variable route-table-name {
                 value .+;
                 description "Route table specific routes, regular expression, e.g. 'inet.0|inet6.0|vpn_1.inet6.0'";
-                type string;            
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files route-summary.yml;
+                }
             }
         }
     }
