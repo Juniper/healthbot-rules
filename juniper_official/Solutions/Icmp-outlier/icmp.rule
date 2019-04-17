@@ -1,0 +1,252 @@
+/*
+ * Sends ICMP probes to user specified destination host and notifies anomalies 
+ * when round trip time average response is above static or dynamic thresholds.
+ * And also detects outlier across the devices in device group ML algorithms.
+ * Three inputs control detection
+ * 
+ *   1) host_var, is a destination IP or host name where ICMP probes send 
+ *      periodically.
+ *   2) count_var, is a ICMP ping count. By default count is set to 1. 
+ *   3) rtt-threshold-var, is the threshold that causes the rule to report an
+ *      anomaly. By default it is 1000 micro seconds. This rule will set a
+ *      dashboard color to red when ICMP response time is greater than static
+ *      threshold 'rtt-threshold-var'.
+ */
+ iceberg {
+    topic protocol.icmp {
+        description "Sends ICMP probes to destination host and notify anomalies";
+        synopsis "ICMP response analyzer";
+        rule check-icmp-statistics {
+            /*
+             * Sends ICMP probes to destination host. Notifies via the dashboard
+             * colors when the host is not reachable or response time is above
+             * threshold {{rtt-threshold-var}} to red. (red). The color is set
+             * to yellow if response time is above dynamic threshold. Otherwise
+             * the color is set to green.
+             * 
+             * Use host as key for rule.
+             */
+             keys host;
+             /*
+             * Sensor configuration to get data from network devices.
+             */
+             sensor icmp {
+                synopsis "iAgent sensor definition";
+                description "Pin rpc to collect data from network device";
+                iAgent {
+                    file icmp_statistics.yml;
+                    table pingTable;
+                    frequency 60s;
+                    args count {
+                        arg-value "{{count_var}}";
+                    }
+                    args host {
+                        arg-value "{{host_var}}";
+                    }
+                }
+            }
+            field dt-response-time {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$rtt-average";
+                    }
+                }
+                type integer;
+                description "Dynamic threshold for field rtt-average";
+            }
+            field rtt-average {
+                sensor icmp {
+                    path rtt-average;
+                }
+                type integer;
+                description "Round trip time";
+            }
+            field rtt-threshold {
+                constant {
+                    value "{{rtt-threshold-var}}";
+                }
+                type string;
+                description "RTT response time static threshold";
+            }
+            trigger packet-loss {
+                synopsis "ICMP packet loss KPI";
+                description "Sets health based on the packet loss";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the packet ($packet-loss) is 100.
+                 */
+                term is-device-not-reachable {
+                    when {
+                        equal-to "$packet-loss" 100 {
+                            time-range 2m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Host $host not reachable";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the packet ($packet-loss) is more than 0.
+                 */
+                term is-device-up {
+                    when {
+                        greater-than "$packet-loss" 0 {
+                            time-range 2m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Host $host reachable and  $packet-loss % packet loss";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-packet-loss {
+                    then {
+                        status {
+                            color green;
+                            message "Host $host reachable and  $packet-loss % packet loss";
+                        }
+                    }
+                }
+            }
+            trigger round-trip-time {
+                synopsis "Round trip time KPI";
+                description "Sets health based on the RTT";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the response time ($rtt-average) is more than static
+                 * threshold ($rtt-threshold).
+                 */
+                term is-rtt-fine {
+                    when {
+                        greater-than-or-equal-to "$rtt-average" "$rtt-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Round trip time($rtt-average μs) to $host is above static threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the response time ($rtt-average) is more than dynamic
+                 * threshold ($dt-response-time).
+                 */
+                term is-rtt-medium {
+                    when {
+                        equal-to "$dt-response-time" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Round trip time($rtt-average μs) to $host is above dynamic threshold";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term rtt-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Round trip time($rtt-average μs) to $host is normal";
+                        }
+                    }
+                }
+            }
+            variable count_var {
+                value 1;
+                type sensor-argument;
+                description "Input ICMP probe count";
+            }
+            variable host_var {
+                value "[null]";
+                type sensor-argument;
+                description "Input Destination host";
+            }
+            variable rtt-threshold-var {
+                value 1000;
+                description "Input RTT response static threshold in μs";
+                type int;
+            }
+        }
+        rule check-outlier {
+            description "Detects ICMP outlier response time and notify anomalies";
+            synopsis "ICMP outlier analyzer";
+            rule-frequency 60s;
+            network-rule;
+            field rtt-ol {
+                formula {
+                    outlier-detection {
+                        algorithm {
+                            dbscan {
+                                sensitivity {
+                                    level low;
+                                }
+                                learning-period 120s;
+                            }
+                        }
+                        dataset "{{rtt_xpath}}";
+                    }
+                }
+                type string;
+                description "Outlier detection of devices in a group using xpath";
+            }
+            trigger icmp-outlier-detection {
+                synopsis "ICMP outlier KPI";
+                description "Sets health based on the RTT average response time across devices";
+                frequency 60s;
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when outlier detected by algorithm across devices.
+                 */
+                term is-outlier-detected {
+                    when {
+                        equal-to "$rtt-ol-is-outlier" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Outlier detected on $rtt-ol-device";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when rtt average time is more or less
+                 * across devices.
+                 */
+                term no-outlier {
+                    when {
+                        equal-to "$rtt-ol-is-outlier" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No outlier detected on $rtt-ol-device";
+                        }
+                    }
+                }
+            }
+            variable rtt_xpath {
+                value .*;
+                type string;
+                description "Input xpath of devices to be in outlier detection format e.g. /device-group[device-group-name=core]/device[device-id=R0]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average,/device-group[device-group-name=core]/device[device-id=R1]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average,/device-group[device-group-name=core]/device[device-id=R2]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average";
+            }
+        }
+    }
+}
