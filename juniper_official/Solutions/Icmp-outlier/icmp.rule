@@ -4,9 +4,9 @@
  * And also detects outlier across the devices in device group ML algorithms.
  * Three inputs control detection
  * 
- *   1) host_var, is a destination IP or host name where ICMP probes send 
+ *   1) host-var, is a destination IP or host name where ICMP probes send 
  *      periodically.
- *   2) count_var, is a ICMP ping count. By default count is set to 1. 
+ *   2) count-var, is a ICMP ping count. By default count is set to 1. 
  *   3) rtt-threshold-var, is the threshold that causes the rule to report an
  *      anomaly. By default it is 1000 micro seconds. This rule will set a
  *      dashboard color to red when ICMP response time is greater than static
@@ -20,7 +20,7 @@
             /*
              * Sends ICMP probes to destination host. Notifies via the dashboard
              * colors when the host is not reachable or response time is above
-             * threshold {{rtt-threshold-var}} to red. (red). The color is set
+             * threshold {{rtt-threshold-var}} to red. The color is set
              * to yellow if response time is above dynamic threshold. Otherwise
              * the color is set to green.
              * 
@@ -32,18 +32,26 @@
              */
              sensor icmp {
                 synopsis "iAgent sensor definition";
-                description "Pin rpc to collect data from network device";
+                description "Ping rpc to collect data from network device";
                 iAgent {
                     file icmp_statistics.yml;
                     table pingTable;
                     frequency 60s;
                     args count {
-                        arg-value "{{count_var}}";
+                        arg-value "{{count-var}}";
                     }
                     args host {
-                        arg-value "{{host_var}}";
+                        arg-value "{{host-var}}";
                     }
                 }
+            }
+            function micro-milli {
+               path micro_milli.py;
+               method rtt_micro_milli;
+               argument micros {
+                  mandatory;
+               }
+               description "This function converts microseconds to milliseconds";
             }
             field dt-response-time {
                 formula {
@@ -51,19 +59,22 @@
                         algorithm k-means;
                         learning-period 7d;
                         pattern-periodicity 1h;
-                        field-name "$rtt-average";
+                        field-name "$rtt-average-ms";
                     }
                 }
                 type integer;
-                description "Dynamic threshold for field rtt-average";
+                description "Dynamic threshold for field rtt-average-ms";
             }
-            field rtt-average {
-                sensor icmp {
-                    path rtt-average;
-                }
-                type integer;
-                description "Round trip time";
-            }
+            field rtt-average-ms {              
+               formula {                       
+                  user-defined-function {     
+                     function-name micro-milli;
+                     argument micros "$rtt-average";
+                  }                           
+               }                               
+               type float;                   
+               description "Round trip time";  
+            }                   
             field rtt-threshold {
                 constant {
                     value "{{rtt-threshold-var}}";
@@ -127,23 +138,23 @@
                 frequency 60s;
                 /*
                  * Sets color to red and sends out an anomaly notification
-                 * when the response time ($rtt-average) is more than static
+                 * when the response time ($rtt-average-ms) is more than static
                  * threshold ($rtt-threshold).
                  */
                 term is-rtt-fine {
                     when {
-                        greater-than-or-equal-to "$rtt-average" "$rtt-threshold";
+                        greater-than-or-equal-to "$rtt-average-ms" "$rtt-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Round trip time($rtt-average μs) to $host is above static threshold";
+                            message "Round trip time($rtt-average-ms ms) to $host is above static threshold";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the response time ($rtt-average) is more than dynamic
+                 * when the response time ($rtt-average-ms) is more than dynamic
                  * threshold ($dt-response-time).
                  */
                 term is-rtt-medium {
@@ -153,7 +164,7 @@
                     then {
                         status {
                             color yellow;
-                            message "Round trip time($rtt-average μs) to $host is above dynamic threshold";
+                            message "Round trip time($rtt-average-ms ms) to $host is above dynamic threshold";
                         }
                     }
                 }
@@ -164,24 +175,24 @@
                     then {
                         status {
                             color green;
-                            message "Round trip time($rtt-average μs) to $host is normal";
+                            message "Round trip time($rtt-average-ms ms) to $host is normal";
                         }
                     }
                 }
             }
-            variable count_var {
+            variable count-var {
                 value 1;
                 type sensor-argument;
                 description "Input ICMP probe count";
             }
-            variable host_var {
+            variable host-var {
                 value "[null]";
                 type sensor-argument;
                 description "Input Destination host";
             }
             variable rtt-threshold-var {
-                value 1000;
-                description "Input RTT response static threshold in μs";
+                value 1;
+                description "Input RTT response static threshold in milli seconds";
                 type int;
             }
         }
@@ -198,7 +209,7 @@
                                 sensitivity {
                                     level low;
                                 }
-                                learning-period 120s;
+                                learning-period 30m;
                             }
                         }
                         dataset "{{rtt_xpath}}";
@@ -245,7 +256,7 @@
             variable rtt_xpath {
                 value .*;
                 type string;
-                description "Input xpath of devices to be in outlier detection format e.g. /device-group[device-group-name=core]/device[device-id=R0]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average,/device-group[device-group-name=core]/device[device-id=R1]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average,/device-group[device-group-name=core]/device[device-id=R2]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average";
+                description "Input xpath of devices to be in outlier detection format e.g. /device-group[device-group-name=core]/device[device-id=R0]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average-ms,/device-group[device-group-name=core]/device[device-id=R1]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average-ms,/device-group[device-group-name=core]/device[device-id=R2]/topic[topic-name=protocol.icmp]/rule[rule-name=check-icmp-statistics]/rtt-average-ms";
             }
         }
     }
