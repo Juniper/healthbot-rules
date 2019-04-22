@@ -7,4 +7,6 @@ def traffic_diff(inpkts, outpkts, **kwargs):
     outpkts = int(outpkts)
     if inpkts == 0:
         return 0
-    return (float(inpkts-outpkts)/inpkts)*100
+    res = ((inpkts-outpkts)/inpkts)*100
+    diff = abs(res)
+    return diff
