@@ -1,0 +1,60 @@
+/*
+ * Check failover Initialization error
+ *
+ * Checks if Ksyncd (Junos Kernel State Synchronization daemon) has reported an
+ * initialization error or not.
+ *
+ * Ksyncd cleans up the FIB states on replicated routing engine before it
+ * starts to resync the FIB states from the Master routing engine. It is possible
+ * for this cleanup to fail in certain scenarios. But, if these cleanup failures
+ * are persistent and are seen for more than 30 minutes, it can comprise high
+ * availability feature and should be reported.
+ *
+ * Rebooting backup RE should help in recovery.
+ */
+iceberg {
+    topic chassis.gres {
+        rule check-failover-init-error {
+            synopsis "Check failover Initialization error";
+            description "Check if Ksyncd (Junos Kernel State Synchronization daemon) has reported an initialization error";
+            sensor gres-error-sensor {
+                open-config {
+                    sensor-name /junos/chassis/gres;
+                    frequency 15m;
+                }
+            }
+            field gres-error-state {
+                sensor gres-error-sensor {
+                    path /junos/chassis/gres/error-state;
+                }
+                type string;
+                description "This field captures failover/GRES errors such as initialization error";
+            }
+            trigger report-gres-init-error {
+                description "Report red color if initialization error is seen consistently in two samples 15 mins apart";
+                term init-error {
+                    when {
+                        matches-with "$gres-error-state" INIT {
+                            time-range 30m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Failover/GRES initialization error detected. High Availability at risk. (State: $gres-error-state)";
+                        }
+                    }
+                }
+                term no-init-error {
+                    then {
+                        status {
+                            color green;
+                            message "No failover/GRES initialization error detected. (State: $gres-error-state)";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+/*
+ * This rule checks if there are any dead ifstate clients not cleaned up in the
+ * system for the last 20 minutes.
+ *
+ * By default, it checks if all the samples collected every 1 minute are
+ * non-zero for contiguous 20 minutes.
+ */
+iceberg {
+    topic kernel.ifstate {
+        rule check-dead-ifstate-client {
+            sensor kernel-ifstate-sensor {
+                open-config {
+                    sensor-name /junos/kernel-ifstate;
+                    frequency 1m;
+                }
+            }
+            field dead-clients-cnt {
+                sensor kernel-ifstate-sensor {
+                    path /junos/kernel-ifstate/dead-clients-cnt;
+                }
+                type integer;
+                description "Dead ifstate clients count in the system";
+            }
+            trigger report-dead-ifstate-clients {
+                term dead-ifstate-clients-20mins {
+                    when {
+                        not-equal-to "$dead-clients-cnt" 0 {
+                            time-range 20m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$dead-clients-cnt Dead Ifstate clients (daemons/fpcs) not cleanedup";
+                        }
+                    }
+                }
+                term no-dead-ifstate-clients {
+                    then {
+                        status {
+                            color green;
+                            message "No dead Ifstate clients found in the system";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

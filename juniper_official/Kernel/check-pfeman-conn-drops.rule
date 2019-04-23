@@ -1,0 +1,69 @@
+/*
+ * Peer infra module is responsible for replicating FIB states to the line cards
+ * and also to process incoming IPCs from them. Each line card has a connection
+ * with Master Routing Engine Junos Kernel.
+ *
+ * This rule monitors and ungraceful connection drops in these pfeman connections.
+ */
+iceberg {
+    topic kernel.peer-infra {
+        synopsis "Monitor peer-infra activities on the system";
+        rule check-pfeman-conn-drops {
+            sensor kernel-peer-infra-sensor {
+                open-config {
+                    sensor-name /junos/kernel/peer-infra;
+                    frequency 5m;
+                }
+            }
+            field peer-pfeman-conn-drops {
+                sensor kernel-peer-infra-sensor {
+                    path /junos/kernel/peer-infra/peer-pfeman-conn-drops;
+                }
+                type integer;
+                description "Number of pfeman connection drops";
+            }
+            trigger report-pfeman-conn-drops {
+                term pfeman-conn-drops-present-gt-5 {
+                    when {
+                        not-equal-to "$peer-pfeman-conn-drops" 0;
+                        increasing-at-least-by-value "$peer-pfeman-conn-drops" {
+                            value 5;
+                            time-range 5m;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "5 or more ungraceful PFEMAN connection drops detected";
+                        }
+                    }
+                }
+                term pfeman-conn-drops-present {
+                    when {
+                        not-equal-to "$peer-pfeman-conn-drops" 0;
+                        increasing-at-least-by-value "$peer-pfeman-conn-drops" {
+                            value 1;
+                            time-range 5m;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "1 or more ungraceful PFEMAN connection drops detected";
+                        }
+                    }
+                }
+                term pfeman-no-conn-drops {
+                    then {
+                        status {
+                            color green;
+                            message "No ungraceful PFEMAN connection drops detected";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

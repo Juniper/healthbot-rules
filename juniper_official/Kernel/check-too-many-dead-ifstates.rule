@@ -1,0 +1,94 @@
+/*
+ * This rule checks for the number of dead ifstates at any given time in
+ * the system. A dead Ifstate gets garbage collected once all the consumers
+ * see the corresponding delete message. If these dead ifstates continue to
+ * pile up, this indicates a garbage collection problem and can eat up
+ * significant resources such as memory and indices.
+ *
+ * This rule monitors the number of dead Ifstates and raises an alarm if there
+ * are too many of these (> 50% of alive ifstates) detected for significant
+ * duration of time (1 hour).
+ */
+iceberg {
+    topic kernel.ifstate {
+        rule check-too-many-dead-ifstates {
+            function alive-dead-ifs-ratio {
+                description "This returns the number of alive/dead ifstates count ratio";
+                path get-dead-alive-ratio.py;
+                method get_dead_alive_ratio;
+                argument alive_ifstates_cnt {
+                    mandatory;
+                }
+                argument dead_ifstates_cnt {
+                    mandatory;
+                }
+            }
+            sensor kernel-ifstate-sensor {
+                open-config {
+                    sensor-name /junos/kernel-ifstate;
+                    frequency 10m;
+                }
+            }
+            field alive-ifstates-cnt {
+                sensor kernel-ifstate-sensor {
+                    path /junos/kernel-ifstate/alive-ifstates-cnt;
+                }
+                type integer;
+                description "Alive ifstates counter";
+            }
+            field dead-ifstates-cnt {
+                sensor kernel-ifstate-sensor {
+                    path /junos/kernel-ifstate/dead-ifstates-cnt;
+                }
+                type integer;
+                description "Dead ifstates counter - OC sensor";
+            }
+            field ratio-value {
+                formula {
+                    user-defined-function {
+                        function-name alive-dead-ifs-ratio;
+                        argument dead_ifstates_cnt "$dead-ifstates-cnt";
+                        argument alive_ifstates_cnt "$alive-ifstates-cnt";
+                    }
+                }
+                type integer;
+                description "This field has the value of final decision if alive/dead ifstates in the system are normal";
+            }
+            trigger report-dead-alive-ifstates-ratio {
+                term dead-alive-cnt-normal {
+                    when {
+                        equal-to "$ratio-value" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Dead ifstates below threshold. No anomaly detected. #Alive-ifstates: $alive-ifstates-cnt #Dead-ifstates: $dead-ifstates-cnt";
+                        }
+                    }
+                }
+                term dead-alive-cnt-abnormal {
+                    when {
+                        equal-to "$ratio-value" 1 {
+                            time-range 1h;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Dead ifstates above threshold, monitor system activity. Refer readme for details. #Alive-ifstates: $alive-ifstates-cnt #Dead-ifstates: $dead-ifstates-cnt";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "Temporary spike in #dead-ifstate can be seen and is expected";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

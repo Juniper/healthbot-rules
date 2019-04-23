@@ -1,0 +1,54 @@
+/*
+ * Check presence of Ksyncd core files
+ *
+ * Checks if Ksyncd core files are present in /var/tmp on the other RE.
+ * 
+ * While replicating a FIB state, if Ksyncd (Kernel state synchronization daemon)
+ * gets an error from the backup routing engine kernel, it generates a ksyncd core
+ * and Kernel live vmcores for debugging.
+ *
+ * This rule detects the presence of Ksyncd core(s) and reports a yellow alarm.
+ */
+iceberg {
+    topic chassis.gres {
+        rule check-ksyncd-core {
+            synopsis "Check presence of Ksyncd core files";
+            description "Check if Ksyncd core files are present in /var/tmp on the other RE";
+            sensor ksyncd-core-sensor {
+                iAgent {
+                    file find_ksyncd_cores.yml;
+                    table checkKsyncdCoresTable;
+                    frequency 15m;
+                }
+            }
+            field ksyncd-cores {
+                sensor ksyncd-core-sensor {
+                    path ksyncd_cores;
+                }
+                description "This field captures number of Ksyncd cores on the device";
+            }
+            trigger report-ksyncd-cores {
+                description "Reports presence of Ksyncd core files in /var/tmp";
+                term ksyncd-core-present {
+                    when {
+                        not-equal-to "$ksyncd-cores" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Possible replication error detected. $ksyncd-cores ksyncd core(s) found in /var/tmp.";
+                        }
+                    }
+                }
+                term ksyncd-core-absent {
+                    then {
+                        status {
+                            color green;
+                            message "No ksyncd (Junos Kernel State Synchronization daemon) core detected";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

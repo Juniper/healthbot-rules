@@ -1,0 +1,46 @@
+/*
+ * This rule detects any intra-chassis connection (part of Internal Routing
+ * Instance) drops because of keep alive expiry.
+ */
+iceberg {
+    topic kernel.tcpip {
+        rule check-iri-conn-keepalive-dropped {
+            synopsis "Detect IRI connection drops because of Keepalive";
+            description "This rule detects any intra-chassis connection drops because of keep alive expiry";
+            sensor iri-conn-dropped-sensor {
+                iAgent {
+                    file tcpconn.yml;
+                    table tcpconnTable;
+                    frequency 20s;
+                }
+            }
+            trigger report-iri-conn-keepalive-dropped {
+                description "Report IRI connection drops";
+                term has-iri-conn-keepalive-dropped {
+                    when {
+                        not-equal-to "$keepalive" 0;
+                        increasing-at-least-by-value "$keepalive" {
+                            value 1;
+                            time-range 1m;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Total $keepalive intra-chassis connections dropped because of Keepalive expiry";
+                        }
+                    }
+                }
+                term no-conn-keepalive-dropped {
+                    then {
+                        status {
+                            color green;
+                            message "No new intra-chassis connections found dropped because of Keepalive expiry";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

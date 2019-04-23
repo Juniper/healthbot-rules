@@ -1,0 +1,71 @@
+/*
+ * Checks if graceful-switchover is configured on a dual RE chassis or not
+ *
+ * First checks if other routing engine is present or not. If present, checks
+ * if failover (set chassis redundancy graceful-switchover) is configured or not.
+ * 
+ * In dual RE chassis, for high availability it is recommended to have faiover
+ * configured. A yellow color is reported if this configuration is not found
+ * in a dual Routing Engine chassis.
+ */
+iceberg {
+    topic chassis.gres {
+        rule check-failover-configured {
+            synopsis "Check whether graceful-switchover is configured or not";
+            description "Checks if other RE is present and if GRES/failover is configured or not";
+            sensor gres-sensor {
+                iAgent {
+                    file failover-info.yml;
+                    table getFailoverInfoTable;
+                    frequency 10m;
+                }
+            }
+            field gres-state {
+                sensor gres-sensor {
+                    path failover;
+                }
+                type integer;
+                description "GRES/failover configured state";
+            }
+            field ore-present {
+                sensor gres-sensor {
+                    path ore_present;
+                }
+                type integer;
+                description "Other RE present or not";
+            }
+            trigger report-failover-configured-state {
+                term other-re-present-term {
+                    when {
+                        not-equal-to "$ore-present" 1;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Other Routing Engine is not present. Ignoring failover/GRES configuration check.";
+                        }
+                    }
+                }
+                term gres-enabled-term {
+                    when {
+                        equal-to "$gres-state" 3;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Chassis redundancy graceful-switchover is configured. (State: $gres-state, ore: $ore-present)";
+                        }
+                    }
+                }
+                term gres-not-enabled-term {
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis redundancy graceful-switchover is NOT configured. High Availability at risk! (State: $gres-state, ORE: $ore-present)";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,43 @@
+/*
+ * This rule detects presence of vmcore (Kernel crash) file(s) on the device.
+ * If vmcore is detected, this rule raises a yellow alarm. It will continue
+ * to report yellow alarm till the vmcore is moved from /var/crash into
+ * some other location or some other device.
+ */
+iceberg {
+    topic system {
+        synopsis "Check presence of Kernel vmcore files";
+        description "This rule detects presence of Kernel vmcore files";
+        rule check-vmcores {
+            sensor vmcores-sensor {
+                iAgent {
+                    file vmcores.yml;
+                    table vmcoreTable;
+                    frequency 60m;
+                }
+            }
+            trigger report-kernel-cores {
+                description "Report yellow color if a Kernel core is detected in /var/crash";
+                term is-vmcore-present {
+                    when {
+                        not-equal-to "$num_cores" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Total $num_cores vmcore dump(s) found in /var/crash";
+                        }
+                    }
+                }
+                term is-vmcore-absent {
+                    then {
+                        status {
+                            color green;
+                            message "No vmcore Dump found in /var/crash";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
