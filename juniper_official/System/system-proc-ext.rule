@@ -1,76 +1,76 @@
 iceberg {
     topic system {
-        description "Rules relevant to metrics and KPI of the system";
-        rule check-system-process-memory {
-            /* description "Monitors active, free and swap memory"; */
-            keys buffered;
-            sensor system-process-memory {
-                iAgent {
-                    file system-process-memory.yml;
-                    table SystemProcExtMemTable;
-                    frequency 60s;
-                }
-            }
-            trigger active-memory {
-                term is-active-memory-greater-than-200M {
-                    when {
-                        greater-than "$active" 209715200;
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Active memory is greater than 200M";
-                        }
-                    }
-                }
-                term active-memory-less-than-or-equal-to-200M {
-                    then {
-                        status {
-                            color green;
-                        }
-                    }
-                }
-            }
-            trigger free-memory {
-                term is-free-memory-less-than-1G {
-                    when {
-                        less-than "$free" 1073741824;
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Free memory is lesser than 1G";
-                        }
-                    }
-                }
-                term free-memory-greater-than-or-equal-to-1G {
-                    then {
-                        status {
-                            color green;
-                        }
-                    }
-                }
-            }
-            trigger swap-total {
-                term is-swap-memory-used {
-                    when {
-                        not-equal-to "$swap-total" "$swap-free";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Swap memory is being used";
-                        }
-                    }
-                }
-                term swap-memory-not-used {
-                    then {
-                        status {
-                            color green;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    description "Rules relevant to metrics and KPI of the system";
+    rule check-system-process-memory {
+      /* description "Monitors active, free and swap memory"; */
+      keys buffered;
+      sensor system-process-memory {
+        iAgent {
+          file system-process-memory.yml;
+          table SystemProcExtMemTable;
+          frequency 60s;
+        }
+      }
+      trigger active-memory {
+        term is-active-memory-greater-than-200M {
+          when {
+            greater-than "$active" 209715200;
+          }
+          then {
+            status {
+              color red;
+              message "Active memory is greater than 200M";
+            }
+          }
+        }
+        term active-memory-less-than-or-equal-to-200M {
+          then {
+            status {
+              color green;
+            }
+          }
+        }
+      }
+      trigger free-memory {
+        term is-free-memory-less-than-1G {
+          when {
+            less-than "$free" 1073741824;
+          }
+          then {
+            status {
+              color red;
+              message "Free memory is lesser than 1G";
+            }
+          }
+        }
+        term free-memory-greater-than-or-equal-to-1G {
+          then {
+            status {
+              color green;
+            }
+          }
+        }
+      }
+      trigger swap-total {
+        term is-swap-memory-used {
+          when {
+            not-equal-to "$swap-total" "$swap-free";
+          }
+          then {
+            status {
+              color red;
+              message "Swap memory is being used";
+            }
+          }
+        }
+        term swap-memory-not-used {
+          then {
+            status {
+              color green;
+            }
+          }
+        }
+      }
+    }
+  }
 }
