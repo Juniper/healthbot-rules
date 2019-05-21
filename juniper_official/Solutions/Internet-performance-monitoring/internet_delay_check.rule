@@ -1,0 +1,236 @@
+{
+  "field": [
+    {
+      "field-name": "jitter_delay",
+      "sensor": [
+        {
+          "path": "jitter_delay",
+          "sensor-name": "probe_delay"
+        }
+      ],
+      "type": "integer"
+    },
+    {
+      "description": "tracks loss_percentage",
+      "field-name": "loss_percentage",
+      "sensor": [
+        {
+          "path": "loss_percentage",
+          "sensor-name": "probe_delay"
+        }
+      ],
+      "type": "string"
+    },
+    {
+      "field-name": "probe_delay",
+      "sensor": [
+        {
+          "path": "probe_rt_ave_delay",
+          "sensor-name": "probe_delay"
+        }
+      ],
+      "type": "integer"
+    },
+    {
+      "field-name": "target_address",
+      "sensor": [
+        {
+          "path": "target_address",
+          "sensor-name": "probe_delay"
+        }
+      ],
+      "type": "string"
+    },
+    {
+      "field-name": "test_name",
+      "sensor": [
+        {
+          "path": "test-name",
+          "sensor-name": "probe_delay"
+        }
+      ],
+      "type": "string"
+    }
+  ],
+  "keys": [
+    "test_name"
+  ],
+  "rule-name": "internet_delay_check",
+  "sensor": [
+    {
+      "iAgent": {
+        "args": [
+          {
+            "arg-name": "limit",
+            "arg-value": "{{limit}}"
+          },
+          {
+            "arg-name": "owner",
+            "arg-value": "{{owner}}"
+          },
+          {
+            "arg-name": "target-address",
+            "arg-value": "{{target-address}}"
+          }
+        ],
+        "file": "rpmProbe_kwargs.yml",
+        "frequency": "30s",
+        "table": "RPMprobeTable"
+      },
+      "sensor-name": "probe_delay"
+    }
+  ],
+  "trigger": [
+    {
+      "frequency": "30s",
+      "term": [
+        {
+          "term-name": "jitter_delay_green",
+          "then": {
+            "status": {
+              "color": "green",
+              "message": "JITTER DELAY $test_name is Normal. Delay:  $jitter_delay"
+            }
+          },
+          "when": {
+            "less-than": [
+              {
+                "left-operand": "$jitter_delay",
+                "right-operand": "250000"
+              }
+            ]
+          }
+        },
+        {
+          "term-name": "jitter_delay_red",
+          "then": {
+            "status": {
+              "color": "red",
+              "message": "JITTER DELAY $test_name is High. Delay:  $jitter_delay"
+            }
+          },
+          "when": {
+            "greater-than-or-equal-to": [
+              {
+                "left-operand": "$jitter_delay",
+                "right-operand": "250000"
+              }
+            ]
+          }
+        }
+      ],
+      "trigger-name": "JITTER_DELAY"
+    },
+    {
+      "frequency": "30s",
+      "term": [
+        {
+          "term-name": "rpm_green",
+          "then": {
+            "next": [
+              null
+            ],
+            "status": {
+              "color": "green",
+              "message": "LATENCY $test_name is Normal. Delay:  $probe_delay"
+            }
+          },
+          "when": {
+            "less-than": [
+              {
+                "left-operand": "$probe_delay",
+                "right-operand": "200000"
+              }
+            ]
+          }
+        },
+        {
+          "term-name": "rpm_red",
+          "then": {
+            "status": {
+              "color": "red",
+              "message": "LATENCY $test_name is High. Delay:  $probe_delay"
+            }
+          },
+          "when": {
+            "greater-than": [
+              {
+                "left-operand": "$probe_delay",
+                "right-operand": "200000"
+              }
+            ]
+          }
+        }
+      ],
+      "trigger-name": "LATENCY"
+    },
+    {
+      "frequency": "30s",
+      "term": [
+        {
+          "term-name": "loss_percentage_green",
+          "then": {
+            "status": {
+              "color": "green",
+              "message": "LOSS PERCENTAGE $test_name is Normal. Delay:  $loss_percentage"
+            }
+          },
+          "when": {
+            "greater-than-or-equal-to": [
+              {
+                "left-operand": "$loss_percentage",
+                "right-operand": "0"
+              }
+            ],
+            "less-than": [
+              {
+                "left-operand": "$loss_percentage",
+                "right-operand": "40"
+              }
+            ]
+          }
+        },
+        {
+          "term-name": "loss_percentage_red",
+          "then": {
+            "status": {
+              "color": "red",
+              "message": "LOSS PERCENTAGE $test_name is High. Delay:  $loss_percentage"
+            }
+          },
+          "when": {
+            "greater-than-or-equal-to": [
+              {
+                "left-operand": "$loss_percentage",
+                "right-operand": "40"
+              }
+            ]
+          }
+        }
+      ],
+      "trigger-name": "LOSS_PERCENTAGE"
+    }
+  ],
+  "variable": [
+    {
+      "name": "limit",
+      "type": "sensor-argument",
+      "value": "50"
+    },
+    {
+      "name": "owner",
+      "type": "sensor-argument",
+      "value": "internet-probe"
+    },
+    {
+      "name": "target-address",
+      "type": "sensor-argument",
+      "value": "8.8.8.8"
+    },
+    {
+      "name": "terse",
+      "type": "sensor-argument",
+      "value": "False"
+    }
+  ]
+}
