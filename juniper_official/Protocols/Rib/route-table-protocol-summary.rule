@@ -11,7 +11,7 @@ iceberg {
             description "Collects total-route-count of each protocol and sets dynamic thresholds and notify anomaly when route count is abnormal";
             /*
              * Monitors Protocols routes of all the route tables. Sets dynamic
-             * threshold using k-means machine learning alogorithm based on
+             * threshold using 3sigma machine learning alogorithm based on
              * learned data. Notifies via dashboard colors when the route
              * count of each protocol exceed or drop for every collected metric
              * during a 35 minute time range (red). Otherwise the color is set
@@ -46,14 +46,14 @@ iceberg {
             field route-count-dynamic-threshold {
                 formula {
                     dynamic-threshold {
-                        algorithm k-means;
+                        algorithm 3sigma;
                         learning-period 7d;
                         pattern-periodicity 1h;
                         field-name "$protocol-route-count";
                     }
                 }
                 type integer;
-                description "Detects anamoly dynamically using kmeans algorithm";
+                description "Detects anamoly dynamically using 3sigma algorithm";
             }
             field table-name {
                 sensor route-protocol-summary {
