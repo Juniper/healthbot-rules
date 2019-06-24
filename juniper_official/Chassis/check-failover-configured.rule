@@ -14,6 +14,8 @@ iceberg {
             synopsis "Check whether graceful-switchover is configured or not";
             description "Checks if other RE is present and if GRES/failover is configured or not";
             sensor gres-sensor {
+                synopsis "Graceful Routing Engine Switchover (GRES) configured or not";
+                description "sensor to monitor if GRES is configured on a dual-RE chassis";
                 iAgent {
                     file failover-info.yml;
                     table getFailoverInfoTable;
@@ -35,6 +37,9 @@ iceberg {
                 description "Other RE present or not";
             }
             trigger report-failover-configured-state {
+                synopsis "report GRES configured state";
+                description "Trigger to monitor if GRES is configured on a dual-RE system";
+                frequency 10m;
                 term other-re-present-term {
                     when {
                         not-equal-to "$ore-present" 1;

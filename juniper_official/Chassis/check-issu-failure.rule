@@ -10,6 +10,8 @@ iceberg {
             synopsis "Detect ISSU failure";
             description "This rule detects ISSU failure and displays the ISSU stage when it failed";
             sensor issu-sensor {
+                synopsis "In-service-software-upgrade (ISSU) failure state sensor";
+                description "Sensor to monitor the ISSU failure state";
                 open-config {
                     sensor-name /junos/chassis/issu;
                     frequency 60m;
@@ -30,7 +32,9 @@ iceberg {
                 description "ISSU failure state";
             }
             trigger report-issu-failure {
+                synopsis "trigger to report any ISSU failure";
                 description "Detects ISSU failure";
+                frequency 60m;
                 term failure-stage-term {
                     when {
                         does-not-match-with "$failure-stage" ISSU_STATE_IDLE;

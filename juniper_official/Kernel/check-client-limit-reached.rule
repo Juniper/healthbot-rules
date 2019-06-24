@@ -6,6 +6,8 @@ iceberg {
     topic kernel.ifstate {
         rule check-client-limit-reached {
             sensor kernel-ifstate-sensor {
+                synopsis "number of ifstate based routing sockets for an application";
+                description "monitor number of ifstate based routing sockets opened by an application";
                 open-config {
                     sensor-name /junos/kernel-ifstate;
                     frequency 4m;
@@ -19,6 +21,9 @@ iceberg {
                 description "Client limit reached";
                 }
             trigger report-ifstate-client-limit-reached {
+                synopsis "report if any application has opened more than allowed number of ifstate based routing sockets";
+                description "raise a RED alarm if a application has opened more than allowed number of ifstate based routing sockets";
+                frequency 4m;
                 term client-limit-change {
                     when {
                         not-equal-to "$client-limit-reached" 0;

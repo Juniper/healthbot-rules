@@ -15,6 +15,8 @@ iceberg {
             synopsis "Check presence of Ksyncd core files";
             description "Check if Ksyncd core files are present in /var/tmp on the other RE";
             sensor ksyncd-core-sensor {
+                synopsis "Kernel FIB state Synchronization daemon (KSYNCD) core sensor";
+                description "sensor to monitor if there is any KSYNCD core on the network device";
                 iAgent {
                     file find_ksyncd_cores.yml;
                     table checkKsyncdCoresTable;
@@ -28,7 +30,9 @@ iceberg {
                 description "This field captures number of Ksyncd cores on the device";
             }
             trigger report-ksyncd-cores {
-                description "Reports presence of Ksyncd core files in /var/tmp";
+                synopsis "report if there are any KSYNCD cores on the system";
+                description "reports presence of Ksyncd core files in /var/tmp";
+                frequency 15m;
                 term ksyncd-core-present {
                     when {
                         not-equal-to "$ksyncd-cores" 0;

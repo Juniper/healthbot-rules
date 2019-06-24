@@ -18,6 +18,8 @@ iceberg {
             synopsis "Check failover Initialization error";
             description "Check if Ksyncd (Junos Kernel State Synchronization daemon) has reported an initialization error";
             sensor gres-error-sensor {
+                synopsis "Graceful routine Engine Switchover (GRES) error state";
+                description "Sensor to monitor the error state in GRES";
                 open-config {
                     sensor-name /junos/chassis/gres;
                     frequency 15m;
@@ -31,7 +33,9 @@ iceberg {
                 description "This field captures failover/GRES errors such as initialization error";
             }
             trigger report-gres-init-error {
+                synopsis "report if there is any GRES error in the system";
                 description "Report red color if initialization error is seen consistently in two samples 15 mins apart";
+                frequency 15m;
                 term init-error {
                     when {
                         matches-with "$gres-error-state" INIT {
