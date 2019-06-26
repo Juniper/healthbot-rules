@@ -9,6 +9,8 @@ iceberg {
     topic kernel.ifstate {
         rule check-dead-ifstate-client {
             sensor kernel-ifstate-sensor {
+                synopsis "dead ifstate client sensor";
+                description "monitor any dead ifstates are not cleaned up on a network device for a predefined time period";
                 open-config {
                     sensor-name /junos/kernel-ifstate;
                     frequency 1m;
@@ -22,6 +24,9 @@ iceberg {
                 description "Dead ifstate clients count in the system";
             }
             trigger report-dead-ifstate-clients {
+                synopsis "any dead ifstates not cleaned up on the network device";
+                description "monitor and raise a RED alaram if dead ifstates are not cleaned up in the system for the last 20 minutes";
+                frequency 1m;
                 term dead-ifstate-clients-20mins {
                     when {
                         not-equal-to "$dead-clients-cnt" 0 {

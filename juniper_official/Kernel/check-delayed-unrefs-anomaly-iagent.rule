@@ -1,6 +1,6 @@
 /*
  * This rule checks if there are any delayed unrefs and if they are greater than
- * a particular threshol (sysctl net.rt_nh_max_delayed_unrefs).
+ * a particular threshold (sysctl net.rt_nh_max_delayed_unrefs).
  *
  * Transient spikes in delayed unref count is expected in certain catastrophic or
  * major events and is not a cause for worry. But, if this situation persists for
@@ -10,6 +10,8 @@ iceberg {
     topic kernel.ifstate {
         rule check-delayed-unrefs-anomaly-iagent {
             sensor delayed-unref-sensor {
+                synopsis "delayed unref iAgent sensor";
+                description "monitor delayed unrefs on the system";
                 iAgent {
                     file delayed_unref.yml;
                     table delayedunrefTable;
@@ -29,6 +31,9 @@ iceberg {
                 type integer;
             }
             trigger report-delayed-unrefs-iagent {
+                synopsis "monitor presence of delayed unrefs on the system";
+                description "Raise a red alarm if number of delayed unrefs are greater than a threshold value";
+                frequency 30s;
                 term delayed-unrefs-gt-max-10mins-iagent {
                     when {
                         not-equal-to "$delayedcnt" 0;

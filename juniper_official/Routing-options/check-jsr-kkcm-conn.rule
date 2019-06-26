@@ -10,6 +10,8 @@ iceberg {
             synopsis "Check KKCM connections when NSR/JSR is enabled";
             description "Report KKCM connection issues when NSR is configured";
             sensor kkcm-sensor {
+                synopsis "kkcm connections iAgent sensor";
+                description "monitor kkcm connections health";
                 iAgent {
                     file jsr_kkcm.yml;
                     table checkJSRTable;
@@ -20,16 +22,20 @@ iceberg {
                 sensor kkcm-sensor {
                     path jsr;
                 }
+                type integer;
                 description "JSR status - set when nonstop-routing is enabled";
             }
             field kkcm {
                 sensor kkcm-sensor {
                     path kkcm;
                 }
+                type integer;
                 description "This field is to parse number of KKCM connections";
             }
             trigger report-jsr-kkcm-health {
+                synopsis "report jsr kkcm connections health";
                 description "Detect health issue with JSR KKCM connections, if NSR is configured";
+                frequency 5m;
                 term jsr-not-configured-term {
                     when {
                         not-equal-to "$jsr" 1;

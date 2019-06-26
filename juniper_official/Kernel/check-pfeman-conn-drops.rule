@@ -10,6 +10,8 @@ iceberg {
         synopsis "Monitor peer-infra activities on the system";
         rule check-pfeman-conn-drops {
             sensor kernel-peer-infra-sensor {
+                synopsis "peer-infra(pfeman) connection drops open-config sensor";
+                description "monitor pfeman connections drops";
                 open-config {
                     sensor-name /junos/kernel/peer-infra;
                     frequency 5m;
@@ -23,6 +25,9 @@ iceberg {
                 description "Number of pfeman connection drops";
             }
             trigger report-pfeman-conn-drops {
+                synopsis "report pfeman connection drops";
+                description "report and raise a resd alarm if there are at least 5 pfeman connection drops in the last 5 minutes";
+                frequency 5m;
                 term pfeman-conn-drops-present-gt-5 {
                     when {
                         not-equal-to "$peer-pfeman-conn-drops" 0;

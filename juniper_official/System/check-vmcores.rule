@@ -10,6 +10,8 @@ iceberg {
         description "This rule detects presence of Kernel vmcore files";
         rule check-vmcores {
             sensor vmcores-sensor {
+                synopis "vmcore iAgent sensor";
+                description "sensor to monitor any vmcores present on the network device";
                 iAgent {
                     file vmcores.yml;
                     table vmcoreTable;
@@ -17,7 +19,9 @@ iceberg {
                 }
             }
             trigger report-kernel-cores {
+                synopsis "report if there are any vmcores on the system";
                 description "Report yellow color if a Kernel core is detected in /var/crash";
+                frequency 60m;
                 term is-vmcore-present {
                     when {
                         not-equal-to "$num_cores" 0;

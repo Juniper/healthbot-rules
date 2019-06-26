@@ -9,6 +9,8 @@ iceberg {
     topic kernel.ifstate {
         rule check-stuck-ifstate-clients-iagent {
             sensor stuck-client-sensor {
+                synopsis "stuck ifstate client iAgent sensor";
+                description "iAgent sensor to monitor any stuck ifstate client on a network device";
                 iAgent {
                     file fetch_stuck_client.yml;
                     table stuckclientTable;
@@ -22,6 +24,9 @@ iceberg {
                 type string;
             }
             trigger report-stuck-ifstate-clients-iagent {
+                synopsis "report stuck ifstate clients";
+                description "monitor and report any stuck ifstate clients on the network device";
+                frequency 1m;
                 term found-stuck-clients {
                     when {
                         matches-with "$stuck-client-info" "slow peers are"

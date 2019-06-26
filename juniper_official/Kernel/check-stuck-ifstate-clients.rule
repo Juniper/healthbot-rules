@@ -11,6 +11,8 @@ iceberg {
     topic kernel.ifstate {
         rule check-stuck-ifstate-clients {
             sensor ifstate-clients {
+                synopsis "stuck ifstate client open-config sensor";
+                description "open-config sensor to monitor any stuck ifstate client on a network device";
                 open-config {
                     sensor-name /junos/kernel-ifstate;
                     frequency 1m;
@@ -23,6 +25,9 @@ iceberg {
                 type integer;
             }
             trigger report-ifstate-clients-health {
+                synopsis "report stuck ifstate clients";
+                description "monitor and report any stuck ifstate clients on the network device";
+                frequency 1m;
                 term is-ifs-client-stuck {
                     when {
                         not-equal-to "$stuck-clients" 0;
