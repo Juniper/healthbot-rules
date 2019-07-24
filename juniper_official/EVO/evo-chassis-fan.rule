@@ -1,0 +1,66 @@
+/*
+ * Monitors chassis fan health status and notifies when anomalies are found.
+ */
+iceberg {
+    topic evo.chassis.fan {
+        description "Monitors the chassis fan status and notifies anomalies";
+        synopsis "Chassis environment analyzer";
+        rule check-fan-health {
+            synopsis "Chassis fans health analyzer";
+            description "Collects chassis fan statistics periodically and notifies anomalies when fan status is NOK";
+            /*
+             * Monitors all the chassis fans. Notifies via the dashboard
+             * colors when the fan status is OK to green. Otherwise the
+             * color is set to red and notify anomaly.
+             * 
+             * Use fan name as key for rule.
+             */
+             keys fan-name;
+            /*
+             * sensor configuration to get data from network devices
+             */
+            sensor chassis-fan {
+                synopsis "iAgent sensor definition";
+                description "iAgent sensor using show-chassis-fan command to collect data from network device";
+                iAgent {
+                    file evo-chassis-fan.yml;
+                    table ChassisFanTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger fan-status {
+                synopsis "Chassis fan health KPI";
+                description "Sets health based on chassis fan status and speed";
+                frequency 60s; 
+                /*
+                 * Sets color to green when fan status is OK.
+                 */
+                term is-fan-health-good {
+                    when {
+                        matches-with "$fan-status" "(?i)OK";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fan-name health-status is normal. $fan-measurement($fan-rpm rpm)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
+                term is-fan-health-bad {
+                    then {
+                        status {
+                            color red;
+                            message "$fan-name health-status is $fan-status. $fan-measurement($fan-rpm rpm)";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
