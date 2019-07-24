@@ -1,0 +1,42 @@
+iceberg {
+    topic chassis.networkservices {
+        rule netsvc-rule {
+            sensor netsvc-sensor {
+                iAgent {
+                    file netsvc.yml;
+                    table NetSvcTable;
+                    frequency 1h;
+                }
+            }
+            trigger netsvc-sync {
+		frequency 1h;
+                term synched {
+                    when {
+                        matches-with "$netsvc_sync" true {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                        }
+                    }
+                }
+                term else {
+                    when {
+                        matches-with "$netsvc_sync" false {
+                            ignore-case;
+                        }
+                        exists "$proposed_action";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$proposed_action";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

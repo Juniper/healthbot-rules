@@ -11,7 +11,7 @@ iceberg {
             description "Collects total-route-count of each protocol and sets dynamic thresholds and notify anomaly when route count is abnormal";
             /*
              * Monitors Protocols routes of all the route tables. Sets dynamic
-             * threshold using k-means machine learning alogorithm based on
+             * threshold using 3sigma machine learning alogorithm based on
              * learned data. Notifies via dashboard colors when the route
              * count of each protocol exceed or drop for every collected metric
              * during a 35 minute time range (red). Otherwise the color is set
@@ -29,23 +29,46 @@ iceberg {
                 iAgent {
                     file route-protocol-summary.yml;
                     table RouteProtocolsTable;
-                    frequency 15m;
+                    frequency 10m;
                 }
             }
             /*
              * Fields defined with dynamic threshold ML algorithms
              */
+            field protocol-name {
+                sensor route-protocol-summary {
+                    where "protocol-name =~ /^{{route-protocol-name}}$/";
+                    path protocol-name;
+                }
+                type string;
+                description "Protocol to monitor";
+            }
             field route-count-dynamic-threshold {
                 formula {
                     dynamic-threshold {
-                        algorithm k-means;
+                        algorithm 3sigma;
                         learning-period 7d;
                         pattern-periodicity 1h;
                         field-name "$protocol-route-count";
                     }
                 }
                 type integer;
-                description "Detects anamoly dynamically using kmeans algorithm";
+                description "Detects anamoly dynamically using 3sigma algorithm";
+            }
+            field table-name {
+                sensor route-protocol-summary {
+                    where "table-name =~ /^{{route-table-name}}$/";
+                    path table-name;
+                }
+                type string;
+                description "Route-table to monitor";
+            }
+            field threshold {
+                constant {
+                    value "{{route-count-threshold}}";
+                }
+                type integer;
+                description "Route count static threshold";
             }
             /*
              * Anomaly detection logic.
@@ -54,56 +77,124 @@ iceberg {
                 synopsis "Protocol route count check KPI";
                 description "Sets health based on increase or drop in route count of each protocol";
                 /*
-                 * Sets color to yellow and sends out an anomaly notification 
-                 * when sufficient data not available to train algorithm.
-                 * ($route-count-dynamic-threshold result contains -1)
-                 * for all points in a 35 minutes period.
+                 * Sets color to red and sends out an anomaly notification 
+                 * when protocol's route-count is above static $threshold for
+                 * all points in a 35 minutes period.
                  */
-                 frequency 15m;
-                 term is-sufficient-data-available-to-analyze {
-                   when {
-                        matches-with "$route-count-dynamic-threshold" -1 {
-                            time-range 35m;
-                            }
+                 frequency 10m;
+                term above-static-threshold {
+                    when {
+                        greater-than-or-equal-to "$protocol-route-count" "$threshold" {
+                            time-range 60s;
                         }
+                    }
                     then {
                         status {
-                            color yellow;
-                            message "Sufficient data not available to train algorithm, wait for learning period completion";
+                            color red;
+                            message "Anomaly detected: Protocol $protocol-name of route-table ($table-name) route count($protocol-route-count) is abnormal";
                         }
                     }
                 }
                 /*
-                 * Sets color to red and sends out an anomaly notification when
+                 * Sets color to yellow and sends out an anomaly notification when
                  * the route count of each routing table exceed or drop
                  * ($route-count-dynamic-threshold result contains 1)
                  * for all points in a 35 minutes period.
                  */
-                 term is-protocol-route-count-abnormal {
-                   when {
-                        matches-with "$route-count-dynamic-threshold" 1 {
+                term above-dynamic-threshold {
+                    when {
+                        equal-to "$route-count-dynamic-threshold" 1 {
                             time-range 35m;
-                            }
                         }
+                    }
                     then {
                         status {
-                            color red;
-                            message "Anomaly detected: $table-name:$protocol-name route count($protocol-route-count) is abnormal";
+                            color yellow;
+                            message "Anomaly detected: Protocol $protocol-name of route-table ($table-name) route count($protocol-route-count) is above dynamic threshold";
                         }
                     }
                 }
                 /*
                  * Defaults color to green.
                  */ 
-                term protocol-route-count-normal {
+                term protocol-route-count-ok {
                     then {
                         status {
                             color green;
-                            message "$table-name:$protocol-name route count($protocol-route-count) is normal";
+                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-route-count)is normal";
                         }
                     }
+                }
+            }         
+            variable route-count-threshold {
+                value 10000;
+                description "Route table's route-count threshold";
+                type int;
+            }
+            variable route-protocol-name {
+                value .+;
+                description "Route table specific routes, regular expression, e.g. 'BGP|RSVP|IS-ISI'";
+                type string;
+            }
+            variable route-table-name {
+                value .+;
+                description "Route table specific routes, regular expression, e.g. 'inet.0|inet6.0|vpn_1.inet6.0'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files route-protocol-summary.yml;
                 }
             }
         }
     }
 }
+

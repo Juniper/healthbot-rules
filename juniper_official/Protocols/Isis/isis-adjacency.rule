@@ -1,0 +1,159 @@
+/*
+ * Detects ISIS adjacency state changes and notifies when anomalies are found.
+ * Three input control detection
+ * 
+ *   1) instance-name, is a regular expression that matches the routing
+ *      instance that you would like to monitor.  By default it's '.*', which
+ *      matches all routing instances. Use something like 'master|RI1' to match
+ *      only ISIS adjacencies belong to master and RI1 routing instances.
+ *
+ *   2) system-name, is a regular expression that matches the ISIS syste-id
+ *      that you would like to monitor.  By default it's '.*', ISIS which matches
+ *      all system ids. Use something like 'router1|router2' to match only
+ *      ISIS adjacencies contains system-id names router1 and router2.
+ *
+ *   3) interface-name, is a regular expression that matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'ge.*' to match only ISIS
+ *      adjacencies contains gigabit ethernet interfaces.
+ *
+ */
+ iceberg {
+    topic protocol.isis {
+        description "Monitors isis statitics i.e. adjacency state& statistics and notify anomalies";
+        synopsis "ISIS session statistics analyzer";
+        rule check-isis-adjacencies {
+            description "Collects ISIS adjacency state periodically and notify anomaly when state is down";
+            synopsis "ISIS session state analyzer";
+            /*
+             * Monitors the ISIS adjacency state. Notifies via the dashboard
+             * colors when the adjacency state is up and color is set to green.
+             * Otherwise the color is set to red.
+             * 
+             * Use instance id, system id and interface id as keys for rule.
+             */
+            keys [ instance-id interface-id system-id ];
+            sensor isis-sensor {
+                synopsis "ISIS open-config sensor definition";
+                description "open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field adjacency-state {
+                sensor isis-sensor {
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-state;
+                }
+                type string;
+                description "ISIS adjacency state";
+            }
+            field instance-id {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/@instance-name =~ /{{instance-name}}/";
+                    path "/network-instances/network-instance/@instance-name";
+                }
+                type string;
+                description "ISIS adjacencies belong to routing instance to be monitored";
+            }
+            field interface-id {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+                }
+                type string;
+                description "ISIS interfaces to be monitored";
+            }
+            field system-id {
+                sensor isis-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id =~ /{{system-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id";
+                }
+                type string;
+                description "ISIS adjacencies to be monitored based on system-id";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger isis-adjacency-state {
+                synopsis "ISIS adjacency state KPI";
+                description "Sets health based on ISIS adjacency state changes and notify anomaly.";
+                frequency 60s;
+                /*
+                 * Sets color to green when ISIS adjacency state is true.
+                 */
+                term is-adjacency-ip {
+                    when {
+                        matches-with "$adjacency-state" up;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message " ISIS adjacency state of routing-instance $instance-id, interface $interface-id and system-id $system-id  is $adjacency-state";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */
+                term is-adjacency-state-down {
+                    then {
+                        status {
+                            color red;
+                            message " ISIS adjacency state of routing-instance $instance-id, interface $interface-id and system-id $system-id  is $adjacency-state";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable instance-name {
+                value .*;
+                type string;
+                description "ISIS ajdacencies belong to routing instance to monitor, regular expression, eg 'master|RI1'";
+            }
+            variable interface-name {
+                value .*;
+                type string;
+                description "ISIS interface names to monitor, regular expression, eg 'ge-.*'";
+            }
+            variable system-name {
+                value .*;
+                type string;
+                description "ISIS system-ids to monitor, regular expression, eg 'router1|router2'";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 17.4R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                            }
+                            products PTX {
+                                releases 17.4R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

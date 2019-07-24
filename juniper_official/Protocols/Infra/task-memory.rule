@@ -25,9 +25,10 @@ iceberg {
             trigger percentage-of-task-memory-in-use {
                 synopsis "Task memory in use kpi";
                 description "Sets health based on task memory in use";
-                term is-percentage-of-task-memory-in-use-greater-than-80 {  
+                frequency 60s;
+                term is-task-memory-in-use-above-threshold {  
                     when {
-                        greater-than-or-equal-to "$in-use-percent" 80;
+                        greater-than-or-equal-to "$in-use-percent" memory-threshold;
                     }
                     then {
                         status {
@@ -36,7 +37,7 @@ iceberg {
                         }
                     }
                 }
-                term percentage-of-task-memory-in-use-lesser-than-equal-to-80 {
+                term task-memory-in-use-normal {
                     then {
                         status {
                             color green;
@@ -49,6 +50,59 @@ iceberg {
                 value 80;
                 description "RPD Task Memory threshold value";
                 type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files task-memory.yml;
+                }
             }
         }
     }

@@ -47,7 +47,7 @@ iceberg {
                 synopsis "BGP open-config sensor definition";
                 description "/protocol/bgp open-config sensor to collect telemetry data from network device";
                 open-config {
-                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/;
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/neighbors;
                     frequency 60s;
                 }
             }
@@ -97,6 +97,21 @@ iceberg {
                 description "Received routes count increase threshold";
             }
             /*
+             * Fields defined with formulas and dynamic thresholds
+             */
+            field received-routes-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$received-routes";
+                    }
+                }
+                type integer;
+                description "Dynamically sets threshold using kmeans algorithm";
+            }
+            /*
              * Anomaly detection logic.
              */
             trigger received-routes {
@@ -108,21 +123,39 @@ iceberg {
                  * ($received-routes) exceed threshold
                  * ($received-route-count-threshold) and notify anomaly.
                  */
-                term is-rcd-route-count-above-threshold {
+                term above-static-threshold {
                     when {
                         greater-than-or-equal-to "$received-routes" $received-route-count-threshold;
                     }
                     then {
                         status {
                             color red;
-                            message "Received route count($received-routes) exceed threshold";
+                            message "Received route count($received-routes) exceed static threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when received routes count
+                 * ($received-routes) exceed dynamic threshold
+                 * ($received-routes-dynamic-threshold) and notify anomaly.
+                 */
+                term above-dynamic-threshold {
+                    when {
+                        equal-to "$received-routes-dynamic-threshold" 1 {
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Received route count($received-routes) exceed dynamic threshold";
                         }
                     }
                 }
                 /*
                  * Defaults color to green.
                  */ 
-                term rcd-route-count-normal {
+                term route-count-normal {
                     then {
                         status {
                             color green;
@@ -154,6 +187,68 @@ iceberg {
                 value 10000;
                 type int;
                 description "BGP neighbor session received routes threshold: Number of received route count increase between metrics, before we report anomaly";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5110;
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
             }
         }
     }

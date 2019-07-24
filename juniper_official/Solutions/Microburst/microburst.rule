@@ -6,22 +6,37 @@ iceberg {
         description "Interface egress queues microburst detection";
         synopsis "Microburst detector";
         rule check-queue {
-            description "Collects all interfaces egress queues data using gpb sensor and detects microbursts";
             keys [ if-name queue-no ];
-            sensor jnpr_qmon_ext {
+            synopsis " Microbust detector";
+            description "Collects all interfaces egress queues data using gpb sensor and detects microbursts";
+            sensor jnpr-qmon-ext {
                 synopsis "Qmon native gpb sensor";
                 description "Sensor configuration to get bgp data from network devices";
                 native-gpb {
                     sensor-name jnpr_qmon_ext;
-                    port 22000;
+                    port 22000; ## Warning: 'port' is deprecated
                 }
+            }
+            field buffer-percentage {
+                sensor jnpr-qmon-ext {
+                    path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.peak_buffer_occupancy_percent;
+                }
+                type float;
+                description "Interface egress buffer percent";
+            }
+            field egress-packets {
+                sensor jnpr-qmon-ext {
+                    path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.packets;
+                }
+                type float;
+                description "Interface egress packets";
             }
             /*
              * Sensor and constant fields
              */
             field if-name {
-                sensor jnpr_qmon_ext {
-                    where "queue_monitor_element_info.if_name =~ /{{if_name_expr}}/";
+                sensor jnpr-qmon-ext {
+                    where "queue_monitor_element_info.if_name =~ /{{if-name-expr}}/";
                     path queue_monitor_element_info.if_name;
                 }
                 type string;
@@ -32,14 +47,16 @@ iceberg {
                     microburst {
                         if-name "$if-name";
                         queue-no "$queue-no";
+                        percentage "$buffer-percentage";
+                        packets "$egress-packets";
                     }
                 }
                 type integer;
-                description "Derives microburst valu";
+                description "Derives microburst value";
             }
             field queue-no {
-                sensor jnpr_qmon_ext {
-                    where "queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number =~ /{{queue_no_expr}}/";
+                sensor jnpr-qmon-ext {
+                    where "queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number =~ /{{queue-no-expr}}/";
                     path queue_monitor_element_info.queue_monitor_stats_egress.queue_monitor_stats_info.queue_number;
                 }
                 type string;
@@ -51,6 +68,7 @@ iceberg {
             trigger microburst {
                 synopsis "Microburst KPI";
                 description "Sets health based on the increase in microburst count";
+                frequency 30s;
                 term green {
                     when {
                         equal-to "$microburst" 0;
@@ -74,15 +92,15 @@ iceberg {
                     }
                 }
             }
-            variable if_name_expr {
+            variable if-name-expr {
                 value .*;
-                type string;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
             }
-            variable queue_no_expr {
+            variable queue-no-expr {
                 value .*;
-                type int;
-                description "Queue number to monitor, regular expression, eg '1|2'";
+                description "Queue number or name to monitor, regular expression, eg '1|2'";
+                type string;
             }
         }
     }
