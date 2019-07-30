@@ -1,0 +1,159 @@
+/*
+ * This playbook is used to detect KRT Async queue stuck condition and raise alarm.
+ * 
+ * Following are the set of commands and the corresponding RPCs used to detect the problematic state.
+ * 
+ * labroot@jtac-mx960> show krt state | display xml rpc
+ * <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+ *     <rpc>
+ *         <get-krt-state>
+ *         </get-krt-state>
+ *     </rpc>
+ *     <cli>
+ *         <banner></banner>
+ *     </cli>
+ * </rpc-reply>
+ * 
+ * labroot@jtac-ptx10001-20c-proto-r2001> show krt async io statistics | display xml rpc
+ * <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+ *     <rpc>
+ *         <get-async-io-stats>
+ *         </get-async-io-stats>
+ *     </rpc>
+ *     <cli>
+ *         <banner></banner>
+ *     </cli>
+ * </rpc-reply>
+ * 
+ * labroot@jtac-ptx10001-20c-proto-r2001> show krt async correlator statistics | display xml rpc
+ * <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+ *     <rpc>
+ *         <get-async-cor-stats>
+ *         </get-async-cor-stats>
+ *     </rpc>
+ *     <cli>
+ *         <banner></banner>
+ *     </cli>
+ * </rpc-reply>
+ * 
+ * labroot@jtac-mx960> show krt state | display xml
+ * <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+ *     <krt-state-information>
+ *         <krt-options>IndirectPFE IndirectChangeACK</krt-options>
+ *         <krt-install-job-not-running/>
+ *         <krt-queue-state>
+ *             <krtq-operations-queued>0</krtq-operations-queued>
+ *             <krtq-rt-table-adds>0</krtq-rt-table-adds>
+ *             <krtq-interface-routes>0</krtq-interface-routes>
+ *             <krtq-high-multicast-adds-changes>0</krtq-high-multicast-adds-changes>
+ *             <krtq-top-indirect-adds-changes>0</krtq-top-indirect-adds-changes>
+ *             <krtq-indirect-adds-changes>0</krtq-indirect-adds-changes>
+ *             <krtq-indirect-deletes>0</krtq-indirect-deletes>
+ *             <krtq-high-mpls-adds>0</krtq-high-mpls-adds>
+ *             <krtq-high-mpls-changes>0</krtq-high-mpls-changes>
+ *             <krtq-top-priority-adds>0</krtq-top-priority-adds>
+ *             <krtq-top-priority-changes>0</krtq-top-priority-changes>
+ *             <krtq-top-priority-deletes>0</krtq-top-priority-deletes>
+ *             <krtq-high-priority-adds>0</krtq-high-priority-adds>
+ *             <krtq-high-priority-changes>0</krtq-high-priority-changes>
+ *             <krtq-high-priority-deletes>0</krtq-high-priority-deletes>
+ *             <krtq-normal-priority-indirects>0</krtq-normal-priority-indirects>
+ *             <krtq-normal-priority-adds>0</krtq-normal-priority-adds>
+ *             <krtq-normal-priority-changes>0</krtq-normal-priority-changes>
+ *             <krtq-normal-priority-deletes>0</krtq-normal-priority-deletes>
+ *             <krtq-least-priority-adds>0</krtq-least-priority-adds>
+ *             <krtq-least-priority-changes>0</krtq-least-priority-changes>
+ *             <krtq-least-priority-deletes>0</krtq-least-priority-deletes>
+ *             <krtq-normal-priority-cnh-deletes>0</krtq-normal-priority-cnh-deletes>
+ *             <krtq-normal-priority-gmp>0</krtq-normal-priority-gmp>
+ *             <krtq-rt-table-deletes>0</krtq-rt-table-deletes>
+ *             <krtq-operations-deferred>0</krtq-operations-deferred>
+ *             <krtq-operations-canceled>0</krtq-operations-canceled>
+ *             <krtq-async-count>0</krtq-async-count>
+ *             <krtq-async-non-q-count>0</krtq-async-non-q-count>
+ *             <krtq-time-until-next-run>0</krtq-time-until-next-run>
+ *             <krtq-kernel-rt-learnt>44</krtq-kernel-rt-learnt>
+ *         </krt-queue-state>
+ *         <rtsock-time-until-next-scan>38</rtsock-time-until-next-scan>
+ *     </krt-state-information>
+ *     <cli>
+ *         <banner></banner>
+ *     </cli>
+ * </rpc-reply>
+ * 
+ * labroot@jtac-mx960> show krt async io statistics | display xml
+ * <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+ *     <krt-io-statistics xmlns="http://xml.juniper.net/junos/18.2I0/junos-routing">
+ *         <krt-io-statistics-entry>
+ *             <krt-io-task-name>KRT IO task</krt-io-task-name>
+ *             <krt-io-write-count>64</krt-io-write-count>
+ *             <krt-io-read-count>28</krt-io-read-count>
+ *         </krt-io-statistics-entry>
+ *         <krt-io-statistics-entry>
+ *             <krt-io-task-name>KStat</krt-io-task-name>
+ *         </krt-io-statistics-entry>
+ *         <krt-io-statistics-entry>
+ *             <krt-io-task-name>krt unsolic client</krt-io-task-name>
+ *         </krt-io-statistics-entry>
+ *         <krt-io-statistics-entry>
+ *             <krt-io-task-name>krt solic client JUNOS</krt-io-task-name>
+ *         </krt-io-statistics-entry>
+ *     </krt-io-statistics>
+ *     <cli>
+ *         <banner></banner>
+ *     </cli>
+ * </rpc-reply>
+ * 
+ * labroot@jtac-mx960> show krt async correlator statistics | display xml
+ * <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+ *     <krt-correlator-statistics junos:style="brief">
+ *         <krt-tree-statistics>
+ *             <krt-tree-insert-count>73</krt-tree-insert-count>
+ *             <krt-tree-delete-count>73</krt-tree-delete-count>
+ *             <krt-tree-lookup-count>264</krt-tree-lookup-count>
+ *             <krt-tree-current-count>0</krt-tree-current-count>
+ *         </krt-tree-statistics>
+ *     </krt-correlator-statistics>
+ *     <cli>
+ *         <banner></banner>
+ *     </cli>
+ * </rpc-reply>
+ * 
+ * 
+ * Any one of the following conditions becoming true will cause the alarms to be set to indicate KRT ASYNC stuck condition and user can perform any recovery actions accordingly.
+ * 
+ * Polling of the parameters that are part of the commands needed to detect the stuck condition is done every minute and internal databases are populated.
+ * 
+ * First Condition :
+ * -----------------
+ * Previous && Current values of "krtq-operations-queued" is not zero ||
+ * Previous && Current values of "krtq-async-count" is not zero &&
+ * Previous && Current values of "krt-io-write-count" are same
+ * then declare KRT stuck/Raise Red Alarm
+ * 
+ * (or)
+ * 
+ * Second Condition :
+ * ------------------
+ * "krt-tree-insert-count" is greater than "krt-tree-delete-count" &&
+ * Previous and Current values of "krt-tree-delete-count" are same
+ * then declare KRT stuck/Raise Red Alarm
+ * 
+ * (or)
+ * 
+ * Third Condition:
+ * ----------------
+ * Current value of "krtq-async-count" is greater than 0 and lessthan/equal to 20000 &&
+ * Previous value of "krtq-async-count" is greater than 0 and lessthan/equal to 20000 &&
+ * Current value of "krtq-async-count" is greater than/equal to previous value of "krtq-async-count" &&
+ * Current value of "krt-tree-current-count" is greater than 0 and lessthan/equal to 20000 &&
+ * Previous value of "krt-tree-current-count" is greater than 0 and lessthan/equal to 20000 &&
+ * Current value of "krt-tree-current-count" is greater than/equal to previous value of "krt-tree-current-count"
+ * then declare KRT stuck/Raise Red Alarm
+ */
+
+iceberg {
+    playbook krtasyncstatuscheck {
+        rules [ krt-async-status-check/krt-all krt-async-status-check/krtcorrtable krt-async-status-check/krtiotable krt-async-status-check/krtstate ];
+    }
+}
