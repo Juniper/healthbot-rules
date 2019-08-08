@@ -1,0 +1,180 @@
+/*
+ * Detects system storage utilization threshold breaches and notifies when
+ * anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) storage-usage-high-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 80% of total size. This rule will
+ *      set a dashboard color to red when storage used exceed
+ *      'storage-usage-high-threshold'.
+ * 
+ *   2) storage-usage-low-threshold, is the threshold that causes the rule to
+ *      report an anomaly. By default it's 50%. This rule will set a dashboard
+ *      color to green when storage used below 'storage-usage-low-threshold'.
+ *      otherwise color is set to yellow as used % is between 50% and 80%.
+ */
+healthbot {
+    topic system.storage {
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies";
+        synopsis "System statistics analyzer";
+        rule evo-check-storage {
+            description "Collects filesystem storage usage periodically and notifies anomalies when used space exceed threshold";
+            synopsis "system storage usage analyzer";
+            /*
+             * Monitors the filesystem storage used% of system. Notifies via
+             * the dashboard colors when the storage used % exceed by 
+             * {{storage-usage-high-threshold}} to red. The color is set to 
+             * green if we see used % below {{storage-usage-low-threshold}}.
+             * Otherwise the color is set to yellow
+             * 
+             * Use filesystem mounted path name as key for rule.
+             */
+            keys mounted-on;
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor storagetable {
+                synopsis "System storage iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file evo-system-storage.yml;
+                    table EvoStorageTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{storage-usage-high-threshold}}";
+                }
+                type integer;
+                description "Filesystem used storage high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{storage-usage-low-threshold}}";
+                }
+                type integer;
+                description "Filesystem used storage low threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger file-system-utilization {
+                synopsis "File system usage kpi";
+                description "Sets health based on increase in file system storage usage";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the filesystem used % ($used-percent) is greater than 80%.
+                 */
+                frequency 60s;
+                term is-system-storage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used-percent" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$filesystem-name storage used($used-percent) is above ($high-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green and sends out an notification when the
+                 * filesystem used % ($used-percent) is less than than 50%.
+                 */                     
+                term is-system-storage-normal {
+                    when {
+                        less-than "$used-percent" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$filesystem-name storage used($used-percent) is normal ($used-percent)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to yellow.
+                 */                
+                term system-storage-middle {
+                    then {
+                        status {
+                            color yellow;
+                            message "$filesystem-name storage used($used-percent) is in middle range(>=$low-threshold, <=$high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable storage-usage-high-threshold {
+                value 80;
+                type int;
+                description "Filesystem storage high threshold: exceed used % threshold, before we report anomaly";
+            }
+            variable storage-usage-low-threshold {
+                value 50;
+                type int;
+                description "Filesystem storage low threshold: exceed used % threshold, before we report anomaly";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files system-storage.yml;
+                }
+            }
+        }
+    }
+}
