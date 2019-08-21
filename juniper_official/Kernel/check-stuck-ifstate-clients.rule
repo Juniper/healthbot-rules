@@ -1,0 +1,53 @@
+/*
+ * This rule checks if there are any stuck ifstate clients present in the system.
+ *
+ * A stuck Ifstate client can cause resource release issues and eventually lead to
+ * Kernel to veto incoming routing socket messages from applications, which further
+ * can result in traffic loss. Though very rare, if this happens, it is a serious
+ * condition and should be mitigated asap by restarting the client. See readme
+ * in healthbot rules folder for details.
+ */
+iceberg {
+    topic kernel.ifstate {
+        rule check-stuck-ifstate-clients {
+            sensor ifstate-clients {
+                synopsis "stuck ifstate client open-config sensor";
+                description "open-config sensor to monitor any stuck ifstate client on a network device";
+                open-config {
+                    sensor-name /junos/kernel-ifstate;
+                    frequency 1m;
+                }
+            }
+            field stuck-clients {
+                sensor ifstate-clients {
+                    path /junos/kernel-ifstate/stuck-clients-cnt;
+                }
+                type integer;
+            }
+            trigger report-ifstate-clients-health {
+                synopsis "report stuck ifstate clients";
+                description "monitor and report any stuck ifstate clients on the network device";
+                frequency 1m;
+                term is-ifs-client-stuck {
+                    when {
+                        not-equal-to "$stuck-clients" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Found stuck daemon/fpc. For details run: show system alarms. Restart stuck clients for recovery.";
+                        }
+                    }
+                }
+                term ifs-client-default {
+                    then {
+                        status {
+                            color green;
+                            message "No ifstate client (daemon/fpc) is stuck.";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
