@@ -1,0 +1,119 @@
+/*
+ * This rule helps in monitoring system health based on the value of the flood token count.
+ *
+ * The sensor used is iAgent.
+ * If this value is below 80% of flood token max, the system is stable.
+ * Any value between 80-90% of flood token max is considered a warning. Any value above 90% of flood token max is considered risky and must be taken seriously."
+ */
+iceberg {
+    topic kernel.vpls {
+        rule check-flood-token-cnt-iagent {
+            function vpls_flood_token_cnt_compare {
+                path compare-vpls-flood-token-cnt.py;
+                method compare_vpls_flood_token_cnt;
+                argument vpls_flood_token_cnt {
+                    mandatory;
+                }
+                argument vpls_flood_token_max {
+                    mandatory;
+                }
+            }
+            sensor flood-token-cnt-sensor {
+                synopsis "Flood token count sensor";
+                description "iAgent sensor for flood token count";
+                iAgent {
+                    file flood_token_count.yml;
+                    table floodTokenCntTable;
+                    frequency 1m;
+                }
+            }
+            field vpls-flood-result {
+                formula {
+                    user-defined-function {
+                        function-name vpls_flood_token_cnt_compare;
+                        argument vpls_flood_token_cnt "$vpls-flood-token-cnt";
+                        argument vpls_flood_token_max "$vpls-flood-token-max";
+                    }
+                }
+            }
+            field vpls-flood-token-cnt {
+                sensor flood-token-cnt-sensor {
+                    path flood_token_cnt;
+                }
+                type integer;
+                description "Print Current flood Token Count In Use";
+            }
+            field vpls-flood-token-max {
+                sensor flood-token-cnt-sensor {
+                    path flood_token_max;
+                }
+                type integer;
+                description "Maximum flood Tokens In The System";
+            }
+            trigger report-vpls-flood-token-cnt-iagent {
+                synopsis "Trigger for flood token count, with the sensor being iAgent";
+                description "This trigger helps in monitoring the system health based on the value of the flood token count. If this value is below 80% of flood token max, the system is stable. Any value between 80-90% of flood token max is considered a warning. Any value above 90% of flood token max is considered risky and must be taken seriously.";
+                frequency 1m;
+                term between_low_high_thresh {
+                    when {
+                        equal-to "$vpls-flood-result" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "flood token count is between low and high thresholds. #flood-token-cnt: $vpls-flood-token-cnt #Max-tokens: $vpls-flood-token-max";
+                        }
+                    }
+                }
+                term above_high_thresh {
+                    when {
+                        equal-to "$vpls-flood-result" 2;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "flood token count is above high threshold, monitor system activity. #flood-token-cnt: $vpls-flood-token-cnt #Max-tokens: $vpls-flood-token-max";
+                        }
+                    }
+                }
+                term below_low_thresh {
+                    then {
+                        status {
+                            color green;
+                            message "flood token count below threshold. No anomaly detected. #flood-token-cnt: $vpls-flood-token-cnt #Max-tokens: $vpls-flood-token-max";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,120 @@
+/*
+ * This rule helps in reporting the health of the system based on the value of non-rpf tunnel id count.
+ *
+ * Openconfig sensor is being used.
+ * If non-rpf tunnel id count is between 85-99%, it is a warning sign.
+ * If it is more than 99%, the system is under risk. Else, the system is healthy.
+ */
+
+iceberg {
+    topic kernel.tunnel {
+        rule check-nonrpf-tunnel-id-cnt {
+            function nonrpf-tunnel-id-cnt-compare {
+                description "This function compares the current non-rpf tunnel id count in the system with the low and the high threshold values and returns the result";
+                path compare-nonrpf-tunnel-id-cnt.py;
+                method compare_nonrpf_tunnel_id_cnt;
+                argument nonrpf_tunnel_id_cnt {
+                    mandatory;
+                }
+                argument nonrpf_tunnel_id_max {
+                    mandatory;
+                }
+            }
+            sensor kernel-tunnel-sensor {
+                synopsis kernel-tunnel-sensor;
+                description "Open config sensor for nonrpf tunnel id count";
+                open-config {
+                    sensor-name /junos/kernel/tunnel;
+                    frequency 1m;
+                }
+            }
+            field nonrpf-tunnel-id-cnt {
+                sensor kernel-tunnel-sensor {
+                    path /junos/kernel/tunnel/nonrpf-tunnelid-cnt;
+                }
+                type integer;
+                description "Print Current Non-rpf Tunnel Id's Allocated In The System";
+            }
+            field nonrpf-tunnel-id-cnt-result {
+                formula {
+                    user-defined-function {
+                        function-name nonrpf-tunnel-id-cnt-compare;
+                        argument nonrpf_tunnel_id_cnt "$nonrpf-tunnel-id-cnt";
+                        argument nonrpf_tunnel_id_max "$nonrpf-tunnel-id-max";
+                    }
+                }
+            }
+            field nonrpf-tunnel-id-max {
+                sensor kernel-tunnel-sensor {
+                    path /junos/kernel/tunnel/nonrpf-tunnelid-max;
+                }
+                type integer;
+                description "Print Maximum Non-rpf Tunnel Id's In The System";
+            }
+            trigger report-tunnel-nonrpf-id-cnt {
+                synopsis "Trigger for reporting non-rpf tunnel id count, with openconfig sensor";
+                description "This trigger helps in reporting the health of the system based on the value of non-rpf tunnel id count. If this value is between 85-99%, it is a warnign sign. If it is more than 99%, the system is under risk. Else, the system is healthy.";
+                frequency 1m;
+                term between_low_high_thresh {
+                    when {
+                        equal-to "$nonrpf-tunnel-id-cnt-result" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Non-rpf tunnel id count is between low and high thresholds. #nonrpf-tunnel-id-cnt: $nonrpf-tunnel-id-cnt #nonrpf-tunnel-id-max: $nonrpf-tunnel-id-max";
+                        }
+                    }
+                }
+                term above_high_thresh {
+                    when {
+                        equal-to "$nonrpf-tunnel-id-cnt-result" 2;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Non-rpf tunnel id count is above threshold, Monitor system activity. #nonrpf-tunnel-id-cnt: $nonrpf-tunnel-id-cnt #nonrpf-tunnel-id-max: $nonrpf-tunnel-id-max";
+                        }
+                    }
+                }
+                term below_low_thresh {
+                    then {
+                        status {
+                            color green;
+                            message "Non-rpf tunnel id count is below threshold. No anomaly detected. nonrpf-tunnel-id-cnt: $nonrpf-tunnel-id-cnt #nonrpf-tunnel-id-max: $nonrpf-tunnel-id-max";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

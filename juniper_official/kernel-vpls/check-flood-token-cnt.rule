@@ -1,0 +1,119 @@
+/*
+ * This rule helps in monitoring system health based on the value of the flood token count.
+ *
+ * The sensor used is openconfig.
+ * If this value is below 80% of flood token max, the system is stable.
+ * Any value between 80-90% of flood token max is considered a warning. Any value above 90% of flood token max is considered risky and must be taken seriously."
+ */
+
+iceberg {
+    topic kernel.vpls {
+        rule check-flood-token-cnt {
+            function vpls_flood_token_cnt_compare {
+                path compare-vpls-flood-token-cnt.py;
+                method compare_vpls_flood_token_cnt;
+                argument vpls_flood_token_cnt {
+                    mandatory;
+                }
+                argument vpls_flood_token_max {
+                    mandatory;
+                }
+            }
+            sensor kernel-vpls-sensor {
+                synopsis "kernel vpls sensor";
+                description "Open config sensor for flood token count";
+                open-config {
+                    sensor-name /junos/kernel/vpls;
+                    frequency 1m;
+                }
+            }
+            field vpls-flood-result {
+                formula {
+                    user-defined-function {
+                        function-name vpls_flood_token_cnt_compare;
+                        argument vpls_flood_token_cnt "$vpls-flood-token-cnt";
+                        argument vpls_flood_token_max "$vpls-flood-token-max";
+                    }
+                }
+            }
+            field vpls-flood-token-cnt {
+                sensor kernel-vpls-sensor {
+                    path /junos/kernel/vpls/flood-token-cnt;
+                }
+                type integer;
+                description "Print Current Flood Token Count In Use";
+            }
+            field vpls-flood-token-max {
+                sensor kernel-vpls-sensor {
+                    path /junos/kernel/vpls/flood-token-max;
+                }
+                type integer;
+                description "Maximum Flood Tokens In The System";
+            }
+            trigger report-vpls-flood-token-cnt {
+                synopsis "Trigger for Flood token count";
+                description "This trigger helps in monitoring whether the system is healthy based on the value of flood token count. If this value is below 80% of max flood token count, the system is stable. Any value between 80-90% of flood token max value is a warning. Any value above 90% of flood token max is a cause for concern, and must be taken seriously.";
+                frequency 1m;
+                term between_low_high_thresh {
+                    when {
+                        equal-to "$vpls-flood-result" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Flood token count is between low and high thresholds. #flood-token-cnt: $vpls-flood-token-cnt #Max-tokens: $vpls-flood-token-max";
+                        }
+                    }
+                }
+                term above_high_thresh {
+                    when {
+                        equal-to "$vpls-flood-result" 2;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Flood token count is above high threshold, monitor system activity. #flood-token-cnt: $vpls-flood-token-cnt #Max-tokens: $vpls-flood-token-max";
+                        }
+                    }
+                }
+                term below_low_thresh {
+                    then {
+                        status {
+                            color green;
+                            message "Flood token count is below low threshold. #flood-token-cnt: $vpls-flood-token-cnt #Max-tokens: $vpls-flood-token-max";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

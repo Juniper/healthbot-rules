@@ -1,0 +1,121 @@
+/*
+ * This rule helps in monitoring system health based on the value of the unicast token count.
+ *
+ * This rule used iAgent sensor.
+ * If this value is below 80% of unicast token max, the system is stable.
+ * Any value between 80-90% of unicast token max is considered a warning.
+ * Any value above 90% of unicast token max is considered risky and must be taken seriously.
+ */
+
+iceberg {
+    topic kernel.vpls {
+        rule check-ucst-token-cnt {
+            function vpls_ucst_token_cnt_compare {
+                description "This function compares the current vpls unicast token count in the system with the low and high threshold values";
+                path compare-vpls-ucst-token-cnt.py;
+                method compare_vpls_ucst_token_cnt;
+                argument vpls_ucst_token_cnt {
+                    mandatory;
+                }
+                argument vpls_ucst_token_max {
+                    mandatory;
+                }
+            }
+            sensor kernel-vpls-sensor {
+                synopsis "kernel vpls sensor";
+                description "Open config sensor for unicast token count";
+                open-config {
+                    sensor-name /junos/kernel/vpls;
+                    frequency 1m;
+                }
+            }
+            field vpls-ucst-result {
+                formula {
+                    user-defined-function {
+                        function-name vpls_ucst_token_cnt_compare;
+                        argument vpls_ucst_token_cnt "$vpls-ucst-token-cnt";
+                        argument vpls_ucst_token_max "$vpls-ucst-token-max";
+                    }
+                }
+            }
+            field vpls-ucst-token-cnt {
+                sensor kernel-vpls-sensor {
+                    path /junos/kernel/vpls/unicast-token-cnt;
+                }
+                type integer;
+                description "Print Current Unicast Token Count In Use";
+            }
+            field vpls-ucst-token-max {
+                sensor kernel-vpls-sensor {
+                    path /junos/kernel/vpls/unicast-token-max;
+                }
+                type integer;
+                description "Maximum Unicast Tokens In The System";
+            }
+            trigger report-vpls-ucst-token-cnt {
+                synopsis "Trigger for unicast token count";
+                description "This trigger helps in monitoring the system health based on the value of the unicast token count. If this value is below 80% of unicast token max, the system is stable. Any value between 80-90% of unicast token max is considered a warning. Any value above 90% of unicast token max is considered risky and must be taken seriously.";
+                frequency 1m;
+                term between_low_high_thresh {
+                    when {
+                        equal-to "$vpls-ucst-result" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Unicast token count is between low and high thresholds. #Ucst-token-cnt: $vpls-ucst-token-cnt #Max-tokens: $vpls-ucst-token-max";
+                        }
+                    }
+                }
+                term above_high_thresh {
+                    when {
+                        equal-to "$vpls-ucst-result" 2;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Unicast token count is above high threshold, monitor system activity. #Ucst-token-cnt: $vpls-ucst-token-cnt #Max-tokens: $vpls-ucst-token-max";
+                        }
+                    }
+                }
+                term below_low_thresh {
+                    then {
+                        status {
+                            color green;
+                            message "Unicast token count below threshold. No anomaly detected. #Ucst-token-cnt: $vpls-ucst-token-cnt #Max-tokens: $vpls-ucst-token-max";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

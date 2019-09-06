@@ -1,0 +1,105 @@
+/*
+ * This rule monitors the system health on the basis of the tnp fragment drop count parameter.
+ *
+ * iAgent sensor is used here.
+ * The rule throws red alarm if the tnp fragment drop count is above 1000.
+ * Yellow alarm is thrown if the tnp fragment drop count is in the range 100-1000.
+ * Else, the system is in a healthy condition.
+ */
+
+iceberg {
+    topic kernel.tnp {
+        rule check-tnp-fragment-drops-iagent {
+            sensor tnp-frag-drop-sensor {
+                synopsis "Sensor for tnp fragment drops";
+                description "iAgent sensor for TNP fragment drops";
+                iAgent {
+                    file tnp_frag_drop_count.yml;
+                    table tnpFragTable;
+                    frequency 1m;
+                }
+            }
+            field tnp-frag-drop-cnt {
+                sensor tnp-frag-drop-sensor {
+                    path tnp_frag_drop_cnt;
+                }
+                type integer;
+                description " TNP fragment Drop Count ";
+            }
+            trigger report-tnp-fragment-drops-iagent {
+                synopsis "Trigger to report tnp fragment drops, with iAgent sensor";
+                description "This trigger helps in monitoring system health through the parameter tnp fragment drop count. If this value is in the range 100-1000, there is a warning. If it is above 1000, the system is under risk. Else, the system is healthy";
+                frequency 1m;
+                term tnp-frag-cnt-diff-gt-1000 {
+                    when {
+                        not-equal-to "$tnp-frag-drop-cnt" 0;
+                        increasing-at-least-by-value "$tnp-frag-drop-cnt" {
+                            value 1001;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "TNP fragment drop count difference between successive samples is above 1000. Urgent action is required";
+                        }
+                    }
+                }
+                term tnp-frag-drop-cnt-diff-gt-100 {
+                    when {
+                        not-equal-to "$tnp-frag-drop-cnt" 0;
+                        increasing-at-least-by-value "$tnp-frag-drop-cnt" {
+                            value 101;
+                            time-range 140s;
+                             any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "TNP fragment drop count difference between successive samples is in the range 100-1000";
+                        }
+                    }
+                }
+                term tnp-frag-drop-cnt-lt-100 {
+                    then {
+                        status {
+                            color green;
+                            message "TNP fragment drop count difference between two successive samples is less than 100. Health is good";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

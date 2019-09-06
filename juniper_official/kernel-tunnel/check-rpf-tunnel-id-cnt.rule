@@ -1,0 +1,120 @@
+/*
+ * This rule helps in monitoring system health based on the value of rpf tunnel id count.
+ *
+ * The sensor used is openconfig.
+ * If the rpf tunnel id count value is between 80-95%, it is a warning sign.
+ * If it is more than 95%, the system is under risk. Else, the system is healthy.
+ */
+
+iceberg {
+    topic kernel.tunnel {
+        rule check-rpf-tunnel-id-cnt {
+            function rpf-tunnel-id-cnt-compare {
+                description "This function compares the current rpf tunnel id count in the system with the low and the high threshold values and returns the result";
+                path compare-rpf-tunnel-id-cnt.py;
+                method compare_rpf_tunnel_id_cnt;
+                argument rpf_tunnel_id_cnt {
+                    mandatory;
+                }
+                argument rpf_tunnel_id_max {
+                    mandatory;
+                }
+            }
+            sensor kernel-tunnel-sensor {
+                synopsis "kernel tunnel sensor";
+                description "Open config sensor for rpd tunnel id count";
+                open-config {
+                    sensor-name /junos/kernel/tunnel;
+                    frequency 1m;
+                }
+            }
+            field rpf-tunnel-id-cnt {
+                sensor kernel-tunnel-sensor {
+                    path /junos/kernel/tunnel/rpf-tunnelid-cnt;
+                }
+                type integer;
+                description "Print Current Rpf Tunnel Ids In Use";
+            }
+            field rpf-tunnel-id-cnt-result {
+                formula {
+                    user-defined-function {
+                        function-name rpf-tunnel-id-cnt-compare;
+                        argument rpf_tunnel_id_cnt "$rpf-tunnel-id-cnt";
+                        argument rpf_tunnel_id_max "$rpf-tunnel-id-max";
+                    }
+                }
+            }
+            field rpf-tunnel-id-max {
+                sensor kernel-tunnel-sensor {
+                    path /junos/kernel/tunnel/rpf-tunnelid-max;
+                }
+                type integer;
+                description "Print Maximum Rpf Tunnel Id's In The System";
+            }
+            trigger report-tunnel-rpf-id-cnt {
+                synopsis "Trigger for reporting rpf tunnel id count with open config sensor";
+                description "This trigger helps in reporting the health of the system based on the value of rpf tunnel id count. If this value is between 80-95%, it is a warning sign. If it is more than 95%, the system is under risk. Else, the system is healthy.";
+                frequency 1m;
+                term between_low_high_thresh {
+                    when {
+                        equal-to "$rpf-tunnel-id-cnt-result" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Rpf tunnel id count is between low and high thresholds. #rpf-tunnel-id-cnt: $rpf-tunnel-id-cnt #rpf-tunnel-id-max: $rpf-tunnel-id-max";
+                        }
+                    }
+                }
+                term above_high_thresh {
+                    when {
+                        equal-to "$rpf-tunnel-id-cnt-result" 2;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rpf tunnel id count is above high threshold, Monitor system activity. #rpf-tunnel-id-cnt: $rpf-tunnel-id-cnt #rpf-tunnel-id-max: $rpf-tunnel-id-max";
+                        }
+                    }
+                }
+                term below_low_thresh {
+                    then {
+                        status {
+                            color green;
+                            message "Rpf tunnel id count below threshold. No anomaly detected. #rpf-tunnel-id-cnt: $rpf-tunnel-id-cnt #rpf-tunnel-id-max: $rpf-tunnel-id-max";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

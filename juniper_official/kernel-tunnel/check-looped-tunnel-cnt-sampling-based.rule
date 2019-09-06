@@ -1,0 +1,109 @@
+/*
+ * This rule monitors system health based on looped tunnel count.
+ *
+ * The sensor used is openconfig.
+ * The rule throws red alarm if the difference between successive samples is non-zero.
+ * The rule kicks in when the result from "check-looped-tunnel-cnt" rule is green.
+ */
+
+iceberg {
+    topic kernel.tunnel {
+        rule check-looped-tunnel-cnt-sampling-based {
+            sensor kernel-tunnel-sensor {
+                synopsis "kernel tunnel sensor";
+                description "Open config sensor for looped tunnel count, used for sampling values";
+                open-config {
+                    sensor-name /junos/kernel/tunnel;
+                    frequency 1m;
+                }
+            }
+            field looped-tunnel-cnt {
+                reference {
+                    path "/topic[topic-name='kernel.tunnel']/rule[rule-name='check-looped-tunnel-cnt']/trigger[trigger-name='report-looped-tunnel-cnt']/looped-tunnel-cnt";
+                }
+                type integer;
+                description "Looped tunnel count value, for sampling, taken from the rule check-looped-tunnel-cnt";
+            }
+            field looped-tunnel-cnt-sampling {
+                sensor kernel-tunnel-sensor {
+                    path /junos/kernel/tunnel/looped-cnt;
+                }
+                type integer;
+                description "Looped tunnel count value, for sampling";
+            }
+            trigger report-looped-tunnel-cnt-sampling {
+                synopsis "Trigger for looped tunnel count(Sampling), with the sensor being Open config";
+                description "This trigger helps in monitoring system health, by sampling the looped tunnel count values. If the looped tunnel count value between successive samples is zero, no action is required. Else, the system needs monitoring";
+                frequency 1m;
+                term looped-tun-cnt-diff-non-zero {
+                    when {
+                        equal-to "$looped-tunnel-cnt" 0;
+                        increasing-at-least-by-value "$looped-tunnel-cnt-sampling" {
+                            value 1;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The looped tunnel count is increasing between successive samples. Action must be taken";
+                        }
+                    }
+                }
+                term looped-tun-cnt-diff-lt-0 {
+                    when {
+                        increasing-at-most-by-value "$looped-tunnel-cnt-sampling" {
+                            value -1;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Looped tunnel count is decreasing between successive samples. System must be monitored";
+                        }
+                    }
+                }
+                term looped-tun-cnt-diff-zero {
+                    then {
+                        status {
+                            color green;
+                            message "Looped tunnel count difference between successive samples is zero. No action required.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
