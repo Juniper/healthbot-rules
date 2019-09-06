@@ -1,0 +1,321 @@
+/*
+ * Detects PFE discards and notifies when anomalies are found.
+ * One inputs control detection
+ * 
+ *   1) discard-count, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the discards are greater than
+ *      'discard-count' for 60s. otherwise color is set to green.
+ */  
+healthbot {
+    topic linecard.pfe {
+        rule check-pfe-discards {
+             /*
+             * Monitors the pfe discards count on PFE. Notifies via the dashboard
+             * colors when the flaps increase by {{discard-count}} for every collected
+             * metric during a 60s time range (red). Otherwise the color is set to green
+             * 
+             * Use FPC and PFE names as key for rule.
+             */  
+            keys [ fpc-no pfe-no ];
+            synopsis "Packet forwarding engine hardware discard statistics analyzer";
+            description "Collects packet forwarding engine hardware discard statistics  and notifies when discard count increases";
+            sensor pfe-sensor {
+                synopsis "iAgent netconf sensor definition";
+                description "Collects data from network device netconf rpc using get-pfe-traffic-statistics";
+                iAgent {
+                    file pfe-discard-statistics.yml;
+                    table PfeDiscardStatisticsTable;
+                    frequency 60s;
+                }
+            }
+            field drop-threshold {
+                constant {
+                    value "{{discard-count}}";
+                }
+                type integer;
+                description "Drop count increase threshold";
+            }
+            field fpc-no {
+                sensor pfe-sensor {
+                    path pfe-fpc-index;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field pfe-no {
+                sensor pfe-sensor {
+                    path pfe-index;
+                }
+                type string;
+                description "PFE number";
+            }
+            trigger data-error-discard {
+                synopsis "PFE data error discards KPI";
+                description "Sets health based on the change in PFE data error discard count";
+                frequency 60s;
+                term is-data-error-discard {
+                    when {
+                        increasing-at-least-by-value "$data-error-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing data-error-discard count $data-error-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "Data-error-discard count $data-error-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-bad-route-discard {
+                synopsis "PFE bad route discards KPI";
+                description "Sets health based on the change in PFE bad route discard count";
+                frequency 60s;
+                term is-bad-route-discard {
+                    when {
+                        increasing-at-least-by-value "$bad-route-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing bad-route-discard drop count $bad-route-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-bad-route-discard {
+                    then {
+                        status {
+                            color green;
+                            message "bad-route-discard count $bad-route-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-bits-to-test-discard {
+                synopsis "PFE bits to test discards KPI";
+                description "Sets health based on the change in PFE bits to test discard count";
+                frequency 60s;
+                term is-bits-to-test-discard {
+                    when {
+                        increasing-at-least-by-value "$bits-to-test-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing bits-to-test-discard drop count $bits-to-test-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-bits-to-test-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Bits-to-test-discard count $bits-to-test-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-fabric-discards {
+                synopsis "PFE fabric discards KPI";
+                description "Sets health based on the change in PFE fabric discard count";
+                frequency 60s;
+                term is-fabric-drop {
+                    when {
+                        increasing-at-least-by-value "$fabric-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing fabric drop count $fabric-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-fabric-drop {
+                    then {
+                        status {
+                            color green;
+                            message "Fabric drop count $fabric-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-info-cell-discard {
+                synopsis "PFE info cell discards KPI";
+                description "Sets health based on the change in PFE info cell discard count";
+                frequency 60s;
+                term is-info-cell-discard {
+                    when {
+                        increasing-at-least-by-value "$info-cell-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing info-cell-discard drop count $info-cell-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-info-cell-discard {
+                    then {
+                        status {
+                            color green;
+                            message "info-cell-discard count $info-cell-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-invalid-iif-discard {
+                synopsis "PFE invalid IIF discards KPI";
+                description "Sets health based on the change in PFE invalid IIF discard count";
+                frequency 60s;
+                term is-invalid-iif-discard {
+                    when {
+                        increasing-at-least-by-value "$invalid-iif-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing invalid-iif-discard drop count $invalid-iif-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-invalid-iif-discard {
+                    then {
+                        status {
+                            color green;
+                            message "invalid-iif-discard count $invalid-iif-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-nexthop-discard {
+                synopsis "PFE nexthop discards KPI";
+                description "Sets health based on the change in PFE nexthop discard count";
+                frequency 60s;
+                term is-nexthop-discard {
+                    when {
+                        increasing-at-least-by-value "$nexthop-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing nexthop-discard drop count $nexthop-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-nexthop-discard {
+                    then {
+                        status {
+                            color green;
+                            message "nexthop-discard count $nexthop-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-stack-overflow-discard {
+                synopsis "PFE stack overflow discards KPI";
+                description "Sets health based on the change in PFE stack overflow discard count";
+                frequency 60s;
+                term is-stack-overflow-discard {
+                    when {
+                        increasing-at-least-by-value "$stack-overflow-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing stack-overflow-discard drop count $stack-overflow-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-stack-overflow-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Stack-overflow-discard count $stack-overflow-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-stack-underflow-discard {
+                synopsis "PFE stack underflow discards KPI";
+                description "Sets health based on the change in PFE stack underflow discard count";
+                frequency 60s;
+                term is-stack-underflow-discard {
+                    when {
+                        increasing-at-least-by-value "$stack-underflow-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing stack-underflow-discard drop count $stack-underflow-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-stack-underflow-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Stack-underflow-discard count $stack-underflow-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            trigger pfe-tcp-header-error-discard {
+                synopsis "PFE TCP header error discards KPI";
+                description "Sets health based on the change in PFE TCP header error discard count";
+                frequency 60s;
+                term is-tcp-header-error-discard {
+                    when {
+                        increasing-at-least-by-value "$tcp-header-error-discard";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing tcp-header-error-discard drop count $tcp-header-error-discard on FPC$fpc-no PFE$pfe-no";
+                        }
+                    }
+                }
+                term no-tcp-header-error-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Tcp-header-error-discard count $tcp-header-error-discard on FPC$fpc-no PFE$pfe-no is normal";
+                        }
+                    }
+                }
+            }
+            variable discard-count {
+                value 1;
+                description "PFE discard threshold: Number of discards increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
