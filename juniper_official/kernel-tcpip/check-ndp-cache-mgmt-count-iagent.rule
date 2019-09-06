@@ -1,0 +1,181 @@
+/*
+ * This rule checks for the neighbour NDP cache count on management interface.
+ *
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
+ * It shows red alarm when the count exceeds 95 percent of the maximum count or if there is an increase in drop count.
+ * It's sampling time is 1 minute.
+ */
+iceberg {
+    topic kernel.tcpip {
+        rule check-ndp-cache-mgmt-count-iagent {
+            synopsis "Check ndp management cache count ";
+            description "Check ndp management cache count";
+            function ndp-cache-mgmt-status {
+                description "This returns a value comparing the ndp management cache count with the threshold value";
+                path get_percent.py;
+                method get_percent_output;
+                argument actual_val {
+                    mandatory;
+                }
+                argument max_val {
+                    mandatory;
+                }
+                argument percent_val {
+                    mandatory;
+                }
+            }
+            sensor ndp-mgmt-cache-count-sensor {
+                synopsis "Sensor to check ndp management cache count";
+                description "Sensor to check ndp management cache count";
+                iAgent {
+                    file ndp_mgmt_cache.yml;
+                    table checkNdpMgmtCacheTable;
+                    frequency 1m;
+                }
+            }
+            field nbrcache-mgmt-cnt {
+                sensor ndp-mgmt-cache-count-sensor {
+                    path ndpcache_mgmt_cnt;
+                }
+                type integer;
+                description "Current ndp management cache count in the system";
+            }
+            field nbrcache-mgmt-drop-cnt {
+                sensor ndp-mgmt-cache-count-sensor {
+                    path ndpcache_mgmt_drop_cnt;
+                }
+                type integer;
+                description "Maximum ndp management cache drop count in the system";
+            }
+            field nbrcache-mgmt-max {
+                sensor ndp-mgmt-cache-count-sensor {
+                    path ndpcache_mgmt_max_cnt;
+                }
+                type integer;
+                description "Maximum ndp management cache count in the system";
+            }
+            field ndp-cache-mgmt-critical-percent {
+                constant {
+                    value "{{ndp-cache-mgmt-critical-percent-input}}";
+                }
+                description "ndp management cache percentage critical limit";
+            }
+            field ndp-cache-mgmt-warning-percent {
+                constant {
+                    value "{{ndp-cache-mgmt-warning-percent-input}}";
+                }
+                description "ndp management cache percentage warning limit";
+            }
+            field output-critical {
+                formula {
+                    user-defined-function {
+                        function-name ndp-cache-mgmt-status;
+                        argument max_val "$nbrcache-mgmt-max";
+                        argument actual_val "$nbrcache-mgmt-cnt";
+                        argument percent_val "$ndp-cache-mgmt-critical-percent";
+                    }
+                }
+                type integer;
+            }
+            field output-warning {
+                formula {
+                    user-defined-function {
+                        function-name ndp-cache-mgmt-status;
+                        argument max_val "$nbrcache-mgmt-max";
+                        argument actual_val "$nbrcache-mgmt-cnt";
+                        argument percent_val "$ndp-cache-mgmt-warning-percent";
+                    }
+                }
+                type integer;
+            }
+            trigger report-ndp-mgmt-cache-count-iagent {
+                synopsis "Trigger to check ndp management cache count";
+                description "Trigger to check ndp management cache count";
+                frequency 1m;
+                term ndp-mgmt-cache-drop {
+                    when {
+                        not-equal-to "$nbrcache-mgmt-drop-cnt" 0;
+                        increasing-at-least-by-value "$nbrcache-mgmt-drop-cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ndp management cache drops seen.ndp cache public drop count:$nbrcache-mgmt-drop-cnt ";
+                        }
+                    }
+                }
+                term ndp-mgmt-cache-count-critical {
+                    when {
+                        equal-to "$output-critical" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ndp management cache count is very high.ndp management cache count:$nbrcache-mgmt-cnt Maximum ndp management cache count: $nbrcache-mgmt-max ";
+                        }
+                    }
+                }
+                term ndp-mgmt-cache-count-warning {
+                    when {
+                        equal-to "$output-warning" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ndp management cache count is high.ndp management cache count:$nbrcache-mgmt-cnt Maximum ndp management cache count: $nbrcache-mgmt-max ";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "ndp management cache count normal.ndp management cache count:$nbrcache-mgmt-cnt Maximum ndp management cache count: $nbrcache-mgmt-max  ";
+                        }
+                    }
+                }
+            }
+            variable ndp-cache-mgmt-critical-percent-input {
+                value 95;
+                description "ndp management cache percentage to raise alarm when critical limit is reached";
+                type int;
+            }
+            variable ndp-cache-mgmt-warning-percent-input {
+                value 90;
+                description "ndp management cache percentage to raise alarm when warning limit is reached";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

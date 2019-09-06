@@ -1,0 +1,160 @@
+/*
+ * This rule checks for the private nexthop count in the system.
+ *
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
+ * It shows red alarm when the count exceeds 95 percent of the maximum count.
+ * It's sampling time is 1 minute.
+ */
+
+iceberg {
+    topic kernel.tcpip {
+        rule check-private-nh-count {
+            synopsis "To check the count of private nexthops.";
+            description "Detect private nexthop exhaustion.";
+            function private-nh-status {
+                description "This returns a value comparing the private nexthop count with the threshold value";
+                path get_percent.py;
+                method get_percent_output;
+                argument actual_val {
+                    mandatory;
+                }
+                argument max_val {
+                    mandatory;
+                }
+                argument percent_val {
+                    mandatory;
+                }
+            }
+            sensor kernel-tcpip-nexthop-private-count-sensor {
+                synopsis "To check the count of private nexthops.";
+                description "Detect private nexthop exhaustion.";
+                open-config {
+                    sensor-name /junos/kernel/tcpip/nhidx;
+                    frequency 1m;
+                }
+            }
+            field nexthop-priv-cnt {
+                sensor kernel-tcpip-nexthop-private-count-sensor {
+                    path /junos/kernel/tcpip/nhidx/nexthop-priv-cnt;
+                }
+                type integer;
+                description "Used private nexthop indices";
+            }
+            field nexthop-priv-max {
+                sensor kernel-tcpip-nexthop-private-count-sensor {
+                    path /junos/kernel/tcpip/nhidx/nexthop-priv-max;
+                }
+                type integer;
+                description "Maximum private nexthop indices";
+            }
+            field output-critical {
+                formula {
+                    user-defined-function {
+                        function-name private-nh-status;
+                        argument max_val "$nexthop-priv-max";
+                        argument actual_val "$nexthop-priv-cnt";
+                        argument percent_val "$private-nh-critical-percent";
+                    }
+                }
+                type integer;
+            }
+            field output-warning {
+                formula {
+                    user-defined-function {
+                        function-name private-nh-status;
+                        argument max_val "$nexthop-priv-max";
+                        argument actual_val "$nexthop-priv-cnt";
+                        argument percent_val "$private-nh-warning-percent";
+                    }
+                }
+                type integer;
+            }
+            field private-nh-critical-percent {
+                constant {
+                    value "{{private-nh-critical-percent-input}}";
+                }
+                description "Private nexthop percentage critical limit";
+            }
+            field private-nh-warning-percent {
+                constant {
+                    value "{{private-nh-warning-percent-input}}";
+                }
+                description "Private nexthop percentage warning limit";
+            }
+            trigger report-private-nh-count {
+                synopsis "To check the count of private nexthops.";
+                description "Used private nexthop indices";
+                frequency 1m;
+                term private-nh-count-critical {
+                    when {
+                        equal-to "$output-critical" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Private nexthop count is very high.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max ";
+                        }
+                    }
+                }
+                term private-nh-count-warning {
+                    when {
+                        equal-to "$output-warning" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Private nexthop count is high.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max ";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "Private nexthop count normal.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max ";
+                        }
+                    }
+                }
+            }
+            variable private-nh-critical-percent-input {
+                value 95;
+                description "Private nexthop percentage to raise alarm when critical limit is reached";
+                type int;
+            }
+            variable private-nh-warning-percent-input {
+                value 90;
+                description "Private nexthop percentage to raise alarm when warning limit is reached";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

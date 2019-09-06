@@ -1,0 +1,184 @@
+/*
+ * This rule checks for the neighbour ARP cache count on public interfaces.
+ *
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
+ * It shows red alarm when the count exceeds 95 percent of the maximum count or if there is an increase in drop count.
+ * It's sampling time is 1 minute.
+ */
+
+iceberg {
+    topic kernel.tcpip {
+        rule check-arp-cache-public-count-iagent {
+            synopsis "Check arp public cache count";
+            description "Check arp public cache count";
+            function arp-cache-public-status {
+                description "This returns a value comparing the arp public cache count with the threshold value";
+                path get_percent.py;
+                method get_percent_output;
+                argument actual_val {
+                    mandatory;
+                }
+                argument max_val {
+                    mandatory;
+                }
+                argument percent_val {
+                    mandatory;
+                }
+            }
+            sensor arp-public-cache-count-sensor {
+                synopsis "Sensor to check arp public cache count";
+                description "Sensor to check arp public cache count";
+                iAgent {
+                    file arp_public_cache.yml;
+                    table checkArpPublicCacheTable;
+                    frequency 1m;
+                }
+            }
+            field arp-cache-public-critical-percent {
+                constant {
+                    value "{{arp-cache-public-critical-percent-input}}";
+                }
+                description "arp public cache percentage critical limit";
+            }
+            field arp-cache-public-warning-percent {
+                constant {
+                    value "{{arp-cache-public-warning-percent-input}}";
+                }
+                description "arp public cache percentage warning limit";
+            }
+            field nbrcache-public-cnt {
+                sensor arp-public-cache-count-sensor {
+                    path arpcache_public_cnt;
+                }
+                type integer;
+                description "Current arp public cache count in the system";
+            }
+            field nbrcache-public-drop-cnt {
+                sensor arp-public-cache-count-sensor {
+                    path arpcache_public_drop_cnt;
+                }
+                type integer;
+                description "Maximum arp public cache drop count in the system";
+            }
+            field nbrcache-public-max {
+                sensor arp-public-cache-count-sensor {
+                    path arpcache_public_max_cnt;
+                }
+                type integer;
+                description "Maximum arp public cache count in the system";
+            }
+            field output-critical {
+                formula {
+                    user-defined-function {
+                        function-name arp-cache-public-status;
+                        argument max_val "$nbrcache-public-max";
+                        argument actual_val "$nbrcache-public-cnt";
+                        argument percent_val "$arp-cache-public-critical-percent";
+                    }
+                }
+                type integer;
+            }
+            field output-warning {
+                formula {
+                    user-defined-function {
+                        function-name arp-cache-public-status;
+                        argument max_val "$nbrcache-public-max";
+                        argument actual_val "$nbrcache-public-cnt";
+                        argument percent_val "$arp-cache-public-warning-percent";
+                    }
+                }
+                type integer;
+            }
+            trigger report-arp-public-cache-count-iagent {
+                synopsis "Trigger to check arp public cache count";
+                description "Trigger to check arp public cache count";
+                frequency 1m;
+                term arp-public-cache-drop {
+                    when {
+                        not-equal-to "$nbrcache-public-drop-cnt" 0;
+                        increasing-at-least-by-value "$nbrcache-public-drop-cnt" {
+                            value 1;
+                            time-range 25s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "arp public cache drops seen.arp public cache drop count:$nbrcache-public-drop-cnt";
+                        }
+                    }
+                }
+                term arp-public-cache-count-critical {
+                    when {
+                        equal-to "$output-critical" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "arp public cache count is very high.arp public cache count:$nbrcache-public-cnt Maximum arp public cache count: $nbrcache-public-max ";
+                        }
+                    }
+                }
+                term arp-public-cache-count-warning {
+                    when {
+                        equal-to "$output-warning" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "arp public cache count is high.arp public cache count:$nbrcache-public-cnt Maximum arp public cache count: $nbrcache-public-max ";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "arp public cache count normal.arp public cache count:$nbrcache-public-cnt Maximum arp public cache count: $nbrcache-public-max  ";
+                        }
+                    }
+                }
+            }
+            variable arp-cache-public-critical-percent-input {
+                value 95;
+                description "arp public cache percentage to raise alarm when critical limit is reached";
+                type int;
+            }
+            variable arp-cache-public-warning-percent-input {
+                value 90;
+                description "arp public cache percentage to raise alarm when warning limit is reached";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

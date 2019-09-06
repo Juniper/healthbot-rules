@@ -1,0 +1,182 @@
+/*
+ * This rule checks for the neighbour NDP cache count on  public interfaces.
+ *
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
+ * It shows red alarm when the count exceeds 95 percent of the maximum count or if there is an increase in drop count.
+ * It's sampling time is 1 minute.
+ */
+
+iceberg {
+    topic kernel.tcpip {
+        rule check-ndp-cache-public-count-iagent {
+            synopsis "Check ndp public cache count";
+            description "Check ndp public cache count";
+            function ndp-cache-public-status {
+                description "This returns a value comparing the ndp public cache count with the threshold value";
+                path get_percent.py;
+                method get_percent_output;
+                argument actual_val {
+                    mandatory;
+                }
+                argument max_val {
+                    mandatory;
+                }
+                argument percent_val {
+                    mandatory;
+                }
+            }
+            sensor ndp-public-cache-count-sensor {
+                synopsis "Sensor to check ndp public cache count";
+                description "Sensor to check ndp public cache count";
+                iAgent {
+                    file ndp_public_cache.yml;
+                    table checkNdpPublicCacheTable;
+                    frequency 1m;
+                }
+            }
+            field nbrcache-public-cnt {
+                sensor ndp-public-cache-count-sensor {
+                    path ndpcache_public_cnt;
+                }
+                type integer;
+                description "Current ndp public cache count in the system";
+            }
+            field nbrcache-public-drop-cnt {
+                sensor ndp-public-cache-count-sensor {
+                    path ndpcache_public_drop_cnt;
+                }
+                type integer;
+                description "Maximum ndp public cache drop count in the system";
+            }
+            field nbrcache-public-max {
+                sensor ndp-public-cache-count-sensor {
+                    path ndpcache_public_max_cnt;
+                }
+                type integer;
+                description "Maximum ndp public cache count in the system";
+            }
+            field ndp-cache-public-critical-percent {
+                constant {
+                    value "{{ndp-cache-public-critical-percent-input}}";
+                }
+                description "ndp public cache percentage critical limit";
+            }
+            field ndp-cache-public-warning-percent {
+                constant {
+                    value "{{ndp-cache-public-warning-percent-input}}";
+                }
+                description "ndp public cache percentage warning limit";
+            }
+            field output-critical {
+                formula {
+                    user-defined-function {
+                        function-name ndp-cache-public-status;
+                        argument max_val "$nbrcache-public-max";
+                        argument actual_val "$nbrcache-public-cnt";
+                        argument percent_val "$ndp-cache-public-critical-percent";
+                    }
+                }
+                type integer;
+            }
+            field output-warning {
+                formula {
+                    user-defined-function {
+                        function-name ndp-cache-public-status;
+                        argument max_val "$nbrcache-public-max";
+                        argument actual_val "$nbrcache-public-cnt";
+                        argument percent_val "$ndp-cache-public-warning-percent";
+                    }
+                }
+                type integer;
+            }
+            trigger report-ndp-public-cache-count-iagent {
+                synopsis "Trigger to to check ndp public cache count";
+                description "Trigger to check ndp public cache count";
+                frequency 1m;
+                term ndp-public-cache-drop {
+                    when {
+                        not-equal-to "$nbrcache-public-drop-cnt" 0;
+                        increasing-at-least-by-value "$nbrcache-public-drop-cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ndp public cache drops seen.ndp public cache drop count:$nbrcache-public-drop-cnt ";
+                        }
+                    }
+                }
+                term ndp-public-cache-count-critical {
+                    when {
+                        equal-to "$output-critical" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ndp public cache count is very high.ndp public cache count:$nbrcache-public-cnt Maximum ndp public cache count: $nbrcache-public-max ";
+                        }
+                    }
+                }
+                term ndp-public-cache-count-warning {
+                    when {
+                        equal-to "$output-warning" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ndp public cache count is high.ndp public cache count:$nbrcache-public-cnt Maximum ndp public cache count: $nbrcache-public-max ";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "ndp public cache count normal.ndp public cache count:$nbrcache-public-cnt Maximum ndp public cache count: $nbrcache-public-max  ";
+                        }
+                    }
+                }
+            }
+            variable ndp-cache-public-critical-percent-input {
+                value 95;
+                description "ndp public cache percentage to raise alarm when critical limit is reached";
+                type int;
+            }
+            variable ndp-cache-public-warning-percent-input {
+                value 90;
+                description "ndp public cache percentage to raise alarm when warning limit is reached";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

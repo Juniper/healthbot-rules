@@ -1,0 +1,161 @@
+/*
+ * This rule checks for the clone route count in the system.
+ *
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
+ * It shows red alarm when the count exceeds 95 percent of the maximum count.
+ * It's sampling time is 1 minute.
+ */
+
+iceberg {
+    topic kernel.tcpip {
+        rule check-clone-route-count-iagent {
+            synopsis "Check clone route";
+            description "Check clone route count";
+            function clone-route-status {
+                description "This returns a value comparing the Clone route count with the threshold value";
+                path get_percent.py;
+                method get_percent_output;
+                argument actual_val {
+                    mandatory;
+                }
+                argument max_val {
+                    mandatory;
+                }
+                argument percent_val {
+                    mandatory;
+                }
+            }
+            sensor clone-route-count-sensor {
+                synopsis "clone route count sensor";
+                description "Sensor to check clone route count";
+                iAgent {
+                    file clone_route_count.yml;
+                    table cloneRouteTable;
+                    frequency 1m;
+                }
+            }
+            field clone-route-count {
+                sensor clone-route-count-sensor {
+                    path route_clone_cnt;
+                }
+                type integer;
+                description "Current clone routes in the system";
+            }
+            field clone-route-critical-percent {
+                constant {
+                    value "{{clone-route-critical-percent-input}}";
+                }
+                description "Clone route percentage critical limit";
+            }
+            field clone-route-max {
+                sensor clone-route-count-sensor {
+                    path route_clone_max;
+                }
+                type integer;
+                description "Maximum Clone routes in the system";
+            }
+            field clone-route-warning-percent {
+                constant {
+                    value "{{clone-route-warning-percent-input}}";
+                }
+                description "Clone route percentage warning limit";
+            }
+            field output-critical {
+                formula {
+                    user-defined-function {
+                        function-name clone-route-status;
+                        argument max_val "$clone-route-max";
+                        argument actual_val "$clone-route-count";
+                        argument percent_val "$clone-route-critical-percent";
+                    }
+                }
+                type integer;
+            }
+            field output-warning {
+                formula {
+                    user-defined-function {
+                        function-name clone-route-status;
+                        argument max_val "$clone-route-max";
+                        argument actual_val "$clone-route-count";
+                        argument percent_val "$clone-route-warning-percent";
+                    }
+                }
+                type integer;
+            }
+            trigger report-clone-route-count-iagent {
+                synopsis "Trigger to check clone route count ";
+                description "Trigger to check clone route count";
+                frequency 1m;
+                term clone-route-count-critical {
+                    when {
+                        equal-to "$output-critical" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Clone route count is very high.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max ";
+                        }
+                    }
+                }
+                term clone-route-count-warning {
+                    when {
+                        equal-to "$output-warning" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Clone route count is high.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max ";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "Clone route count normal.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max  ";
+                        }
+                    }
+                }
+            }
+            variable clone-route-critical-percent-input {
+                value 95;
+                description "Clone route percentage to raise alarm when critical limit is reached";
+                type int;
+            }
+            variable clone-route-warning-percent-input {
+                value 90;
+                description "Clone route percentage to raise alarm when warning limit is reached";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

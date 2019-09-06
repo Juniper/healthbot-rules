@@ -1,0 +1,134 @@
+/*
+ * This rule checks for the ether queue statistics in the system.
+ *
+ * It shows yellow alarm when the difference between packet queued and packet handled exceeds 95 percent of the queue size.
+ * It shows red alarm if there is an increase in drop count.
+ * It's sampling time is 30 seconds.
+ */
+iceberg { 
+    topic kernel.tcpip {   
+        rule check-ether-queue-stats-iagent {
+            synopsis "check ether queue statistics in the system";
+            description "check ether queue statistics in the system";
+            function pkt-queued-handled-abs {
+                description "this returns an absolute value between queue and dequeue variable";
+                path get_queued_handled_abs.py;
+                method get_queued_handled_pkt_abs_value;
+                argument pkt_handled_arg {
+                    mandatory;
+                }
+                argument pkt_queued_arg {
+                    mandatory;
+                }
+            }
+            sensor kernel-tcpip-ether-queue-stats-sensor {
+                synopsis "sensor to check ether queue statistics in the system";
+                description "sensor to check ether queue statistics in the system";
+                iAgent {
+                    file ether_netisr_work.yml;
+                    table etherNetisrWorkTable;
+                    frequency 30s;
+                }
+            }
+            field ether-drop-cnt-value {
+                sensor kernel-tcpip-ether-queue-stats-sensor {
+                    path ether_pkt_drop;
+                }
+                type integer;
+                description "drop packet count";
+            }
+            field ether-pkt-handled-value {
+                sensor kernel-tcpip-ether-queue-stats-sensor {
+                    path ether_pkt_handled;
+                }
+                type integer;
+                description "packets handled";
+            }
+            field ether-pkt-queued-value {
+                sensor kernel-tcpip-ether-queue-stats-sensor {
+                    path ether_pkt_queued;
+                }
+                type integer;
+                description "packets queued";
+            }
+            field pkt-queued-handled-abs-value {
+                formula {
+                    user-defined-function {
+                        function-name pkt-queued-handled-abs;
+                        argument pkt_queued_arg "$ether-pkt-queued-value";
+                        argument pkt_handled_arg "$ether-pkt-handled-value";
+                    }
+                }
+                type integer;
+        }
+            trigger report-ether-queue-stats-iagent {
+            synopsis "trigger to check ether queue statistics in the system";
+            description "trigger to check ether queue statistics in the system";
+            frequency 30s;
+            term ether-queue-stats-abnormal {
+                when {
+                    not-equal-to "$ether-drop-cnt-value" 0;
+                    increasing-at-least-by-value "$ether-drop-cnt-value" {
+                        value 1;
+                        time-range 105s;
+                    }
+                }
+                then {
+                    status {
+                        color red;
+                        message "status abnormal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                    }
+                }
+            }
+            term ether-queue-stats-normal {
+                when {
+                    greater-than "$pkt-queued-handled-abs-value" 2850;
+                }
+                then {
+                    status {
+                        color yellow;
+                        message " status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                    }
+                }
+            }
+            term default-term {
+                then {
+                    status {
+                        color green;
+                        message "status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                    }
+                }
+            }
+        }
+        rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.1R1 {
+                                       release-support min-supported-release;
+                                        platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                    }
+                                }
+                            products PTX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,181 @@
+/*
+ * This rule checks for the neighbour NDP cache count on  IRI(internal routing interface).
+ *
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
+ * It shows red alarm when the count exceeds 95 percent of the maximum count or if there is an increase in drop count.
+ * It's sampling time is 1 minute.
+ */
+
+iceberg {
+    topic kernel.tcpip {
+        rule check-ndp-cache-iri-count {
+            synopsis "Check ndp iri cache count";
+            description "Check ndp iri cache count";
+            function ndp-cache-iri-status {
+                description "This returns a value comparing the ndp iri cache count with the threshold value";
+                path get_percent.py;
+                method get_percent_output;
+                argument actual_val {
+                    mandatory;
+                }
+                argument max_val {
+                    mandatory;
+                }
+                argument percent_val {
+                    mandatory;
+                }
+            }
+            sensor kernel-tcpip-ndp-iri-cache-count-sensor {
+                synopsis "Sensor to check ndp iri cache count";
+                description "Sensor to check ndp iri cache count";
+                open-config {
+                    sensor-name /junos/kernel/tcpip/ndp;
+                    frequency 1m;
+                }
+            }
+            field nbrcache-iri-cnt {
+                sensor kernel-tcpip-ndp-iri-cache-count-sensor {
+                    path /junos/kernel/tcpip/ndp/nbrcache-iri-cnt;
+                }
+                type integer;
+                description "Current ndp iri cache count in the system";
+            }
+            field nbrcache-iri-drop-cnt {
+                sensor kernel-tcpip-ndp-iri-cache-count-sensor {
+                    path /junos/kernel/tcpip/ndp/nbrcache-iri-drop-cnt;
+                }
+                type integer;
+                description "Maximum ndp iri cache drop count in the system";
+            }
+            field nbrcache-iri-max {
+                sensor kernel-tcpip-ndp-iri-cache-count-sensor {
+                    path /junos/kernel/tcpip/ndp/nbrcache-iri-max;
+                }
+                type integer;
+                description "Maximum ndp iri cache count in the system";
+            }
+            field ndp-cache-iri-critical-percent {
+                constant {
+                    value "{{ndp-cache-iri-critical-percent-input}}";
+                }
+                description "ndp iri cache percentage critical limit";
+            }
+            field ndp-cache-iri-warning-percent {
+                constant {
+                    value "{{ndp-cache-iri-warning-percent-input}}";
+                }
+                description "ndp iri cache percentage warning limit";
+            }
+            field output-critical {
+                formula {
+                    user-defined-function {
+                        function-name ndp-cache-iri-status;
+                        argument max_val "$nbrcache-iri-max";
+                        argument actual_val "$nbrcache-iri-cnt";
+                        argument percent_val "$ndp-cache-iri-critical-percent";
+                    }
+                }
+                type integer;
+            }
+            field output-warning {
+                formula {
+                    user-defined-function {
+                        function-name ndp-cache-iri-status;
+                        argument max_val "$nbrcache-iri-max";
+                        argument actual_val "$nbrcache-iri-cnt";
+                        argument percent_val "$ndp-cache-iri-warning-percent";
+                    }
+                }
+                type integer;
+            }
+            trigger report-ndp-iri-cache-count {
+                synopsis "Trigger to check ndp iri cache count";
+                description "Trigger to check ndp iri cache count";
+                frequency 1m;
+                term ndp-iri-cache-drop {
+                    when {
+                        not-equal-to "$nbrcache-iri-drop-cnt" 0;
+                        increasing-at-least-by-value "$nbrcache-iri-drop-cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ndp iri cache drops seen.ndp cache iri drop count:$nbrcache-iri-drop-cnt ";
+                        }
+                    }
+                }
+                term ndp-iri-cache-count-critical {
+                    when {
+                        equal-to "$output-critical" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ndp iri cache count is very high.ndp iri cache count:$nbrcache-iri-cnt Maximum ndp iri cache count: $nbrcache-iri-max ";
+                        }
+                    }
+                }
+                term ndp-iri-cache-count-warning {
+                    when {
+                        equal-to "$output-warning" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ndp iri cache count is high.ndp iri cache count:$nbrcache-iri-cnt Maximum ndp iri cache count: $nbrcache-iri-max ";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "ndp iri cache count normal.ndp iri cache count:$nbrcache-iri-cnt Maximum ndp iri cache count: $nbrcache-iri-max  ";
+                        }
+                    }
+                }
+            }
+            variable ndp-cache-iri-critical-percent-input {
+                value 95;
+                description "ndp iri cache percentage to raise alarm when critical limit is reached";
+                type int;
+            }
+            variable ndp-cache-iri-warning-percent-input {
+                value 90;
+                description "ndp iri cache percentage to raise alarm when warning limit is reached";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
