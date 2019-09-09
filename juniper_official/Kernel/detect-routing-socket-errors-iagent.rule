@@ -1,0 +1,125 @@
+/*
+ * This rule checks for the total number of routing socket errors at any given time in the system.
+ * Routing socket errors includes errors returned from rtsock, veto and mproc layers.
+ * It monitors the total number of routing socket errors and raises an alarm if there are too many of
+ * these detected for significant duration of time.
+ *
+ * This rule will check if the error has benn increased by 100 from its previous value in ALL the samples
+ * for the last 70 or 130 seconds and raises the alarm accordingly.
+ */
+iceberg {
+    topic kernel.rtsock {
+        rule detect-routing-socket-errors-iagent {
+            synopsis "Detect Routing Socket errors in the system.";
+            description "Detect errors in rtsock, veto and mproc layers.";
+            sensor rtsock-error-count-sensor {
+                synopsis "Rtsock error count sensor.";
+                description "sensor to keep track of rtsock error counts.";
+                iAgent {
+                    file rtsock-error-count.yml;
+                    table getRtsockErrorCountTable;
+                    frequency 20s;
+                }
+            }
+            field rtsock-error-count-threshold {
+                constant {
+                    value "{{rtsock-error-count-threshold-input}}";
+                }
+                description "RTSOCK Error count threshold value.";
+            }
+            field rtsock-total-error-count {
+                sensor rtsock-error-count-sensor {
+                    path total_error_count;
+                }
+                type integer;
+                description "Total rtsock error count - includes veto, mproc and generic errors.";
+            }
+            field rtsock-total-veto-count {
+                sensor rtsock-error-count-sensor {
+                    path total_veto_count;
+                }
+                type integer;
+                description "Total rtsock veto count.";
+            }
+            trigger report-rtsock-errors-iagent {
+                synopsis "Trigger to check rtsock error count.";
+                description "Trigger to check rtsock error count";
+                frequency 20s;
+                term rtsock-errors-critical-iagent {
+                    when {
+                        not-equal-to "$rtsock-total-error-count" 0;
+                        increasing-at-least-by-value "$rtsock-total-error-count" {
+                            value "$rtsock-error-count-threshold";
+                            time-range 130s;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Too many rtsock errors detected. Total rtsock error count:($rtsock-total-error-count), veto count:($rtsock-total-veto-count)";
+                        }
+                    }
+                }
+                term rtsock-errors-minor-iagent {
+                    when {
+                        not-equal-to "$rtsock-total-error-count" 0;
+                        increasing-at-least-by-value "$rtsock-total-error-count" {
+                            value "$rtsock-error-count-threshold";
+                            time-range 70s;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Few rtsock errors detected. Total rtsock error count:($rtsock-total-error-count), veto count:($rtsock-total-veto-count)";
+                        }
+                    }
+                }
+                term default-term-iagent {
+                    then {
+                        status {
+                            color green;
+                            message "Rtsock error count is under threshold. No anomaly detected.";
+                        }
+                    }
+                }
+            }
+            variable rtsock-error-count-threshold-input {
+                value 100;
+                description "RTSOCK Error count threshold value.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
