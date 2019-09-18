@@ -1,0 +1,198 @@
+/*
+ * Detects BGP neighbor state changes and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) "neighbors" is a regular expression that matches the BGP neighbors
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all bap neighbors. Use something like '172.16.*' to match all neighbor
+ *      addresses which are in 172.16.0.0/16 network range.
+ *   2) flap-count-threshold, is the threshold that causes the rule to 
+ *      report an anomaly.  By default value is 80
+ */
+iceberg {
+    topic protocol.bgp  {
+        rule check-snmp-bgp-neighbor-flaps {
+            keys neighbor-address;
+            synopsis "BGP neighbor flaps, neighbor state change detector";
+            description "Collects BGP session details and notify anomalies based on threshold values ";
+            sensor bgp-sensor {
+        	    synopsis "BGP snmp sensor definition";
+                description "BGP SNMP sensor to collect data from network device";
+                snmp {
+                    table BGP4-MIB::bgpPeerTable;
+                    frequency 30s;
+                }
+            }
+            field established-transitions {
+                sensor bgp-sensor {
+                    path bgpPeerFsmEstablishedTransitions;
+                }
+                type integer;
+                description "Number of neighbor session flaps";
+            }
+            field flap-count-threshold {
+                constant {
+                    value "{{flaps-threshold}}";
+                }
+                type integer;
+                description "Flap count increase threshold";
+            }
+            field last-established {
+                sensor bgp-sensor {
+                    path bgpPeerFsmEstablishedTime;
+                }
+                type string;
+                description "BGP session last established time";
+            }                                   
+            field neighbor-address {
+                sensor bgp-sensor {
+                    where "bgpPeerRemoteAddr =~ /{{neighbors}}/";
+                    path bgpPeerRemoteAddr;
+                }
+                type string;
+                description "BGP neighbor addresses to monitor";
+            }
+            field session-state {
+                sensor bgp-sensor {
+                    path bgpPeerState;
+                }
+                type string;
+                description "BGP session status";
+            }
+        	/*
+            * Neighbor flap detection logic
+            */
+            trigger neigbor-flap {
+        	    synopsis "BGP session state KPI";
+                description "Report anoamoly based on the neigbor-flap count ";
+                frequency 30s;
+                term is-session-flapping {
+                    when {
+                        increasing-at-least-by-value "$established-transitions" {
+                            value "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor session flapping, last-established:$last-established";
+                        }
+                    }
+                }
+                term is-session-inconsistent {
+                    when {                      
+                        increasing-at-least-by-value "$established-transitions" {
+                            value "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Neighbor session inconsistent, last-established:$last-established";
+                        }
+                    }
+                }
+                term is-session-stable {
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor session stable, last-established:$last-established";
+                        }
+                    }
+                }
+            }
+        	/*
+            * Neighbor state change detection logic
+            */
+            trigger neigbor-state {
+        	    synopsis "BGP session state KPI";
+                description "Sets health based on change in BGP neighbor state";
+                frequency 30s;
+                term is-neighbor-up {
+                    when {
+                        equal-to "$session-state" 6;
+                    }
+                    then {                      
+                        status {
+                            color green;
+                            message "Neighbor($neighbor-address) session up";
+                        }
+                    }
+                }
+                term neighbor-down {
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor($neighbor-address) session down";
+                        }
+                    }
+                }
+            }
+            variable flaps-threshold {
+                value 1;
+                description "BGP neighbor session flaps threshold: Number of flap increase between metrics, before we report anomaly.";
+                type int;
+            }
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {             
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 12.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform EX46000;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                            }
+                            products MX {
+                                releases 14.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products PTX {
+                                releases 14.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX5000;
+                                }
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5110 QFX5200 ];
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }    
+    }
+}
