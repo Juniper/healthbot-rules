@@ -1,0 +1,91 @@
+/*
+ * Detects chassis alarms and notifies when anomalies are found.
+ *  
+ */
+ healthbot {
+    topic chassis.alarms {
+        rule check-chassis-alarms {
+            synopsis "Chassis alarms detector";
+            description "Collects chassis stats and notify anomalies when alarms found";
+	        /*
+            * Use alarm-description slot as key for rule.
+            */
+            keys alarm-description;
+            sensor chassis {
+			    synopsis "Chassis netconf alarm sensor";
+                description "Chassis iAgent sensor to collect data from network device";
+                iAgent {
+                    file Chassis-Alarms.yml;
+                    table ChassisAlarmTable;
+                    frequency 60s;
+                }
+            }
+            field alarm-description {
+                sensor chassis {
+                    path alarm-description;
+                    data-if-missing {
+                        value "No alarms currently active";
+                    }
+                }
+                type string;
+                description "Chassis alarm description";
+            }
+            /*
+            * Anomaly detection logic for buffer memory utilization.
+            */
+            trigger chassis-alarms {
+                synopsis "Chassis alarms KPI";
+                description "Sets health based on chassis alarm type";
+                frequency 60s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * major chassis alarms detected
+                * 
+                */
+                term is-major-alarm-exists {
+                    when {
+                        matches-with "$alarm-class" Major {
+                            ignore-case;
+                        }
+                        does-not-match-with "$alarm-description" "No alarms currently active";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Chassis alarms detected at $alarm-time, class:$alarm-class, $alarm-description";
+                        }
+                    }
+                }
+                /*
+                * Sets color to yellow and sends out an anomaly notification when
+                * medium or minor chassis alarms detected
+                * 
+                */
+                term is-minor-alarm-exists {
+                    when {
+                        does-not-match-with "$alarm-description" "No alarms currently active" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis alarms detected at $alarm-time, class:$alarm-class, $alarm-description";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term no-alarm {
+                    then {
+                        status {
+                            color green;
+                            message "No chassis alarms detected";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
