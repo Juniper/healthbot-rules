@@ -15,12 +15,12 @@
  *   3) out-octets-high-threshold, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 800000000 octets. This rule will set a
  *      dashboard color to red when *all* the output traffic exceed threshold
- *      for 180s. Use 8000000000 octets for 10G & 80000000000 for 100G interface. 
+ *      for 600s. Use 8000000000 octets for 10G & 80000000000 for 100G interface. 
  *
  *   4) out-octets-low-threshold, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 500000000 octets . This rule will set a
  *      dashboard color to yellow when *all* the output traffic exceed 
- *      threshold for 180s, otherwise color is set to green. Use 5000000000
+ *      threshold for 600s, otherwise color is set to green. Use 5000000000
  *      octets for 10G & 50000000000 for 100G interface. 
  *   5) stats-name, is a regular expression that matches the interface KPI
  *      statistics counter name that you would like to monitor. By default it's
@@ -30,20 +30,20 @@
  *   6) in-octets-high-threshold, is the threshold that causes the rule to 
  *      report an anomaly.  By default it's 800000000 octets. This rule will 
  *      set a dashboard color to red when *all* the input traffic is above 
- *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
+ *      threshold for 600 seconds period. Use 8000000000 octets for 10G &
  *      80000000000 for 100G interface.
  *
  *   7) in-octets-low-threshold, is the threshold that causes the rule to
  *      report an anomaly.  By default it's 500000000 octets . This rule will
  *      set a dashboard color to yellow when *all* the input traffic is above
- *      threshold for 180 seconds period, otherwise color is set to green.
+ *      threshold for 600 seconds period, otherwise color is set to green.
  *      Use 5000000000 octets for 10G & 50000000000 for 100G interface. 
  *
  *   8) in-errors-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
  *      color to red when *all* the error increases are greater than
- *      'in-errors-threshold-variable' for 180s. If it sees any errors increase for a
- *      period of less than 180s, it'll turn the color to yellow,
+ *      'in-errors-threshold-variable' for 600s. If it sees any errors increase for a
+ *      period of less than 600s, it'll turn the color to yellow,
  *      otherwise color is set to green.
  *
  *   9) in-errors-stats-name, is the error stats counter name in-error which is
@@ -52,14 +52,14 @@
  *   10) out-errors-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
  *      color to red when *all* the error increases are greater than
- *      'out-errors-threshold-variable' for 180s. If it sees any errors increase for a
- *      period of less than 180s, it'll turn the color to yellow,
+ *      'out-errors-threshold-variable' for 600s. If it sees any errors increase for a
+ *      period of less than 600s, it'll turn the color to yellow,
  *      otherwise color is set to green.
  *   11) flaps-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
  *      color to red when *all* the flap-increases are greater than
- *      'flaps-threshold-variable' for 180s. If it sees any flaps increase for a
- *      period of less than 180s, it'll turn the color to yellow,
+ *      'flaps-threshold-variable' for 600s. If it sees any flaps increase for a
+ *      period of less than 600s, it'll turn the color to yellow,
  *      otherwise color is set to green.
  */
 iceberg {
@@ -72,14 +72,14 @@ iceberg {
 	    	/*
             * Monitors interface input and output traffic. Notifies via the dashboard
             * colors when the traffic is above {{in-octets-high-threshold}} or {{out-octets-high-threshold}} 
-            * for every collected metric during a 180s time range (red).
+            * for every collected metric during a 600s time range (red).
             * The color is set to yellow when the traffic is above {{in-octets-low-threshold}} or 
             * {{out-octets-low-threshold}} for every collected metric during
-            * a 180s. Otherwise the color is set to green.
+            * a 600s. Otherwise the color is set to green.
             * 
 	    	* Monitors the interface in-errors and out-errors count on an interface.
             * Notifies via the dashboard colors when the flaps increase by {{in-errors-threshold-variable}}
-            * {{out-errors-threshold-variable}} for every collected metric during a 180s
+            * {{out-errors-threshold-variable}} for every collected metric during a 600s
             * time range (red).  The color is set to yellow if we see any
             * in errors increase by {{in-errors-threshold-variable}} or {{out-errors-threshold-variable}}. Otherwise the
             * color is set to green.
@@ -100,7 +100,7 @@ iceberg {
                 description "Interfaces snmp sensor to collect data from network device";
                 snmp {
                     table IF-MIB::ifTable;
-                    frequency 60s;
+                    frequency 300s;
                 }
             }
      		/*
@@ -224,7 +224,7 @@ iceberg {
             * Anomaly detection logic for link-flaps.
             */
 			trigger flap-count {
-                frequency 60s;
+                frequency 300s;
 				/*
                 * Sets color to red and sends out an anomaly notification when
                 * the interface carrier-transition ($flaps-count) count increases for
@@ -238,7 +238,7 @@ iceberg {
                     when {
                         increasing-at-least-by-value "$flap-count" {
                             value "$flaps-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }
                     then {
@@ -286,14 +286,14 @@ iceberg {
                 /*
                 * Sets color to red and sends out an anomaly notification when
                 * interface in errors ($in-errors-count) count increases for 
-                * all points in 180 seconds period.
+                * all points in 600 seconds period.
                 */
-                frequency 60s;
+                frequency 300s;
                 term is-interface-in-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$in-errors-count" {
                             value "$in-errors-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }
                     then {
@@ -327,7 +327,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "$interface-name is stable";
+                            message "In error count:$in-errors-count is normal on $interface-name";
                         }
                     }
                 }
@@ -342,14 +342,14 @@ iceberg {
                 * Sets color to red and sends out an anomaly notification
                 * when the interface input traffic ($in-octets-stats-value) is
                 * abovehigh threshold (in-octets-high-threshold) for all  
-                * points in a 180 seconds period.
+                * points in a 600 seconds period.
                 */                
-                frequency 60s;
+                frequency 300s;
                 term is-interface-in-traffic-abnormal {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
                             value "$high-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }
                     then {
@@ -363,13 +363,13 @@ iceberg {
                 * Sets color to yellow and sends out an anomaly notification
                 * when the interface input traffic($in-octets-stats-value) is
                 * above low threshold (in-octets-low-threshold) for all points 
-                * in a 180 seconds period.
+                * in a 600 seconds period.
                 */   
                 term is-interface-in-traffic-median {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
                             value "$low-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }
                     then {
@@ -400,7 +400,7 @@ iceberg {
         		/*
                 * Skips evaluation for admin down state interfaces
                 */
-                frequency 60s;
+                frequency 300s;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" 2;
@@ -444,14 +444,14 @@ iceberg {
                 /*
                 * Sets color to red and sends out an anomaly notification when
                 * the interface out errors ($out-errors-count) count increases
-                * for all points in 180 seconds period.
+                * for all points in 600 seconds period.
                 */
-                frequency 60s;
+                frequency 300s;
                 term is-interface-out-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$out-errors-count" {
                             value "$out-errors-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }
                     then {
@@ -485,7 +485,7 @@ iceberg {
                     then {                          
                         status {
                             color green;
-                            message "$interface-name is stable";
+                            message "Out error count:$out-errors-count is normal on $interface-name";
                         }
                     }
                 }
@@ -500,14 +500,14 @@ iceberg {
                 * Sets color to red and sends out an anomaly notification when
                 * the interface output traffic ($out-octets-stats-value) is
                 * above high threshold (out-octets-high-threshold) for all
-                * points in 180 seconds period.
+                * points in 600 seconds period.
                 */         
-                frequency 60s;
+                frequency 300s;
                 term is-interface-stats-abnormal {
                     when {
                         increasing-at-least-by-value "$out-octets-high-threshold" {
                             value "$out-octets-high-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }
                     then {
@@ -521,13 +521,13 @@ iceberg {
                 * Sets color to yellow and sends out an anomaly notification
                 * when the interface output traffic ($out-octets-stats-value)
                 * is above low threshold (out-octets-low-threshold) for all
-                * points in 180 seconds period.
+                * points in 600 seconds period.
                 */       			
      		    term is-interface-stats-median {
                     when {
                         increasing-at-least-by-value "$out-octets-stats-value" {
                             value "$out-octets-low-threshold";
-                            time-range 180s;
+                            time-range 600s;
                         }
                     }                               
                     then {
