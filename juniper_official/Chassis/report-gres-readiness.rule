@@ -1,0 +1,145 @@
+/*
+ * Check if slave RE is ready for failover
+ *
+ * In dual routing engine chassis, if graceful-switchover is configured, the
+ * slave routing engine syncs the FIB states from Master RE and declares itself 
+ * ready for failover event.
+ *
+ * If for some reason, Slave does not become ready for failover for significant
+ * amount of time, this rule will report it.
+ */
+iceberg {
+    topic chassis.gres {
+        rule report-gres-readiness {
+            synopsis "Check if slave RE is ready for failover";
+            description "Check whether Failover/GRES is configured and if slave RE is ready for a switchover";
+            sensor chassis-gres-sensor {
+                synopsis "Graceful Routing Engine Switchover (GRES) readiness state sensor";
+                description "monitor the GRES readiness state of the Dual-RE network device";
+                open-config {
+                    sensor-name /junos/chassis/gres;
+                    frequency 10m;
+                }
+            }
+            field configured-state {
+                sensor chassis-gres-sensor {
+                    path /junos/chassis/gres/configured-state;
+                }
+                type string;
+                description "Failover/GRES configured state";
+            }
+            field ore-present {
+                reference {
+                    path "/topic[topic-name='chassis.gres']/rule[rule-name=check-failover-configured]/ore-present";
+                }
+                type integer;
+                description "Dual RE or not";
+            }
+            field slave-connect-time {
+                sensor chassis-gres-sensor {
+                    path /junos/chassis/gres/slave-connect-time;
+                }
+                type integer;
+                description "Slave connect time";
+            }
+            field slave-kernel-ready {
+                sensor chassis-gres-sensor {
+                    path /junos/chassis/gres/slave-kernel-ready;
+                }
+                type string;
+                description "Whether slave kernel is gres ready or not";
+            }
+            trigger report-gres-readiness {
+                synopsis "report GRES readiness of a network device";
+                description "Report problems related to GRES readiness";
+                frequency 10m;
+                term not-dual-re-term {
+                    when {
+                        equal-to "$ore-present" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Other routing engine is not present, hence GRES rule not applicable on this device";
+                        }
+                    }
+                }
+                term gres-configured-term {
+                    when {
+                        matches-with "$configured-state" NOT_CONFIGURED;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis redundancy graceful-switchover is NOT configured. High availability at risk! ($configured-state, $ore-present)";
+                        }
+                    }
+                }
+                term gres-readiness-term {
+                    when {
+                        matches-with "$slave-kernel-ready" GRES_READY;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "GRES is ready for switchover (other RE: $ore-present)";
+                        }
+                    }
+                }
+                term gres-slave-reconnect-term {
+                    when {
+                        does-not-match-with "$slave-kernel-ready" GRES_READY;
+                        increasing-at-least-by-value "$slave-connect-time" {
+                            value 1;
+                            time-range 60m;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Slave has reconnected to Master and is resyncing states from it";
+                        }
+                    }
+                }
+                term slave-connected-term {
+                    when {
+                        equal-to "$slave-connect-time" 0 {
+                            time-range 30m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Slave is NOT connected to Master routing engine for over 30 minutes";
+                        }
+                    }
+                }
+                term gres-not-readiness-term {
+                    when {
+                        does-not-match-with "$slave-kernel-ready" GRES_READY;
+                        not-equal-to "$slave-connect-time" 0 {
+                            time-range 60m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Slave is NOT ready for GRES switchover for over 60 minutes";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "Slave is syncing states from Master routing engine";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
