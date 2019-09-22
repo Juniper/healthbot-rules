@@ -1,0 +1,90 @@
+healthbot {
+    topic linecard.optical {
+        description "Rules relevant to metrics on the optical interfaces";
+        synopsis "Optical interface rules";
+        rule check-optical-interfaces {
+            keys interface-name;
+            synopsis "Optical interface status analyser";
+            description "Optical interface status analyser monitors for loss of signal or FEC uncorrected words";
+            sensor optical-sensor {
+                open-config {
+                    sensor-name /junos/system/linecard/optical/;
+                    frequency 60s;
+                }
+            }
+            field fec-uncorrected-words {
+                sensor optical-sensor {
+                    path /junos/system/linecard/optical/optical-stats/stats/optical-pm/fec-uncorrected-words;
+                }
+                description "Number of code words received that could not be corrected. A non-zero value equals packet loss";
+            }
+            field interface-name {
+                sensor optical-sensor {
+                    path "/junos/system/linecard/optical/optical-stats/@if-name";
+                }
+                description "Interfaces to be monitored";
+            }
+            field loss-of-signal-alarm {
+                sensor optical-sensor {
+                    path /junos/system/linecard/optical/optical-stats/stats/optical-pm/loss-of-signal-alarm;
+                }
+                type string;
+                description "Loss Of Signal alarm";
+            }
+            trigger optical-interface-status {
+                synopsis "Optical interface KPI";
+                description "Monitors interface health for loss of signal or FEC uncorrected words";
+                frequency 60s;
+                term is-loss-of-signal-alarm {
+                    when {
+                        matches-with "$loss-of-signal-alarm" true;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name has a loss-of-signal alarm";
+                        }
+                    }
+                }
+                term is-fec-uncorrected-words {
+                    when {
+                        greater-than "$fec-uncorrected-words" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name has non-zero FEC uncorrected words";
+                        }
+                    }
+                }
+                term is-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name is normal";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value .*;
+                description "Interface names to monitor, regular expression, eg 'ot-.*'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products ACX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+     }
+}    
