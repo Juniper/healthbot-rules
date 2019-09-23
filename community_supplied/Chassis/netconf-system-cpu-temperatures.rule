@@ -9,14 +9,14 @@
  */
 healthbot {
     topic chassis.temperature  {
-        rule check-netconf-chassis-temperatures {
+        rule check-netconf-chassis-component-temperature {
 	    synopsis "Chassis component temperature change detector";
             description "Collects temperature details from chassis components and notify anomalies based on threshold values ";
 		    /*
             * Use componet-name as key for rule.
             */
             keys component-name;
-            function temp_degrees {
+            function temperature-in-degrees {
 			    description "Python application collects string from the iagent sensor and pick the temperature as integer for all chassis components";
                 path temp_degrees.py;
                 method temp_degrees;
@@ -58,7 +58,7 @@ healthbot {
             field temperature-value {
                 formula {
                     user-defined-function {
-                        function-name temp_degrees;
+                        function-name temperature-in-degrees;
                         argument temperature "$temperature";
                     }
                 }
@@ -81,7 +81,7 @@ healthbot {
                 * 
                 */ 
                 frequency 300s;
-                term is-component-temperature-is-abnormal {
+                term is-component-temperature-abnormal {
                     when {
                         greater-than "$temperature-value" "$threshold";
                     }
@@ -97,9 +97,9 @@ healthbot {
                 * temperature value increases more than dynamic threshold value
                 * 
                 */
-                term is-component-temperature-is-minimal {
+                term is-component-temperature-above-dt {
                     when {
-                        equal-to "$temperature-value" 1;
+                        equal-to "$dt-temperature-value" 1;
                     }
                     then {
                         status {
@@ -111,7 +111,7 @@ healthbot {
 				/*
                 * Defaults color to green.
                 */
-                term is-component-temperature-is-normal {
+                term component-temperature-is-normal {
                     then {
                         status {
                             color green;

@@ -4,7 +4,7 @@
  * 
  *   1) "neighbors" is a regular expression that matches the BGP neighbors
  *      that you would like to monitor.  By default it's '.*', which matches
- *      all bap neighbors. Use something like '172.16.*' to match all neighbor
+ *      all bgp neighbors. Use something like '172.16.*' to match all neighbor
  *      addresses which are in 172.16.0.0/16 network range.
  *   2) flap-count-threshold, is the threshold that causes the rule to 
  *      report an anomaly.  By default value is 80
@@ -59,17 +59,18 @@ iceberg {
                 type string;
                 description "BGP session status";
             }
-        	/*
+           /*
             * Neighbor flap detection logic
             */
             trigger neigbor-flap {
-        	    synopsis "BGP session state KPI";
+                synopsis "BGP session state KPI";
                 description "Report anoamoly based on the neigbor-flap count ";
                 frequency 180s;
                 term is-session-flapping {
                     when {
                         increasing-at-least-by-value "$established-transitions" {
                             value "$flaps-threshold";
+                            time-range 360s;
                         }
                     }
                     then {
@@ -101,11 +102,11 @@ iceberg {
                     }
                 }
             }
-        	/*
+           /*
             * Neighbor state change detection logic
             */
             trigger neigbor-state {
-        	    synopsis "BGP session state KPI";
+                synopsis "BGP session state KPI";
                 description "Sets health based on change in BGP neighbor state";
                 frequency 180s;
                 term is-neighbor-up {

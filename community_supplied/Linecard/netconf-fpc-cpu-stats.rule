@@ -25,7 +25,7 @@ healthbot {
                 iAgent {
                     file fpc-cpu-memory-stats.yml;
                     table FPCCpuMemoryStatsTable;
-                    frequency 300s;              
+                    frequency 90s;              
                 }
             }
             /*
@@ -36,7 +36,7 @@ healthbot {
                     dynamic-threshold {
                         algorithm k-means;
                         learning-period 7d;
-                        pattern-periodicity 1d;
+                        pattern-periodicity 1d,1h;
                         field-name "$memory-buffer-utilization";
                     }
                 }
@@ -48,19 +48,19 @@ healthbot {
                     dynamic-threshold {
                         algorithm k-means;
                         learning-period 7d;
-                        pattern-periodicity 1d;
+                        pattern-periodicity 1d,1h;
                         field-name "$cpu-total";
                     }
                 }
                 type integer;
                 description "dynamic threshold value for CPU utilization";
             }
-            field dt-heap-util {
+            field dt-heap-utilization {
                 formula {
                     dynamic-threshold {
                         algorithm k-means;      
                         learning-period 7d;
-                        pattern-periodicity 1d;
+                        pattern-periodicity 1d,1h;
                         field-name "$memory-heap-utilization";
                     }
                 }
@@ -92,7 +92,7 @@ healthbot {
                 * memory buffer utilization count increases more than threshold static ($threshold) value
                 * 
                 */
-                term is-buffer-memory-utilization-is-abnormal {
+                term is-buffer-memory-utilization-abnormal {
                     when {
                         greater-than "$memory-buffer-utilization" "$threshold";
                     }
@@ -108,7 +108,7 @@ healthbot {
                 * memory buffer utilization count increases more than dynamic threshold ($threshold) value
                 * 
                 */
-                term is-buffer-memory-utilization-is-minimal {
+                term is-buffer-memory-utilization-above-dt {
                     when {
                         equal-to "$dt-buffer-util" 1;
                     }
@@ -122,7 +122,7 @@ healthbot {
 				/*
                 * Defaults color to green.
                 */
-                term is-buffer-memory-utilization-is-normal {
+                term is-buffer-memory-utilization-normal {
                     then {
                         status {
                             color green;
@@ -141,7 +141,7 @@ healthbot {
                 * CPU utilization count increases more than static static ($threshold) value
                 * 
                 */				
-                term is-cpu-utilization-is-abnormal {
+                term is-cpu-utilization-abnormal {
                     when {
                         greater-than "$cpu-total" "$threshold";
                     }
@@ -157,7 +157,7 @@ healthbot {
                 * CPU utilization count increases more than dynamic threshold ($threshold) value
                 * 
                 */
-                term is-cpu-utilization-is-minimal {
+                term is-cpu-utilization-above-dt {
                     when {
                         equal-to "$dt-cpu-total" 1;
                     }
@@ -171,7 +171,7 @@ healthbot {
 				/*
                 * Defaults color to green.
                 */
-                term is-cpu-utilization-is-normal {
+                term is-cpu-utilization-normal {
                     then {
                         status {
                             color green;
@@ -190,7 +190,7 @@ healthbot {
                 * memory heap utilization count increases more than static static ($threshold) value
                 * 
                 */				
-                term is-heap-memory-utilization-is-abnormal {
+                term is-heap-memory-utilization-abnormal {
                     when {
                         greater-than "$memory-heap-utilization" "$threshold";
                     }
@@ -206,9 +206,9 @@ healthbot {
                 * heap memory utilization count increases more than dynamic threshold ($threshold) value
                 * 
                 */
-                term is-heap-memory-utilization-is-minimal {
+                term is-heap-utilization-above-dt{
                     when {
-                        equal-to "$dt-heap-util" 1;
+                        equal-to "$dt-heap-utilization" 1;
                     }
                     then {
                         status {
@@ -220,7 +220,7 @@ healthbot {
 				/*
                 * Defaults color to green.
                 */
-                term is-heap-memory-utilization-is-normal {
+                term is-heap-memory-utilization-normal {
                     then {
                         status {                
                             color green;

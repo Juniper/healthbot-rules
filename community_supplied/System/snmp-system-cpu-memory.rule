@@ -11,7 +11,7 @@ healthbot {
         rule check-snmp-system-cpu-memory {
             synopsis "System CPU, Memory Utilization change detector";
             description "Collects CPU, Memory Utilization details from Routing Engines and notify anomalies based on threshold values ";
-		    /*
+           /*
             * Use description as key for rule.
             */
             keys description;
@@ -23,12 +23,12 @@ healthbot {
                     frequency 300s;
                 }
             }
-			/*
+	   /*
             * Fields defined with variables, dynamic thresholds and constant values
             */
             field description {
                 sensor system-cpu-memory {
-                    where "jnxOperatingDescr =~ /{{comp-name}}/";
+                    where "jnxOperatingDescr =~ /{{component-name}}/";
                     path jnxOperatingDescr;
                 }
                 type string;
@@ -79,7 +79,7 @@ healthbot {
                 type integer;
 				description "System CPU utilization"; 
             }
-			/*
+           /*
             * Anomaly detection logic for buffer memory utilization.
             */
             trigger system-buffer {
@@ -89,7 +89,7 @@ healthbot {
                 * 
                 */ 
                 frequency 300s;                      
-                term is-system-buffer-memory-utilization-is-abnormal {
+                term is-system-buffer-memory-utilization-abnormal {
                     when {
                         greater-than "$system-buffer-memory" "$threshold";
                     }
@@ -100,12 +100,12 @@ healthbot {
                         }
                     }
                 }
-				/*
+	       /*
                 * Sets color to yellow and sends out an anomaly notification when
                 * memory buffer utilization count increases more than dynamic threshold value
                 * 
                 */
-                term is-system-buffer-memory-utilization-is-minimal {
+                term is-buffer-utilization-above-dt {
                     when {
                         equal-to "$dt-buffer-memory-utilization" 1;
                     }
@@ -116,10 +116,10 @@ healthbot {
                         }
                     }
                 }
-			    /*
+	       /*
                 * Defaults color to green.
                 */
-                term is-system-buffer-memory-utilization-is-normal {
+                term is-system-buffer-memory-utilization-normal {
                     then {
                         status {
                             color green;
@@ -132,13 +132,13 @@ healthbot {
             * Anomaly detection logic for CPU utilization.
             */
             trigger system-cpu {
-			    /*
+	       /*
                 * Sets color to red and sends out an anomaly notification when
                 * CPU utilization count increases more than threshold static ($threshold) value
                 * 
                 */ 
                 frequency 300s;
-                term is-system-cpu-utilization-is-abnormal {
+                term is-system-cpu-utilization-abnormal {
                     when {
                         greater-than "$system-cpu" "$threshold";
                     }
@@ -154,7 +154,7 @@ healthbot {
                 * CPU utilization count increases more than dynamic threshold value
                 * 
                 */
-                term is-system-cpu-utilization-is-minimal {
+                term is-system-cpu-utilization-above-dt {
                     when {
                         equal-to "$dt-cpu-utilization" 1;
                     }
@@ -168,7 +168,7 @@ healthbot {
 				/*
                 * Defaults color to green.
                 */
-                term is-system-cpu-utilization-is-normal {
+                term is-system-cpu-utilization-normal {
                     then {                          
                         status {
                             color green;
@@ -177,7 +177,7 @@ healthbot {
                     }
                 }
             }
-            variable comp-name {
+            variable component-name {
                 value "Routing Engine .*";
 				description "Collectes all routing engines CPU and memory utilization";
                 type string;
