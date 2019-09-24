@@ -1,6 +1,6 @@
 from __future__ import division
 '''
-This function isExceeding returns 'True' if % of size used out of reserved memory is exceeding the threshold
+This function isExceeding returns 'True' if % of size used out of resident memory is exceeding the threshold
 '''
 def isExceeding(size,res,threshold, **kwargs):
         if size.endswith('M'):
