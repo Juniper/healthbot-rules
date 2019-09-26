@@ -1,7 +1,7 @@
 healthbot {
     topic krt.statistics {
         rule check-krt-async-all {
-            rule-frequency 1m;
+            rule-frequency 90s;
             field krt-tree-current-count {
                 reference {
                     path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-current-count";
@@ -33,6 +33,7 @@ healthbot {
                 }
             }
             trigger krt-stuck-1 {
+                frequency 90s;
                 term is-krt-write-count-different {
                     when {
                         increasing-at-least-by-value "$write-count" {
@@ -84,6 +85,7 @@ healthbot {
                 }
             }
             trigger krt-stuck-2 {
+                frequency 90s;
                 term is-krt-tree-insert-count-greater {
                     when {
                         greater-than "$krt-tree-insert-count" "$krt-tree-delete-count";
@@ -108,6 +110,7 @@ healthbot {
                 }
             }
             trigger krt-stuck-3 {
+                frequency 90s;
                 term is-krt-stuck {
                     when {
                         range "$krt-tree-current-count" {
@@ -149,7 +152,7 @@ healthbot {
                 iAgent {
                     file krtcorrtable.yml;
                     table krtcorrtable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field krt-tree-current-count {
@@ -173,7 +176,7 @@ healthbot {
                 iAgent {
                     file krtiotable.yml;
                     table krtiotable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field krt-io-write-count {
@@ -187,7 +190,7 @@ healthbot {
                 iAgent {
                     file krtstate.yml;
                     table krtstate;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field krtq-async-count {
