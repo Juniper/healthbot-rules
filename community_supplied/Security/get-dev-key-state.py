@@ -28,7 +28,7 @@ def run():
         op_cli = dev.rpc.request_shell_execute(command="/usr/bin/whoami")
     except jnpr.junos.exception.RpcError:
         dev_key_msg = "feature unsupported"
-        return ({'fields':{"sb_color_result": sb_color_result, "dev_key_msg": dev_key_msg}})
+        return ({'fields':{"dev_key_color_result": dev_key_color_result, "dev_key_msg": dev_key_msg}})
 
     if hasattr(op_cli, 'xpath'):
         user = op_cli.xpath('.')
@@ -36,7 +36,7 @@ def run():
 
     if not root:
         dev_key_msg = "Rule must be run as root."
-        return ({'fields':{"sb_color_result": sb_color_result, "dev_key_msg": dev_key_msg}})
+        return ({'fields':{"dev_key_color_result": dev_key_color_result, "dev_key_msg": dev_key_msg}})
 
     op1 = dev.rpc.request_shell_execute(command="/bin/sh /usr/sbin/check-secureboot-status.sh | grep \"Dev Key Revocation Status:\"")
     obj1 = re.search('(?<=: ).*',op1.text)
