@@ -1,17 +1,17 @@
 /*
  * This rule checks for the neighbour ARP cache count on IRI(Internal routing interface).
  *
- * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
  * It shows red alarm when the count exceeds 95 percent of the maximum count or if there is an increase in drop count.
+ * It shows yellow alarm when the count exceeds 90 percent of the maximum count.
  * It's sampling time is 1 minute.
  */
-iceberg {
+healthbot {
     topic kernel.tcpip {
         rule check-arp-cache-iri-count {
-            synopsis "To check arp iri cache count in the system.";
-            description "To check arp iri cache count in the system.";
+            synopsis "To check ARP IRI cache count in the system";
+            description "To check ARP IRI cache count in the system";
             function arp-cache-iri-status {
-                description "This returns a value comparing the arp iri cache count with the threshold value";
+                description "This returns a value comparing the ARP IRI cache count with the threshold value";
                 path get_percent.py;
                 method get_percent_output;
                 argument actual_val {
@@ -25,8 +25,8 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-arp-iri-cache-count-sensor {
-                synopsis "Sensor to check arp iri cache count in the system.";
-                description "Sensor to check arp iri cache count in the system.";
+                synopsis "Sensor to check ARP IRI cache count in the system";
+                description "Sensor to check ARP IRI cache count in the system";
                 open-config {
                     sensor-name /junos/kernel/tcpip/arp;
                     frequency 1m;
@@ -36,34 +36,34 @@ iceberg {
                 constant {
                     value "{{arp-cache-iri-critical-percent-input}}";
                 }
-                description "arp iri cache percentage critical limit";
+                description "ARP IRI cache percentage critical limit";
             }
             field arp-cache-iri-warning-percent {
                 constant {
                     value "{{arp-cache-iri-warning-percent-input}}";
                 }
-                description "arp iri cache percentage warning limit";
+                description "ARP IRI cache percentage warning limit";
             }
             field nbrcache-iri-cnt {
                 sensor kernel-tcpip-arp-iri-cache-count-sensor {
                     path /junos/kernel/tcpip/arp/nbrcache-iri-cnt;
                 }
                 type integer;
-                description "Current arp iri cache count in the system";
+                description "Current ARP IRI cache count in the system";
             }
             field nbrcache-iri-drop-cnt {
                 sensor kernel-tcpip-arp-iri-cache-count-sensor {
                     path /junos/kernel/tcpip/arp/nbrcache-iri-drop-cnt;
                 }
                 type integer;
-                description "Maximum arp iri cache drop count in the system";
+                description "Maximum ARP IRI cache drop count in the system";
             }
             field nbrcache-iri-max {
                 sensor kernel-tcpip-arp-iri-cache-count-sensor {
                     path /junos/kernel/tcpip/arp/nbrcache-iri-max;
                 }
                 type integer;
-                description "Maximum arp iri cache count in the system";
+                description "Maximum ARP IRI cache count in the system";
             }
             field output-critical {
                 formula {
@@ -75,6 +75,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for red case";
             }
             field output-warning {
                 formula {
@@ -86,11 +87,12 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for yellow case";
             }
             trigger report-arp-iri-cache-count {
-                synopsis "Trigger to check arp iri cache count in the system.";
-                description "Trigger to check arp iri cache count in the system.";
-                frequency 1m;
+                synopsis "ARP IRI cache count analyser";
+                description "To monitor ARP IRI [cache count, drop count] and report anomaly when it exceeds threshold or when there is a drop";
+                frequency 90s;
                 term arp-iri-cache-drop {
                     when {
                         not-equal-to "$nbrcache-iri-drop-cnt" 0;
@@ -101,7 +103,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "arp management cache drops seen.arp IRI cache drop count:$nbrcache-iri-drop-cnt ";
+                            message "ARP IRI cache drops seen.ARP IRI cache drop count:$nbrcache-iri-drop-cnt";
                         }
                     }
                 }
@@ -112,7 +114,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "arp iri cache count is very high.arp iri cache count:$nbrcache-iri-cnt Maximum arp iri cache count: $nbrcache-iri-max ";
+                            message "ARP IRI cache count is very high.ARP IRI cache count:$nbrcache-iri-cnt Maximum ARP IRI cache count: $nbrcache-iri-max";
                         }
                     }
                 }
@@ -123,7 +125,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "arp iri cache count is high.arp iri cache count:$nbrcache-iri-cnt Maximum arp iri cache count: $nbrcache-iri-max ";
+                            message "ARP IRI cache count is high.ARP IRI cache count:$nbrcache-iri-cnt Maximum ARP IRI cache count: $nbrcache-iri-max";
                         }
                     }
                 }
@@ -131,19 +133,19 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "arp iri cache count normal.arp iri cache count:$nbrcache-iri-cnt Maximum arp iri cache count: $nbrcache-iri-max  ";
+                            message "ARP IRI cache count normal.ARP IRI cache count:$nbrcache-iri-cnt Maximum ARP IRI cache count: $nbrcache-iri-max";
                         }
                     }
                 }
             }
             variable arp-cache-iri-critical-percent-input {
                 value 95;
-                description "arp iri cache percentage to raise alarm when critical limit is reached";
+                description "ARP IRI cache percentage to raise alarm when critical limit is reached";
                 type int;
             }
             variable arp-cache-iri-warning-percent-input {
                 value 90;
-                description "arp iri cache percentage to raise alarm when warning limit is reached";
+                description "ARP IRI cache percentage to raise alarm when warning limit is reached";
                 type int;
             }
             rule-properties {
