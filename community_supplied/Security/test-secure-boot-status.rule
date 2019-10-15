@@ -1,17 +1,21 @@
 /*
- * This rule checks if secureboot is running and enforced and returns
+ * This rule checks if secure boot is running and enforced and returns
  * an error if it is not.
  *
  * This rule relies on a file present in 19.3R1 and beyond.
- * This rule is only applicible to devices where secureboot is capable.
- * If this rule is run on a device that is incapable of secureboot,
+ * This rule is only applicible to devices where secure boot is capable.
+ * If this rule is run on a device that is incapable of secure boot,
  * the result will be "secureboot status is unknonw" and the rule should be
  * removed.
  */
 healthbot {
     topic security {
+        description "Rules related to platform security";
         rule check-secureboot-status {
+            synopsis "System secure boot status";
+            description "Checks that secure boot is running and enforced";
             sensor secureboot-sensor {
+                description "Rule requires a command to be run on the host";
                 iAgent {
                     file test-secure-boot-status.yml;
                     table securebootTable;
@@ -20,6 +24,7 @@ healthbot {
             }
             trigger check-secureboot-status-trigger {
                 frequency 4w;
+                description "Script returns message and a number to determine color";
                 term secure-boot-enforced {
                     when {
                         equal-to "$sb_color_result" 0;

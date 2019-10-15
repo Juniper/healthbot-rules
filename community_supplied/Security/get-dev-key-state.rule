@@ -7,8 +7,12 @@
  */
 healthbot {
     topic security {
+        description "Rules related to platform security";
         rule get-dev-key-status {
+            synopsis "State of development keys";
+            description "Determines if development keys have been revoked";
             sensor dev-key-sensor {
+                description "Rule requires a command to be run on the host";
                 iAgent {
                     file get-dev-key-state.yml;
                     table devkeyTable;
@@ -17,6 +21,7 @@ healthbot {
             }
             trigger get-dev-key-status-trigger {
                 frequency 4w;
+                description "Script returns message and a number to determine color";
                 term dev-key-ok {
                     when {
                         equal-to "$dev_key_color_result" 0;
