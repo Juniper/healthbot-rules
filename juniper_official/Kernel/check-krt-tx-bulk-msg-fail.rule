@@ -1,0 +1,75 @@
+healthbot {
+    topic krt.statistics {
+        rule check-krt-tx-bulk-msg-fail {
+            keys krt-tx-bulk-state;
+            synopsis "KRT bulking statistics analyzer";
+            description "Collect KRT bulking statistics and notifies when message fail count increases";
+            sensor krt-tx-bulk-stats {
+                iAgent {
+                    file krt-tx-bulk-stats.yml;
+                    table KrtTxBulkStatsTable;
+                    frequency 60s;
+                }
+            }
+            field krt-tx-bulk-state {
+                sensor krt-tx-bulk-stats {
+                    path krt-tx-bulk-state;
+                }
+                type string;
+                description "Kernel routing table transmit bulking state";
+            }
+            field threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "KRT TX message fail count increase threshold";
+            }
+            trigger krt-bulk-msg-fail {
+                frequency 90s;
+                term is-msg-failed {
+                    when {
+                        increasing-at-least-by-value "$krt-tx-total-msg-fail" {
+                            value "$threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "krt-tx-total-msg-fail count is increasing: ($krt-tx-total-msg-fail), Sent=$krt-tx-total-msgs-sent, Success=$krt-tx-total-msg-success";
+                        }
+                    }
+                }
+                term msg-normal {
+                    then {
+                        status {
+                            color green;
+                            message "krt-tx-msgs-fail count is normal;($krt-tx-total-msg-fail), Sent=$krt-tx-total-msgs-sent, Success=$krt-tx-total-msg-success";
+                        }
+                    }
+                }
+            }
+            variable error-threshold {
+                value 1;
+                description "Error threshold: Number of KRT TX  bulk message error count increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                supported-healthbot-version 2.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

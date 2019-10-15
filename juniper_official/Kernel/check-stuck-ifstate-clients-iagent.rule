@@ -1,0 +1,52 @@
+/*
+ * This rule checks if there are any stuck ifstate clients present in the system.
+ * Though rare, but when any Ifstate client (application/FPC peer) gets stuck,
+ * it can result in resource accumulation and eventually can lead to traffic loss.
+ *
+ * It checks if the "slow peers" alarm has been raised on the device.
+ */
+healthbot {
+    topic kernel.ifstate {
+        rule check-stuck-ifstate-clients-iagent {
+            sensor stuck-client-sensor {
+                synopsis "Stuck ifstate client iAgent sensor";
+                description "iAgent sensor to monitor any stuck ifstate client on a network device";
+                iAgent {
+                    file fetch_stuck_client.yml;
+                    table stuckclientTable;
+                    frequency 1m;
+                }
+            }
+            field stuck-client-info {
+                sensor stuck-client-sensor {
+                    path stuck_client_info;
+                }
+                type string;
+            }
+            trigger report-stuck-ifstate-clients-iagent {
+                synopsis "Report stuck ifstate clients";
+                description "Monitor and report any stuck ifstate clients on the network device";
+                frequency 90s;
+                term found-stuck-clients {
+                    when {
+                        matches-with "$stuck-client-info" "slow peers are"
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Stuck clients info: $stuck-client-info";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "There are no stuck clients found in the system";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,83 @@
+healthbot {
+    topic krt.statistics {
+        rule check-krt-ack-timeouts {
+            keys krt-acknowledgement-enabled;
+            synopsis "Kernel route and next-hop acknowledgements statistics analyzer ";
+            description "This rule collects kernel route and next-hop acknowledgement statistics  periodically and notifies anomaly in case of timeout";
+            sensor krt-ack-stats-timeouts {
+                iAgent {
+                    file krt-ack-stats.yml;
+                    table KrtAckStatsTable;
+                    frequency 60s;
+                }
+            }
+            field threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "KRT route and next-hop timeout count increase threshold";
+            }
+            trigger tr-timeouts {
+                frequency 90s;
+                term route-timeouts {
+                    when {
+                        increasing-at-least-by-value "$krt-rt-acknowledgement-timeouts" {
+                            value "$threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "krt route acknowledgment timeouts are increasing. Value =($krt-rt-acknowledgement-timeouts)";
+                        }
+                        next;
+                    }
+                }
+                term nexthop-timeouts {
+                    when {
+                        increasing-at-least-by-value "$krt-nh-acknowledgement-timeouts" {
+                            value "$threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "KRT nexthop acknowledgement-timeouts are increasing.Value =($krt-nh-acknowledgement-timeouts)";
+                        }
+                    }
+                }
+                term no-timeouts {
+                    then {
+                        status {
+                            color green;
+                            message "Route ack and Nexthop ack timeouts are not increasing";
+                        }
+                    }
+                }
+            }
+            variable error-threshold {
+                value 1;
+                description "Error threshold: Number of timeout increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
