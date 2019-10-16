@@ -1,0 +1,88 @@
+/*
+ * This rule checks for the TCP Distributed denial-of-service attack(DDoS) attack count in the system.
+ *
+ * It shows RED alarm when the count is increased by minimum 1 from its previous value.
+ * It's sampling time is 1 minute.
+ */
+iceberg {
+    topic kernel.tcpip {
+        rule check-tcp-ddos-attack-count-iagent {
+            synopsis "Detect TCP DDoS Attack";
+            description "Check whether the system is under TCP DDoS attack or not";
+            sensor ddos-attack-sensor {
+                synopsis "iAgent sensor for TCP DDoS Attack";
+                description "Returns the TCP DDoS Attack status";
+                iAgent {
+                    file tcp-ddos-attack-count.yml;
+                    table tcpDdosAttackTable;
+                    frequency 1m;
+                }
+            }
+            field tcp-ddos-attack-cnt {
+                sensor ddos-attack-sensor {
+                    path tcp-ddos-attack;
+                }
+                type integer;
+                description "Indicates the system DDoS attack count";
+            }
+            trigger report-tcp-ddos-attack-count-iagent {
+                synopsis "Trigger for TCP DDoS Attack";
+                description "Checks for TCP DDoS Attack and raises an alarm";
+                frequency 1m;
+                term tcp-ddos-attack-present {
+                    when {
+                        not-equal-to "$tcp-ddos-attack-cnt" 0;
+                        increasing-at-least-by-value "$tcp-ddos-attack-cnt" {
+                            value 1;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "System under DDoS Attack.";
+                        }
+                    }
+                }
+                term no-tcp-ddos-attack {
+                    then {
+                        status {
+                            color green;
+                            message "No DDoS attacks detected";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

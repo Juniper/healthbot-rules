@@ -1,0 +1,88 @@
+/*
+ * This rule checks for the Junos Socket Replication PRL Queue full count in the system.
+ *
+ * It shows YELLOW alarm when the count is increased by minimum 1 from its previous value.
+ * It's sampling time is 1 minute.
+ */
+iceberg {
+    topic routing-options.nsr {
+        rule check-jsr-prl-queue-full-count-iagent {
+            synopsis "Detect JSR PRL Queue Full";
+            description "Checks for Junos Socket Replication PRL Queue Full";
+            sensor prl-queue-full-sensor {
+                synopsis "iAgent sensor for JSR PRL Queue Full";
+                description "Returns the PRL Queue Full count";
+                iAgent {
+                    file jsr-prl-queue-full-count.yml;
+                    table jsrPrlQueueFullTable;
+                    frequency 1m;
+                }
+            }
+            field jsr-prl-queue-full-cnt {
+                sensor prl-queue-full-sensor {
+                    path jsr-prl-queue-full;
+                }
+                type integer;
+                description "Number of times the PRL Queue Full detected";
+            }
+            trigger report-jsr-prl-queue-full-count-iagent {
+                synopsis "Trigger for JSR PRL Queue Full";
+                description "Checks for PRL Queue Full count and raises an alarm";
+                frequency 1m;
+                term if-jsr-prl-queue-full {
+                    when {
+                        not-equal-to "$jsr-prl-queue-full-cnt" 0;
+                        increasing-at-least-by-value "$jsr-prl-queue-full-cnt" {
+                            value 1;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Junos Socket Replication Packet Replication Layer Queue is Full.";
+                        }
+                    }
+                }
+                term if-jsr-prl-queue-not-full {
+                    then {
+                        status {
+                            color green;
+                            message "No Junos Socket Replication PRL Queuing detected";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

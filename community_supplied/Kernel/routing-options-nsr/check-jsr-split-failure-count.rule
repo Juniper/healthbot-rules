@@ -1,0 +1,87 @@
+/*
+ * This rule checks for the Junos Socket Replication Split failure count in the system.
+ *
+ * It shows YELLOW alarm when the count is increased by minimum 1 from its previous value.
+ * It's sampling time is 1 minute.
+ */
+iceberg {
+    topic routing-options.nsr {
+        rule check-jsr-split-failure-count {
+            synopsis "Detect JSR Split Failure";
+            description "Checks for Junos Socket Replication split failure";
+            sensor split-failure-sensor {
+                synopsis "Sensor for JSR Split Failure";
+                description "Returns the JSR Split Failure count";
+                open-config {
+                    sensor-name /junos/routing-options/nonstop-routing;
+                    frequency 1m;
+                }
+            }
+            field jsr-split-failure-cnt {
+                sensor split-failure-sensor {
+                    path /junos/routing-options/nonstop-routing/jsr-split-failure-cnt;
+                }
+                type integer;
+                description "Number of Replication Socket Split failures";
+            }
+            trigger report-jsr-split-failure-count {
+                synopsis "Trigger for JSR Split Failures";
+                description "Checks for Replication Socket Split failures and raises an alarm";
+                frequency 1m;
+                term jsr-split-failure-present {
+                    when {
+                        not-equal-to "$jsr-split-failure-cnt" 0;
+                        increasing-at-least-by-value "$jsr-split-failure-cnt" {
+                            value 1;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Junos Socket Replication split failure detected.";
+                        }
+                    }
+                }
+                term no-jsr-split-failure {
+                    then {
+                        status {
+                            color green;
+                            message "No Junos Socket Replication split failure detected";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

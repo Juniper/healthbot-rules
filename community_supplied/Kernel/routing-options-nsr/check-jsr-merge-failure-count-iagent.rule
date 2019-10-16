@@ -1,0 +1,88 @@
+/*
+ * This rule checks for the Junos Socket Replication Merge failure count in the system.
+ *
+ * It shows YELLOW alarm when the count is increased by minimum 1 from its previous value.
+ * It's sampling time is 1 minute.
+ */
+iceberg {
+    topic routing-options.nsr {
+        rule check-jsr-merge-failure-count-iagent {
+            synopsis "Detect JSR Merge Failure";
+            description "Checks for Junos Socket Replication merge failure";
+            sensor merge-failure-sensor {
+                synopsis "iAgent sensor for JSR Merge Failure";
+                description "Returns the JSR Merge Failure count";
+                iAgent {
+                    file jsr-merge-failure-count.yml;
+                    table jsrMergeFailureTable;
+                    frequency 1m;
+                }
+            }
+            field jsr-merge-failure-cnt {
+                sensor merge-failure-sensor {
+                    path jsr-merge-failures;
+                }
+                type integer;
+                description "Number of Replication Socket Merge failures";
+            }
+            trigger report-jsr-merge-failure-count-iagent {
+                synopsis "Trigger for JSR Merge Failures";
+                description "Checks for Replication Socket Merge failures and raises an alarm";
+                frequency 1m;
+                term jsr-merge-failure-present {
+                    when {
+                        not-equal-to "$jsr-merge-failure-cnt" 0;
+                        increasing-at-least-by-value "$jsr-merge-failure-cnt" {
+                            value 1;
+                            time-range 140s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Junos Socket Replication merge failure detected.";
+                        }
+                    }
+                }
+                term no-jsr-merge-failure {
+                    then {
+                        status {
+                            color green;
+                            message "No Junos Socket Replication merge failure detected";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.3R3 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
