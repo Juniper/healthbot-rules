@@ -1,2 +1,1 @@
-hshsh
-test
+Playbook rules for SRX devices
