@@ -1,0 +1,233 @@
+/*
+ * Monitors interface input & output traffic and notifies when anomalies are found.
+ * Four inputs control detection
+ *
+ *   1) interface-name-variable, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ *
+ *   2) high-threshold, is the threshold that causes the rule to 
+ *      report an anomaly.  By default it's 800000000 octets. This rule will 
+ *      set a dashboard color to red when *all* the input traffic is above 
+ *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
+ *      80000000000 for 100G interface.
+ *
+ *   3) low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 180 seconds period, otherwise color is set to green.
+ *      Use 5000000000 octets for 10G & 50000000000 for 100G interface. 
+ */
+iceberg {
+    topic interface.statistics {
+        description "Monitors and notify input & output traffic traffic";
+        synopsis "Interface statistics analyzer";
+        rule check-snmp-in-out-traffic {
+            synopsis "Interface input  and output traffic analyzer";
+            description "Collects input and output traffic (in-octets) periodically and notifies in case of traffic is above threshold";
+	    /*
+             * Monitors the interface input and output traffic. Notifies via the dashboard
+             * colors when the traffic is above {{high-threshold}}
+             * for every collected metric during a 180s time range (red).
+             * The color is set to yellow when the traffic is above
+             * {{low-threshold}} for every collected metric during 
+             * a 180s. Otherwise the color is set to green.
+             * 
+             * Use interface name and snmp index as keys for rule.
+             */
+	    keys [ index interface-name ];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor input-output-bytes {
+	        synopsis "Interface SNMP sensor definition";
+                description "Interfaces SNMP sensor to data from network device";
+                snmp {
+                    table IF-MIB::ifXTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{high-threshold}}";
+                }
+                type integer;
+                description "This field contains interface traffic high threshold value";
+            }
+            field index {
+                sensor input-output-bytes {
+                    path ifIndex;
+                }
+                type string;
+                description "This field contains interface index value";
+            }
+            field input-bytes {
+                sensor input-output-bytes {
+                    path ifHCInOctets;
+                }
+                type integer;
+                description "This field contains interface input-bytes value";
+            }
+            field interface-name {
+                sensor input-output-bytes {
+                    where "ifName =~ /{{interface-name-variable}}/";
+                    path ifName;
+                }                                   
+                type string;
+                description "This field contains the name of the interface";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold}}";
+                }
+                type integer;
+                description "This field contains interface traffic high threshold value";
+            }
+            field output-bytes {
+                sensor input-output-bytes {
+                    path ifHCOutOctets;
+                }
+                type integer;
+                description "This field contains interface Output-bytes value";
+            }
+	    /*
+             * Anomaly detection logic.
+             */
+            trigger input-bytes {
+                synopsis "Interface input traffic kpi";
+                description "Sets health based on input traffic exceed threshold";
+                frequency 60s;
+		/*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($input-bytes) is
+                 * abovehigh threshold (high-threshold) for all  
+                 * points in a 180 seconds period.
+                 */    
+                term is-input-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$input-bytes" {
+                            value "$high-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Input traffic for Interface=$interface-name is crossed high threshold value ($high-threshold), Value=($input-bytes)";
+                        }                           
+                    }
+                }
+		/*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($input-bytes) is
+                 * above low threshold (low-threshold) for all points 
+                 * in a 180 seconds period.
+                 */   
+                term is-input-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$input-bytes" {
+                            value "$low-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Input traffic for Interface=$interface-name is crossed high threshold value ($low-threshold), Value=($input-bytes)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */  
+                term is-input-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Input traffic for Interface=$interface-name is normal, Value=($input-bytes)";
+                        }
+                    }
+                }
+            }
+            trigger output-bytes {
+	     synopsis "Interface output traffic kpi";
+                description "Sets health based on output traffic exceed threshold"; 
+                frequency 60s;
+		/*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($output-bytes) is
+                 * abovehigh threshold (high-threshold) for all  
+                 * points in a 180 seconds period.
+                 */    
+                term is-output-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$high-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Output traffic for Interface=$interface-name is crossed Low threshold value ($high-threshold), Value=($output-bytes)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($output-bytes) is
+                 * above low threshold (low-threshold) for all points 
+                 * in a 180 seconds period.
+                 */   
+                term is-output-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$low-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Output traffic for Interface=($interface-name) is crossed low threshold value ($low-threshold), Value=($output-bytes)";
+                        }
+                    }
+                }
+		/*
+                 * Defaults color to green.
+                 */ 
+                term is-output-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Output-bytes for Interface=$interface-name is normal, Value=($output-bytes)";
+                        }                           
+                    }
+                }
+            }
+	    /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable high-threshold {
+                value 800000000;
+                description "Interface traffic high threshold value in octets.";
+                type int;
+            }
+            variable interface-name-variable {
+                value .*;
+                description "Interfaces to be monitored";
+                type string;
+            }
+            variable low-threshold {
+                value 500000000;
+                description "Interface traffic low threshold value in octets.";
+                type int;
+            }
+        }
+    }
+}

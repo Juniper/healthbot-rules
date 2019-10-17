@@ -1,0 +1,152 @@
+/*
+ * Detects linecards SPU utilization percentage and notifies when 
+ * anomalies are found.
+ * 
+ *   1) "spu-cpu-threshold" is the threshold that causes the rule to report
+ *      an anomaly. By default it's 80% of CPU utilization. This rule will set
+ *      a dashboard color to red when SPU utilization exceed high threshold
+ *  
+ */
+iceberg {
+    topic security {
+        description "Monitors and notify SPU performance details";
+        synopsis "FPC SPU performance statistics analyzer";
+        rule check-spu-performance-monitor {
+	    synopsis "FPC SPU performace analyzer";
+            description "Collects SPU performace for each PIC and notifies in case of stats is above threshold";
+            /*
+             * Monitors the SPU performace stats and notifies via the dashboard
+             * colors when the traffic is above {{spu-cpu-threshold}}
+             * it will mark as red.
+             * The color is set to yellow when the traffic is above dt-cpu-percentage.
+             * Otherwise the color is set to green.
+             * 
+             * Use pic-number re-name and slot as keys for rule.
+             */
+            keys [ pic-number re-name slot ];
+            function get-spu {
+                description "Python application collects string from the iagent sensor and pick the 30th sec performance as integer for all SPUs.";
+                path get_spu_performance.py;
+                method get_spu_performace;
+                argument performance_info {
+                    mandatory;
+                }
+            }
+	    /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor spu-monitor {
+                iAgent {
+                    file srx-cluster-performance-spu.yml;
+                    table MonitoringPerformanceSPUTable;
+                    frequency 60s;
+                }
+            }
+	    /*
+             * Fields defined with variables and constant values
+             */
+            field cpu-percentage-value {
+                formula {
+                    user-defined-function {
+                        function-name get-spu;
+                        argument performance_info "$performance";
+                    }
+                }
+                type integer;
+                description "This value contains 30th second performance for the line card";
+            }
+            field cpu-threshold {
+                constant {
+                    value "{{spu-cpu-threshold}}";
+                }
+                type integer;
+                description "Threshold value for SPU monitoring value";
+            }
+            field dt-cpu-percentage {
+                formula {
+                    dynamic-threshold {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$cpu-percentage-value";
+                    }
+                }
+                type integer;
+                description "This field contains dynamic threshold value for SPU cpu value";
+            }
+            field pic-number {
+                sensor spu-monitor {
+                    path pic-number;
+                }
+                type string;
+                description "This field contains FPC slot number";
+            }
+            field re-name {
+                sensor spu-monitor {
+                    path parent::*/parent::*/re-name;
+                }
+                type string;
+                description "This field contains node number";
+            }
+            field slot {
+                sensor spu-monitor {
+                    path fpc-number;
+                }
+                type string;                        
+                description "This field contains FPC slot number";
+            }
+	    /*
+             * Anomaly detection logic for SPU performace.
+             */
+            trigger spu-monitor {
+                frequency 60s;
+		/*
+                 * Sets color to red and sends out an anomaly notification when
+                 * SPU performace value for PIC increases more than threshold ($cpu-threshold)
+                 */ 
+                term is-spu-cpu-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-percentage-value" "$cpu-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "SPU CPU of Node=$re-name fpc slot = $slot & pic = $pic-number has crossed static threshold value ($cpu-threshold), Value=$cpu-percentage-value";
+                        }
+                    }
+                }
+		/*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * SPU performace value for PIC increases more than $dt-cpu-percentage value
+                 */ 
+                term is-spu-cpu-above-dt {
+                    when {
+                        equal-to "$dt-cpu-percentage" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "SPU CPU of Node=$re-name fpc slot = $slot & pic = $pic-number has crossed dynamic threshold value, Value=$cpu-percentage-value";
+                        }
+                    }
+                }
+		/*
+                 * Defaults color to green.
+                 */
+                term is-spu-cpu-normal {
+                    then {
+                        status {
+                            color green;            
+                            message "SPU CPU of Node=$re-name fpc slot = $slot & pic = $pic-number is normal, Value=$cpu-percentage-value";
+                        }
+                    }
+                }
+            }
+            variable spu-cpu-threshold {
+                value 80;
+                description "Threshold value for spu cpu percentage value";
+                type int;
+            }
+        }
+    }
+}
