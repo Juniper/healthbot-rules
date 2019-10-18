@@ -1,1 +1,1 @@
-Playbook rules for SRX devices
+Playbook rules for SRX devices.
