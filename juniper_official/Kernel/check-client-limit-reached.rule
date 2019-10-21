@@ -1,0 +1,54 @@
+/*
+ * This rule checks if any application has opened more than the allowed number
+ * of Ifstate based routing sockets.
+ */
+healthbot {
+    topic kernel.ifstate {
+        rule check-client-limit-reached {
+            sensor kernel-ifstate-sensor {
+                synopsis "Number of ifstate based routing sockets for an application";
+                description "Monitor number of ifstate based routing sockets opened by an application";
+                open-config {
+                    sensor-name /junos/kernel-ifstate;
+                    frequency 4m;
+                }
+            }
+            field client-limit-reached {
+                sensor kernel-ifstate-sensor {
+                    path /junos/kernel-ifstate/client-limit-reached;
+                }
+                type integer;
+                description "Client limit reached";
+                }
+            trigger report-ifstate-client-limit-reached {
+                synopsis "Report if any application has opened more than allowed number of ifstate based routing sockets";
+                description "Raise a RED alarm if application has opened more than allowed number of ifstate based routing sockets";
+                frequency 4m;
+                term client-limit-change {
+                    when {
+                        not-equal-to "$client-limit-reached" 0;
+                        increasing-at-least-by-value "$client-limit-reached" {
+                            value 1;
+                            time-range 10m;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Limit for ifstate based routing socket for a daemon reached. #failed registrations: $client-limit-reached";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "In the last 10 mins, no ifstate based registration has failed";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

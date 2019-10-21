@@ -6,16 +6,18 @@
  *
  * Detects PEMs temperature changes and notifies when anomalies are found.
  *
- * Detects PEMs DC input state changes and notifies when anomalies are found.
+ * Detects PEMs AC or DC input state changes and notifies when anomalies are found.
  *
  * One input control detection
  *
  *   1) "pem-power-usage-threshold" is the threshold that causes the rule to
  *      report an anomaly. By default it's 80% of PEM power usage. This rule
- *      will set a dashboard color to red when PEM power usage exceed 
+ *      will set a dashboard color to red when PEM power usage exceed
  *      threshold 'pem-power-usage-threshold'. Otherwise color is set to green.
+ *   2) "power-input-type" is selects the input type as power-dc-input or
+ *      power-ac-input
  */
-iceberg {
+healthbot {
     topic chassis.power {
         description "Monitors the chassis power usage of whole system, zone & PEMs and notifies anomalies";
         synopsis "Chassis power manager";
@@ -24,7 +26,7 @@ iceberg {
             description "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold";
             /*
              * Monitors PEM power usage. Notifies via the dashboard colors when
-             * the PEM power usage exceed by {{pem-power-usage-threshold}} to 
+             * the PEM power usage exceed by {{pem-power-usage-threshold}} to
              * red. Otherwise the color is set to green.
              *
              * Monitors PEMs state. Notifies via the dashboard colors when the
@@ -34,8 +36,8 @@ iceberg {
              * colors when the temperature state is "OK" to green. Otherwise
              * the color is set to green.
              *
-             * Monitors PEMs DC power input state. Notifies via the dashboard
-             * colors when the DC input state is "OK" to green. Otherwise the
+             * Monitors PEMs AC or DC power input state. Notifies via the dashboard
+             * colors when the AC or DC input state is "OK" to green. Otherwise the
              * color is set to green.
              *
              * Use PEM slot as key for rule.
@@ -91,22 +93,25 @@ iceberg {
                 sensor components {
                     where "/components/component/properties/property/@name == 'power-capacity-maximum'";
                     path /components/component/properties/property/state/value;
+                    zero-suppression;
                 }
                 type integer;
                 description "PEM maximum power capacity";
             }
-            field power-dc-input {
+            field power-input {
                 sensor components {
-                    where "/components/component/properties/property/@name == 'power-dc-input'";
+                    where "/components/component/properties/property/@name == {{power-input-type}}";
                     path /components/component/properties/property/state/value;
+                    zero-suppression;
                 }
                 type string;
-                description "PEM DC input";
+                description "PEM AC or DC input";
             }
             field power-dc-output {
                 sensor components {
                     where "/components/component/properties/property/@name == 'power-dc-output'";
                     path /components/component/properties/property/state/value;
+                    zero-suppression;
                 }
                 type integer;
                 description "PEM DC output";
@@ -154,7 +159,7 @@ iceberg {
                  * Sets color to red and sends out an anomaly notification when
                  * the PEM power usage ($pem-power-usage) exceed threshold
                  * ($pem-power-usage-threshold).
-                 */ 
+                 */
                 term is-power-usage-crossing-threshold {
                     when {
                         greater-than "$pem-power-usage" "$pem-power-usage-threshold";
@@ -168,7 +173,7 @@ iceberg {
                 }
                 /*
                  * Defaults color to green.
-                 */ 
+                 */
                 term power-usage-normal {
                     then {
                         status {
@@ -187,7 +192,7 @@ iceberg {
                 frequency 60s;
                 /*
                  * Sets color to green when PEM state ($pem-state) is "online".
-                 */ 
+                 */
                 term is-pem-online {
                     when {
                         matches-with "$pem-state" Online;
@@ -201,7 +206,7 @@ iceberg {
                 }
                 /*
                  * Defaults color to red and notify anomaly.
-                 */ 
+                 */
                 term pem-offline {
                     then {
                         status {
@@ -235,7 +240,7 @@ iceberg {
                 }
                 /*
                  * Defaults color to red and notify anomaly.
-                 */ 
+                 */
                 term temperature-status-not-ok {
                     then {
                         status {
@@ -248,33 +253,33 @@ iceberg {
             /*
              * PEM power DC input anomaly detection logic.
              */
-            trigger power-dc-input {
-                synopsis "PEM power DC input state KPI";
-                description "Sets health based on power DC input state";
+            trigger power-input {
+                synopsis "PEM power AC or DC input state KPI";
+                description "Sets health based on power AC or DC input state";
                 frequency 60s;
                 /*
-                 * Sets color to green when PEM DC input ($power-dc-input)
+                 * Sets color to green when PEM AC or DC input ($power-input)
                  * if "OK".
                  */
-                term is-power-dc-input-ok {
+                term is-power-input-ok {
                     when {
-                        matches-with "$power-dc-input" OK;
+                        matches-with "$power-input" OK;
                     }
                     then {
                         status {
                             color green;
-                            message "$pem-slot power-dc-input is $power-dc-input";
+                            message "$pem-slot power-input is $power-input";
                         }
                     }
                 }
                 /*
                  * Defaults color to red and notify anomaly.
-                 */ 
-                term is-power-dc-input-not-ok {
+                 */
+                term is-power-input-not-ok {
                     then {
                         status {
                             color red;
-                            message "$pem-slot power-dc-input is $power-dc-input";
+                            message "$pem-slot power-input is $power-input";
                         }
                     }
                 }
@@ -288,6 +293,11 @@ iceberg {
                 description "PEM power usage threshold percentage";
                 type int;
             }
+            variable power-input-type {
+    			value power-dc-input;
+    			description "PEM power input type";
+    			type string;
+			}
             rule-properties {
                 version 2;
                     contributor juniper;

@@ -20,7 +20,7 @@
  *      utilization exceed low threshold 'process-memory-low-threshold'
  *      for a period of 5 minutes. Otherwise color is set to green.
  */
-iceberg {
+healthbot {
     topic system.processes {
         description "Monitors system statistics i.e. CPU, memory, storage, processes & queues and notifies anomalies";
         synopsis "System statistics analyzer";
@@ -36,14 +36,14 @@ iceberg {
              * {{process-memory-low-threshold}} for every collected metric
              * during a 5 minutes time range.
              * 
-             * Use daemon name as key for rule.
+             * Use daemon name and pid as key for rule.
              */
-            keys daemon;
+            keys [ daemon pid ];
             /*
              * Function derives memory utilization in percent from KB and MB.
              */
             function isExceeding {
-                description "Function isExceeding returns 'True' if % of size used out of reserved memory is not exceeding the threshold";
+                description "Function isExceeding returns 'True' if % of size used out of resident memory is not exceeding the threshold";
                 path system-processes.py;
                 method isExceeding;
                 argument res {
@@ -78,7 +78,7 @@ iceberg {
                 }
                 description "Daemon to be monitored";
             }
-            field reserved {
+            field resident {
                 sensor systemprocexttable {
                     path res;
                 }
@@ -89,6 +89,13 @@ iceberg {
                     path size;
                 }
                 description "Daemon memory size";
+            }
+            field pid {
+                sensor systemprocexttable {
+                    path pid;
+                }
+                type string;
+                description "PID to be monitored";
             }
             /*
              * Fields defined with variables and constant values
@@ -139,7 +146,7 @@ iceberg {
                     when {
                         user-defined-function isExceeding {
                             argument size "$size";
-                            argument res "$reserved";
+                            argument res "$resident";
                             argument threshold "$max-threshold";
                             time-range 5m;
                         }
@@ -161,7 +168,7 @@ iceberg {
                     when {
                         user-defined-function isExceeding {
                             argument size "$size";
-                            argument res "$reserved";
+                            argument res "$resident";
                             argument threshold "$min-threshold";
                             time-range 5m;
                         }

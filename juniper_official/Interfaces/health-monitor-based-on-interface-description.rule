@@ -33,7 +33,7 @@
  *      is above threshold for 60s, otherwise color is set to green. Use
  *      5000000000 octets for 10G & 50000000000 for 100G interface.
  */
-iceberg {
+healthbot {
     topic interface.monitor {
         description "Monitors only filtered interfaces based on keyword in description";
         synopsis "Selective interface KPIs monitoring";
@@ -107,6 +107,7 @@ iceberg {
             field stats-value {
                 sensor interfaces {
                     path "/interfaces/interface/state/counters/{{stats-name-variable}}";
+                    zero-suppression;
                 }
                 type integer;
                 description "Interface statistics counter (in-octets) value";
@@ -209,6 +210,68 @@ iceberg {
                 value in-octets;
                 description "Interface statistics counter name(in-octets, out-octets, in-pkts, out-pkts, in-unicast-pkts, out-unicast-pkts, in-errors, out-errors, carrier-transitions) to monitor. Create separate instance for each kpi";
                 type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
             }
         }
     }

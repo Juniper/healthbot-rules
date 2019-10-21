@@ -14,7 +14,7 @@
  *      increase for a period of less than 60s, it'll turn the color to
  *      yellow, otherwise color is set to green.
  */
-iceberg {
+healthbot {
     topic protocol.bgp {
         description "Monitors BGP sessions statistics i.e. neighbor state, detects flaps, route damping and max received-routes count and notify anomalies";
         synopsis "BGP session statistics analyzer";
@@ -49,6 +49,7 @@ iceberg {
             field established-transitions {
                 sensor bgp-sensor {
                     path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/established-transitions;
+                    zero-suppression;
                 }
                 type integer;
                 description "Number of neighbor session flaps";
@@ -95,7 +96,7 @@ iceberg {
                     when {
                         min-rate-of-increase "$established-transitions" {
                             rate $flap-count-threshold;
-                            time-range 60s;
+                            time-range 180s;
                         }
                     }
                     then {

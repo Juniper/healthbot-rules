@@ -1,38 +1,39 @@
-iceberg {
-    topic krt-async-status-check {
+healthbot {
+    topic krt.statistics {
         rule check-krt-async-all {
-            rule-frequency 1m;
+            rule-frequency 90s;
             field krt-tree-current-count {
                 reference {
-                    path "/topic[topic-name=krt-async-status-check]/rule[rule-name=check-krt-corrtable]/krt-tree-current-count";
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-current-count";
                 }
             }
             field krt-tree-delete-count {
                 reference {
-                    path "/topic[topic-name=krt-async-status-check]/rule[rule-name=check-krt-corrtable]/krt-tree-delete-count";
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-delete-count";
                 }
             }
             field krt-tree-insert-count {
                 reference {
-                    path "/topic[topic-name=krt-async-status-check]/rule[rule-name=check-krt-corrtable]/krt-tree-insert-count";
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-insert-count";
                 }
             }
             field krtq-async-count {
                 reference {
-                    path "/topic[topic-name=krt-async-status-check]/rule[rule-name=check-krt-state]/krtq-async-count";
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-state]/krtq-async-count";
                 }
             }
             field krtq-operations-queued {
                 reference {
-                    path "/topic[topic-name=krt-async-status-check]/rule[rule-name=check-krt-state]/krtq-operations-queued";
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-state]/krtq-operations-queued";
                 }
             }
             field write-count {
                 reference {
-                    path "/topic[topic-name=krt-async-status-check]/rule[rule-name=check-krt-io-table]/krt-io-write-count";
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-io-table]/krt-io-write-count";
                 }
             }
             trigger krt-stuck-1 {
+                frequency 90s;
                 term is-krt-write-count-different {
                     when {
                         increasing-at-least-by-value "$write-count" {
@@ -84,6 +85,7 @@ iceberg {
                 }
             }
             trigger krt-stuck-2 {
+                frequency 90s;
                 term is-krt-tree-insert-count-greater {
                     when {
                         greater-than "$krt-tree-insert-count" "$krt-tree-delete-count";
@@ -108,6 +110,7 @@ iceberg {
                 }
             }
             trigger krt-stuck-3 {
+                frequency 90s;
                 term is-krt-stuck {
                     when {
                         range "$krt-tree-current-count" {
@@ -149,7 +152,7 @@ iceberg {
                 iAgent {
                     file krtcorrtable.yml;
                     table krtcorrtable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field krt-tree-current-count {
@@ -168,12 +171,12 @@ iceberg {
                 }
             }
         }
-        rule check-krt-iotable {
+        rule check-krt-io-table {
             sensor krtiotable {
                 iAgent {
                     file krtiotable.yml;
                     table krtiotable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field krt-io-write-count {
@@ -187,7 +190,7 @@ iceberg {
                 iAgent {
                     file krtstate.yml;
                     table krtstate;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field krtq-async-count {
