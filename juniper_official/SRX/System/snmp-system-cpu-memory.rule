@@ -2,7 +2,7 @@
  * Detects System CPU & memory utilization and notifies when anomalies are found.
  * One input control detection
  * 
- *   1) Threshold, is the threshold value for CPU and memory utiilzation takes as input and pass to the rule to 
+ *   1) Threshold, is the threshold value for CPU and memory utilization takes as input and pass to the rule to 
  *      report an anomaly.  By default value is 80
  *
  */
@@ -12,11 +12,11 @@ iceberg {
             synopsis "System CPU, Memory Utilization change detector";
             description "Collects CPU, Memory Utilization details from Routing Engines and notify anomalies based on threshold values ";
             /*
-             * Use description as key for rule.
+             * Use component description as key for rule.
              */
             keys description;
             sensor system-cpu-memory {
-                synopsis "system CPU Memory sensor initialization";
+                synopsis "System CPU Memory sensor initialization";
                 description "System SNMP sensor to collect data from network device";
                 snmp {
                     table JUNIPER-MIB::jnxOperatingTable;
@@ -44,7 +44,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "dynamic threshold value for memory buffer utilization";
+                description "ML derived memory buffer utilization value";
             }
             field dt-cpu-utilization {
                 formula {
@@ -56,28 +56,28 @@ iceberg {
                     }
                 }
                 type integer;
-                description "dynamic threshold value for system cpu utilization";
+                description "ML derived system cpu utilization value";
             }
             field system-buffer-memory {
                 sensor system-cpu-memory {
                     path jnxOperatingBuffer;
                 }
                 type integer;
-                description "System memory buffer utilization";
+                description "System memory buffer utilization value";
             }
             field system-cpu {
                 sensor system-cpu-memory {
                     path jnxOperatingCPU;
                 }
                 type integer;
-                description "System CPU utilization";
+                description "System CPU utilization value";
             }
             field threshold {
                 constant {
                     value "{{static-threshold}}";
                 }
                 type integer;
-				description "System CPU utilization"; 
+				            description "System CPU utilization threshold value"; 
             }
             /*
              * Anomaly detection logic for buffer memory utilization.
@@ -95,7 +95,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "System buffer utilization for $description has crossed static threshold value ($threshold), Value=($system-buffer-memory)";
+                            message "System buffer utilization ($system-buffer-memory) for $description has crossed static threshold value ($threshold)";
                         }
                     }
                 }
@@ -110,7 +110,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "System buffer utilization for $description has crossed dynamic threshold value ($threshold), Value=($system-buffer-memory)";
+                            message "System buffer utilization ($system-buffer-memory) for $description has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -121,7 +121,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "System buffer utilization for $description is normal, Value=($system-buffer-memory)";
+                            message "System buffer utilization ($system-buffer-memory) for $description is normal";
                         }                           
                     }
                 }
@@ -142,7 +142,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "CPU utilization for $description has crossed static threshold value ($threshold), Value=($system-cpu)";
+                            message "CPU utilization ($system-cpu) for $description has crossed static threshold value ($threshold)";
                         }
                     }
                 }
@@ -157,7 +157,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "CPU utilization for $description has crossed dynamic threshold value, Value=($system-cpu)";
+                            message "CPU utilization ($system-cpu) for $description has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -168,22 +168,22 @@ iceberg {
                     then {                          
                         status {
                             color green;
-                            message "CPU utilization for $description is normal, Value=($system-cpu)";
+                            message "CPU utilization ($system-cpu) for $description is normal";
                         }
                     }
                 }
             }
             variable comp-name {
                 value ".*Routing Engine.*";
-		description "Collectes all routing engines CPU and memory utilization";
+		              description "Collects all routing engines CPU and memory utilization";
                 type string;
             }
             variable static-threshold {
                 value 80;
-                description "static threshold value for CPU and memory utilization";
+                description "Static threshold value for CPU and memory utilization";
                 type int;
             }
-	    rule-properties {
+	           rule-properties {
                 version 2;
                 contributor juniper;
                 supported-healthbot-version 1.0.1;

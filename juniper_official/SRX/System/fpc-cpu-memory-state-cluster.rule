@@ -93,7 +93,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "This field is for linecard buffer usage dynamic threshold value ";
+                description "ML derived linecard buffer usage threshold value ";
             }
             field dt-cpu-uage {
                 formula {
@@ -105,7 +105,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "This field is for linecard cpu usage dynamic threshold value ";
+                description "ML derived linecard cpu usage threshold value ";
             }
             field dt-heap-memory-usage {
                 formula {
@@ -117,7 +117,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "This field is for linecard heap usage dynamic threshold value ";
+                description "ML derived linecard heap usage threshold value ";
             }
             field fpc-status {
                 sensor sensor-fpc-cpu-memory {
@@ -159,7 +159,7 @@ iceberg {
              * Anomaly detection logic for fpc buffer memory utilization.
              */
             trigger fpc-buffer-memory {
-                frequency 60s;
+                frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * memory buffer utilization count increases more than static threshold static value
@@ -172,7 +172,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Node=$re-name FPC slot number $slot buffer memory usage has crossed static threshold value ($buffer-usage-threshold), Value=($buffer-memory-usage)";
+                            message "Buffer memory usage ($buffer-memory-usage) for Node:$re-name, fpc-slot:$slot has crossed static threshold value ($buffer-usage-threshold)";
                         }
                     }
                 }
@@ -188,7 +188,7 @@ iceberg {
                     then {
                         status {
                             color yellow;           
-                            message "Node=$re-name FPC slot number $slot buffer memory usage has crossed dynamic threshold value, Value=($buffer-memory-usage)";
+                            message "Buffer memory usage ($buffer-memory-usage) for Node:$re-name, fpc-slot:$slot has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -199,7 +199,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Node=$re-name FPC slot number $slot buffer memory usage is normal, Value=($buffer-memory-usage)";
+                            message "Buffer memory usage ($buffer-memory-usage) for Node:$re-name, fpc-slot:$slot is normal";
                         }
                     }
                 }
@@ -208,7 +208,7 @@ iceberg {
              * Anomaly detection logic for CPU utilization.
              */
             trigger fpc-cpu {
-                frequency 60s;
+                frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * CPU utilization count increases more than static threshold value
@@ -221,7 +221,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Node=$re-name FPC slot number $slot CPU usage has crossed static threshold value ($cpu-usage-threshold), Value=($cpu-usage)";
+                            message "CPU usage ($cpu-usage) for Node:$re-name, fpc-slot:$slot has crossed static threshold value ($cpu-usage-threshold)";
                         }
                     }
                 }
@@ -237,7 +237,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Node=$re-name FPC slot number $slot CPU usage has crossed dynamic threshold value, Value=($cpu-usage)";
+                            message "CPU usage ($cpu-usage) for Node:$re-name, fpc-slot:$slot has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -248,7 +248,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Node=$re-name FPC slot number $slot CPU usage is normal, Value=($cpu-usage)";
+                            message "CPU usage ($cpu-usage) for Node:$re-name, fpc-slot:$slot is normal";
                         }
                     }
                 }
@@ -257,7 +257,7 @@ iceberg {
              * Anomaly detection logic for heap memory utilization.
              */
             trigger fpc-heap-memory {
-                frequency 60s;
+                frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * memory heap utilization count increases more than static threshold) value
@@ -270,7 +270,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Node=$re-name FPC slot number $slot heap memory usage has crossed static threshold value ($heap-usage-threshold), Value=($heap-memory-usage)";
+                            message "Heap memory usage ($heap-memory-usage) Node:$re-name, fpc-slot:$slot has crossed static threshold value ($heap-usage-threshold)";
                         }
                     }
                 }
@@ -286,7 +286,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Node=$re-name FPC slot number $slot heap memory usage has crossed dynamic threshold value, Value=($heap-memory-usage)";
+                            message "Heap memory usage ($heap-memory-usage) Node:$re-name, fpc-slot:$slot has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -297,7 +297,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Node=$re-name FPC slot number $slot heap memory usage is normal, Value=($heap-memory-usage)";
+                            message "Heap memory usage ($heap-memory-usage) Node:$re-name, fpc-slot:$slot is normal";
                         }
                     }
                 }
@@ -306,7 +306,7 @@ iceberg {
              * Anomaly detection logic for FPC offline and online.
              */
             trigger fpc-state {
-                frequency 60s;
+                frequency 90s;
                 /*
                  * Sets color to green when FPC state is Online 
                  */	
@@ -317,7 +317,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Node=$re-name FPC slot= $slot is online";
+                            message "Node:$re-name fpc_slot:$slot is Online";
                         }                           
                     }
                 }
@@ -328,7 +328,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Node=$re-name FPC slot= $slot is Offline";
+                            message "Node:$re-name fpc_slot:$slot is Offline";
                         }
                     }
                 }
