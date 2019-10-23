@@ -6,7 +6,7 @@
  *      an anomaly.  By default it's 5000000. This rule will set a dashboard
  *      color to red when active sessions for a PIC slot is greater than this value.
  *   2) "max-sessions-threshold-value" is the threshold that causes the rule to report
- *      an anomaly.  By default it's 5000000. This rule will set a dashboard
+ *      an anomaly.  By default it's 8000000. This rule will set a dashboard
  *      color to red when active sessions for a PIC slot is greater than this value.
  *  
  */
@@ -14,26 +14,26 @@ iceberg {
     topic security  {
         rule check-flow-session-summery {
             description "Monitors and notify flow session details";
-            synopsis "flow session summery statistics analyzer"; 
+            synopsis "Flow session summary statistics analyzer"; 
             /*
-             * Monitors the active flow session setails  and notifies via the dashboard
+             * Monitors the active flow session details  and notifies via the dashboard
              * colors when the threshold is above {{active-sessions-threshold}}
              * it will mark as red.
-             * The color is set to yellow when the traffic is above dt-active-sessions.
+             * The color is set to yellow when active flow sessions are above dynamic threshold {{dt-active-sessions}}.
              * Otherwise the color is set to green.
              * 
-             * Monitors the maximimum flow session setails  and notifies via the dashboard
+             * Monitors the maximum flow session details and notifies via the dashboard
              * colors when the threshold is above {{max-sessions-threshold}}
              * it will mark as red.
-             * The color is set to yellow when the traffic is above dt-max-sessions.
+             * The color is set to yellow when maximum flow sessions are above dynamic threshold {{dt-max-sessions}}.
              * Otherwise the color is set to green.
              * 
              * Use pic-number re-name and slot as keys for rule.
              */
             keys [ fpc-pic-id re-name ];
             sensor flow-session {
-                synopsis "flow session sensor initialization";
-                description "security flow sesssion sensor to collect data from network device";
+                synopsis "Security flow session sensor initialization";
+                description "Security flow session sensor to collect data from network device";
                 iAgent {
                     file srx-flow-session-summary.yml;
                     table SecurityFlowSessionSummaryTable;
@@ -67,7 +67,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "This filed contains the active flow sessions threshold value";
+                description "ML derived active flow sessions threshold value";
             }
             field dt-max-sessions {
                 formula {
@@ -79,7 +79,7 @@ iceberg {
                     }
                 }
                 type integer;
-                description "This filed contains the maximum flow sessions threshold value";
+                description "ML derived maximum flow sessions threshold value";
             }
             field flow-fpc-pic-id {
                 sensor flow-session {
@@ -113,7 +113,7 @@ iceberg {
              * Anomaly detection logic for active flow sessions
              */
             trigger active-sessions {
-                frequency 60s;
+                frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * active sessions value for FPC-PIC id is more than threshold ($active-sessions-threshold)
@@ -127,7 +127,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Active flow sessions for flow id = $flow-fpc-pic-id has crossed static threshold value ($active-sessions-threshold), Value=$active-sessions";
+                            message "Active flow sessions ($active-sessions) for flow_id:$flow-fpc-pic-id has crossed static threshold value ($active-sessions-threshold)";
                         }
                     }
                 }
@@ -145,7 +145,7 @@ iceberg {
                     then {                          
                         status {
                             color yellow;
-                            message "Active flow sessions for flow id = $flow-fpc-pic-id  has crossed dynamic threshold value, Value=$active-sessions";
+                            message "Active flow sessions ($active-sessions) for flow_id:$flow-fpc-pic-id has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -156,7 +156,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Active flow sessions for flow id = $flow-fpc-pic-id is normal, Value=$active-sessions";
+                            message "Active flow sessions ($active-sessions) for flow_id:$flow-fpc-pic-id is normal";
                         }
                     }
                 }
@@ -165,10 +165,10 @@ iceberg {
              * Anomaly detection logic for maximum flow sessions
              */
             trigger max-sessions {
-                frequency 60s;
+                frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * maxmimum sessions value for FPC-PIC id is more than threshold ($max-sessions-threshold)
+                 * maximum sessions value for FPC-PIC id is more than threshold ($max-sessions-threshold)
                  * 
                  */ 
                 term is-max-sessions-abnormal {
@@ -180,7 +180,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Maximum flow sessions for flow id = $flow-fpc-pic-id has crossed static threshold value ($max-sessions-threshold), Value=$max-sessions";
+                            message "Maximum flow sessions ($max-sessions) for flow_id:$flow-fpc-pic-id has crossed static threshold value ($max-sessions-threshold)";
                         }
                     }                               
                 }
@@ -198,7 +198,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Maximum flow sessions for flow id = $flow-fpc-pic-id has crossed dynamic threshold value, Value=$max-sessions";
+                            message "Maximum flow sessions ($max-sessions) for flow_id:$flow-fpc-pic-id has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -209,7 +209,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Maximum flow sessions for flow id = $flow-fpc-pic-id is normal, Value=$max-sessions";
+                            message "Maximum flow sessions ($max-sessions) for flow_id:$flow-fpc-pic-id is normal";
                         }
                     }
                 }
