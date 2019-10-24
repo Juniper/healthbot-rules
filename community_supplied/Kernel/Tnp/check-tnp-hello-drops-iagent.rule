@@ -2,13 +2,15 @@
  * This rule monitors the health of the system with the help of the tnp hello drop count parameter. 
  * 
  * It uses iAgent sensor.
- * The rule throws red alarm if the tnp hello drop count is above 100. 
- * It throws yellow alarm if the tnp hello drop count is in the range 10-100.
- * Else, the system is in a healthy condition.
+ * The rule collects tnp hello drop count and notifies anomaly if 
+ * the parameter exceeds the threshold.
  */
+
 iceberg {
     topic kernel.tnp {
         rule check-tnp-hello-drops-iagent {
+            synopsis "Check TNP hello drop count";
+            description "Monitors system health with the help of TNP hello drop count parameter. The sensor used is iAgent";
             sensor tnp-hello-drop-sensor {
                 synopsis "tnp hello drop sensor";
                 description "iAgent sensor for TNP hello drops";
@@ -25,21 +27,36 @@ iceberg {
                 type integer;
                 description " TNP Hello Drop Count ";
             }
+	    field tnp-hello-drop-cnt-green-threshold {
+		    constant {
+			    value "{{tnp-hello-drop-cnt-green-threshold-input}}";
+		    }
+	    }
+	    field tnp-hello-drop-cnt-red-threshold {
+		    constant {
+			    value "{{tnp-hello-drop-cnt-red-threshold-input}}";
+		    }
+	    }
+	    field tnp-hello-drop-cnt-yellow-threshold {
+		    constant {
+			    value "{{tnp-hello-drop-cnt-yellow-threshold-input}}";
+		    }
+	    }
             trigger report-tnp-hello-drops-iagent {
                 synopsis "Trigger for TNP hello drops, with the sensor being Open config";
                 description "The above sensor helps in determining the health of the system based on the value of the TNP hello drop count. If this value is below 10, the system is in healthy condition. If the value is in the range 10-100, it is a cause for concern and must be taken as a warning. Anything above this, is a serious cause of concern and indicates that the system is under risk";
-                frequency 1m;
+                frequency 90s;
                 term tnp-hello-drop-cnt-diff-lt-10 {
                     when {
                         increasing-at-most-by-value "$tnp-hello-drop-cnt" {
-                            value 10;
-                            time-range 1m;
+                            value "$tnp-hello-drop-cnt-green-threshold";
+                            time-range 200s;
                         }
                     }
                     then {
                         status {
                             color green;
-                            message "TNP hello drop count difference between two successive samples is less than 10. Health is good";
+                            message "TNP hello drop count difference between two successive samples is less than 10. Health is good. Tnp hello drop count = $tnp-hello-drop-cnt";
                         }
                     }
                 }
@@ -47,14 +64,14 @@ iceberg {
                     when {
                         not-equal-to "$tnp-hello-drop-cnt" 0;
                         increasing-at-most-by-value "$tnp-hello-drop-cnt" {
-                            value 100;
-                            time-range 1m;
+                            value "$tnp-hello-drop-cnt-yellow-threshold";
+                            time-range 200s;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "TNP hello drop count difference between successive samples is in the range 10-100";
+                            message "TNP hello drop count difference between successive samples is in the range 10-100. Tnp hello drop count = $tnp-hello-drop-cnt";
                         }
                     }
                 }
@@ -62,18 +79,33 @@ iceberg {
                     when {
                         not-equal-to "$tnp-hello-drop-cnt" 0;
                         increasing-at-least-by-value "$tnp-hello-drop-cnt" {
-                            value 101;
-                            time-range 1m;
+                            value "$tnp-hello-drop-cnt-red-threshold";
+                            time-range 200s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "TNP hello drop count difference between successive samples is above 100. Urgent action is required";
+                            message "TNP hello drop count difference between successive samples is above 100. Urgent action is required. Tnp hello drop count = $tnp-hello-drop-cnt";
                         }
                     }
                 }
             }
+	    variable tnp-hello-drop-cnt-green-threshold-input {
+		    value 10;
+		    description "TNP hello drop count green threshold value. If the value is within this threshold, system is healthy";
+		    type int;
+	    }
+	    variable tnp-hello-drop-cnt-red-threshold-input {
+		    value 101;
+		    description "TNP hello drop count red threshold. If the tnp hello drop count parameter is above this, then urgent action needs to be taken";
+		    type int;
+	    }
+	    variable tnp-hello-drop-cnt-yellow-threshold-input {
+		    value 100;
+		    description "TNP hello drop count yellow threshold value. If the TNP hello drop count is more than green threshold and lesser than yellow threshold, system needs monitoring";
+		    type int;
+	    }
             rule-properties {
                 version 1;
                 contributor juniper;

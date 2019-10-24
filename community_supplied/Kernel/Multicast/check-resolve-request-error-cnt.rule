@@ -2,18 +2,30 @@
  * This rule helps in monitoring the health of the system on the basis of the resolve request error count parameter.
  *
  * The sensor used is open-config.
- * The rule throws red alarm if the resolve request error count is more than 20.
- * The rule throws yellow alarm if the resolve request error count is in the range 11-20.
+ * The rule throws collects resolve request error count and notifies anomaly if
+ * resolve request error count exceeds threshold.
  */
 iceberg {
     topic kernel.multicast {
         rule check-resolve-request-error-cnt {
+            synopsis "Check resolve request error count";
+            description "This rule helps to monitor the system health with the parameter resolve request error count. The sensor used is open-config";
             sensor kernel-multicast-sensor {
                 synopsis "kernel multicast sensor";
                 description "Open config sensor for resolve request error count";
                 open-config {
                     sensor-name /junos/kernel/multicast;
                     frequency 10m;
+                }
+            }
+            field rslv-req-err-cnt-red-threshold {
+                constant {
+                    value "{{rslv-req-err-cnt-red-threshold-input}}";
+                }
+            }
+            field rslv-req-err-cnt-yellow-threshold {
+                constant {
+                    value "{{rslv-req-err-cnt-yellow-threshold-input}}";
                 }
             }
             field resolve-request-error-cnt {
@@ -25,21 +37,21 @@ iceberg {
             }
             trigger report-resolve-req-error-cnt {
                 synopsis "Trigger for resolve request error count, with open config sensor";
-                description "The trigger monitors the system health, based on the value of the resovle request error count. If this value is greater than 20, red alarm is thrown. If it is between 11-20, yellow alarm is thrown. Else, green alarm is thrown.";
-                frequency 10m;
+                description "The trigger monitors the system health, based on the value of the resovle request error count. If this value is greater than 20, red alarm is thrown. If it is between 11-20, yellow alarm is thrown. Else, green alarm is thrown";
+                frequency 15m;
                 term resolve-request-error-cnt-diff-gt-20 {
                     when {
                         not-equal-to "$resolve-request-error-cnt" 0;
                         increasing-at-least-by-value "$resolve-request-error-cnt" {
-                            value 21;
-                            time-range 1300s;
+                            value "$rslv-req-err-cnt-red-threshold";
+                            time-range 1810s;
                             any;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Resolve request error count difference between successive samples is greater than 20. Urgent action required";
+                            message "Resolve request error count difference between successive samples is greater than 20. Urgent action required. Resolve request error count = $resolve-request-error-cnt";
                         }
                     }
                 }
@@ -47,15 +59,15 @@ iceberg {
                     when {
                         not-equal-to "$resolve-request-error-cnt" 0;
                         increasing-at-least-by-value "$resolve-request-error-cnt" {
-                            value 11;
-                            time-range 1300s;
+                            value "$rslv-req-err-cnt-yellow-threshold";
+                            time-range 1810s;
                             any;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "Resolve request error count difference between successive samples is in the range 10-20";
+                            message "Resolve request error count difference between successive samples is in the range 10-20. Resolve request error count = $resolve-request-error-cnt";
                         }
                     }
                 }
@@ -63,11 +75,21 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Resolve request error count difference between successive samples is less than or equal to 10. Health is good";
+                            message "Resolve request error count difference between successive samples is less than or equal to 10. Health is good. Resolve request error count = $resolve-request-error-cnt";
                         }
                     }
                 }
             }
+	    variable rslv-req-err-cnt-red-threshold-input {
+		    value 21;
+		    description "Resolve request error count red threshold value";
+		    type int;
+	    }
+	    variable rslv-req-err-cnt-yellow-threshold-input {
+		    value 11;
+		    description "Resolve request error count yellow threshold value";
+		    type int;
+	    }
             rule-properties {
                 version 1;
                 contributor juniper;

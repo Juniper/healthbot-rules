@@ -8,6 +8,8 @@
 iceberg {
     topic kernel.tunnel {
         rule check-looped-tunnel-cnt-sampling-based-iagent {
+            synopsis "Check looped tunnel count (sampling)";
+            description "Monitors system health by comparing successive values of looped tunnel count parameter. The sensor used is iAgent";
             sensor looped-tunnel-cnt-sensor {
                 synopsis "looped tunnel count sensor(Sampling)";
                 description "iAgent sensor for looped tunnel count (Sampling)";
@@ -34,13 +36,13 @@ iceberg {
             trigger report-looped-tunnel-cnt-sampling-iagent {
                 synopsis "Trigger for looped tunnel count(Sampling), with the sensor being iagent";
                 description "This trigger helps in monitoring system health, by sampling the looped tunnel count values. If the looped tunnel count value between successive samples is zero, no action is required. Else, the system needs monitoring.";
-                frequency 1m;
+                frequency 90s;
                 term looped-tun-cnt-diff-non-zero {
                     when {
                         equal-to "$looped-tunnel-cnt" 0;
                         increasing-at-least-by-value "$looped-tunnel-cnt-sampling" {
                             value 1;
-                            time-range 140s;
+                            time-range 200s;
                             any;
                         }
                     }
@@ -55,7 +57,7 @@ iceberg {
                     when {
                         increasing-at-most-by-value "$looped-tunnel-cnt-sampling" {
                             value -1;
-                            time-range 140s;
+                            time-range 200s;
                             any;
                         }
                     }
@@ -70,7 +72,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Looped tunnel count difference between successive samples is zero. No action required.";
+                            message "Looped tunnel count difference between successive samples is zero. No action required";
                         }
                     }
                 }

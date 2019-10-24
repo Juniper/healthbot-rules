@@ -1,20 +1,32 @@
 /*
- * This rule checks monitors the health of the system on the basis of the iif_mismatch_err_cnt parameter.
+ * This rule checks the health of the system on the basis of the iif_mismatch_err_cnt parameter.
  *
- * The sensor used is open-config.
- * The rule shows red alarm when the iif_mismatch_err_cnt exceeds 100. 
- * It shows yellow alarm when the iif_mismatch_err_cnt is in the range 10-100.
+ * The sensor used is Open config.
+ * This rule collects iif mismatch error count and notifies anomaly if
+ * iif mismatch error count exceeds threshold.
  */
 
 iceberg {
     topic kernel.multicast {
         rule check-multicast-iif-mismatch-error-cnt {
+            synopsis "Check multicast iif mismatch error count";
+            description "Monitors system health with the help of the iif mismatch error count parameter. The sensor used is open-config";
             sensor kernel-multicast-sensor {
                 synopsis "kernel multicast sensor";
                 description "Open config sensor for IIF mismatch error count";
                 open-config {
                     sensor-name /junos/kernel/multicast;
                     frequency 10m;
+                }
+            }
+            field iif-mismatch-err-cnt-red-threshold {
+                constant {
+                    value "{{iif-mismatch-err-cnt-red-threshold-input}}";
+                }
+            }
+            field iif-mismatch-err-cnt-yellow-threshold {
+                constant {
+                    value "{{iif-mismatch-err-cnt-yellow-threshold-input}}";
                 }
             }
             field multicast-iif-mismatch-error-cnt {
@@ -27,20 +39,20 @@ iceberg {
             trigger report-multicast-iif-mismatch {
                 synopsis "Trigger for reporting the iif mismatch error count, with open config sensor";
                 description "This trigger helps in monitoring the health of the system with the help of the parameter iif mismatch error count. If this value is increasing atmost by a value of 10, the system is healthy. Else if it is increasing between the range 10-100, it is a warning sign. Else, the system is under risk";
-                frequency 10m;
+                frequency 15m;
                 term iif-mismatch-err-cnt-diff-gt-100 {
                     when {
                         not-equal-to "$multicast-iif-mismatch-error-cnt" 0;
                         increasing-at-least-by-value "$multicast-iif-mismatch-error-cnt" {
-                            value 101;
-                            time-range 1300s;
+                            value "$iif-mismatch-err-cnt-red-threshold";
+                            time-range 1810s;
                             any;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Multicast IIF mismatch error count difference between successive samples is greater than 100. Urgent action is required.";
+                            message "Multicast IIF mismatch error count difference between successive samples is greater than 100. Urgent action is required. IIF mismatch error count = $multicast-iif-mismatch-error-cnt";
                         }
                     }
                 }
@@ -48,15 +60,15 @@ iceberg {
                     when {
                         not-equal-to "$multicast-iif-mismatch-error-cnt" 0;
                         increasing-at-least-by-value "$multicast-iif-mismatch-error-cnt" {
-                            value 11;
-                            time-range 1300s;
+                            value "$iif-mismatch-err-cnt-yellow-threshold";
+                            time-range 1810s;
                             any;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "Multicast IIF mismatch error count difference between successive samples is in the range 10-100. Remedial action may be required";
+                            message "Multicast IIF mismatch error count difference between successive samples is in the range 10-100. Remedial action may be required. IIF mismatch error count = $multicast-iif-mismatch-error-cnt";
                         }
                     }
                 }
@@ -64,11 +76,21 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "IIF mismatch error count difference between successive samples is less than 10. Health is good";
+                            message "IIF mismatch error count difference between successive samples is less than 10. Health is good. IIF mismatch error count = $multicast-iif-mismatch-error-cnt";
                         }
                     }
                 }
             }
+            variable iif-mismatch-err-cnt-red-threshold-input {
+                value 101;
+                description "iif mismatch error count red threshold value";
+                type int;
+            }
+            variable iif-mismatch-err-cnt-yellow-threshold-input {
+                value 11;
+                description "iif mismatch error count yellow threshold value";
+                type int;
+            }         
             rule-properties {
                 version 1;
                 contributor juniper;

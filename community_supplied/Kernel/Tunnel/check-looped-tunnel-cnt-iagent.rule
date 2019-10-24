@@ -8,6 +8,8 @@
 iceberg {
     topic kernel.tunnel {
         rule check-looped-tunnel-cnt-iagent {
+            synopsis "Check looped tunnel id count";
+            description "Monitors system health with looped tunnel id count parameter. The sensor used is iAgent";
             sensor looped-tunnel-cnt-sensor {
                 synopsis "looped tunnel count sensor";
                 description "iAgent sensor for looped tunnel count";
@@ -27,7 +29,7 @@ iceberg {
             trigger report-looped-tunnel-cnt-iagent {
                 synopsis "Trigger for looped tunnel count, with the sensor being iAgent";
                 description "This trigger helps in monitoring the system health based on the value of the looped tunnel count. If this value is non-zero, we raise a red alarm, else it remains green. If the value remains green, we also check whether consecutive samples are zero. If not, we raise a red alarm";
-                frequency 1m;
+                frequency 90s;
                 term looped-tunnel-cnt-nonzero {
                     when {
                         not-equal-to "$looped-tunnel-cnt" 0;
@@ -46,7 +48,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Looped tunnel count is zero. No corrective action required.";
+                            message "Looped tunnel count is zero. No corrective action required";
                         }
                     }
                 }
