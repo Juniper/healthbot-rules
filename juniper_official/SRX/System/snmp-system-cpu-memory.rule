@@ -7,7 +7,7 @@
  *
  */
 iceberg {
-    topic system.processes  {
+    topic system.cpu.memory  {
         rule check-snmp-system-cpu-memory {
             synopsis "System CPU, Memory Utilization change detector";
             description "Collects CPU, Memory Utilization details from Routing Engines and notify anomalies based on threshold values ";
@@ -26,6 +26,27 @@ iceberg {
             /*
              * Fields defined with variables, dynamic thresholds and constant values
              */
+            field cpu-15min-avg {
+                sensor system-cpu-memory {
+                    path jnxOperating15MinLoadAvg;
+                }
+                type integer;
+                description "System cpu utilization 15 min average value";
+            }
+            field cpu-1min-avg {
+                sensor system-cpu-memory {
+                    path jnxOperating1MinLoadAvg;
+                }
+                type integer;
+                description "System cpu utilization 1 min average value";
+            }
+            field cpu-5min-avg {
+                sensor system-cpu-memory {
+                    path jnxOperating5MinLoadAvg;
+                }
+                type integer;
+                description "System cpu utilization 5 min average value.";
+            }
             field description {
                 sensor system-cpu-memory {
                     where "jnxOperatingDescr =~ /{{comp-name}}/";
@@ -45,6 +66,42 @@ iceberg {
                 }
                 type integer;
                 description "ML derived memory buffer utilization value";
+            }
+            field dt-cpu-15min-avg {
+                formula {
+                    dynamic-threshold {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$cpu-15min-avg";
+                    }
+                }
+                type integer;
+                description "ML derived system cpu utilization 15 min average value";
+            }
+            field dt-cpu-1min-avg {
+                formula {
+                    dynamic-threshold {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$cpu-1min-avg";
+                    }
+                }
+                type integer;
+                description "ML derived system cpu utilization 1 min average value";
+            }
+            field dt-cpu-5min-avg {
+                formula {
+                    dynamic-threshold {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$cpu-5min-avg";
+                    }
+                }
+                type integer;
+                description "ML derived system cpu utilization 5 min average value";
             }
             field dt-cpu-utilization {
                 formula {
@@ -87,8 +144,8 @@ iceberg {
                  * Sets color to red and sends out an anomaly notification when
                  * memory buffer utilization count increases more than threshold static ($threshold) value
                  */ 
-                frequency 60s;                      
-                term is-system-buffer-memory-utilization-is-abnormal {
+                frequency 90s;                      
+                term is-system-buffer-memory-utilization-abnormal {
                     when {
                         greater-than "$system-buffer-memory" "$threshold";
                     }
@@ -103,7 +160,7 @@ iceberg {
                  * Sets color to yellow and sends out an anomaly notification when
                  * memory buffer utilization count increases more than dynamic threshold value
                  */
-                term is-system-buffer-memory-utilization-is-minimal {
+                term is-system-buffer-memory-utilization-above-dt {
                     when {
                         equal-to "$dt-buffer-memory-utilization" 1;
                     }
@@ -117,7 +174,7 @@ iceberg {
                 /*
                  * Defaults color to green.
                  */
-                term is-system-buffer-memory-utilization-is-normal {
+                term is-system-buffer-memory-utilization-normal {
                     then {
                         status {
                             color green;
@@ -134,8 +191,8 @@ iceberg {
                  * Sets color to red and sends out an anomaly notification when
                  * CPU utilization count increases more than threshold static ($threshold) value
                  */ 
-                frequency 60s;
-                term is-system-cpu-utilization-is-abnormal {
+                frequency 90s;
+                term is-system-cpu-utilization-abnormal {
                     when {
                         greater-than "$system-cpu" "$threshold";
                     }
@@ -150,7 +207,7 @@ iceberg {
                  * Sets color to yellow and sends out an anomaly notification when
                  * CPU utilization count increases more than dynamic threshold value
                  */
-                term is-system-cpu-utilization-is-minimal {
+                term is-system-cpu-utilization-above-dt {
                     when {
                         equal-to "$dt-cpu-utilization" 1;
                     }
@@ -164,7 +221,7 @@ iceberg {
                 /*
                  * Defaults color to green.
                  */
-                term is-system-cpu-utilization-is-normal {
+                term is-system-cpu-utilization-normal {
                     then {                          
                         status {
                             color green;
@@ -173,6 +230,147 @@ iceberg {
                     }
                 }
             }
+            /*
+             * Anomaly detection logic for CPU 15 min average utilization.
+             */
+            trigger system-cpu-15min-average {
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * CPU 15 min average utilization value increases more than threshold static ($threshold) value
+                 */
+                frequency 90s;
+                term is-cpu-15m-average-util-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-15min-avg" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CPU 15 minute average utilization ($cpu-15min-avg) for $description has crossed static threshold value ($threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * CPU 15 min average utilization value increases more than dynamic threshold value
+                 */    
+                term is-cpu-15m-average-util-above-dt {
+                    when {
+                        equal-to "$dt-cpu-15min-avg" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "CPU 15 minute average utilization ($cpu-15min-avg) for $description has crossed dynamic threshold value";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */    
+                term is-cpu-15m-average-util-normal {
+                    then {
+                        status {
+                            color green;
+                            message "CPU 15 minute average utilization ($cpu-15min-avg) for $description is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic for CPU 1 min utilization.
+             */
+            trigger system-cpu-1min-average {
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * CPU 1 min average utilization value increases more than threshold static ($threshold) value
+                 */
+                frequency 90s;
+                term is-cpu-1m-average-util-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-1min-avg" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CPU 1 minute average utilization ($cpu-1min-avg) for $description has crossed static threshold value ($threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * CPU 1 min average utilization value increases more than dynamic threshold value
+                 */   
+                term is-cpu-1m-average-util-above-dt {
+                    when {
+                        equal-to "$dt-cpu-1min-avg" 1;
+                    }
+                    then {
+                        status {
+                           color yellow;
+                           message "CPU 1 minute average utilization ($cpu-1min-avg) for $description has crossed dynamic threshold value";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */    
+                term is-cpu-1m-average-util-normal {
+                    then {
+                        status {
+                            color green;
+                            message "CPU 1 minute average utilization ($cpu-1min-avg) for $description is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic for CPU 5 min average utilization.
+             */
+            trigger system-cpu-5min-average {
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * CPU 5 min average utilization value increases more than threshold static ($threshold) value
+                 */
+                frequency 90s;
+                term is-cpu-5m-average-util-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-5min-avg" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CPU 5 minute average utilization ($cpu-5min-avg) for $description has crossed static threshold value ($threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * CPU 5 min average utilization value increases more than dynamic threshold value
+                 */    
+                term is-cpu-5m-average-util-above-dt {
+                    when {
+                        equal-to "$dt-cpu-5min-avg" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "CPU 5 minute average utilization ($cpu-5min-avg) for $description has crossed dynamic threshold value";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */   
+                term is-cpu-5m-average-util-normal {
+                    then {
+                        status {
+                            color green;
+                            message "CPU 5 minute average utilization ($cpu-5min-avg) for $description is normal";
+                        }
+                    }
+                }
+            } 
             variable comp-name {
                 value ".*Routing Engine.*";
 		              description "Collects all routing engines CPU and memory utilization";
