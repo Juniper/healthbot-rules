@@ -6,11 +6,11 @@
  * It's sampling time is 1 minute.
  */
 
-iceberg {
+heathbot {
     topic kernel.tcpip {
         rule check-public-nh-count {
             synopsis "To check the count of public nexthops.";
-            description "Detect public nexthop exhaustion.";
+            description "This rule monitors the  public nexthop count and reports anomaly when it exceeds threshold";
             function public-nh-status {
                 description "This returns a value comparing the public nexthop count with the threshold value";
                 path get_percent.py;
@@ -26,8 +26,8 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-nexthop-public-count-sensor {
-                synopsis "Sensor to check the count of public nexthops.";
-                description "Sensor to detect public nexthop exhaustion.";
+                synopsis "Sensor to check the count of public nexthops";
+                description "Sensor to detect public nexthop exhaustion";
                 open-config {
                     sensor-name /junos/kernel/tcpip/nhidx;
                     frequency 1m;
@@ -57,6 +57,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for red case";
             }
             field output-warning {
                 formula {
@@ -68,6 +69,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for yellow case";
             }
             field public-nh-critical-percent {
                 constant {
@@ -82,9 +84,9 @@ iceberg {
                 description "Public nexthop percentage warning limit";
             }
             trigger report-public-nh-count {
-                synopsis "Trigger to check the count of public nexthops.";
-                description "Trigger to detect public nexthop exhaustion.";
-                frequency 1m;
+                synopsis "Trigger to check the count of public nexthops";
+                description "Trigger to detect public nexthop exhaustion";
+                frequency 90s;
                 term public-nh-count-critical {
                     when {
                         equal-to "$output-critical" 1;
@@ -92,7 +94,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Public nexthop count is very high Public nexthop count:$nexthop-pub-cnt Maximum Public nexthop count: $nexthop-pub-max ";
+                            message "Public nexthop count is very high Public nexthop count:$nexthop-pub-cnt Maximum Public nexthop count: $nexthop-pub-max";
                         }
                     }
                 }
@@ -103,7 +105,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Public nexthop count is high Public nexthop count:$nexthop-pub-cnt Maximum Public nexthop count: $nexthop-pub-max ";
+                            message "Public nexthop count is high Public nexthop count:$nexthop-pub-cnt Maximum Public nexthop count: $nexthop-pub-max";
                         }
                     }
                 }
@@ -111,7 +113,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Public nexthop count normal.Public nexthop count:$nexthop-pub-cnt Maximum Public nexthop count: $nexthop-pub-max  ";
+                            message "Public nexthop count normal.Public nexthop count:$nexthop-pub-cnt Maximum Public nexthop count: $nexthop-pub-max";
                         }
                     }
                 }

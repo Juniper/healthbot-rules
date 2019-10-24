@@ -5,11 +5,11 @@
  * It shows red alarm if there is an increase in drop count.
  * It's sampling time is 30 seconds.
  */
-iceberg { 
+heathbot { 
     topic kernel.tcpip {   
         rule check-ip-queue-stats {
-            synopsis "check ip queue statistics in the system";
-            description "check ip queue statistics in the system";
+            synopsis "Check IP queue statistics in the system";
+            description "Rule to monitor IP queue statistics in the system and report anomaly if it exceeds threshold";
             function pkt-queued-handled-abs {
                 description "This returns an absolute value between queue and dequeue variable";
                 path get_queued_handled_abs.py;
@@ -22,7 +22,7 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-ip-queue-stats-sensor {
-                description "sensor to check ip queue statistics in the system";
+                description "Sensor to check IP queue statistics in the system";
                 open-config {
                     sensor-name /junos/kernel/tcpip/netisr;
                     frequency 30s;
@@ -60,10 +60,10 @@ iceberg {
                 type integer;
             }
             trigger report-ip-queue-stats {
-                synopsis "trigger to check ip queue statistics in the system";
-                description "trigger to check ip queue statistics in the system";
-                frequency 30s;
-                term ip-queue-stats-abnormal {
+            synopsis "IP queue statistics analyser in the system";
+            description "To monitor IP queue statistics in the system and report anomaly if it exceeds threshold size";
+            frequency 45s;
+            term ip-queue-stats-abnormal {
                     when {
                         not-equal-to "$ip-drop-cnt-value" 0;
                         increasing-at-least-by-value "$ip-drop-cnt-value" {
@@ -74,7 +74,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "status abnormal: ip max queue size is 3000 and current packet drop:$ip-drop-cnt-value packet handled:$ip-pkt-handled-value packet queued:$ip-pkt-queued-value packet queued:$ip-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status abnormal: IP max queue size is 3000 and current packet drop:$ip-drop-cnt-value packet handled:$ip-pkt-handled-value packet queued:$ip-pkt-queued-value packet queued:$ip-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }
@@ -85,7 +85,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "status normal: ip max queue size is 3000 and current packet drop:$ip-drop-cnt-value packet handled:$ip-pkt-handled-value packet queued:$ip-pkt-queued-value packet queued:$ip-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status normal: IP max queue size is 3000 and current packet drop:$ip-drop-cnt-value packet handled:$ip-pkt-handled-value packet queued:$ip-pkt-queued-value packet queued:$ip-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }
@@ -93,7 +93,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "status normal: ip max queue size is 3000 and current packet drop:$ip-drop-cnt-value packet handled:$ip-pkt-handled-value packet queued:$ip-pkt-queued-value packet queued:$ip-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status normal: IP max queue size is 3000 and current packet drop:$ip-drop-cnt-value packet handled:$ip-pkt-handled-value packet queued:$ip-pkt-queued-value packet queued:$ip-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }

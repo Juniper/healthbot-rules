@@ -5,11 +5,11 @@
  * It shows red alarm when the count exceeds 95 percent of the maximum count.
  * It's sampling time is 1 minute.
  */
-iceberg {
+heathbot {
     topic kernel.tcpip {
         rule check-clone-route-count {
-            synopsis "Check clone routes count in the system.";
-            description "Check clone route exhaustion.";
+            synopsis "Check clone routes count in the system";
+            description "This rule monitors clone route count and reports anomaly if it exceeds threshold";
             function clone-route-status {
                 path get_percent.py;
                 method get_percent_output;
@@ -24,8 +24,8 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-clone-route-count-sensor {
-                synopsis "Clone routes sensor.";
-                description "Sensor to keep track of clone routes.";
+                synopsis "Clone routes sensor";
+                description "Sensor to keep track of clone routes";
                 open-config {
                     sensor-name /junos/kernel/tcpip/rtb;
                     frequency 1m;
@@ -53,6 +53,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for red case";
             }
             field output-warning {
                 formula {
@@ -64,6 +65,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for yellow case";
             }
             field route-clone-cnt {
                 sensor kernel-tcpip-clone-route-count-sensor {
@@ -80,9 +82,9 @@ iceberg {
                 description "Maximum Clone routes in the system ";
             }
             trigger report-clone-route-count {
-                synopsis "Trigger to check clone routes count in the system.";
-                description "Trigger to check clone route count.";
-                frequency 1m;
+                synopsis "Trigger to check clone routes count in the system";
+                description "Trigger to monitor clone route count and report anomaly if it exceeds threshold";
+                frequency 90s;
                 term clone-route-count-critical {
                     when {
                         equal-to "$output-critical" 1;
@@ -90,7 +92,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message " Clone route count is very high.Clone route count:$route-clone-cnt Maximum Clone route count: $route-clone-max ";
+                            message " Clone route count is very high.Clone route count:$route-clone-cnt Maximum Clone route count: $route-clone-max";
                         }
                     }
                 }

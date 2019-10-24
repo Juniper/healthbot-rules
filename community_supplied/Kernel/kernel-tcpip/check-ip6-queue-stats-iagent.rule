@@ -5,13 +5,13 @@
  * It shows red alarm if there is an increase in drop count.
  * It's sampling time is 30 seconds.
  */
-iceberg { 
+heathbot { 
     topic kernel.tcpip {   
         rule check-ip6-queue-stats-iagent {
-            synopsis "check ip6 queue statistics in the system";
-            description "check ip6 queue statistics in the system";
+            synopsis "Check IPv6 queue statistics in the system";
+            description "Rule to monitor IPv6 queue statistics in the system and report anomaly if it exceeds threshold";
             function pkt-queued-handled-abs {
-                description "this returns an absolute value between queue and dequeue variable";
+                description "This returns an absolute value between queue and dequeue variable";
                 path get_queued_handled_abs.py;
                 method get_queued_handled_pkt_abs_value;
                 argument pkt_handled_arg {
@@ -22,8 +22,8 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-ip6-queue-stats-sensor {
-                synopsis "sensor to check ip6 queue statistics in the system";
-                description "sensor to check ip6 queue statistics in the system";
+                synopsis "Sensor to check IPv6 queue statistics in the system";
+                description "Sensor to check IPv6 queue statistics in the system";
                 iAgent {
                     file ip6_netisr_work.yml;
                     table ip6NetisrWorkTable;
@@ -35,21 +35,21 @@ iceberg {
                     path ip6_pkt_drop;
                 }
                 type integer;
-                description "drop packet count";
+                description "Drop packet count";
             }
             field ip6-pkt-handled-value {
                 sensor kernel-tcpip-ip6-queue-stats-sensor {
                     path ip6_pkt_handled;
                 }
                 type integer;
-                description "packets handled";
+                description "Packets handled";
             }
             field ip6-pkt-queued-value {
                 sensor kernel-tcpip-ip6-queue-stats-sensor {
                     path ip6_pkt_queued;
                 }
                 type integer;
-                description "packets queued";
+                description "Packets queued";
             }
             field pkt-queued-handled-abs-value {
                 formula {
@@ -62,9 +62,9 @@ iceberg {
                 type integer;
         }
             trigger report-ip6-queue-stats-iagent {
-            synopsis "trigger to check ip6 queue statistics in the system";
-            description "trigger to check ip6 queue statistics in the system";
-            frequency 30s;
+            synopsis "IPv6 queue statistics analyser in the system";
+            description "To monitor IPv6 queue statistics in the system and report anomaly if it exceeds threshold size";
+            frequency 45s;
             term ip6-queue-stats-abnormal {
                 when {
                     not-equal-to "$ip6-drop-cnt-value" 0;
@@ -76,7 +76,7 @@ iceberg {
                 then {
                     status {
                         color red;
-                        message "status abnormal: ip6 max queue size is 3000 and current packet drop:$ip6-drop-cnt-value packet handled:$ip6-pkt-handled-value packet queued:$ip6-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                        message "Status abnormal: IPv6 max queue size is 3000 and current packet drop:$ip6-drop-cnt-value packet handled:$ip6-pkt-handled-value packet queued:$ip6-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                     }
                 }
             }
@@ -87,7 +87,7 @@ iceberg {
                 then {
                     status {
                         color yellow;
-                        message " status normal: ip6 max queue size is 3000 and current packet drop:$ip6-drop-cnt-value packet handled:$ip6-pkt-handled-value packet queued:$ip6-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                        message "Status normal: IPv6 max queue size is 3000 and current packet drop:$ip6-drop-cnt-value packet handled:$ip6-pkt-handled-value packet queued:$ip6-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                     }
                 }
             }
@@ -95,7 +95,7 @@ iceberg {
                 then {
                     status {
                         color green;
-                        message "status normal: ip6 max queue size is 3000 and current packet drop:$ip6-drop-cnt-value packet handled:$ip6-pkt-handled-value packet queued:$ip6-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                        message "Status normal: IPv6 max queue size is 3000 and current packet drop:$ip6-drop-cnt-value packet handled:$ip6-pkt-handled-value packet queued:$ip6-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                     }
                 }
             }

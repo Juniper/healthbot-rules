@@ -1,15 +1,15 @@
 /*
- * This rule checks for the arp queue statistics in the system.
+ * This rule checks for the ARP queue statistics in the system.
  *
  * It shows yellow alarm when the difference between packet queued and packet handled exceeds 95 percent of the queue size.
  * It shows red alarm if there is an increase in drop count.
  * It's sampling time is 30 seconds.
  */
-iceberg { 
+heathbot { 
     topic kernel.tcpip {   
         rule check-arp-queue-stats {
-            synopsis "check arp queue statistics in the system";
-            description "check arp queue statistics in the system";
+            synopsis "Check ARP queue statistics in the system";
+            description "Rule to monitor ARP queue statistics in the system and report anomaly if it exceeds threshold";
             function pkt-queued-handled-abs {
                 description "This returns an absolute value between queue and dequeue variable";
                 path get_queued_handled_abs.py;
@@ -22,7 +22,7 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-arp-queue-stats-sensor {
-                description "sensor to check arp queue statistics in the system";
+                description "Sensor to check ARP queue statistics in the system";
                 open-config {
                     sensor-name /junos/kernel/tcpip/netisr;
                     frequency 30s;
@@ -60,9 +60,9 @@ iceberg {
                 type integer;
             }
             trigger report-arp-queue-stats {
-                synopsis "trigger to check arp queue statistics in the system";
-                description "trigger to check arp queue statistics in the system";
-                frequency 30s;
+            synopsis "ARP queue statistics analyser in the system";
+            description "To monitor ARP queue statistics in the system and report anomaly if it exceeds threshold size";
+            frequency 45s;
                 term arp-queue-stats-abnormal {
                     when {
                         not-equal-to "$arp-drop-cnt-value" 0;
@@ -74,7 +74,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "status abnormal: arp max queue size is 50 and current packet drop:$arp-drop-cnt-value packet handled:$arp-pkt-handled-value packet queued:$arp-pkt-queued-value packet queued:$arp-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status abnormal: ARP max queue size is 50 and current packet drop:$arp-drop-cnt-value packet handled:$arp-pkt-handled-value packet queued:$arp-pkt-queued-value packet queued:$arp-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }
@@ -85,7 +85,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "status normal: arp max queue size is 50 and current packet drop:$arp-drop-cnt-value packet handled:$arp-pkt-handled-value packet queued:$arp-pkt-queued-value packet queued:$arp-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status normal: ARP max queue size is 50 and current packet drop:$arp-drop-cnt-value packet handled:$arp-pkt-handled-value packet queued:$arp-pkt-queued-value packet queued:$arp-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }
@@ -93,7 +93,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "status normal: arp max queue size is 50 and current packet drop:$arp-drop-cnt-value packet handled:$arp-pkt-handled-value packet queued:$arp-pkt-queued-value packet queued:$arp-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status normal: ARP max queue size is 50 and current packet drop:$arp-drop-cnt-value packet handled:$arp-pkt-handled-value packet queued:$arp-pkt-queued-value packet queued:$arp-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }

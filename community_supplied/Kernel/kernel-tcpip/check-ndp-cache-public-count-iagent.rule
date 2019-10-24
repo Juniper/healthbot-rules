@@ -6,13 +6,13 @@
  * It's sampling time is 1 minute.
  */
 
-iceberg {
+heathbot {
     topic kernel.tcpip {
         rule check-ndp-cache-public-count-iagent {
-            synopsis "Check ndp public cache count";
-            description "Check ndp public cache count";
+            synopsis "Check NDP public cache count";
+            description "This rule monitors NDP public cache count and reports anomaly if it exceeds the threshold value";
             function ndp-cache-public-status {
-                description "This returns a value comparing the ndp public cache count with the threshold value";
+                description "This returns a value comparing the NDP public cache count with the threshold value";
                 path get_percent.py;
                 method get_percent_output;
                 argument actual_val {
@@ -26,8 +26,8 @@ iceberg {
                 }
             }
             sensor ndp-public-cache-count-sensor {
-                synopsis "Sensor to check ndp public cache count";
-                description "Sensor to check ndp public cache count";
+                synopsis "Sensor to check NDP public cache count";
+                description "Sensor to check NDP public cache count";
                 iAgent {
                     file ndp_public_cache.yml;
                     table checkNdpPublicCacheTable;
@@ -39,33 +39,33 @@ iceberg {
                     path ndpcache_public_cnt;
                 }
                 type integer;
-                description "Current ndp public cache count in the system";
+                description "Current NDP public cache count in the system";
             }
             field nbrcache-public-drop-cnt {
                 sensor ndp-public-cache-count-sensor {
                     path ndpcache_public_drop_cnt;
                 }
                 type integer;
-                description "Maximum ndp public cache drop count in the system";
+                description "Maximum NDP public cache drop count in the system";
             }
             field nbrcache-public-max {
                 sensor ndp-public-cache-count-sensor {
                     path ndpcache_public_max_cnt;
                 }
                 type integer;
-                description "Maximum ndp public cache count in the system";
+                description "Maximum NDP public cache count in the system";
             }
             field ndp-cache-public-critical-percent {
                 constant {
                     value "{{ndp-cache-public-critical-percent-input}}";
                 }
-                description "ndp public cache percentage critical limit";
+                description "NDP public cache percentage critical limit";
             }
             field ndp-cache-public-warning-percent {
                 constant {
                     value "{{ndp-cache-public-warning-percent-input}}";
                 }
-                description "ndp public cache percentage warning limit";
+                description "NDP public cache percentage warning limit";
             }
             field output-critical {
                 formula {
@@ -77,6 +77,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for red case";
             }
             field output-warning {
                 formula {
@@ -88,11 +89,12 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for yellow case";
             }
             trigger report-ndp-public-cache-count-iagent {
-                synopsis "Trigger to to check ndp public cache count";
-                description "Trigger to check ndp public cache count";
-                frequency 1m;
+                synopsis "NDP public cache count analyser";
+                description "To monitor NDP public [cache count, drop count] and report anomaly when it exceeds threshold or when there is a drop";
+                frequency 90s;
                 term ndp-public-cache-drop {
                     when {
                         not-equal-to "$nbrcache-public-drop-cnt" 0;
@@ -103,7 +105,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "ndp public cache drops seen.ndp public cache drop count:$nbrcache-public-drop-cnt ";
+                            message "NDP public cache drops seen.NDP public cache drop count:$nbrcache-public-drop-cnt";
                         }
                     }
                 }
@@ -114,7 +116,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "ndp public cache count is very high.ndp public cache count:$nbrcache-public-cnt Maximum ndp public cache count: $nbrcache-public-max ";
+                            message "NDP public cache count is very high.NDP public cache count:$nbrcache-public-cnt Maximum NDP public cache count: $nbrcache-public-max";
                         }
                     }
                 }
@@ -125,7 +127,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "ndp public cache count is high.ndp public cache count:$nbrcache-public-cnt Maximum ndp public cache count: $nbrcache-public-max ";
+                            message "NDP public cache count is high.NDP public cache count:$nbrcache-public-cnt Maximum NDP public cache count: $nbrcache-public-max";
                         }
                     }
                 }
@@ -133,19 +135,19 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "ndp public cache count normal.ndp public cache count:$nbrcache-public-cnt Maximum ndp public cache count: $nbrcache-public-max  ";
+                            message "NDP public cache count normal.NDP public cache count:$nbrcache-public-cnt Maximum NDP public cache count: $nbrcache-public-max";
                         }
                     }
                 }
             }
             variable ndp-cache-public-critical-percent-input {
                 value 95;
-                description "ndp public cache percentage to raise alarm when critical limit is reached";
+                description "NDP public cache percentage to raise alarm when critical limit is reached";
                 type int;
             }
             variable ndp-cache-public-warning-percent-input {
                 value 90;
-                description "ndp public cache percentage to raise alarm when warning limit is reached";
+                description "NDP public cache percentage to raise alarm when warning limit is reached";
                 type int;
             }
             rule-properties {

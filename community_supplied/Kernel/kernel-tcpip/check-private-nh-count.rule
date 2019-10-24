@@ -6,11 +6,11 @@
  * It's sampling time is 1 minute.
  */
 
-iceberg {
+heathbot {
     topic kernel.tcpip {
         rule check-private-nh-count {
-            synopsis "To check the count of private nexthops.";
-            description "Detect private nexthop exhaustion.";
+            synopsis "To check the count of private nexthops";
+            description "This rule monitors the  private nexthop count and reports anomaly when it exceeds threshold";
             function private-nh-status {
                 description "This returns a value comparing the private nexthop count with the threshold value";
                 path get_percent.py;
@@ -26,8 +26,8 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-nexthop-private-count-sensor {
-                synopsis "To check the count of private nexthops.";
-                description "Detect private nexthop exhaustion.";
+                synopsis "To check the count of private nexthops";
+                description "Detect private nexthop exhaustion";
                 open-config {
                     sensor-name /junos/kernel/tcpip/nhidx;
                     frequency 1m;
@@ -57,6 +57,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for red case";
             }
             field output-warning {
                 formula {
@@ -68,6 +69,7 @@ iceberg {
                     }
                 }
                 type integer;
+                description "Output field to indicate if the threshold is reached for yellow case";
             }
             field private-nh-critical-percent {
                 constant {
@@ -82,9 +84,9 @@ iceberg {
                 description "Private nexthop percentage warning limit";
             }
             trigger report-private-nh-count {
-                synopsis "To check the count of private nexthops.";
-                description "Used private nexthop indices";
-                frequency 1m;
+                synopsis "Trigger to check the count of private nexthops";
+                description "Trigger to detect private nexthop exhaustion";
+                frequency 90s;
                 term private-nh-count-critical {
                     when {
                         equal-to "$output-critical" 1;
@@ -92,7 +94,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Private nexthop count is very high.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max ";
+                            message "Private nexthop count is very high.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max";
                         }
                     }
                 }
@@ -103,7 +105,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Private nexthop count is high.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max ";
+                            message "Private nexthop count is high.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max";
                         }
                     }
                 }
@@ -111,7 +113,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Private nexthop count normal.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max ";
+                            message "Private nexthop count normal.private nexthop count:$nexthop-priv-cnt Maximum private nexthop count: $nexthop-priv-max";
                         }
                     }
                 }

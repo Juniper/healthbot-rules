@@ -5,11 +5,11 @@
  * It shows red alarm if there is an increase in drop count.
  * It's sampling time is 30 seconds.
  */
-iceberg { 
+heathbot { 
     topic kernel.tcpip {   
         rule check-ether-queue-stats {
-            synopsis "check ether queue statistics in the system";
-            description "check ether queue statistics in the system";
+            synopsis "Check ether queue statistics in the system";
+            description "This rule monitors ether queue statistics and reports anomaly if it exceeds threshold";
             function pkt-queued-handled-abs {
                 description "This returns an absolute value between queue and dequeue variable";
                 path get_queued_handled_abs.py;
@@ -22,7 +22,7 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-ether-queue-stats-sensor {
-                description "sensor to check ether queue statistics in the system";
+                description "Sensor to check ether queue statistics in the system";
                 open-config {
                     sensor-name /junos/kernel/tcpip/netisr;
                     frequency 30s;
@@ -60,9 +60,9 @@ iceberg {
                 type integer;
             }
             trigger report-ether-queue-stats {
-                synopsis "trigger to check ether queue statistics in the system";
-                description "trigger to check ether queue statistics in the system";
-                frequency 30s;
+                synopsis "Ether queue statistics anlayser";
+                description "To monitor ether queue statistics in the system and report anomaly if it exceeds threshold queue size";
+                frequency 45s;
                 term ether-queue-stats-abnormal {
                     when {
                         not-equal-to "$ether-drop-cnt-value" 0;
@@ -74,7 +74,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "status abnormal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status abnormal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }
@@ -85,7 +85,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }
@@ -93,7 +93,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                            message "Status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                         }
                     }
                 }

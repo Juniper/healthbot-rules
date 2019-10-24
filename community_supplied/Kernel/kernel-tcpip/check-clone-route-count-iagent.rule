@@ -6,11 +6,11 @@
  * It's sampling time is 1 minute.
  */
 
-iceberg {
+heathbot {
     topic kernel.tcpip {
         rule check-clone-route-count-iagent {
             synopsis "Check clone route";
-            description "Check clone route count";
+            description "This rule monitors clone route count and reports anomaly if it exceeds threshold";
             function clone-route-status {
                 description "This returns a value comparing the Clone route count with the threshold value";
                 path get_percent.py;
@@ -26,7 +26,7 @@ iceberg {
                 }
             }
             sensor clone-route-count-sensor {
-                synopsis "clone route count sensor";
+                synopsis "Clone route count sensor";
                 description "Sensor to check clone route count";
                 iAgent {
                     file clone_route_count.yml;
@@ -83,9 +83,9 @@ iceberg {
                 type integer;
             }
             trigger report-clone-route-count-iagent {
-                synopsis "Trigger to check clone route count ";
-                description "Trigger to check clone route count";
-                frequency 1m;
+                synopsis "Trigger to check clone route count";
+                description "Trigger to monitor clone route count and report anomaly if it exceeds threshold";
+                frequency 90s;
                 term clone-route-count-critical {
                     when {
                         equal-to "$output-critical" 1;
@@ -93,7 +93,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Clone route count is very high.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max ";
+                            message "Clone route count is very high.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max";
                         }
                     }
                 }
@@ -104,7 +104,7 @@ iceberg {
                     then {
                         status {
                             color yellow;
-                            message "Clone route count is high.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max ";
+                            message "Clone route count is high.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max";
                         }
                     }
                 }
@@ -112,7 +112,7 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Clone route count normal.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max  ";
+                            message "Clone route count normal.Clone route count:$clone-route-count Maximum Clone route count: $clone-route-max";
                         }
                     }
                 }

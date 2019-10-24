@@ -5,13 +5,13 @@
  * It shows red alarm if there is an increase in drop count.
  * It's sampling time is 30 seconds.
  */
-iceberg { 
+heathbot { 
     topic kernel.tcpip {   
         rule check-ether-queue-stats-iagent {
-            synopsis "check ether queue statistics in the system";
-            description "check ether queue statistics in the system";
+            synopsis "Check ether queue statistics in the system";
+            description "This rule monitors ether queue statistics and reports anomaly if it exceeds threshold";
             function pkt-queued-handled-abs {
-                description "this returns an absolute value between queue and dequeue variable";
+                description "This returns an absolute value between queue and dequeue variable";
                 path get_queued_handled_abs.py;
                 method get_queued_handled_pkt_abs_value;
                 argument pkt_handled_arg {
@@ -22,8 +22,8 @@ iceberg {
                 }
             }
             sensor kernel-tcpip-ether-queue-stats-sensor {
-                synopsis "sensor to check ether queue statistics in the system";
-                description "sensor to check ether queue statistics in the system";
+                synopsis "Sensor to check ether queue statistics in the system";
+                description "Sensor to check ether queue statistics in the system";
                 iAgent {
                     file ether_netisr_work.yml;
                     table etherNetisrWorkTable;
@@ -35,22 +35,22 @@ iceberg {
                     path ether_pkt_drop;
                 }
                 type integer;
-                description "drop packet count";
+                description "Drop packet count";
             }
             field ether-pkt-handled-value {
                 sensor kernel-tcpip-ether-queue-stats-sensor {
                     path ether_pkt_handled;
                 }
                 type integer;
-                description "packets handled";
+                description "Packets handled";
             }
             field ether-pkt-queued-value {
                 sensor kernel-tcpip-ether-queue-stats-sensor {
                     path ether_pkt_queued;
                 }
                 type integer;
-                description "packets queued";
-            }
+                description "Packets queued";
+           }
             field pkt-queued-handled-abs-value {
                 formula {
                     user-defined-function {
@@ -62,9 +62,9 @@ iceberg {
                 type integer;
         }
             trigger report-ether-queue-stats-iagent {
-            synopsis "trigger to check ether queue statistics in the system";
-            description "trigger to check ether queue statistics in the system";
-            frequency 30s;
+                synopsis "Ether queue statistics anlayser";
+                description "To monitor ether queue statistics in the system and report anomaly if it exceeds threshold queue size";
+                frequency 45s;
             term ether-queue-stats-abnormal {
                 when {
                     not-equal-to "$ether-drop-cnt-value" 0;
@@ -76,7 +76,7 @@ iceberg {
                 then {
                     status {
                         color red;
-                        message "status abnormal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                        message "Status abnormal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                     }
                 }
             }
@@ -87,7 +87,8 @@ iceberg {
                 then {
                     status {
                         color yellow;
-                        message " status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+
+                        message "Status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                     }
                 }
             }
@@ -95,7 +96,7 @@ iceberg {
                 then {
                     status {
                         color green;
-                        message "status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
+                        message "Status normal: ether max queue size is 3000 and current packet drop:$ether-drop-cnt-value packet handled:$ether-pkt-handled-value packet queued:$ether-pkt-queued-value and current packets in queue:$pkt-queued-handled-abs-value";
                     }
                 }
             }
