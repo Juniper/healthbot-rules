@@ -1,5 +1,5 @@
 /*
- * Detects flow session details for each PIC and notifies when anomalies are found.
+ * Detects flow session details for each PIC in SRX cluster device and notifies when anomalies are found.
  * 
  * 
  *   1) "active-sessions-threshold-value" is the threshold that causes the rule to report
@@ -10,24 +10,24 @@
  *      color to red when active sessions for a PIC slot is greater than this value.
  *  
  */
-iceberg {
-    topic security  {
+healthbot {
+    topic security.flow  {
         rule check-flow-session-summary {
             description "Monitors and notify flow session details";
             synopsis "Flow session summary statistics analyzer"; 
             /*
-             * Monitors the active flow session details and notifies via the dashboard
-             * colors when the threshold is above {{active-sessions-threshold}}
-             * it will mark as red.
-             * The color is set to yellow when active flow session details are above dynamic threshold
-             * {{dt-active-sessions}}.
+             * Monitors the active flow session details and notifies via the
+             * dashboard colors when the threshold is above
+             *  {{active-sessions-threshold}} it will mark as red.
+             * The color is set to yellow when active flow session details 
+             * are above dynamic threshold {{dt-active-sessions}}.
              * Otherwise the color is set to green.
              * 
-             * Monitors the maximum flow session details and notifies via the dashboard
-             * colors when the threshold is above {{max-sessions-threshold}}
-             * it will mark as red.
-             * The color is set to yellow when maximum flow session details are above dynamic threshold
-             * {{dt-max-sessions}].
+             * Monitors the maximum flow session details and notifies via the 
+             * dashboard colors when the threshold is above
+             * {{max-sessions-threshold}} it will mark as red.
+             * The color is set to yellow when maximum flow session details
+             * are above dynamic threshold {{dt-max-sessions}].
              * Otherwise the color is set to green.
              * Use fpc-pic-id and re-name slot as key for rule.
              */
@@ -42,7 +42,8 @@ iceberg {
                 }
             }
             /*
-             * Fields defined with variables, dynamic thresholds and constant values
+             * Fields defined with variables, dynamic thresholds and
+             * constant values
              */
             field active-sessions {
                 sensor flow-session {
@@ -133,8 +134,9 @@ iceberg {
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * active sessions value for FPC-PIC id is more than $dt-active-sessions
+                 * Sets color to yellow and sends out an anomaly notification 
+                 * when active sessions value for FPC-PIC id is more than
+                 * $dt-active-sessions
                  */ 
                 term is-active-sessions-above-dt {
                     when {
@@ -168,7 +170,8 @@ iceberg {
                 frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * maximum sessions value for FPC-PIC id is more than threshold ($max-sessions-threshold)
+                 * maximum sessions value for FPC-PIC id is more than threshold
+                 * ($max-sessions-threshold)
                  */ 
                 term is-max-sessions-abnormal {
                     when {
@@ -184,8 +187,9 @@ iceberg {
                     }                               
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * maximum sessions value for FPC-PIC id is more than $dt-max-sessions
+                 * Sets color to yellow and sends out an anomaly notification 
+                 * when maximum sessions value for FPC-PIC id is more than
+                 * $dt-max-sessions 
                  */
                 term is-max-sessions-above-dt {
                     when {
