@@ -58,7 +58,10 @@ def get_config(**kwargs):
 
 # Calculate the percentage
 def decimal_to_percent(numerator,denominator, **kwargs):
-        return (numerator/denominator)*100
+        percent = (numerator/denominator)*100
+        round_percent = round(percent,3)
+        return round_percent
+
 #Change the percentage to decimal
 def percent_to_decimal(percentage, **kwargs):
         return percentage/100
