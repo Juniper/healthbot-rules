@@ -3,7 +3,6 @@ import sys
 import requests
 from jnpr.junos.device import Device
 from pprint import pprint
-# from __future__ import print_function
 
 prev_value = {}
 prev_time = {}
@@ -16,46 +15,51 @@ previous_value = {}
 
 #UDF
 
-
+# Get the hostname of the device
 def get_hostname(**kwargs):
         device_info = get_device_info_healthbot(**kwargs)
         return device_info['facts']['hostname']
-     
+
+# Get the model of the device
 def get_model(**kwargs):
         device_info = get_device_info_healthbot(**kwargs)
         return  device_info['facts']['platform']
 
+#Get the version of device
 def get_version(**kwargs):
         device_info = get_device_info_healthbot(**kwargs)
         return  device_info['facts']['release']
 
+# Get the version of RE0 of the device if present
 def get_version_RE0(**kwargs):
         device_details = get_device_info(**kwargs)
         with connect_to_device(**device_details) as dev:
                 return dev.facts['version_RE0']
-        
+ # Get the version of RE1 of the device if present               
 def get_version_RE1(**kwargs):
         device_details = get_device_info(**kwargs)
         with connect_to_device(**device_details) as dev:
                 return dev.facts['version_RE1']
-
+# Get the version of RE0 of the device if present
 def get_re_master(**kwargs):
         device_details = get_device_info(**kwargs)
         with connect_to_device(**device_details) as dev:
                 return dev.facts['re_master']['default']
-
+# Get the serrial number of the device
 def get_serial_no(**kwargs):
         device_info = get_device_info_healthbot(**kwargs)
         return  device_info['facts']['serial-number']
 
+# Get the configuration of the device in string
 def get_config(**kwargs):
         device_details = get_device_info(**kwargs)
         with connect_to_device(**device_details) as dev:
                 return dev.rpc.get_config(options={'format':'json'})
 
+# Calculate the percentage
 def decimal_to_percent(numerator,denominator, **kwargs):
         return (numerator/denominator)*100
-
+#Change the percentage to decimal
 def percent_to_decimal(percentage, **kwargs):
         return percentage/100
 
@@ -78,12 +82,15 @@ def bytes_to_gb(bytes, **kwargs):
 def mb_to_bytes(mb, **kwargs):
         return mb*(10**6)
 
+#convert megabytes to gigabytes
 def mb_to_gb(mb, **kwargs):
         return mb/(10**3)
 
+#convert gigabytes to bytes
 def gb_to_bytes(gb, **kwargs):
         return gb*(10**9)
 
+#convert bytes to megabytes
 def gb_to_mb(gb, **kwargs):
         return gb*(10**6)
 
@@ -140,7 +147,7 @@ def gbps(intf_name, octets, ifl_id = None, **kwargs):
         return gbps
 
 
-
+#Bytes transfered in an interval
 def bytes(intf_name, octets, ifl_id = None, **kwargs):
         intf_name_ifl_id = ""
         if ifl_id is None:
@@ -163,13 +170,13 @@ def bytes(intf_name, octets, ifl_id = None, **kwargs):
         prev_value[intf_name_ifl_id] = cur_value
         return bytes_send
 
-#kilobytes conversion
+#kilobytes transfered in an interval
 def kilo_bytes(intf_name, octets, ifl_id = None, **kwargs):
         bytes_send = bytes(intf_name, octets, ifl_id, **kwargs)
         kilobytes_send = bytes_send/1000
         return kilobytes_send
 
-#megabytes conversion
+#megabytes transfered in an interval
 def mega_bytes(intf_name, octets, ifl_id = None, **kwargs):
         bytes_send = bytes(intf_name, octets, ifl_id, **kwargs)
         megabytes_send = bytes_send/1000000
@@ -177,7 +184,7 @@ def mega_bytes(intf_name, octets, ifl_id = None, **kwargs):
 
 
 
-#gigabytes conversion
+#gigabytes transfered in an interval
 def giga_bytes(intf_name, octets, ifl_id = None, **kwargs):
         bytes_send = bytes(intf_name, octets, ifl_id, **kwargs)
         gigabytes_send = bytes_send/1000000000
@@ -199,6 +206,8 @@ def value_diff(key_name, value, sub_key_name = None, **kwargs):
         return val_diff
 
 #UDA
+#Restart the Fpc of device
+#input FPC slot Number
 def restart_fpc(fpc_slot, **kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
@@ -206,6 +215,8 @@ def restart_fpc(fpc_slot, **kwargs):
         dev.close()
         return response
 
+#Bring the Fpc online of device
+#input FPC slot Number
 def online_fpc(fpc_slot, **kwargs):
         device_details = get_device_info(**kwargs)
         dev=connect_to_device(**device_details)
@@ -213,7 +224,8 @@ def online_fpc(fpc_slot, **kwargs):
         dev.close()
         return response
 
-
+#Bring the Fpc offline of device
+#input FPC slot Number
 def offline_fpc(fpc_slot, **kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
@@ -221,7 +233,8 @@ def offline_fpc(fpc_slot, **kwargs):
         dev.close()
         return response
 
-
+#Bring the pic online of specific fpc of device
+#input FPC slot Number and pic slot number
 def online_pic(fpc_slot, pic_slot, **kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
@@ -229,6 +242,8 @@ def online_pic(fpc_slot, pic_slot, **kwargs):
         dev.close()
         return response
 
+#Bring the pic offline of specific fpc of device
+#input FPC slot Number and pic slot number
 def offline_pic(fpc_slot, pic_slot, **kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
@@ -236,7 +251,7 @@ def offline_pic(fpc_slot, pic_slot, **kwargs):
         dev.close()
         return response
 
-
+#Restart The device
 def reboot_system(**kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
@@ -244,13 +259,14 @@ def reboot_system(**kwargs):
         dev.close()
         return response
 
+#Restart both the RE's
 def reboot_both_routing_engines(**kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
         response = dev.rpc.request_reboot(both_routing_engines = True)
         dev.close()
         return response
-
+#Restart the other RE's
 def reboot_other_routing_engine(**kwargs):
         device_details = get_device_info(**kwargs)
         dev = connect_to_device(**device_details)
@@ -258,11 +274,7 @@ def reboot_other_routing_engine(**kwargs):
         dev.close()
         return response
 
-
-
-
-
-
+#Helper Functions
 def get_device_info(**kwargs):
         response = requests.get('http://api_server:9000/api/v1/device/%s/' % kwargs['device_id'], verify=False)
         if response.status_code != 200:
