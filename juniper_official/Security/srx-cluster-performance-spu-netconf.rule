@@ -1,5 +1,5 @@
 /*
- * Detects linecards SPU utilization percentage and notifies when 
+ * Detects linecards SPU utilization percentage in SRX cluster device and notifies when 
  * anomalies are found.
  * 
  *   1) "spu-cpu-threshold" is the threshold that causes the rule to report
@@ -11,19 +11,19 @@ healthbot {
     topic security.spu {
         description "Monitors and notify SPU performance details";
         synopsis "FPC SPU performance statistics analyzer";
-        rule check-spu-performance-monitor {
+        rule check-spu-performance-srx-cluster-netconf {
             synopsis "FPC SPU performance analyzer";
             description "Collects SPU performance for each PIC and notifies in case of stats is above threshold";
             /*
-             * Monitors the SPU performance stats and notifies via the 
-             * dashboard colors when the traffic is above 
-             * {{spu-cpu-threshold}} it will mark as red.
-             * The color is set to yellow when the traffic is above dynamic 
-             * threshold  {{dt-cpu-percentage}}. 
+             * Monitors the SPU performance stats and notifies via the dashboard
+             * colors when the traffic is above {{spu-cpu-threshold}}
+             * it will mark as red.
+             * The color is set to yellow when the traffic is above dynamic .
+             * threshold value {{dt-cpu-percentage}} 
              * Otherwise the color is set to green.
-             * Use pic-number and slot as keys for rule.
+             * Use pic-number re-name and slot as keys for rule.
              */
-            keys [ pic-number slot ];
+            keys [ pic-number re-name slot ];
             function get-spu {
                 description "Python application collects string from the iagent sensor and pick the 30th sec performance as integer for all SPUs.";
                 path get_spu_performance.py;
@@ -37,7 +37,7 @@ healthbot {
              */
             sensor spu-monitor {
                 iAgent {
-                    file srx-performance-spu.yml;
+                    file srx-cluster-performance-spu.yml;
                     table MonitoringPerformanceSPUTable;
                     frequency 60s;
                 }
@@ -66,8 +66,8 @@ healthbot {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1d,1h;
+                        learning-period 7days;
+                        pattern-periodicity 1days,1hours;
                         field-name "$cpu-percentage-value";
                     }
                 }
@@ -80,6 +80,13 @@ healthbot {
                 }
                 type string;
                 description "This field contains FPC slot number";
+            }
+            field re-name {
+                sensor spu-monitor {
+                    path parent::*/parent::*/re-name;
+                }
+                type string;
+                description "This field contains node number";
             }
             field slot {
                 sensor spu-monitor {
@@ -96,7 +103,7 @@ healthbot {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * SPU performance value for PIC increases more than threshold
-                 * ($cpu-threshold)
+                 * ($cpu-threshold) 
                  */ 
                 term is-spu-cpu-abnormal {
                     when {
@@ -105,14 +112,14 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "SPU CPU ($cpu-percentage-value) of fpc_slot:$slot, pic:$pic-number has crossed static threshold value ($cpu-threshold)";
+                            message "SPU CPU ($cpu-percentage-value) of Node:re-name, fpc-slot:$slot, pic:$pic-number has crossed static threshold value ($cpu-threshold)";
                         }
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 *  when SPU performance value for PIC increases more than
-                 *  $dt-cpu-percentage value
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * SPU performance value for PIC increases more than
+                 * $dt-cpu-percentage value
                  */ 
                 term is-spu-cpu-above-dt {
                     when {
@@ -121,7 +128,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "SPU CPU ($cpu-percentage-value) of fpc_slot:$slot, pic:$pic-number has crossed dynamic threshold value";
+                            message "SPU CPU ($cpu-percentage-value) of Node:$re-name, fpc-slot:$slot, pic:$pic-number has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -132,7 +139,7 @@ healthbot {
                     then {
                         status {
                             color green;            
-                            message "SPU CPU ($cpu-percentage-value) of fpc_slot:$slot, pic:$pic-number is normal";
+                            message "SPU CPU ($cpu-percentage-value) of Node:$re-name, fpc-slot:$slot, pic:$pic-number is normal";
                         }
                     }
                 }
@@ -141,6 +148,23 @@ healthbot {
                 value 80;
                 description "Threshold value for spu cpu percentage value";
                 type int;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }                       
+                    }
+                }
             }
         }
     }

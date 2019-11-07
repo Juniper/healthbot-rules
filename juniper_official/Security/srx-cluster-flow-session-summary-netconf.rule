@@ -12,7 +12,7 @@
  */
 healthbot {
     topic security.flow  {
-        rule check-flow-session-summary {
+        rule check-flow-session-summary-srx-cluster-netconf {
             description "Monitors and notify flow session details";
             synopsis "Flow session summary statistics analyzer"; 
             /*
@@ -63,8 +63,8 @@ healthbot {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1d,1h;
+                        learning-period 7days;
+                        pattern-periodicity 1days,1hours;
                         field-name "$active-sessions";
                     }
                 }
@@ -75,8 +75,8 @@ healthbot {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1d,1h;
+                        learning-period 7days;
+                        pattern-periodicity 1days,1hours;
                         field-name "$max-sessions";
                     }
                 }
@@ -225,6 +225,23 @@ healthbot {
                 value 8000000;
                 description "Default threshold value for maximum flow sessions threshold value";
                 type int;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }                       
+                    }
+                }
             }
         }
     }

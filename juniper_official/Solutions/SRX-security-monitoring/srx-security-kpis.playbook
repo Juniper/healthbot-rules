@@ -1,0 +1,24 @@
+/*
+ * Playbook contains multiple rules which monitors standalone SRX's system,
+ * linecard, SPU's CPU & Memory and security parameters and notifies when
+ * anomalies are found.
+ *
+ * 1) Rule "check-spu-performance-netconf" Collects SPU performance for each
+ *    PIC and notifies in case of stats is above threshold
+ * 2) Rule "check-flow-session-summary-netconf" Collects and monitors the
+ *    active flow session details and notifies anomalies
+ * 3) Rule "check-fpc-cpu-memory-usage-netconf" Collects system FPC CPU
+ *    statistics periodically and notifies anomalies when CPU utilization 
+ *    exceed threshold
+ * 4) Rule "check-interface-in-out-traffic-snmp" Collects input and output
+ *    traffic periodically and notifies in case of traffic is above threshold
+ * 5) Rule "check-system-cpu-memory-snmp" Collects CPU, Memory Utilization
+ *    details from Routing Engines and notify anomalies based on threshold values
+ */
+healthbot {
+    playbook srx-security-kpis-playbook {
+        rules [ security.spu/check-spu-performance-netconf security.flow/check-flow-session-summary-netconf linecard.fpc/check-fpc-cpu-memory-usage-netconf interface.statistics/check-interface-in-out-traffic-snmp system.cpu.memory/check-system-cpu-memory-snmp ];
+        description "Playbook checks SRX's system, linecard, SPU's cpu, memory and security parameters";
+        synopsis "SRX's system, linecard and security performance indicators";
+    }
+}

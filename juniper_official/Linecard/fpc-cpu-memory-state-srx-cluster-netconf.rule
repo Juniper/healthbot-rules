@@ -1,11 +1,12 @@
 /*
- * Detects linecards CPU utilization threshold breaches and notifies when 
+ * Detects linecards CPU utilization threshold breaches in SRX cluster device and notifies when 
  * anomalies are found.
+ * Three inputs control detection
  * 
- *   1) "buffer-usage-threshold" is the threshold that causes the rule to
- *       report an anomaly. By default it's 80% of CPU utilization. This
- *       rule will set a dashboard color to red when FPC CPU utilization 
- *       exceed high threshold 
+ *   1) "buffer-usage-threshold" is the threshold that causes the rule to report
+ *      an anomaly. By default it's 80% of CPU utilization. This rule will set
+ *      a dashboard color to red when FPC CPU utilization exceed high threshold
+ * 
  *   2) "cpu-usage-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 80% of CPU utilization. This rule will set
  *      a dashboard color to red when FPC CPU utilization exceed high threshold
@@ -17,7 +18,7 @@ healthbot {
     topic linecard.fpc {
         description "Monitors linecards memory & cpu and notifies anomalies";
         synopsis "Linecard health analyzer";
-        rule check-fpc-cpu-memory-usage {
+        rule check-fpc-cpu-memory-usage-srx-cluster-netconf {
             description "Collects system FPC CPU statistics periodically and notifies anomalies when CPU utilization exceed threshold";
             synopsis "FPC CPU analyzer";
             /*
@@ -28,22 +29,22 @@ healthbot {
              * Otherwise the color is set to green.
              * 
              * Monitors all the linecards buffer-memory-usage and Notifies via
-             * the dashboard colors when the linecards buffer-memory
-             * utilization exceed by {{buffer-usage-threshold}} for every
-             * streaming interval. The color is set to yellow 
-             * if buffer-memory-usage goes over dt-buffer-memory-usage. 
-             * Otherwise the color is set to green. 
+             * the dashboard colors when the linecards buffer-memory utilization
+             * exceed by {{buffer-usage-threshold}} for every streaming interval. 
+             * The color is set to yellow if buffer-memory-usage goes over 
+             * dt-buffer-memory-usage. Otherwise the color is set to green.
+             * 
              * Monitors all the linecards heap-memory-usage and Notifies via
-             * the dashboard colors when the linecards heap-memory
-             * utilization exceed by {{heap-usage-threshold}} for every
-             * streaming interval. The color is set to yellow if 
-             * heap-memory-usage goes over dt-heap-memory-usage. 
-             * Otherwise the color is set to green.
-             * Use FPC slot name as key for this rule.
+             * the dashboard colors when the linecards heap-memory utilization
+             * exceed by {{heap-usage-threshold}} for every streaming interval.
+             * The color is set to yellow if heap-memory-usage goes over
+             *  dt-heap-memory-usage. Otherwise the color is set to green.
+             * 
+             * Use FPC slot and node (re-name) name as keys for this rule.
              */
-            keys slot;
+            keys [ re-name slot ];
             sensor sensor-fpc-cpu-memory {
-	            synopsis "FPC CPU Memory sensor initialization";
+                synopsis "FPC CPU Memory sensor initialization";
                 description "FPC iAgent sensor to collect data from network device";
                 iAgent {
                     file srx-cluster-fpc-util.yml;
@@ -86,8 +87,8 @@ healthbot {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1d,1h;
+                        learning-period 7days;
+                        pattern-periodicity 1days,1hours;
                         field-name "$buffer-memory-usage";
                     }
                 }
@@ -98,8 +99,8 @@ healthbot {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1d,1h;
+                        learning-period 7days;
+                        pattern-periodicity 1days,1hours;
                         field-name "$cpu-usage";
                     }
                 }
@@ -110,8 +111,8 @@ healthbot {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
-                        learning-period 7d;         
-                        pattern-periodicity 1d,1h;
+                        learning-period 7days;         
+                        pattern-periodicity 1days,1hours;
                         field-name "$heap-memory-usage";
                     }
                 }
@@ -140,6 +141,13 @@ healthbot {
                 type integer;
                 description "This field is for linecard heap usage threshold";
             }
+            field re-name {
+                sensor sensor-fpc-cpu-memory {
+                    path re-name;                   
+                }
+                type string;
+                description "This field is for node name";
+            }
             field slot {
                 sensor sensor-fpc-cpu-memory {
                     path slot;
@@ -154,8 +162,8 @@ healthbot {
                 frequency 90s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * memory buffer utilization count increases more than static 
-                 * threshold static value $buffer-usage-threshold
+                 * memory buffer utilization count increases more than static
+                 * threshold static value {{$buffer-usage-threshold}}
                  */
                 term is-fpc-buffer-memory-usage-abnormal {
                     when {
@@ -164,14 +172,14 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Buffer memory usage ($buffer-memory-usage) for FPC:$slot has crossed static threshold value ($buffer-usage-threshold)";
+                            message "Buffer memory usage ($buffer-memory-usage) for $re-name, fpc-slot:$slot has crossed static threshold value ($buffer-usage-threshold)";
                         }
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * memory buffer utilization count increases more than dynamic
-                 * threshold value
+                 * Sets color to yellow and sends out an anomaly notification 
+                 * when memory buffer utilization count increases more than 
+                 * dynamic threshold value
                  */
                 term is-fpc-buffer-memory-usage-above-dt {
                     when {
@@ -180,7 +188,7 @@ healthbot {
                     then {
                         status {
                             color yellow;           
-                            message "Buffer memory usage ($buffer-memory-usage) for FPC:$slot has crossed dynamic threshold value";
+                            message "Buffer memory usage ($buffer-memory-usage) for $re-name, fpc-slot:$slot has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -191,7 +199,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Buffer memory usage ($buffer-memory-usage) for FPC:$slot is normal";
+                            message "Buffer memory usage ($buffer-memory-usage) for $re-name, fpc-slot:$slot is normal";
                         }
                     }
                 }
@@ -213,13 +221,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "CPU usage ($cpu-usage) for FPC:$slot has crossed static threshold value ($cpu-usage-threshold)";
+                            message "CPU usage ($cpu-usage) for $re-name, fpc-slot:$slot has crossed static threshold value ($cpu-usage-threshold)";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when CPU utilization count increases more than dynamic
+                 * when CPU utilization count increases more than dynamic 
                  * threshold value.
                  */
                 term is-fpc-cpu-usage-above-dt {
@@ -229,7 +237,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "CPU usage ($cpu-usage) for FPC:$slot has crossed dynamic threshold value";
+                            message "CPU usage ($cpu-usage) for $re-name, fpc-slot:$slot has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -240,7 +248,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "CPU usage ($cpu-usage) for FPC:$slot is normal";
+                            message "CPU usage ($cpu-usage) for $re-name, fpc-slot:$slot is normal";
                         }
                     }
                 }
@@ -253,6 +261,7 @@ healthbot {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * memory heap utilization count increases more than static threshold) value
+                 * 
                  */	
                 term is-fpc-heap-memory-usage-abnormal {
                     when {
@@ -261,14 +270,14 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Heap memory usage ($heap-memory-usage) for FPC:$slot has crossed static threshold value ($heap-usage-threshold)";
+                            message "Heap memory usage ($heap-memory-usage) $re-name, fpc-slot:$slot has crossed static threshold value ($heap-usage-threshold)";
                         }
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * heap memory utilization count increases more than dynamic
-                 * threshold value
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when heap memory utilization count increases more than 
+                 * dynamic threshold value.
                  */				
                 term is-fpc-heap-memory-usage-above-dt {
                     when {
@@ -277,7 +286,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "FHeap memory usage ($heap-memory-usage) for FPC:$slot has crossed dynamic threshold value";
+                            message "Heap memory usage ($heap-memory-usage) $re-name, fpc-slot:$slot has crossed dynamic threshold value";
                         }
                     }
                 }
@@ -288,7 +297,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Heap memory usage ($heap-memory-usage) for FPC:$slot is normal";
+                            message "Heap memory usage ($heap-memory-usage) $re-name, fpc-slot:$slot is normal";
                         }
                     }
                 }
@@ -300,7 +309,6 @@ healthbot {
                 frequency 90s;
                 /*
                  * Sets color to green when FPC state is Online 
-                 * 
                  */	
                 term is-fpc-normal {
                     when {
@@ -309,19 +317,18 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "FPC:$slot status is Online";
+                            message "$re-name fpc_slot:$slot is Online";
                         }                           
                     }
                 }
                 /*
                  * Sets color to red when FPC state is other than Online 
-                 * 
                  */	
                 term is-fpc-offline {
                     then {
                         status {
                             color red;
-                            message "FPC:$slot status is Offline";
+                            message "$re-name fpc_slot:$slot is Offline";
                         }
                     }
                 }
@@ -341,12 +348,23 @@ healthbot {
                 description "Linecard Heap Memory usage threshold value";
                 type int;
             }
-	    rule-properties {
+            rule-properties {
                 version 2;
                 contributor juniper;
-                supported-healthbot-version 2.0.1;
-               
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }                       
+                    }
+                }
             }
- 	    }
+        }
     }
 }
