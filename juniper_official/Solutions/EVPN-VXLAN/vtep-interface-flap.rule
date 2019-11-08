@@ -1,0 +1,112 @@
+/*
+ * Monitors VTEP interface flaps and notifies when anomalies are found.
+ * One inputs control detection
+ *
+ *   1) flaps-threshold, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the flap-increases are greater than
+ *      'flaps-threshold' for 180s. If it sees any flaps increase for a
+ *      period of less than 180s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify VTEP interface flaps";
+        synopsis "VTEP Interface statistics analyzer";
+        rule check-vtep-interface-flap {
+            synopsis "VTEP interface statistics analyzer";
+            description "Collects statistics periodically and notifies in case of any anomaly";
+            sensor vxlan {
+                synopsis "VTEP iagent sensor definition";
+                description "Interfaces iagent sensor to collect telemetry data from network device";
+                iAgent {
+                    file vtep-statistics.yml;
+                    table VtepTable;
+                    frequency 30s;
+                }
+            }
+            field vtep-interface-flap {
+                sensor vxlan {
+                    path carrier-transitions;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface flap count";
+            }
+            trigger VTEP-interface-flap {
+                synopsis "VTEP Link flaps KPI";
+                description "Sets health based on the change in flap count";
+                term is-link-admin-down {
+                    when {
+                        not-equal-to "$vtep-admin-status" DOWN;
+                    }
+                }
+                term is-flapping-consistently {
+                    when {
+                        increasing-at-least-by-value "$vtep-interface-flap" {
+                            value "$flaps-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Flaps are increasing continuously on VTEP, flap count is:$vtep-interface-flap";
+                        }
+                    }
+                }
+                term is-link-fluctuating {
+                    when {
+                        increasing-at-least-by-value "$vtep-interface-flap" {
+                            value "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "VTEP interface flaps($vtep-interface-flap) are intermittent";
+                        }
+                    }
+                }
+                term is-link-stable {
+                    then {
+                        status {
+                            color green;
+                            message "VTEP interface is stable";
+                        }
+                    }
+                }
+            }
+            variable flaps-threshold {
+                value 1;
+                description "VTEP interface flap threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files vtep-statistics.yml;
+                }
+            }
+        }
+    }
+}

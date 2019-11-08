@@ -1,0 +1,150 @@
+/*
+ * Monitors VTEP interface interface input traffic, output traffic and
+ * notifies when anomalies are found.
+ * Two inputs control detection
+ *   1) high-threshold,  is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 800000000 octets. This rule will
+ *      set a dashboard color to red when *all* the input traffic is above
+ *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
+ *      80000000000 for 100G interface.
+ *
+ *   2) low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 180 seconds period, otherwise color is set to green.
+ *      Use 5000000000 octets for 10G & 50000000000 for 100G interface.
+ */
+healthbot {
+    topic protocol.evpn {
+        description "Monitors and notify VTEP interface input & output traffic";
+        synopsis "VTEP Interface statistics analyzer";
+        rule check-vtep-interface-traffic {
+            synopsis "VTEP interface statistics analyzer";
+            description "Collects statistics periodically and notifies in case of any anomaly";
+            sensor vxlan {
+                synopsis "VTEP iagent sensor definition";
+                description "Interfaces iagent sensor to collect telemetry data from network device";
+                iAgent {
+                    file vtep-statistics.yml;
+                    table VtepTable;
+                    frequency 30s;
+                }
+            }
+            trigger Input-traffic {
+                synopsis "VTEP Interface input traffic kpi";
+                description "Sets health based on VTEP input traffic exceed threshold";
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        min-rate-of-increase "$input-bytes" { ## Warning: 'min-rate-of-increase' is deprecated
+                            rate "$high-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "VTEP interface input traffic is above high threshold($high-threshold bytes)";
+                        }
+                    }
+                }
+                term is-interface-in-traffic-median {
+                    when {
+                        min-rate-of-increase "$input-bytes" { ## Warning: 'min-rate-of-increase' is deprecated
+                            rate "$low-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "VTEP input traffic is in medium range(>=$low-threshold,<=$high-threshold  bytes)";
+                        }
+                    }
+                }
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "VTEP input traffic:$input-bytes is normal";
+                        }
+                    }
+                }
+            }
+            trigger Output-traffic {
+                synopsis "VTEP Interface output traffic kpi";
+                description "Sets health based on VTEP output traffic exceed threshold";
+                term is-interface-out-traffic-abnormal {
+                    when {
+                        min-rate-of-increase "$output-bytes" { ## Warning: 'min-rate-of-increase' is deprecated
+                            rate "$high-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "VTEP interface output traffic is above high threshold($high-threshold bytes)";
+                        }
+                    }
+                }
+                term is-interface-out-traffic-median {
+                    when {
+                        min-rate-of-increase "$output-bytes" { ## Warning: 'min-rate-of-increase' is deprecated
+                            time-range 5m;
+                        }
+                        min-rate-of-increase output-bytes { ## Warning: 'min-rate-of-increase' is deprecated
+                            rate "$low-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "VTEP output traffic is in medium range(>=$low-threshold,<=$high-threshold  bytes)";
+                        }
+                    }
+                }
+                term interface-out-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "VTEP output traffic:$output-bytes is normal";
+                        }
+                    }
+                }
+            }
+            variable high-threshold {
+                value 80000000000;
+                description "traffic high threshold";
+                type int;
+            }
+            variable low-threshold {
+                value 500000000;
+                description "traffic low threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files vtep-statistics.yml;
+                }
+            }
+        }
+    }
+}
