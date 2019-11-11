@@ -1,0 +1,110 @@
+/*
+ * Detects interface input traffic and notifies when anomalies are found.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-in-traffic-iagent {
+            keys name;
+            synopsis "Interface input traffic analyzer";
+            description "Collects the interface input traffic";
+            sensor interface-stats {
+                synopsis "Iinterfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file interface-details.yml;
+                    table intfaceStats;
+                    frequency 30s;
+                    args interface_name {
+                        arg-value "{{interface-name}}";
+                    }
+                }
+            }
+            field bps-threshold {
+                constant {
+                    value "{{bps-threshold-variable}}";
+                }
+                type integer;
+                description "Interfaces traffic in bps";
+            }
+            field name {
+                sensor interface-stats {
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            trigger input-traffic {
+                synopsis "Interface input traffic kpi";
+                description "Sets health based on the change in input traffic";
+                term is-traffic-abnormal {
+                    when {
+                        less-than-or-equal-to "$input_bps" "$bps-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name traffic $input_bps (bps) is within the limit.";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color red;
+                            message "ERROR: Interface $name traffic $input_bps (bps) is not within the limit.";
+                        }
+                    }
+                }
+            }
+            variable bps-threshold-variable {
+                value 1000000;
+                description "Input traffic threshold in bps ";
+                type int;
+            }
+            variable interface-name {
+                value *;
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

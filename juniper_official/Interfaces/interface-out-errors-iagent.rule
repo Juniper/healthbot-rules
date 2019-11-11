@@ -1,0 +1,126 @@
+/*
+ * Detects interface out errors and notifies when anomalies are found.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-out-errors-iagent {
+            keys name;
+            synopsis "Interface out-error analyzer";
+            description "Collects the interface output error (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            sensor interface-stats {
+                synopsis "interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file interface-details.yml;
+                    table intfaceStats;
+                    frequency 30s;
+                    args interface_name {
+                        arg-value "{{interface-name}}";
+                    }
+                }
+            }
+            field error-threshold {
+                constant {
+                    value "{{error-threshold-variable}}";
+                }
+                type integer;
+                description "Out errors count increase threshold";
+            }
+            field name {
+                sensor interface-stats {
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            trigger output-errors {
+                synopsis "Interface out-errors kpi";
+                description "Sets health based on the change in out-errors count";
+                term is-interface-out-errors-abnormal {
+                    when {
+                        increasing-at-least-by-value "$output_errors" {
+                            value "$error-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ERROR: Output errors are increasing continuously on interface $name, Error count is:$output_errors";
+                        }
+                    }
+                }
+                term is-interface-out-errors-median {
+                    when {
+                        increasing-at-least-by-value "$output_errors" {
+                            value "$error-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ERROR: Interface $name output errors ($output_errors) are intermittent";
+                        }
+                    }
+                }
+                term no-interface-out-errors {
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name output error is not occurring";
+                        }
+                    }
+                }
+            }
+            variable error-threshold-variable {
+                value 1;
+                description "Input and output interface error threshold value";
+                type int;
+            }
+            variable interface-name {
+                value *;
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
