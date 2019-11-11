@@ -12,40 +12,77 @@ healthbot {
                 iAgent {
                     file task-io.yml;
                     table TaskIOTable;
-                    frequency 10s;
+                    frequency 60s;
                 }
+            }
+            field task-name {
+                sensor task-io-drops {
+                    path task-name;
+                }
+                type string;
+                description "IO task name";
+            }
+            field reads {
+                sensor task-io-drops {
+                    path reads;
+                }
+                type integer;
+                description "Task memory IO reads";
+            }
+            field writes {
+                sensor task-io-drops {
+                    path writes;
+                }
+                type integer;
+                description "Task memory IO writes";
+            }
+            field sent {
+                sensor task-io-drops {
+                    path sent;
+                }
+                type integer;
+                description "Task memory IO sent count";
+            }
+            field drops {
+                sensor task-io-drops {
+                    path dropped;
+                }
+                type integer;
+                description "Task memory IO drops";
             }
             field io-drops-threshold {
                 constant {
                     value "{{io-drops-hreshold}}";
                 }
+                type integer;
                 description "This field is for IO drops threshold";
             }
             trigger task-io-drops {
                 synopsis "task io drops kpi";
                 description "Sets health based on task ip drops threshold value";
+                frequency 75s;
                 term are-task-io-drops-increasing {
                     when {
-                        min-rate-of-increase "$dropped" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$io-drops-threshold";
-                            time-range 50s;
+                            time-range 180s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Task IO drops ($dropped) increasing";
+                            message "Task IO drops ($drops) increasing";
                         }
                     }
                 }
                 term are-task-io-drops-non-zero {
                     when {
-                        greater-than "$dropped" 0;
+                        greater-than "$drops" 0;
                     }
                     then {
                         status {
                             color yellow;
-                            message "Task IO drops ($dropped) non-zero";
+                            message "Task IO drops ($drops) non-zero";
                         }
                     }
                 }
@@ -53,6 +90,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "No task IO drops ($drops)";
                         }
                     }
                 }

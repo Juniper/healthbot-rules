@@ -15,6 +15,36 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field ifd {
+                sensor showjnhifdstream {
+                    path ifd;
+                }
+                type string;
+            }
+            field counter {
+                sensor showjnhifdstream {
+                    path counter;
+                }
+                type string;
+            }
+            field target {
+                sensor showjnhifdstream {
+                    path target;
+                }
+                type string;
+            }
+            field packet-count {
+                sensor showjnhifdstream {
+                    path packets;
+                }
+                type integer;
+            }
+            field bytes {
+                sensor showjnhifdstream {
+                    path bytes;
+                }
+                type integer;
+            }
             field linecard-jnh-ifd-stream-increase-rate {
                 constant {
                     value "{{fpc-jnh-ifd-stream-increase-rate}}";
@@ -29,7 +59,7 @@ healthbot {
                 term are-jnh-ifd-stream-packets-increasing-over-threshold {
                     when {
                         does-not-match-with "$counter" rx.;
-                        min-rate-of-increase "$packets" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$packet-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$linecard-jnh-ifd-stream-increase-rate";
                             time-range 300s;
                         }
@@ -37,7 +67,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "JNH ifd stream packets ($packets) increasing over threshold ($linecard-jnh-ifd-stream-increase-rate)";
+                            message "JNH ifd stream packets ($packet-count) increasing over threshold ($linecard-jnh-ifd-stream-increase-rate)";
                         }
                     }
                 }

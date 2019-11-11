@@ -55,16 +55,18 @@ healthbot {
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */
-            field cpu-util-percent {
+            field util-percent {
                 sensor systemprocexttable {
                     path wcpu;
                 }
+                type float;
                 description "Daemon CPU utilization";
             }
             field daemon {
                 sensor systemprocexttable {
                     path cmd;
                 }
+                type string;
                 description "Daemon to be monitored";
             }
             field pid {
@@ -73,6 +75,13 @@ healthbot {
                 }
                 type string;
                 description "PID to be monitored";
+            }
+            field process-name {
+                constant {
+                    value "{{process-name-input}}";
+                }
+                type string;
+                description "Selected daemon to be monitored";
             }
             /*
              * Fields defined with variables and constant values.
@@ -90,13 +99,6 @@ healthbot {
                 }
                 type integer;
                 description "Daemon cpu low threshold";
-            }
-            field process-name {
-                constant {
-                    value "{{process-name-input}}";
-                }
-                type string;
-                description "Selected daemon to be monitored";
             }
             /*
              * Anomaly detection logic.
@@ -121,14 +123,14 @@ healthbot {
                  */
                 term is-cpu-utilization-abnormal {
                     when {
-                        greater-than-or-equal-to "$cpu-util-percent" "$max-threshold" {
+                        greater-than-or-equal-to "$util-percent" "$max-threshold" {
                             time-range 3m;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$daemon cpu utilization:($cpu-util-percent), crossed high threshold($max-threshold)";
+                            message "$daemon cpu utilization:($util-percent), crossed high threshold($max-threshold)";
                         }
                     }
                 }
@@ -140,14 +142,14 @@ healthbot {
                  */  
                 term is-cpu-utilization-middle {
                     when {
-                        greater-than-or-equal-to "$cpu-util-percent" "$min-threshold" {
+                        greater-than-or-equal-to "$util-percent" "$min-threshold" {
                             time-range 3m;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$daemon cpu utilization:($cpu-util-percent), is in middle range";
+                            message "$daemon cpu utilization:($util-percent), is in middle range";
                         }
                     }
                 }
@@ -158,7 +160,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$daemon cpu utilization:($cpu-util-percent), is normal";
+                            message "$daemon cpu utilization:($util-percent), is normal";
                         }
                     }
                 }

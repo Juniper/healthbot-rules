@@ -43,13 +43,27 @@ healthbot {
                 type string;
                 description "Protocol to monitor";
             }
+            field protocol-total-route-count {
+                sensor route-protocol-summary {
+                    path protocol-route-count;
+                }
+                type integer;
+                description "Protocol route count";
+            }
+            field active-route-count {
+                sensor route-protocol-summary {
+                    path active-route-count;
+                }
+                type integer;
+                description "Protocol active route count";
+            }
             field route-count-dynamic-threshold {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
                         learning-period 7d;
                         pattern-periodicity 1h;
-                        field-name "$protocol-route-count";
+                        field-name "$protocol-total-route-count";
                     }
                 }
                 type integer;
@@ -84,14 +98,14 @@ healthbot {
                  frequency 10m;
                 term above-static-threshold {
                     when {
-                        greater-than-or-equal-to "$protocol-route-count" "$threshold" {
+                        greater-than-or-equal-to "$protocol-total-route-count" "$threshold" {
                             time-range 60s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Anomaly detected: Protocol $protocol-name of route-table ($table-name) route count($protocol-route-count) is abnormal";
+                            message "Anomaly detected: Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count) is abnormal";
                         }
                     }
                 }
@@ -110,7 +124,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Anomaly detected: Protocol $protocol-name of route-table ($table-name) route count($protocol-route-count) is above dynamic threshold";
+                            message "Anomaly detected: Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count) is above dynamic threshold";
                         }
                     }
                 }
@@ -121,7 +135,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-route-count)is normal";
+                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count)is normal";
                         }
                     }
                 }

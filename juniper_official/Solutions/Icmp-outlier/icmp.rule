@@ -45,6 +45,24 @@
                     }
                 }
             }
+            field host {
+                sensor icmp {
+                    path host;
+                }
+                type string;
+            }
+            field packet-loss-percent {
+                sensor icmp {
+                    path packet-loss;
+                }
+                type integer;
+            }
+            field rtt {
+                sensor icmp {
+                    path rtt-average;
+                }
+                type integer;
+            }
             function micro-milli {
                path micro_milli.py;
                method rtt_micro_milli;
@@ -69,7 +87,7 @@
                formula {                       
                   user-defined-function {     
                      function-name micro-milli;
-                     argument micros "$rtt-average";
+                     argument micros "$rtt";
                   }                           
                }                               
                type float;                   
@@ -88,11 +106,11 @@
                 frequency 60s;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the packet ($packet-loss) is 100.
+                 * the packet ($packet-loss-percent) is 100.
                  */
                 term is-device-not-reachable {
                     when {
-                        equal-to "$packet-loss" 100 {
+                        equal-to "$packet-loss-percent" 100 {
                             time-range 2m;
                         }
                     }
@@ -105,18 +123,18 @@
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the packet ($packet-loss) is more than 0.
+                 * when the packet ($packet-loss-percent) is more than 0.
                  */
                 term is-device-up {
                     when {
-                        greater-than "$packet-loss" 0 {
+                        greater-than "$packet-loss-percent" 0 {
                             time-range 2m;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "Host $host reachable and  $packet-loss % packet loss";
+                            message "Host $host reachable and  $packet-loss-percent % packet loss";
                         }
                     }
                 }
@@ -127,7 +145,7 @@
                     then {
                         status {
                             color green;
-                            message "Host $host reachable and  $packet-loss % packet loss";
+                            message "Host $host reachable and  $packet-loss-percent % packet loss";
                         }
                     }
                 }
