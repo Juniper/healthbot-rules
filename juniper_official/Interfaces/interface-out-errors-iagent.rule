@@ -15,7 +15,7 @@ healthbot {
                 iAgent {
                     file interface-details.yml;
                     table intfaceStats;
-                    frequency 30s;
+                    frequency 60s;
                     args interface_name {
                         arg-value "{{interface-name}}";
                     }
@@ -35,9 +35,17 @@ healthbot {
                 type string;
                 description "Interfaces to be monitored";
             }
+            field output_errors {
+                sensor interface-stats {
+                    path output_errors;
+                }
+                type integer;
+                description "Interfaces output error";
+            }
             trigger output-errors {
                 synopsis "Interface out-errors kpi";
                 description "Sets health based on the change in out-errors count";
+                frequency 90s;
                 term is-interface-out-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$output_errors" {

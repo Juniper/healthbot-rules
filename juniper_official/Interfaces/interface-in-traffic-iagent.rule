@@ -15,7 +15,7 @@ healthbot {
                 iAgent {
                     file interface-details.yml;
                     table intfaceStats;
-                    frequency 30s;
+                    frequency 60s;
                     args interface_name {
                         arg-value "{{interface-name}}";
                     }
@@ -35,9 +35,17 @@ healthbot {
                 type string;
                 description "Interfaces to be monitored";
             }
+            field input_bps {
+                sensor interface-stats {
+                    path input_bps;
+                }
+                type integer;
+                description "Interfaces to be monitored";
+            }
             trigger input-traffic {
                 synopsis "Interface input traffic kpi";
                 description "Sets health based on the change in input traffic";
+                frequency 90s;
                 term is-traffic-abnormal {
                     when {
                         less-than-or-equal-to "$input_bps" "$bps-threshold";

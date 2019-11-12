@@ -15,7 +15,7 @@ healthbot {
                 iAgent {
                     file interface-details.yml;
                     table intfaceStats;
-                    frequency 30s;
+                    frequency 60s;
                     args interface_name {
                         arg-value "{{interface-name}}";
                     }
@@ -35,9 +35,17 @@ healthbot {
                 type string;
                 description "Interfaces to be monitored";
             }
+            field carrier_transitions {
+                sensor interface-stats {
+                    path carrier_transitions;
+                }
+                type integer;
+                description "Interface flaps count";
+            }
             trigger link-flap {
                 synopsis "Interface flap  kpi";
                 description "Sets health based on the change in flap count";
+                frequency 90s;
                 term is-link-flapping-consistently {
                     when {
                         increasing-at-least-by-value "$carrier_transitions" {
