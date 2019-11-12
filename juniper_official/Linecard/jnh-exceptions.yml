@@ -3,13 +3,32 @@ ShowJnhExceptions:
   command: show jnh {{ jnh_instance }} exceptions terse
   args:
     jnh_instance: 0
-  target: Null
-  key: reason
-  view: ShowJnhExceptionsView
+  view: JNHExceptionTerseView
 
-ShowJnhExceptionsView:
+JNHExceptionTerseView:
+  fields:
+    pfe_state: _PFEStatelTable
+    packet: _PacketTable
+    routing: _RoutingTable
+
+_PFEStatelTable:
+  title: PFE State Invalid
+  key: reason
+  view: _JnhExceptionView
+  
+_PacketTable:
+  title: Packet Exceptions
+  key: reason
+  view: _JnhExceptionView
+    
+_RoutingTable:
+  title: Routing
+  key: reason
+  view: _JnhExceptionView
+
+_JnhExceptionView:
   regex:
-    reason: '(\w+(\s\w+)*)'
-    type: '((DISC|PUNT)\(\s*\d+\)|M2L ERROR|TRAP\(\))'
-    packets: '\d+'
-    bytes: '\d*'
+    reason: '(\w+(\s\w+)+)'
+    type: '((DISC|PUNT)\(\s*\d+\))'
+    packets: numbers
+    bytes: numbers
