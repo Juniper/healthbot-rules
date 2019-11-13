@@ -1,0 +1,101 @@
+/*
+ * This rule checks for the TCP embryonic connection drop count in the system.
+ * TCP embryonic connection is a half-open connection.
+ *
+ * It shows YELLOW alarm when the count is increased by minimum 10 from its previous value.
+ * It's sampling time is 1 minute.
+ */
+healthbot {
+    topic kernel.tcpip {
+        rule check-tcp-connection-drop-count {
+            synopsis "Detect TCP embryonic connection drops";
+            description "Check whether the TCP connection are getting dropped";
+            sensor conn-drop-sensor {
+                synopsis "Sensor for TCP embryonic connection drops";
+                description "Returns the TCP embryonic connection drop count";
+                open-config {
+                    sensor-name /junos/kernel/tcpip/tcp;
+                    frequency 1m;
+                }
+            }
+            field tcp-conndrops-cnt {
+                sensor conn-drop-sensor {
+                    path /junos/kernel/tcpip/tcp/tcp-conndrops-cnt;
+                }
+                type integer;
+                description "Number of times the TCP connection got dropped";
+            }
+            trigger report-tcp-connection-drop-count {
+                synopsis "Trigger for TCP embryonic connection drops";
+                description "Checks for TCP embryonic connection drops and raises an alarm";
+                frequency 90s;
+                term no-tcp-connection-drops {
+                    when {
+                        not-equal-to "$tcp-conndrops-cnt" 0;
+                        increasing-at-most-by-value "$tcp-conndrops-cnt" {
+                            value 9;
+                            time-range 200s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No embryonic connection drops detected";
+                        }
+                    }
+                }
+                term tcp-connection-drops-present {
+                    when {
+                        not-equal-to "$tcp-conndrops-cnt" 0;
+                        increasing-at-least-by-value "$tcp-conndrops-cnt" {
+                            value 10;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "TCP embryonic connection drops detected";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "No embryonic connection drops detected";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
