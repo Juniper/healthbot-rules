@@ -4,14 +4,14 @@
  * Three inputs control detection
  * 
  *   1) "buffer-usage-threshold" is the threshold that causes the rule to report
- *      an anomaly. By default it's 80% of CPU utilization. This rule will set
+ *      an anomaly. By default, it's 80% of CPU utilization. This rule will set
  *      a dashboard color to red when FPC CPU utilization exceed high threshold
  * 
  *   2) "cpu-usage-threshold" is the threshold that causes the rule to report
- *      an anomaly. By default it's 80% of CPU utilization. This rule will set
+ *      an anomaly. By default, it's 80% of CPU utilization. This rule will set
  *      a dashboard color to red when FPC CPU utilization exceed high threshold
  *   3) "heap-usage-threshold" is the threshold that causes the rule to report
- *      an anomaly. By default it's 80% of CPU utilization. This rule will set
+ *      an anomaly. By default, it's 80% of CPU utilization. This rule will set
  *      a dashboard color to red when FPC CPU utilization exceed high threshold
  */
 healthbot {
@@ -19,23 +19,23 @@ healthbot {
         description "Monitors linecards memory & cpu and notifies anomalies";
         synopsis "Linecard health analyzer";
         rule check-fpc-cpu-memory-usage-srx-cluster-netconf {
-            description "Collects system FPC CPU statistics periodically and notifies anomalies when CPU utilization exceed threshold";
+            description "Collects FPC CPU statistics periodically and notifies anomalies when CPU utilization exceed threshold";
             synopsis "FPC CPU analyzer";
             /*
              * Monitors all the linecards CPU utilization. Notifies via the
-             * dashboard colors when the linecards CPU utilization exceed by
-             * {{cpu-usage-threshold}} for every streaming interval . The color
-             * is set to yellow if cpu-usage goes over dt-cpu-uage. 
+             * dashboard colors. When the linecards CPU utilization exceed by
+             * {{cpu-usage-threshold}} for every streaming interval. The color
+             * is set to yellow if cpu-usage goes over dt-cpu-usage. 
              * Otherwise the color is set to green.
              * 
              * Monitors all the linecards buffer-memory-usage and Notifies via
-             * the dashboard colors when the linecards buffer-memory utilization
+             * the dashboard colors. When the linecards buffer-memory utilization
              * exceed by {{buffer-usage-threshold}} for every streaming interval. 
              * The color is set to yellow if buffer-memory-usage goes over 
              * dt-buffer-memory-usage. Otherwise the color is set to green.
              * 
              * Monitors all the linecards heap-memory-usage and Notifies via
-             * the dashboard colors when the linecards heap-memory utilization
+             * the dashboard colors. When the linecards heap-memory utilization
              * exceed by {{heap-usage-threshold}} for every streaming interval.
              * The color is set to yellow if heap-memory-usage goes over
              *  dt-heap-memory-usage. Otherwise the color is set to green.
@@ -95,7 +95,7 @@ healthbot {
                 type integer;
                 description "ML derived linecard buffer usage threshold value ";
             }
-            field dt-cpu-uage {
+            field dt-cpu-usage {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
@@ -232,7 +232,7 @@ healthbot {
                  */
                 term is-fpc-cpu-usage-above-dt {
                     when {
-                        equal-to "$dt-cpu-uage" 1;  
+                        equal-to "$dt-cpu-usage" 1;  
                     }
                     then {
                         status {
