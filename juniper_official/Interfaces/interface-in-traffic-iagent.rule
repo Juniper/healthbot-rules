@@ -8,7 +8,7 @@ healthbot {
         rule check-in-traffic-iagent {
             keys name;
             synopsis "Interface input traffic analyzer";
-            description "Collects the interface input traffic";
+            description "Collects the interface input traffic.";
             sensor interface-stats {
                 synopsis "Iinterfaces netconf based iAgent sensor definition";
                 description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
@@ -21,12 +21,26 @@ healthbot {
                     }
                 }
             }
-            field bps-threshold {
+            field high-threshold {
                 constant {
-                    value "{{bps-threshold-variable}}";
+                    value "{{in-octets-high-threshold}}";
                 }
                 type integer;
-                description "Interfaces traffic in bps";
+                description "Input traffic high threshold";
+            }
+            field input_bytes {
+                sensor interface-stats {
+                    path input_bytes;
+                }
+                type integer;
+                description "Interfaces to be monitored";
+            }
+            field low-threshold {
+                constant {
+                    value "{{in-octets-low-threshold}}";
+                }
+                type integer;
+                description "Input traffic low threshold";
             }
             field name {
                 sensor interface-stats {
@@ -35,40 +49,55 @@ healthbot {
                 type string;
                 description "Interfaces to be monitored";
             }
-            field input_bps {
-                sensor interface-stats {
-                    path input_bps;
-                }
-                type integer;
-                description "Interfaces to be monitored";
-            }
             trigger input-traffic {
                 synopsis "Interface input traffic kpi";
                 description "Sets health based on the change in input traffic";
                 frequency 90s;
-                term is-traffic-abnormal {
+                term is-interface-in-traffic-abnormal {
                     when {
-                        less-than-or-equal-to "$input_bps" "$bps-threshold";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Interface $name traffic $input_bps (bps) is within the limit.";
+                        increasing-at-least-by-value "$input_bytes" {
+                            value "$high-threshold";
+                            time-range 180s;
                         }
                     }
-                }
-                term default-term {
                     then {
                         status {
                             color red;
-                            message "ERROR: Interface $name traffic $input_bps (bps) is not within the limit.";
+                            message "$name input traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$input_bytes" {
+                            value "$low-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name input traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                        }
+                    }
+                }
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$name input traffic:$input_bytes is normal";
                         }
                     }
                 }
             }
-            variable bps-threshold-variable {
-                value 1000000;
-                description "Input traffic threshold in bps ";
+            variable in-octets-high-threshold {
+                value 800000000;
+                description "Interface input traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
+                type int;
+            }
+            variable in-octets-low-threshold {
+                value 500000000;
+                description "Interface input traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
                 type int;
             }
             variable interface-name {

@@ -21,12 +21,19 @@ healthbot {
                     }
                 }
             }
-            field bps-threshold {
+            field high-threshold {
                 constant {
-                    value "{{bps-threshold-variable}}";
+                    value "{{out-octets-high-threshold}}";
                 }
                 type integer;
-                description "Interfaces traffic in bps";
+                description "Output traffic high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{out-octets-low-threshold}}";
+                }
+                type integer;
+                description "Output traffic low threshold";
             }
             field name {
                 sensor interface-stats {
@@ -35,9 +42,9 @@ healthbot {
                 type string;
                 description "Interfaces to be monitored";
             }
-            field output_bps {
+            field output_bytes {
                 sensor interface-stats {
-                    path output_bps;
+                    path output_bytes;
                 }
                 type integer;
                 description "Interfaces output traffic";
@@ -46,34 +53,57 @@ healthbot {
                 synopsis "Interface output traffic kpi";
                 description "Sets health based on the change in output traffic";
                 frequency 90s;
-                term is-traffic-abnormal {
+                term is-interface-stats-abnormal {
                     when {
-                        less-than-or-equal-to "$output_bps" "$bps-threshold";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Interface $name traffic $output_bps (bps) is within the limit.";
+                        increasing-at-least-by-value "$output_bytes" {
+                            value "$high-threshold";
+                            time-range 180s;
                         }
                     }
-                }
-                term default-term {
                     then {
                         status {
                             color red;
-                            message "ERROR: Interface $name traffic $output_bps (bps) is not within the limit.";
+                            message "ERROR: $name output traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-stats-median {
+                    when {
+                        increasing-at-least-by-value "$output_bytes" {
+                            value "$low-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ERROR: $name output traffic is in medium range(>=$low-threshold,<=$high-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-stats-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$name output traffic:$output_bytes is normal";
                         }
                     }
                 }
             }
-            variable bps-threshold-variable {
-                value 1000000;
-                description "Output traffic threshold in bps ";
-                type int;
-            }
             variable interface-name {
                 value *;
+                description "";
                 type sensor-argument;
+            }
+            variable out-octets-high-threshold {
+                value 800000000;
+                description "Interface output traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable out-octets-low-threshold {
+                value 500000000;
+                description "Interface output traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
+                type int;
             }
             rule-properties {
                 version 1;
