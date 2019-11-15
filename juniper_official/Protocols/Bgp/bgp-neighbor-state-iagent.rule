@@ -1,0 +1,104 @@
+/*
+ * Detects BGP neighbor state and notifies when anomalies are found
+ *
+ * Inputs control detection
+ *
+ *   1) "neighbors" is a regular expression that matches the BGP neighbors
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all BGP neighbors. Use something like '172.16.*' to match all neighbor
+ *      addresses which are in 172.16.0.0/16 network range.
+ */
+healthbot {
+    topic protocol.bgp {
+        description "Monitors BGP neighbour state and notify anomalies";
+        synopsis "BGP state statistics analyzer";
+        rule check-bgp-neighbour-state-iagent {
+            keys neighbor-address;
+            synopsis "BGP neighbour state analyzer";
+            description "Collects BGP neighbour state periodically and notifies anomaly";
+            sensor BgpNeighbour {
+                synopsis "iAgent sensor definition";
+                iAgent {
+                    file bgp_neighbour.yml;
+                    table bgpNeighbourTable;
+                    frequency 60s;
+                }
+            }
+            field peer-address {
+                sensor BgpNeighbour {
+                    where "peer-address =~ /{{neighbors}}/";
+                    path peer-address;
+                }
+                type string;
+                description "Sensor field to store peer address";
+            }
+            trigger neighbor-state {
+                synopsis "BGP session state KPI";
+                description "Sets health based on change in BGP neighbor session state";
+                frequency 90s;
+                term is-neighbor-up {
+                    when {
+                        matches-with "$peer-state" ESTABLISHED;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor($peer-address) session up";
+                        }
+                    }
+                }
+                term neighbor-down {
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor($peer-address) session down";
+                        }
+                    }
+                }
+            }
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
