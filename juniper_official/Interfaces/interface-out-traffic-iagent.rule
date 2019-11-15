@@ -1,0 +1,148 @@
+/*
+ * Detects interface output traffic and notifies when anomalies are found.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-out-traffic-iagent {
+            keys name;
+            synopsis "Interface out-traffic analyzer";
+            description "Collects the interface output traffic periodically and notifies in case of anomalies";
+            sensor interface-stats {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file interface-details.yml;
+                    table intfaceStats;
+                    frequency 60s;
+                    args interface_name {
+                        arg-value "{{interface-name}}";
+                    }
+                }
+            }
+            field high-threshold {
+                constant {
+                    value "{{out-octets-high-threshold}}";
+                }
+                type integer;
+                description "Output traffic high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{out-octets-low-threshold}}";
+                }
+                type integer;
+                description "Output traffic low threshold";
+            }
+            field name {
+                sensor interface-stats {
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field output_bytes {
+                sensor interface-stats {
+                    path output_bytes;
+                }
+                type integer;
+                description "Interfaces output traffic";
+            }
+            trigger output-traffic {
+                synopsis "Interface output traffic kpi";
+                description "Sets health based on the change in output traffic";
+                frequency 90s;
+                term is-interface-stats-abnormal {
+                    when {
+                        increasing-at-least-by-value "$output_bytes" {
+                            value "$high-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ERROR: $name output traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-stats-median {
+                    when {
+                        increasing-at-least-by-value "$output_bytes" {
+                            value "$low-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ERROR: $name output traffic is in medium range(>=$low-threshold,<=$high-threshold octets)";
+                        }
+                    }
+                }
+                term is-interface-stats-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$name output traffic:$output_bytes is normal";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value *;
+                description "";
+                type sensor-argument;
+            }
+            variable out-octets-high-threshold {
+                value 800000000;
+                description "Interface output traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable out-octets-low-threshold {
+                value 500000000;
+                description "Interface output traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,151 @@
+/*
+ *   This rule monitors IRB input and output traffic and notify in case any of the health monitored field crosses threshold
+ */
+healthbot {
+    topic protocol.evpn {
+        description "This topic is to monitor IRB input and output traffic";
+        synopsis "IRB input and output traffic check";
+        rule check-irb-traffic {
+            keys irb-name;
+            synopsis "IRB input and output traffic analyzer";
+            description "This rule collects IRB input and output traffic periodically and notifies in case of anomalies";
+            sensor irb-sensor {
+                synopsis "IRB interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file IrbIntefaceTrafficTable.yml;
+                    table IrbIntefaceTrafficTable;
+                    frequency 60s;
+                }
+            }
+            field in-bytes {
+                sensor irb-sensor {
+                    path in-bytes;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface statistics in-bytes value";
+            }
+            field in-traffic-threshold {
+                constant {
+                    value "{{in-threshold}}";
+                }
+                type integer;
+                description "Interface statistics in-bytes threshold";
+            }
+            field irb-name {
+                sensor irb-sensor {
+                    where "name =~ /{{irb-if-name}}/";
+                    path name;
+                }
+                type string;
+                description "IRB interface name";
+            }
+            field out-bytes {
+                sensor irb-sensor {
+                    path out-bytes;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface statistics out-bytes value";
+            }
+            field out-traffic-threshold {
+                constant {
+                    value "{{out-threshold}}";
+                }
+                type integer;
+                description "Interface statistics in-bytes threshold";
+            }
+            trigger irb-in-traffic {
+                synopsis "IRB input traffic kpi";
+                description "Sets health based on IRB input traffic";
+                frequency 90s;
+                term is-in-traffic-exceeds-threshold {
+                    when {
+                        increasing-at-least-by-value "$in-bytes";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$irb-name input traffic($in-bytes) exceeds threshold";
+                        }
+                    }
+                }
+                term is-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$irb-name input traffic($in-bytes) is normal";
+                        }
+                    }
+                }
+            }
+            trigger irb-out-traffic {
+                synopsis "IRB output traffic kpi";
+                description "Sets health based on IRB output traffic";
+                frequency 90s;
+                term is-out-traffic-exceeds-threshold {
+                    when {
+                        increasing-at-least-by-value "$out-bytes";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$irb-name output traffic($out-bytes) exceeds threshold";
+                        }
+                    }
+                }
+                term out-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$irb-name output traffic($out-bytes) is normal";
+                        }
+                    }
+                }
+            }
+            variable in-threshold {
+                value 8000000;
+                description "Enter input traffic threshold";
+                type int;
+            }
+            variable irb-if-name {
+                value .*;
+                description "Enter IRB interface name";
+                type string;
+            }
+            variable out-threshold {
+                value 8000000;
+                description "Enter output traffic threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files IrbIntefaceTrafficTable.yml;
+                }
+            }
+        }
+    }
+}

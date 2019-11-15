@@ -1,0 +1,138 @@
+/*
+ * Monitors VTEP interface interface input errors, output errors and
+ * notifies when anomalies are found.
+ * inputs control detection
+ *
+ *   1) errors-threshold, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the error increases are greater than
+ *      'errors-threshold-variable' for 180s. If it sees any errors increase for a
+ *      period of less than 180s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
+ *
+ */
+healthbot {
+    topic protocol.evpn {
+        description "Monitors and notify VTEP interface input & output errors";
+        synopsis "VTEP Interface statistics analyzer";
+        rule check-vtep-interface-errors {
+            synopsis "VTEP interface statistics analyzer";
+            description "Collects statistics periodically and notifies in case of any anomaly";
+            sensor vxlan {
+                synopsis "VTEP iagent sensor definition";
+                description "Interfaces iagent sensor to collect telemetry data from network device";
+                iAgent {
+                    file vtep-statistics.yml;
+                    table VtepTable;
+                    frequency 30s;
+                }
+            }
+            trigger VTEP-Input-Error {
+                synopsis "VTEP Interface in-errors kpi";
+                description "Sets health based on the change in in-errors count";
+                term is-interface-in-errors-abnormal {
+                    when {
+                        increasing-at-least-by-value "$input-errors" {
+                            value "$errors-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Input errors are increasing continuously on VTEP, Error count is:$input-errors";
+                        }
+                    }
+                }
+                term is-interface-in-errors-median {
+                    when {
+                        increasing-at-least-by-value "$input-errors" {
+                            value "$errors-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "VTEP input errors($input-errors) are intermittent\"";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "VTEP interface Input error is stable";
+                        }
+                    }
+                }
+            }
+            trigger VTEP-Output-Error {
+                synopsis "VTEP Interface output-errors kpi";
+                description "Sets health based on the change in output-errors count";
+                term is-interface-out-errors-abnormal {
+                    when {
+                        increasing-at-least-by-value "$output-errors" {
+                            value "$errors-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Output errors are increasing continuously on VTEP, Error count is:$output-errors";
+                        }
+                    }
+                }
+                term is-interface-in-errors-median {
+                    when {
+                        increasing-at-least-by-value "$output-errors" {
+                            value "$errors-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "VTEP Output errors($output-errors) are intermittent\"";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "VTEP interface Output Error is stable";
+                        }
+                    }
+                }
+            }
+            variable errors-threshold {
+                value 1;
+                description "VTEP interface errors threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files vtep-statistics.yml;
+                }
+            }
+        }
+    }
+}
