@@ -42,6 +42,36 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field mounted-on {
+                sensor storagetable {
+                    path mounted-on;
+                }
+                type string;
+            }
+            field used-percentage {
+                sensor storagetable {
+                    path used-percent;
+                }
+                type integer;
+            }
+            field total-blocks {
+                sensor storagetable {
+                    path total-blocks;
+                }
+                type integer;
+            }  
+            field used-blocks {
+                sensor storagetable {
+                    path used-blocks;
+                }
+                type integer;
+            }
+            field available-blocks {
+                sensor storagetable {
+                    path available-blocks;
+                }
+                type integer;
+            }
             /*
              * Fields defined with variables and constant values
              */
@@ -72,27 +102,27 @@ healthbot {
                 frequency 60s;
                 term is-system-storage-abnormal {
                     when {
-                        greater-than-or-equal-to "$used-percent" "$high-threshold";
+                        greater-than-or-equal-to "$used-percentage" "$high-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$filesystem-name storage used($used-percent) is above ($high-threshold)";
+                            message "$filesystem-name storage used($used-percentage) is above ($high-threshold)";
                         }
                     }
                 }
                 /*
                  * Sets color to green and sends out an notification when the
-                 * filesystem used % ($used-percent) is less than than 50%.
+                 * filesystem used % ($used-percentage) is less than than 50%.
                  */                     
                 term is-system-storage-normal {
                     when {
-                        less-than "$used-percent" "$low-threshold";
+                        less-than "$used-percentage" "$low-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$filesystem-name storage used($used-percent) is normal ($used-percent)";
+                            message "$filesystem-name storage used($used-percentage) is normal ($used-percentage)";
                         }
                     }
                 }
@@ -103,7 +133,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$filesystem-name storage used($used-percent) is in middle range(>=$low-threshold, <=$high-threshold)";
+                            message "$filesystem-name storage used($used-percentage) is in middle range(>=$low-threshold, <=$high-threshold)";
                         }
                     }
                 }

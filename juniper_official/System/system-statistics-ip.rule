@@ -5,7 +5,6 @@ healthbot {
         rule check-system-statistics-ip {
             description "Monitors incoming ip no socket buffer drops";
             synopsis "Incoming raw ip packets analyzer";
-            keys incoming-rawip-packets-dropped-no-socket-buffer;
             sensor system-statistics-ip {
                 description "Netconf rpc get-statistics-information to collect data from network device";
                 synopsis "Ip packets dropped no socket buffer iAgent sensor definition";
@@ -15,14 +14,22 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field ip-no-socket-buffer {
+                sensor system-statistics-ip {
+                    path system-statistics-ip-no-socket-buffer;
+                }
+                type integer;
+            }
             field configured-packets-dropped-count-threshold {
                 description "IP no socket buffer count threshold";
+                type integer;
                 constant {
                     value "{{ip-no-socket-buffer-count-threshold}}";
                 }
             }
             field configured-packets-dropped-rate-threshold {
                 description "IP no socket buffer rate threshold";
+                type integer;
                 constant {
                     value "{{ip-no-socket-buffer-rate-threshold}}";
                 }
@@ -33,7 +40,7 @@ healthbot {
                 frequency 60s;
                 term are-incoming-ip-no-socket-drops-increasing-over-threshold-rate {
                     when {
-                        min-rate-of-increase "$system-statistics-ip-no-socket-buffer" {
+                        min-rate-of-increase "$ip-no-socket-buffer" {
                             rate "$configured-packets-dropped-rate-threshold";
                             time-range 300s;
                         }
@@ -41,18 +48,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "IP no socket buffer drops ($system-statistics-ip-no-socket-buffer) increase rate is higher than threshold ($configured-packets-dropped-rate-threshold)";
+                            message "IP no socket buffer drops ($ip-no-socket-buffer) increase rate is higher than threshold ($configured-packets-dropped-rate-threshold)";
                         }
                     }
                 }
                 term are-incoming-ip-no-buffer-drops-larger-than-threshold {
                     when {
-                        greater-than "$system-statistics-ip-no-socket-buffer" "$configured-packets-dropped-count-threshold";
+                        greater-than "$ip-no-socket-buffer" "$configured-packets-dropped-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "IP no socket buffer drops ($system-statistics-ip-no-socket-buffer) non-zero";
+                            message "IP no socket buffer drops ($ip-no-socket-buffer) non-zero";
                         }
                     }
                 }
@@ -60,6 +67,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "IP no socket buffer drops ($ip-no-socket-buffer)";
                         }
                     }
                 }
