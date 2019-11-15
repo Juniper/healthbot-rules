@@ -42,7 +42,7 @@
                          algorithm 3sigma;
                          learning-period 7d;
                          pattern-periodicity 1h;
-                         field-name "$route-count";
+                         field-name "$fib-route-count";
                      }
                  }
                  type integer;
@@ -79,6 +79,13 @@
                  type string;
                  description "Address family name to be monitored";
              }
+             field fib-route-count {
+                sensor fib-sensor {
+                    path route-count;
+                }
+                type integer;
+                description "Route count";
+            }
             /*
              * Anomaly detection logic.
              */
@@ -86,19 +93,19 @@
                  frequency 10m;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * route count ($route-count) exceeds static threshold for all
+                 * route count ($fib-route-count) exceeds static threshold for all
                  * points in a 30 minutes period.
                  */
                  term is-route-count-abnormal {
                      when {
-                         greater-than-or-equal-to "$route-count" "$threshold" {
+                         greater-than-or-equal-to "$fib-route-count" "$threshold" {
                              time-range 30m;
                          }
                      }
                      then {
                          status {
                              color red;
-                             message "Route count of $table-name of $address-family of $route-table-type is ($route-count) abnormal";
+                             message "Route count of $table-name of $address-family of $route-table-type is ($fib-route-count) abnormal";
                          }
                      }
                  }
@@ -117,7 +124,7 @@
                      then {
                          status {
                              color yellow;
-                             message "Route count of $table-name of $address-family of $route-table-type is ($route-count) is above dynamic threshold";
+                             message "Route count of $table-name of $address-family of $route-table-type is ($fib-route-count) is above dynamic threshold";
                          }
                      }
                  }
@@ -128,7 +135,7 @@
                      then {
                          status {
                              color green;
-                             message "Route count of $table-name of $address-family of $route-table-type is ($route-count) normal";
+                             message "Route count of $table-name of $address-family of $route-table-type is ($fib-route-count) normal";
                          }
                      }
                  }

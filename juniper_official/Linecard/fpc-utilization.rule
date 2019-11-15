@@ -15,22 +15,49 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field slot {
+                sensor fpccpuheaputilizationtable {
+                    path slot;
+                }
+                type string;
+            }
+            field cpu-util {
+                sensor fpccpuheaputilizationtable {
+                    path cpu-total;
+                }
+                type integer;
+            }
+            field memory-heap-util {
+                sensor fpccpuheaputilizationtable {
+                    path memory-heap-utilization;
+                }
+                type integer;
+            }
+            field memory-buffer-util {
+                sensor fpccpuheaputilizationtable {
+                    path memory-buffer-utilization;
+                }
+                type integer;
+            }
             field linecard-buffer-usage-threshold {
                 constant {
                     value "{{fpc-buffer-usage-threshold}}";
                 }
+                type integer;
                 description "This field is for buffer usage threshold";
             }
             field linecard-cpu-usage-threshold {
                 constant {
                     value "{{fpc-cpu-usage-threshold}}";
                 }
+                type integer;
                 description "This field is for linecard cpu usage threshold";
             }
             field linecard-heap-usage-threshold {
                 constant {
                     value "{{fpc-heap-usage-threshold}}";
                 }
+                type integer;
                 description "This field is for linecard heap usage threshold";
             }
             trigger fpc-buffer-memory-utilization {
@@ -39,12 +66,12 @@ healthbot {
                 frequency 60s; 
                 term is-buffer-memory-utilization-greater-than-threshold {
                     when {
-                        greater-than "$memory-buffer-utilization" "$linecard-buffer-usage-threshold";
+                        greater-than "$memory-buffer-util" "$linecard-buffer-usage-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "FPC buffer memory utilization ($memory-buffer-utilization) is over threshold ($linecard-buffer-usage-threshold)";
+                            message "FPC buffer memory utilization ($memory-buffer-util) is over threshold ($linecard-buffer-usage-threshold)";
                         }
                     }
                 }
@@ -52,6 +79,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "FPC buffer memory utilization ($memory-buffer-util) is normal";
                         }
                     }
                 }
@@ -62,14 +90,14 @@ healthbot {
                 frequency 60s; 
                 term is-cpu-utilization-greater-than-80 {
                     when {
-                        greater-than "$cpu-total" "$linecard-cpu-usage-threshold" {
+                        greater-than "$cpu-util" "$linecard-cpu-usage-threshold" {
                             time-range 180s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "FPC CPU utilization ($cpu-total) is over threshold ($linecard-cpu-usage-threshold)";
+                            message "FPC CPU utilization ($cpu-util) is over threshold ($linecard-cpu-usage-threshold)";
                         }
                     }
                 }
@@ -77,6 +105,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "FPC CPU utilization ($cpu-util) is normal";
                         }
                     }
                 }
@@ -87,12 +116,12 @@ healthbot {
                 frequency 60s; 
                 term is-heap-memory-utilization-greater-than-threshold {
                     when {
-                        greater-than "$memory-heap-utilization" "$linecard-heap-usage-threshold";
+                        greater-than "$memory-heap-util" "$linecard-heap-usage-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "FPC heap memory utilization ($memory-heap-utilization) is over threshold ($linecard-heap-usage-threshold)";
+                            message "FPC heap memory utilization ($memory-heap-util) is over threshold ($linecard-heap-usage-threshold)";
                         }
                     }
                 }
@@ -100,6 +129,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "FPC heap memory utilization ($memory-heap-util) is normal";
                         }
                     }
                 }

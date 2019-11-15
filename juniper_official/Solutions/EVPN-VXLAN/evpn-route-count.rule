@@ -1,0 +1,185 @@
+/*
+ * Detects total number of active routes in bgp.evpn.0  table and notifies
+ * when anomalies are found.
+ * inputs control detection
+ *
+ *   1) "route-count-variable"  is the threshold that causes the
+ *      rule to report an anomaly. By default it's 100. This rule will set
+ *      a dashboard color to red when received route count exceed threshold
+ *
+ */
+healthbot {
+    topic protocol.evpn {
+        description "Monitors total active routes in evpn table and notify anomalies";
+        synopsis "EVPN session statistics analyzer";
+        rule check-evpn-route-count {
+            synopsis "Active EVPN routes analyzer";
+            description "Collects EVPN routes count periodically and notifies anomaly when count exceed threshold";
+            rule-frequency 30s;
+            field destination-count {
+                formula {
+                    count {
+                        field-name "@destination-list";
+                    }
+                }
+                type integer;
+                description "field to count the destination routes.";
+            }
+            field destination-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$destination-count";
+                    }
+                }
+                type integer;
+                description "Formula Field to store anomaly/no-anomaly in destination-count field";
+            }
+            field route-count-threshold {
+                constant {
+                    value "{{route-count-variable}}";
+                }
+                type integer;
+            }
+            trigger check-route-available {
+                synopsis "Active EVPN routes KPI";
+                description "Sets health based on active EVPN routes on bgp.evpn.0 table";
+                frequency 30s;
+                term is-route-available-static {
+                    when {
+                        equal-to "$destination-count" "$route-count-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Total active routes in bgp.evpn.0 is $destination-count.";
+                        }
+                    }
+                }
+                term is-route-available-dynamic {
+                    when {
+                        equal-to "$destination-dynamic-threshold" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Total active routes in bgp.evpn.0 is $destination-count. Within the dynamic level";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color red;
+                            message "Total active routes in bgp.evpn.0 is $destination-count. Expected routes in bgp.evpn.0 is not available";
+                        }
+                    }
+                }
+            }
+            variable route-count-variable {
+                value 100;
+                description "active evpn routes threshold";
+                type int;
+            }
+            vector destination-list {
+                path "/topic[topic-name=protocol.evpn]/rule[rule-name=check-evpn-routes]/destination";
+                time-range 30s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files EvpnTable.yml;
+                }
+            }
+        }
+        rule check-evpn-routes {
+            keys [ destination next-hop ];
+            synopsis "Active EVPN  routes analyzer";
+            description "Collects active EVPN routes count periodically and displays the routes";
+            sensor evpn-sensor {
+                synopsis "iAgent sensor definition";
+                iAgent {
+                    file EvpnTable.yml;
+                    table EvpnTable;
+                    frequency 30s;
+                }
+            }
+            field active-tag {
+                sensor evpn-sensor {
+                    path active-tag;
+                }
+                type string;
+                description "Sensor field to store active tag.";
+            }
+            field destination {
+                sensor evpn-sensor {
+                    path rt-destination;
+                }
+                type string;
+                description "Sensor field to store destination address.";
+            }
+            field next-hop {
+                sensor evpn-sensor {
+                    path rt-entry/protocol-nh/to;
+                }
+                type string;
+                description "Sensor field to store next hop.";
+            }
+            trigger EVPN-destination {
+                synopsis "EVPN active routes KPI";
+                description "Display all the active EVPN routes";
+                frequency 30s;
+                term is-destination-available {
+                    then {
+                        status {
+                            color green;
+                            message "$destination, Next-hop is $next-hop";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files EvpnTable.yml;
+                }
+            }
+        }
+    }
+}

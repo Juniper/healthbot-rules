@@ -15,6 +15,18 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field target {
+                sensor ithrottle {
+                    path target;
+                }
+                type string;
+            }
+            field usage-percent {
+                sensor ithrottle {
+                    path usage;
+                }
+                type integer;
+            }
             field ithrottle-state-ok {
                 constant {
                     value "{{fpc-ithrottle-state-ok}}";
@@ -25,6 +37,7 @@ healthbot {
                 constant {
                     value "{{fpc-ithrottle-usage-threshold}}";
                 }
+                type integer;
                 description "This field is for iThrottle usage";
             }
             trigger configuration-state {
@@ -46,6 +59,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "iThrottle configuration state is OK";
                         }
                     }
                 }
@@ -69,6 +83,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Operating state is OK";
                         }
                     }
                 }
@@ -79,12 +94,12 @@ healthbot {
                 frequency 60s;
                 term is-usage-percentage-greater-than-threshold {
                     when {
-                        greater-than "$usage" "$ithrottle-usage-threshold";
+                        greater-than "$usage-percent" "$ithrottle-usage-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Usage ($usage) is greater than threshold ($ithrottle-usage-threshold)";
+                            message "Usage ($usage-percent) is greater than threshold ($ithrottle-usage-threshold)";
                         }
                     }
                 }
@@ -92,6 +107,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Usage ($usage-percent) is normal";
                         }
                     }
                 }
