@@ -24,7 +24,7 @@ healthbot {
                 iAgent {
                     file bgp_neighbour.yml;
                     table bgpNeighbourTable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field name {
@@ -55,7 +55,7 @@ healthbot {
                     dynamic-threshold {
                         algorithm 3sigma;
                         learning-period 7d;
-                        pattern-periodicity 1h;
+                        pattern-periodicity 1d,1h;
                         field-name "$received-count";
                     }
                 }
@@ -71,7 +71,7 @@ healthbot {
             trigger received-prefix {
                 synopsis "BGP EVPN max received routes KPI";
                 description "Sets health based on increase in received EVPN routes on neighbor session";
-                frequency 30s;
+                frequency 90s;
                 term above-static-threshold {
                     when {
                         greater-than-or-equal-to "$received-count" "$route-count-threshold";

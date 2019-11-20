@@ -14,7 +14,7 @@ healthbot {
         rule check-vtep-interface-count {
             synopsis "VTEP interface count analyzer";
             description "Collects VTEP interfaces count periodically and notifies anomaly when count exceed threshold";
-            rule-frequency 30s;
+            rule-frequency 60s;
             field endpoint-count {
                 formula {
                     count {
@@ -29,27 +29,35 @@ healthbot {
                     dynamic-threshold {
                         algorithm 3sigma;
                         learning-period 7d;
-                        pattern-periodicity 1h;
+                        pattern-periodicity 1d,1h;
                         field-name "$endpoint-count";
                     }
                 }
                 type integer;
                 description "Formula Field to store anomaly/no-anomaly in endpoint-count field";
             }
-            field vtep-count {
+            field vtep-count-min {
                 constant {
-                    value "{{vtep-threshold}}";
+                    value "{{vtep-threshold-min}}";
                 }
                 type integer;
-                description "VTEP count static threshold";
+                description "VTEP count static min threshold";
+            }
+            field vtep-count-max {
+                constant {
+                    value "{{vtep-threshold-max}}";
+                }
+                type integer;
+                description "VTEP count static max threshold";
             }
             trigger check-endpoint-count {
                 synopsis "VTEP interface count KPI";
                 description "Sets health based on number of VTEP interfaces";
-                frequency 30s;
+                frequency 90s;
                 term is-endpoints-available-static {
                     when {
-                        equal-to "$endpoint-count" "$vtep-count";
+                        greater-than "$endpoint-count" "$vtep-count-min";
+                        less-than "$endpoint-count" "$vtep-count-max";
                     }
                     then {
                         status {
@@ -78,14 +86,19 @@ healthbot {
                     }
                 }
             }
-            variable vtep-threshold {
-                value 10;
-                description "VTEP threshold";
+            variable vtep-threshold-min {
+                value 2;
+                description "VTEP interface min threshold";
+                type int;
+            }
+            variable vtep-threshold-max {
+                value 20;
+                description "VTEP interface max threshold";
                 type int;
             }
             vector endpoint-list {
                 path "/topic[topic-name=protocol.evpn]/rule[rule-name=check-vtep-interface]/endpoint-address";
-                time-range 30s;
+                time-range 60s;
             }
             rule-properties {
                 version 1;
@@ -120,7 +133,7 @@ healthbot {
                 iAgent {
                     file VtepTable.yml;
                     table VtepTable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field endpoint-address {
@@ -147,7 +160,7 @@ healthbot {
             trigger VTEP-Endpoint {
                 synopsis "VTEP interface  KPI";
                 description "Display all VTEP interfaces";
-                frequency 30s;
+                frequency 90s;
                 term Term_1 {
                     then {
                         status {
