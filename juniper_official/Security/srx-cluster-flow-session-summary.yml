@@ -1,0 +1,25 @@
+---
+SPUSessionSummaryTable:
+  rpc: get-flow-session-information
+  args:
+    summary: True
+  item: multi-routing-engine-item
+  key: re-name
+  view: SecurityFlowView
+
+SecurityFlowView:
+  fields:
+    flow-view: _SummeryView
+
+_SummeryView:
+  item: flow-session-information/flow-fpc-pic-id[starts-with(normalize-space(),
+        'on FPC')]/parent::*
+  key: flow-fpc-pic-id
+  view: SummeryView
+
+SummeryView:
+  groups:
+    summary: following-sibling::flow-session-summary-information[1]
+  fields_summary:
+    active-sessions: {active-sessions: int}
+    max-sessions: {max-sessions: int}

@@ -15,29 +15,65 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field name {
+                sensor fpcmemory {
+                    path name;
+                }
+                type string;
+            }
+            field id {
+                sensor fpcmemory {
+                    path id;
+                }
+                type string;
+            }
+            field target {
+                sensor fpcmemory {
+                    path target;
+                }
+                type string;
+            }
+            field free {
+                sensor fpcmemory {
+                    path free;
+                }
+                type integer;
+            }
+            field used {
+                sensor fpcmemory {
+                    path used;
+                }
+                type integer;
+            }
+            field percent {
+                sensor fpcmemory {
+                    path perc;
+                }
+                type integer;
+            }
             trigger memory-usage-percentage {
                 synopsis "PFE memory buffer utilization kpi";
                 description "Sets health based on increase in FPC memory buffer utilization";
                 frequency 60s;
                 term way-over-limit {
                     when {
-                        greater-than "$perc" 90;
+                        greater-than "$percent" 90;
                     }
                     then {
                         status {
                             color red;
-                            message "$name memory usage for $target is too high ($perc)!";
+                            message "$name memory usage for $target is too high ($percent)!";
                         }
                     }
                 }
                 term over-limit {
                     when {
-                        greater-than "$perc" 80;
+                        greater-than "$percent" 80;
                     }
                     then {
                         status {
                             color yellow;
-                            message "$name memory usage for $target is high ($perc)!";
+                            message "$name memory usage for $target is high ($percent)!";
                         }
                     }
                 }
@@ -48,7 +84,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$name memory usage for $target is normal ($perc)!";
+                            message "$name memory usage for $target is normal ($percent)!";
                         }
                     }
                 }

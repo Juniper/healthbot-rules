@@ -224,16 +224,18 @@ healthbot {
                 type integer;
                 description "Value calculated based on 3sigma algorithm";
             }
-            field pool-maximum-utilization {
+            field pool-max-utilization {
                 constant {
                     value "{{pool-max-utilization}}";
                 }
+                type integer;
                 description "linked address pool utilization maximum threshold";
             }
-            field pool-minimum-util {
+            field pool-min-util {
                 constant {
                     value "{{pool-min-utilization}}";
                 }
+                type integer;
                 description "linked address pool utilization minimum threshold";
             }
             trigger mean-pool-utilization {
@@ -242,7 +244,7 @@ healthbot {
                 frequency 120s;
                 term is-mean-abnormal-gr {
                     when {
-                        greater-than "$mean-pool-utilization" "$pool-maximum-utilization";
+                        greater-than "$mean-pool-utilization" "$pool-max-utilization";
                     }
                     then {
                         status {
@@ -253,7 +255,7 @@ healthbot {
                 }
                 term is-mean-abnormal-lt {
                     when {
-                        less-than "$mean-pool-utilization" "$pool-minimum-util";
+                        less-than "$mean-pool-utilization" "$pool-min-util";
                     }
                     then {
                         status {
