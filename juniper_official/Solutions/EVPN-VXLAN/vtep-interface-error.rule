@@ -16,6 +16,7 @@ healthbot {
         description "Monitors and notify VTEP interface input & output errors";
         synopsis "VTEP Interface statistics analyzer";
         rule check-vtep-interface-errors {
+            keys vtep-name;
             synopsis "VTEP interface statistics analyzer";
             description "Collects statistics periodically and notifies in case of any anomaly";
             sensor vxlan {
@@ -27,6 +28,27 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field input-errors {
+                sensor vxlan {
+                    path input-errors;
+                }
+                type integer;
+                description "Total input errors";
+            }
+            field output-errors {
+                sensor vxlan {
+                    path output-errors;
+                }
+                type integer;
+                description "Total output errors";
+            }
+            field vtep-name {
+                sensor vxlan {
+                    path name;
+                }
+                type string;
+                description "VTEP interface name";
+            }
             trigger VTEP-Input-Error {
                 synopsis "VTEP Interface in-errors kpi";
                 description "Sets health based on the change in in-errors count";
@@ -36,12 +58,13 @@ healthbot {
                         increasing-at-least-by-value "$input-errors" {
                             value "$errors-threshold";
                             time-range 180s;
+                            all;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Input errors are increasing continuously on VTEP, Error count is:$input-errors";
+                            message "$vtep-name Input errors are increasing continuously, Error count is:$input-errors";
                         }
                     }
                 }
@@ -54,7 +77,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "VTEP input errors($input-errors) are intermittent\"";
+                            message "$vtep-name input errors($input-errors) are intermittent\"";
                         }
                     }
                 }
@@ -62,7 +85,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "VTEP interface Input error is stable";
+                            message "$vtep-name Input error count is normal($input-errors)";
                         }
                     }
                 }
@@ -81,7 +104,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Output errors are increasing continuously on VTEP, Error count is:$output-errors";
+                            message "$vtep-name Output errors are increasing continuously, Error count is:$output-errors";
                         }
                     }
                 }
@@ -94,7 +117,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "VTEP Output errors($output-errors) are intermittent\"";
+                            message "$vtep-name output errors($input-errors) are intermittent\"";
                         }
                     }
                 }
@@ -102,7 +125,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "VTEP interface Output Error is stable";
+                            message "$vtep-name output error count is normal($output-errors)";
                         }
                     }
                 }

@@ -37,61 +37,49 @@ healthbot {
                 type integer;
                 description "Formula Field to store anomaly/no-anomaly in destination-count field";
             }
-            field route-count-min-threshold {
-                constant {
-                    value "{{route-count-min-variable}}";
-                }
-                type integer;
-            }
-            field route-count-max-threshold {
+            field route-count-threshold {
                 constant {
                     value "{{route-count-max-variable}}";
                 }
                 type integer;
             }
-            trigger check-route-available {
+            trigger EVPN-active-route-count {
                 synopsis "Active EVPN routes KPI";
                 description "Sets health based on active EVPN routes on bgp.evpn.0 table";
                 frequency 90s;
                 term is-route-available-static {
                     when {
-                        greater-than-or-equal-to "$destination-count" "$route-count-min-threshold";
-                        less-than-or-equal-to "$destination-count" "$route-count-max-threshold";
+                        greater-than-or-equal-to "$destination-count" "$route-count-threshold";
                     }
                     then {
                         status {
-                            color green;
-                            message "Total active routes in bgp.evpn.0 is $destination-count.";
+                            color red;
+                            message "bgp.evpn.0 route count  $destination-count exceeds static threshold";
                         }
                     }
                 }
                 term is-route-available-dynamic {
                     when {
-                        equal-to "$destination-dynamic-threshold" 0;
+                        equal-to "$destination-dynamic-threshold" 1;
                     }
                     then {
                         status {
                             color yellow;
-                            message "Total active routes in bgp.evpn.0 is $destination-count. Within the dynamic level";
+                            message "bgp.evpn.0 route count  $destination-count exceeds dynamic threshold";
                         }
                     }
                 }
-                term default-term {
+                term route-count-normal {
                     then {
                         status {
-                            color red;
-                            message "Total active routes in bgp.evpn.0 is $destination-count. Expected routes in bgp.evpn.0 is not available";
+                            color green;
+                            message "bgp.evpn.0 route count  $destination-count is normal";
                         }
                     }
                 }
             }
-            variable route-count-min-variable {
-                value 10;
-                description "active evpn routes min threshold";
-                type int;
-            }
             variable route-count-max-variable {
-                value 1000;
+                value 10000;
                 description "active evpn routes max threshold";
                 type int;
             }

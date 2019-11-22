@@ -73,25 +73,23 @@ healthbot {
                 frequency 90s;
                 term above-static-threshold {
                     when {
-                        greater-than-or-equal-to "$advertised-routes" "$route-count-threshold";
+                        greater-than-or-equal-to "$advertised-count" "$route-count-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Advertised route count($advertised-routes) exceed static threshold";
+                            message "EVPN advertised route count($advertised-count) exceed static threshold";
                         }
                     }
                 }
                 term is-advertised-count-abnormal {
                     when {
-                        equal-to "$advertised-count-dynamic-threshold" 1 {
-                            time-range 5m;
-                        }
+                        equal-to "$advertised-count-dynamic-threshold" 1;
                     }
                     then {
                         status {
                             color yellow;
-                            message "anomaly in advertised count!!($advertised-count)";
+                            message "EVPN advertised route count($advertised-count) exceed dynamic threshold";
                         }
                     }
                 }
@@ -99,7 +97,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "no anomaly in advertised count($advertised-count)";
+                            message "EVPN advertised route count($advertised-count) is normal";
                         }
                     }
                 }
