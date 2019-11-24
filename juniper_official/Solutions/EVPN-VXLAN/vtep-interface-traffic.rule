@@ -87,13 +87,12 @@ healthbot {
                     when {
                         increasing-at-least-by-value "$input-bytes" {
                             value "$low-threshold-value";
-                            all;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$vtep-name input traffic ($input-bytes) is in medium range(>=$low-threshold-value,<=$high-threshold-value  bytes)";
+                            message "$vtep-name input traffic ($input-bytes) is in medium range(>=$low-threshold-value,<=$high-threshold-value bytes)";
                         }
                     }
                 }
@@ -112,25 +111,27 @@ healthbot {
                 frequency 90s;
                 term is-interface-out-traffic-abnormal {
                     when {
-                        min-rate-of-increase "$output-bytes" { ## Warning: 'min-rate-of-increase' is deprecated
+                        increasing-at-least-by-value "$output-bytes" {
                             rate "$high-threshold-value";
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$vtep-name interface output traffic ($output-bytes) is above high threshold($high-threshold-value bytes)";
+                            message "$vtep-name output traffic ($output-bytes) is above high threshold($high-threshold-value bytes)";
                         }
                     }
                 }
                 term is-interface-out-traffic-median {
                     when {
-                        min-rate-of-increase "$output-bytes"; ## Warning: 'min-rate-of-increase' is deprecated
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$low-threshold-value";
+                        }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$vtep-name output traffic ($output-bytes)is in medium range(>=$low-threshold-value,<=$high-threshold-value  bytes)";
+                            message "$vtep-name output traffic ($output-bytes)is in medium range(>=$low-threshold-value,<=$high-threshold-value bytes)";
                         }
                     }
                 }
