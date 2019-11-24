@@ -12,7 +12,7 @@
  *      or re-cpu-5min-high-threshold, is the threshold that causes the rule
  *      to report an anomaly. This rule will set a dashboard color to yellow
  *      when RE CPU utilization below high threshold. Otherwise color is set
- *      to red. 
+ *      to red.
  */
 healthbot {
     topic system.cpu {
@@ -176,6 +176,9 @@ healthbot {
                  * Defaults color to red.
                  */ 
                 term cpu-utilization-15min-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-high-threshold";
+                    }
                     then {
                         status {
                             color red;
@@ -233,6 +236,12 @@ healthbot {
                  * Defaults color to green.
                  */ 
                 term cpu-utilization-1min-normal {
+                    when {
+                        less-than "$cpu-1min" "$cpu-utilization-1min-low-threshold" {
+                        time-range 3m;
+                        all;
+                        }
+                    }
                     then {
                         status {
                             color green;
@@ -283,6 +292,9 @@ healthbot {
                  * Defaults color to red.
                  */                   
                 term cpu-utilization-5min-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-5min" "$cpu-utilization-5min-high-threshold";
+                    }
                     then {
                         status {
                             color red;
