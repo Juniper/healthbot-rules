@@ -2,7 +2,7 @@
  * Detects VTEP interfaces count and notifies when anomalies are found.
  * Input control detection
  *
- *   1) "vtep-threshold"  is the threshold that causes the
+ *   1) "vtep-count-static-threshold"  is the threshold that causes the
  *      rule to report an anomaly. By default it's 10. This rule will set
  *      a dashboard color to red when advertised route count exceed threshold
  *
@@ -11,106 +11,6 @@ healthbot {
     topic protocol.evpn {
         description "Monitors the VTEP interfaces count and notify anomalies";
         synopsis "VTEP interface count analyzer";
-        rule check-vtep-interface-count {
-            synopsis "VTEP interface count analyzer";
-            description "Collects VTEP interfaces count periodically and notifies anomaly when count exceed threshold";
-            rule-frequency 30s;
-            field endpoint-count {
-                formula {
-                    count {
-                        field-name "@endpoint-list";
-                    }
-                }
-                type integer;
-                description "Count the VTEP interfaces";
-            }
-            field endpoint-count-dynamic-threshold {
-                formula {
-                    dynamic-threshold {
-                        algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1h;
-                        field-name "$endpoint-count";
-                    }
-                }
-                type integer;
-                description "Formula Field to store anomaly/no-anomaly in endpoint-count field";
-            }
-            field vtep-count {
-                constant {
-                    value "{{vtep-threshold}}";
-                }
-                type integer;
-                description "VTEP count static threshold";
-            }
-            trigger check-endpoint-count {
-                synopsis "VTEP interface count KPI";
-                description "Sets health based on number of VTEP interfaces";
-                frequency 30s;
-                term is-endpoints-available-static {
-                    when {
-                        equal-to "$endpoint-count" "$vtep-count";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Total VTEP interfaces are : $endpoint-count";
-                        }
-                    }
-                }
-                term is-endpoints-available {
-                    when {
-                        equal-to "$endpoint-count-dynamic-threshold" 0;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "Total VTEP interfaces are : $endpoint-count. Within the dynamic level";
-                        }
-                    }
-                }
-                term default-term {
-                    then {
-                        status {
-                            color red;
-                            message "Total VTEP interfaces are : $endpoint-count. But expected VTEP interfaces are not available";
-                        }
-                    }
-                }
-            }
-            variable vtep-threshold {
-                value 10;
-                description "VTEP threshold";
-                type int;
-            }
-            vector endpoint-list {
-                path "/topic[topic-name=protocol.evpn]/rule[rule-name=check-vtep-interface]/endpoint-address";
-                time-range 30s;
-            }
-            rule-properties {
-                version 1;
-                contributor juniper;
-                supported-healthbot-version 2.1.0;
-                catalogue {
-                    tier 2;
-                }
-                supported-devices {
-                    juniper {
-                        operating-system junos {
-                            products QFX {
-                                releases 18.1R1 {
-                                    release-support min-supported-release;
-                                    platform All;
-                                }
-                            }
-                        }
-                    }
-                }
-                helper-files other {
-                    list-of-files VtepTable.yml;
-                }
-            }
-        }
         rule check-vtep-interface {
             keys vtep-name;
             synopsis "VTEP interface count KPI";
@@ -118,9 +18,9 @@ healthbot {
             sensor vtep-sensor {
                 synopsis "iAgent sensor definition";
                 iAgent {
-                    file VtepTable.yml;
-                    table VtepTable;
-                    frequency 30s;
+                    file VtepCountTable.yml;
+                    table VtepCountTable;
+                    frequency 60s;
                 }
             }
             field endpoint-address {
@@ -144,18 +44,105 @@ healthbot {
                 type string;
                 description "Sensor field to store end point name.";
             }
-            trigger VTEP-Endpoint {
-                synopsis "VTEP interface  KPI";
-                description "Display all VTEP interfaces";
-                frequency 30s;
-                term Term_1 {
-                    then {
-                        status {
-                            color green;
-                            message "Interface : $vtep-name Endpoint Type: $endpoint-type Endpoint Address: $endpoint-address";
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
                         }
                     }
                 }
+                helper-files other {
+                    list-of-files VtepCountTable.yml;
+                }
+            }
+        }
+        rule check-vtep-interface-count {
+            synopsis "VTEP interface count analyzer";
+            description "Collects VTEP interfaces count periodically and notifies anomaly when count exceed threshold";
+            rule-frequency 60s;
+            field endpoint-count {
+                formula {
+                    count {
+                        field-name "@endpoint-list";
+                    }
+                }
+                type integer;
+                description "Count the VTEP interfaces";
+            }
+            field endpoint-count-dynamic-threshold {
+                formula {
+                    dynamic-threshold {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$endpoint-count";
+                    }
+                }
+                type integer;
+                description "Formula Field to store anomaly/no-anomaly in endpoint-count field";
+            }
+            field vtep-count-static-threshold {
+                constant {
+                    value "{{vtep-threshold-max}}";
+                }
+                type integer;
+                description "VTEP count static max threshold";
+            }
+            trigger VTEP-interface-count {
+                synopsis "VTEP interface count KPI";
+                description "Sets health based on number of VTEP interfaces";
+                frequency 90s;
+                term is-vtep-count-above-static-threshold {
+                    when {
+                        greater-than-or-equal-to "$endpoint-count" "$vtep-count-static-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Total VTEP interfaces are : $endpoint-count above static threshold($vtep-count-static-threshold)";
+                        }
+                    }
+                }
+                term is-vtep-count-above-dynamic-threshold {
+                    when {
+                        equal-to "$endpoint-count-dynamic-threshold" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Total VTEP interfaces are : $endpoint-count above dynamic threshold";
+                        }
+                    }
+                }
+                term vtep-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Total VTEP interfaces are : $endpoint-count is normal";
+                        }
+                    }
+                }
+            }
+            variable vtep-threshold-max {
+                value 3200;
+                description "Enter VTEP interface max threshold";
+                type int;
+            }
+            vector endpoint-list {
+                path "/topic[topic-name=protocol.evpn]/rule[rule-name=check-vtep-interface]/endpoint-address";
+                time-range 60s;
             }
             rule-properties {
                 version 1;
@@ -177,7 +164,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files VtepTable.yml;
+                    list-of-files VtepCountTable.yml;
                 }
             }
         }

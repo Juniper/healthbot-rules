@@ -5,96 +5,97 @@ healthbot {
     topic protocol.evpn {
         description "This topic is to monitor vport";
         synopsis "vport check";
-       rule check-vport {
+        rule check-vport {
             synopsis "vport analyzer";
-            description "This rule collects vport used percentage periodically and notifies in case of anomalies";        
-        function difference {
-            path subtract.py;
-            method subtract;
-            argument subtract {
-                mandatory;
+            description "This rule collects vport used percentage periodically and notifies in case of anomalies";
+            function difference {
+                path subtract.py;
+                method subtract;
+                argument subtract {
+                    mandatory;
+                }
+                argument subtract_from {
+                    mandatory;
+                }
             }
-            argument subtract_from {
-                mandatory;
+            function used-percentage {
+                path used-percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
             }
-        }
-        function used-percentage {
-            path used-percentage.py;
-            method used_percentage;
-            argument total {
-                mandatory;
-            }
-            argument used {
-                mandatory;
-            }
-        }
-        sensor vport-information {
+            sensor vport-information {
                 synopsis "vport netconf based iAgent sensor definition";
                 description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
-            iAgent {
-                file vport.yml;
-                table VirtualVportTable;
-                frequency 60s;
-            }
-        }
-        field vport-count {
-            formula {
-                user-defined-function {
-                    function-name difference;
-                    argument subtract_from "$vport_count";
-                    argument subtract 1;
+                iAgent {
+                    file vport.yml;
+                    table VirtualVportTable;
+                    frequency 60s;
                 }
             }
-            type integer;
-        }
-    field vport-percentage-used {
-            formula {
-                user-defined-function {
-                    function-name used-percentage;
-                    argument used "$vport-count";
-                    argument total "{{vport_max_count}}";
+            field vport-count {
+                formula {
+                    user-defined-function {
+                        function-name difference;
+                        argument subtract_from "$vport_count";
+                        argument subtract 1;
+                    }
                 }
+                type integer;
             }
-            type integer;
-        }
-        trigger vport-usage {
+            field vport-percentage-used {
+                formula {
+                    user-defined-function {
+                        function-name used-percentage;
+                        argument used "$vport-count";
+                        argument total "{{vport_max_count}}";
+                    }
+                }
+                type integer;
+            }
+            trigger vport-usage {
                 synopsis "vport kpi";
                 description "Sets health based on vport used percentage.";
-            term below-threshold {
-                when {
-                    less-than "$vport-percentage-used" 60;
+                frequency 90s;
+                term below-threshold {
+                    when {
+                        less-than "$vport-percentage-used" 60;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message " vport count is $vport-count which is  $vport-percentage-used  %of max";
+                        }
+                    }
                 }
-                then {
-                    status {
-                        color green;
-                        message " vport count is $vport-count which is  $vport-percentage-used  %of max";
+                term above-threshold {
+                    when {
+                        greater-than "$vport-percentage-used" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message " vport count is $vport-count which is  $vport-percentage-used % of max";
+                        }
+                    }
+                }
+                term inbetween-threshold {
+                    then {
+                        status {
+                            color yellow;
+                            message " vport count is $vport-count which is  $vport-percentage-used  %of max";
+                        }
                     }
                 }
             }
-            term above-threshold {
-                when {
-                    greater-than "$vport-percentage-used" 80;
-                }
-                then {
-                    status {
-                        color red;
-                        message " vport count is $vport-count which is  $vport-percentage-used % of max";
-                    }
-                }
+            variable vport_max_count {
+                value 3200;
+                type int;
             }
-            term inbetween-threshold {
-                then {
-                    status {
-                        color yellow;
-                        message " vport count is $vport-count which is  $vport-percentage-used  %of max";
-                    }
-                       }
-            }
-        }
-        variable vport_max_count {
-            value 100;
-            type int;
-        }
             rule-properties {
                 version 1;
                 contributor juniper;
@@ -115,7 +116,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files [ vport.yml used-percentage.py subtract.py ];
+                    list-of-files [ subtract.py used-percentage.py vport.yml ];
                 }
             }
         }

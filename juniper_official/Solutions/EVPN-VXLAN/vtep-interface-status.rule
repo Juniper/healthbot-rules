@@ -7,6 +7,7 @@ healthbot {
         description "Monitors and notify VTEP interface admin status and link status";
         synopsis "VTEP Interface status analyzer";
         rule check-vtep-interface-status {
+            keys vtep-name;
             synopsis "VTEP interface status analyzer";
             description "Collects VTEP status periodically and notifies in case of any anomaly";
             sensor vxlan {
@@ -15,8 +16,15 @@ healthbot {
                 iAgent {
                     file vtep-statistics.yml;
                     table VtepTable;
-                    frequency 30s;
+                    frequency 60s;
                 }
+            }
+            field vtep-name {
+                sensor vxlan {
+                    path name;
+                }
+                type string;
+                description "Vtep interface name";
             }
             field vtep-oper-status {
                 sensor vxlan {
@@ -29,14 +37,17 @@ healthbot {
             trigger VTEP-admin-status {
                 synopsis "admin state kpi";
                 description "Sets health based on admin state";
+                frequency 90s;
                 term check-admin-status {
                     when {
-                        matches-with "$vtep-admin-status" up;
+                        matches-with "$admin-status" up {
+                            ignore-case;
+                        }
                     }
                     then {
                         status {
                             color green;
-                            message "VTEP interface admin status is \"$vtep-admin-status\"";
+                            message "VTEP interface admin status is \"$admin-status\"";
                         }
                     }
                 }
@@ -52,9 +63,12 @@ healthbot {
             trigger VTEP-oper-status {
                 synopsis "operational state kpi";
                 description "Sets health based on operational state";
+                frequency 90s;
                 term check-operational-status {
                     when {
-                        matches-with "$vtep-oper-status" up;
+                        matches-with "$vtep-oper-status" up {
+                            ignore-case;
+                        }
                     }
                     then {
                         status {
