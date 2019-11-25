@@ -10,22 +10,22 @@
  */
 healthbot {
     topic protocol.bgp {
-        description "Monitors BGP neighbour state and notify anomalies";
+        description "Monitors BGP neighbor state and notify anomalies";
         synopsis "BGP state statistics analyzer";
-        rule check-bgp-neighbour-state-iagent {
+        rule check-bgp-neighbor-state-iagent {
             keys peer-address;
-            synopsis "BGP neighbour state analyzer";
-            description "Collects BGP neighbour state periodically and notifies anomaly";
-            sensor BgpNeighbour {
+            synopsis "BGP neighbor state analyzer";
+            description "Collects BGP neighbor state periodically and notifies anomaly";
+            sensor BgpNeighbor {
                 synopsis "iAgent sensor definition";
                 iAgent {
-                    file bgp_neighbour.yml;
-                    table bgpNeighbourTable;
+                    file bgp_neighbor.yml;
+                    table bgpNeighborTable;
                     frequency 60s;
                 }
             }
             field peer-address {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     where "peer-address =~ /{{neighbors}}/";
                     path peer-address;
                 }
@@ -39,11 +39,12 @@ healthbot {
                 term is-neighbor-up {
                     when {
                         matches-with "$peer-state" Established;
+                        ignore-case;
                     }
                     then {
                         status {
                             color green;
-                            message "Neighbor($peer-address) session up";
+                            message "BGP neighbor($peer-address) session is up";
                         }
                     }
                 }
@@ -51,7 +52,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Neighbor($peer-address) session down";
+                            message "BGP neighbor($peer-address) session is down";
                         }
                     }
                 }

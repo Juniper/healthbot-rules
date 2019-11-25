@@ -18,22 +18,22 @@
  */
 healthbot {
     topic protocol.bgp {
-        description "Monitors BGP neighbour flap count and notify anomalies";
+        description "Monitors BGP neighbor flap count and notify anomalies";
         synopsis "BGP statistics analyzer";
-        rule check-bgp-neighbour-flap-iagent {
+        rule check-bgp-neighbor-flap-iagent {
             keys peer-address;
-            synopsis "BGP neighbour flap count analyzer";
-            description "Collects BGP neighbour flap count periodically and notifies anomaly";
-            sensor BgpNeighbour {
+            synopsis "BGP neighbor flap count analyzer";
+            description "Collects BGP neighbor flap count periodically and notifies anomaly";
+            sensor BgpNeighbor {
                 synopsis "iAgent sensor definition";
                 iAgent {
-                    file bgp_neighbour.yml;
-                    table bgpNeighbourTable;
+                    file bgp_neighbor.yml;
+                    table bgpNeighborTable;
                     frequency 60s;
                 }
             }
             field flap-count {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     path flap-count;
                 }
                 type integer;
@@ -47,7 +47,7 @@ healthbot {
                 description "Flap count increase threshold";
             }
             field peer-address {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     where "peer-address =~ /{{neighbors}}/";
                     path peer-address;
                 }
@@ -60,28 +60,29 @@ healthbot {
                 frequency 90s;
                 term is-session-flapping {
                     when {
-                        min-rate-of-increase "$flap-count" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$flap-count-threshold";
+                        increasing-at-least-by-value "$flap-count" {
+                            value "$flap-count-threshold";
                             time-range 180s;
+                            all;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Neighbor session flapping.";
+                            message "BGP neighbor session ($peer-address) is flapping.";
                         }
                     }
                 }
                 term is-session-inconsistent {
                     when {
-                        min-rate-of-increase "$flap-count" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$flap-count-threshold";
+                        increasing-at-least-by-value "$flap-count" {
+                            value "$flap-count-threshold";
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "Neighbor session inconsistent.";
+                            message "BGP neighbor session ($peer-address) is inconsistent.";
                         }
                     }
                 }
@@ -89,7 +90,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Neighbor session stable";
+                            message "BGP neighbor session  ($peer-address) is stable";
                         }
                     }
                 }
