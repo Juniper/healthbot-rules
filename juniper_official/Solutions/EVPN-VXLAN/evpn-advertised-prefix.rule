@@ -18,16 +18,16 @@ healthbot {
             keys [ name peer-address ];
             synopsis "BGP EVPN advertised routes analyzer";
             description "Collects BGP EVPN session advertised routes count periodically and notifies anomaly when advertised route count exceed threshold";
-            sensor BgpNeighbour {
+            sensor BgpNeighbor {
                 synopsis "iAgent sensor definition";
                 iAgent {
                     file bgp_neighbor.yml;
-                    table bgpNeighbourTable;
+                    table bgpNeighborTable;
                     frequency 60s;
                 }
             }
             field advertised-count {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     path advertised-prefix-count;
                     zero-suppression;
                 }
@@ -47,7 +47,7 @@ healthbot {
                 description "Formula Field to store anomaly/no-anomaly in advertised-count field";
             }
             field name {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     where "name =~ /{{addr-table}}/";
                     path name;
                 }
@@ -55,7 +55,7 @@ healthbot {
                 description "Sensor field to store table name";
             }
             field peer-address {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     path peer-address;
                 }
                 type string;
@@ -104,7 +104,7 @@ healthbot {
             }
             variable addr-table {
                 value default-switch.evpn.0;
-                description "BGP Neighbour table, regular expression, e.g. 'efault-switch.evpn.0'";
+                description "BGP Neighbor table, regular expression, e.g. 'default-switch.evpn.0'";
                 type string;
             }
             variable max-route-threshold {
