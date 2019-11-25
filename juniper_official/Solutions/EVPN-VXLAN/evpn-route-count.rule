@@ -15,7 +15,7 @@ healthbot {
         rule check-evpn-route-count {
             synopsis "Active EVPN routes analyzer";
             description "Collects EVPN routes count periodically and notifies anomaly when count exceed threshold";
-            rule-frequency 30s;
+            rule-frequency 65s;
             field destination-count {
                 formula {
                     count {
@@ -30,7 +30,7 @@ healthbot {
                     dynamic-threshold {
                         algorithm 3sigma;
                         learning-period 7d;
-                        pattern-periodicity 1h;
+                        pattern-periodicity 1d,1h;
                         field-name "$destination-count";
                     }
                 }
@@ -39,53 +39,53 @@ healthbot {
             }
             field route-count-threshold {
                 constant {
-                    value "{{route-count-variable}}";
+                    value "{{route-count-max-variable}}";
                 }
                 type integer;
             }
-            trigger check-route-available {
+            trigger EVPN-active-route-count {
                 synopsis "Active EVPN routes KPI";
                 description "Sets health based on active EVPN routes on bgp.evpn.0 table";
-                frequency 30s;
+                frequency 90s;
                 term is-route-available-static {
                     when {
-                        equal-to "$destination-count" "$route-count-threshold";
+                        greater-than-or-equal-to "$destination-count" "$route-count-threshold";
                     }
                     then {
                         status {
-                            color green;
-                            message "Total active routes in bgp.evpn.0 is $destination-count.";
+                            color red;
+                            message "bgp.evpn.0 route count  $destination-count exceeds static threshold";
                         }
                     }
                 }
                 term is-route-available-dynamic {
                     when {
-                        equal-to "$destination-dynamic-threshold" 0;
+                        equal-to "$destination-dynamic-threshold" 1;
                     }
                     then {
                         status {
                             color yellow;
-                            message "Total active routes in bgp.evpn.0 is $destination-count. Within the dynamic level";
+                            message "bgp.evpn.0 route count  $destination-count exceeds dynamic threshold";
                         }
                     }
                 }
-                term default-term {
+                term route-count-normal {
                     then {
                         status {
-                            color red;
-                            message "Total active routes in bgp.evpn.0 is $destination-count. Expected routes in bgp.evpn.0 is not available";
+                            color green;
+                            message "bgp.evpn.0 route count  $destination-count is normal";
                         }
                     }
                 }
             }
-            variable route-count-variable {
-                value 100;
-                description "active evpn routes threshold";
+            variable route-count-max-variable {
+                value 10000;
+                description "active evpn routes max threshold";
                 type int;
             }
             vector destination-list {
                 path "/topic[topic-name=protocol.evpn]/rule[rule-name=check-evpn-routes]/destination";
-                time-range 30s;
+                time-range 65s;
             }
             rule-properties {
                 version 1;
@@ -120,7 +120,7 @@ healthbot {
                 iAgent {
                     file EvpnTable.yml;
                     table EvpnTable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field active-tag {
@@ -143,19 +143,6 @@ healthbot {
                 }
                 type string;
                 description "Sensor field to store next hop.";
-            }
-            trigger EVPN-destination {
-                synopsis "EVPN active routes KPI";
-                description "Display all the active EVPN routes";
-                frequency 30s;
-                term is-destination-available {
-                    then {
-                        status {
-                            color green;
-                            message "$destination, Next-hop is $next-hop";
-                        }
-                    }
-                }
             }
             rule-properties {
                 version 1;

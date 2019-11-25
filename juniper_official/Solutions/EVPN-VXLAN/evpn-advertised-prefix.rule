@@ -9,7 +9,6 @@
  *   2) "max-route-threshold"  is the threshold that causes the
  *      rule to report an anomaly. By default it's 10000. This rule will set
  *      a dashboard color to red when advertised route count exceed threshold
- *
  */
 healthbot {
     topic protocol.evpn {
@@ -19,16 +18,16 @@ healthbot {
             keys [ name peer-address ];
             synopsis "BGP EVPN advertised routes analyzer";
             description "Collects BGP EVPN session advertised routes count periodically and notifies anomaly when advertised route count exceed threshold";
-            sensor BgpNeighbour {
+            sensor BgpNeighbor {
                 synopsis "iAgent sensor definition";
                 iAgent {
-                    file bgp_neighbour.yml;
-                    table bgpNeighbourTable;
-                    frequency 30s;
+                    file bgp_neighbor.yml;
+                    table bgpNeighborTable;
+                    frequency 60s;
                 }
             }
             field advertised-count {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     path advertised-prefix-count;
                     zero-suppression;
                 }
@@ -40,7 +39,7 @@ healthbot {
                     dynamic-threshold {
                         algorithm 3sigma;
                         learning-period 7d;
-                        pattern-periodicity 1h;
+                        pattern-periodicity 1d,1h;
                         field-name "$advertised-count";
                     }
                 }
@@ -48,7 +47,7 @@ healthbot {
                 description "Formula Field to store anomaly/no-anomaly in advertised-count field";
             }
             field name {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     where "name =~ /{{addr-table}}/";
                     path name;
                 }
@@ -56,7 +55,7 @@ healthbot {
                 description "Sensor field to store table name";
             }
             field peer-address {
-                sensor BgpNeighbour {
+                sensor BgpNeighbor {
                     path peer-address;
                 }
                 type string;
@@ -71,28 +70,26 @@ healthbot {
             trigger advertised-prefix {
                 synopsis "BGP EVPN max advertised routes KPI";
                 description "Sets health based on increase in advertised EVPN routes on neighbor session";
-                frequency 30s;
+                frequency 90s;
                 term above-static-threshold {
                     when {
-                        greater-than-or-equal-to "$advertised-routes" "$route-count-threshold";
+                        greater-than-or-equal-to "$advertised-count" "$route-count-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Advertised route count($advertised-routes) exceed static threshold";
+                            message "EVPN advertised route count($advertised-count) for $peer-address exceeds static threshold";
                         }
                     }
                 }
                 term is-advertised-count-abnormal {
                     when {
-                        equal-to "$advertised-count-dynamic-threshold" 1 {
-                            time-range 5m;
-                        }
+                        equal-to "$advertised-count-dynamic-threshold" 1;
                     }
                     then {
                         status {
                             color yellow;
-                            message "anomaly in advertised count!!($advertised-count)";
+                            message "EVPN advertised route count($advertised-count) for $peer-address exceeds dynamic threshold";
                         }
                     }
                 }
@@ -100,14 +97,14 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "no anomaly in advertised count($advertised-count)";
+                            message "EVPN advertised route count($advertised-count) is normal for $peer-address";
                         }
                     }
                 }
             }
             variable addr-table {
                 value default-switch.evpn.0;
-                description "BGP Neighbour table, regular expression, e.g. 'efault-switch.evpn.0'";
+                description "BGP Neighbor table, regular expression, e.g. 'default-switch.evpn.0'";
                 type string;
             }
             variable max-route-threshold {
@@ -135,7 +132,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files bgp_neighbour.yml;
+                    list-of-files bgp_neighbor.yml;
                 }
             }
         }
