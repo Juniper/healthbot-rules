@@ -16,9 +16,6 @@ healthbot {
                     file interface-details.yml;
                     table intfaceStats;
                     frequency 60s;
-                    args interface_name {
-                        arg-value "{{interface-name}}";
-                    }
                 }
             }
             field high-threshold {
@@ -44,6 +41,7 @@ healthbot {
             }
             field name {
                 sensor interface-stats {
+                    where "name =~ /{{interface-name}}/";
                     path name;
                 }
                 type string;
@@ -101,8 +99,9 @@ healthbot {
                 type int;
             }
             variable interface-name {
-                value *;
-                type sensor-argument;
+                value .*;
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
             }
             rule-properties {
                 version 1;
