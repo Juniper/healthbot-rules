@@ -1,0 +1,108 @@
+/*
+ * This rule checks if secure boot is running and enforced and returns
+ * an error if it is not.
+ *
+ * This rule relies on a file present in 19.3R1 and beyond.
+ * This rule is only applicible to devices where secure boot is capable.
+ * If this rule is run on a device that is incapable of secure boot,
+ * the result will be "secureboot status is unknonw" and the rule should be
+ * removed.
+ */
+healthbot {
+    topic security {
+        description "Rules related to platform security";
+        rule check-secureboot-status {
+            synopsis "System secure boot status";
+            description "Checks that secure boot is running and enforced";
+            sensor secureboot-sensor {
+                description "Rule requires a command to be run on the host";
+                iAgent {
+                    file secure-boot-status.yml;
+                    table securebootTable;
+                    frequency 4w;
+                }
+            }
+            trigger check-secureboot-status-trigger {
+                frequency 4w;
+                description "Script returns message and a number to determine color";
+                term secure-boot-enforced {
+                    when {
+                        equal-to "$sb_color_result" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$sb_msg";
+                        }
+                    }
+                }
+                term secure-boot-not-enabled {
+                    when {
+                        equal-to "$sb_color_result" 2;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$sb_msg";
+                        }
+                    }
+                }
+                term secure-boot-unknown {
+                    then {
+                        status {
+                            color yellow;
+                            message "$sb_msg";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX4650-48Y EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX10003 MX10008 MX2008 MX2010 MX2020 MX204 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products NFX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform NFX250;
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX10008 PTX10016 PTX3000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10002-60C QFX10008 QFX10016 QFX5110 QFX5120-48Y ];
+                                }
+                            }
+                            products SRX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ SRX1500 SRX4600 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
