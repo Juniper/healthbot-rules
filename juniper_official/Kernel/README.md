@@ -443,6 +443,6 @@ Check if routing socket errors has been increased by 100 from its previous value
 
 **Suggested action**
 Collect below information and contact Juniper:
-1)Take a kernel live vmcore by issuing "sysctl kern.live_core_dump" and share vmcore generated in /var/crash
+1)Take a kernel live Vmcore by issuing "sysctl kern.live_core_dump" and share vmcore generated in /var/crash
 2)All log files in /var/log/, from both routing engines
 3)Output of ifsmon -p, ifsmon -c, ifsmon -Id, ifsmon -g
