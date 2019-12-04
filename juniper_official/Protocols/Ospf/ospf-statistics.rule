@@ -14,13 +14,43 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field ospf-packet-type {
+                sensor protocol-ospf-statistics-information {
+                    path ospf-packet-type;
+                }
+                type string;
+            }
+            field hellos-sent {
+                sensor protocol-ospf-statistics-information {
+                    path hello-sent;
+                }
+                type integer;
+            }
+            field hellos-received {
+                sensor protocol-ospf-statistics-information {
+                    path hello-received;
+                }
+                type integer;
+            }
+            field hellos-sent-5sec {
+                sensor protocol-ospf-statistics-information {
+                    path hello-sent-5sec;
+                }
+                type integer;
+            }
+            field hellos-received-5sec {
+                sensor protocol-ospf-statistics-information {
+                    path hello-received-5sec;
+                }
+                type integer;
+            }
             trigger protocol-ospf-statistics-information-hello-received {
                 synopsis "ospf hello received statistics kpi";
                 description "Sets health based on ospf hello received statistics";
                 frequency 60s;
                 term is-ospf-hello-receive-increasing {
                     when {
-                        min-rate-of-increase "$hello-received" {
+                        min-rate-of-increase "$hellos-received" {
                             rate 1;
                             time-range 5m;
                         }
@@ -47,7 +77,7 @@ healthbot {
                 frequency 60s;
                 term is-ospf-hello-sent-increasing {
                     when {
-                        min-rate-of-increase "$hello-sent" {
+                        min-rate-of-increase "$hellos-sent" {
                             rate 1;
                             time-range 5m;
                         }
@@ -73,7 +103,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

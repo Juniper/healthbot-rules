@@ -7,12 +7,12 @@
  * condition and should be mitigated asap by restarting the client. See readme
  * in healthbot rules folder for details.
  */
-iceberg {
+healthbot {
     topic kernel.ifstate {
         rule check-stuck-ifstate-clients {
             sensor ifstate-clients {
-                synopsis "stuck ifstate client open-config sensor";
-                description "open-config sensor to monitor any stuck ifstate client on a network device";
+                synopsis "Stuck ifstate client open-config sensor";
+                description "Open-config sensor to monitor any stuck ifstate client on a network device";
                 open-config {
                     sensor-name /junos/kernel-ifstate;
                     frequency 1m;
@@ -25,9 +25,9 @@ iceberg {
                 type integer;
             }
             trigger report-ifstate-clients-health {
-                synopsis "report stuck ifstate clients";
-                description "monitor and report any stuck ifstate clients on the network device";
-                frequency 1m;
+                synopsis "Report stuck ifstate clients";
+                description "Monitor and report any stuck ifstate clients on the network device";
+                frequency 90s;
                 term is-ifs-client-stuck {
                     when {
                         not-equal-to "$stuck-clients" 0;
@@ -44,6 +44,35 @@ iceberg {
                         status {
                             color green;
                             message "No ifstate client (daemon/fpc) is stuck.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
                         }
                     }
                 }

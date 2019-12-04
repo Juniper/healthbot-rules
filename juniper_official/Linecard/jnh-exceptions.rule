@@ -15,6 +15,18 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field packet-count{
+                sensor showjnhexceptions {
+                    path packets;
+                }
+                type integer;
+            }
+            field bytes{
+                sensor showjnhexceptions {
+                    path bytes;
+                }
+                type integer;
+            }
             field exception-increase-rate {
                 constant {
                     value "{{exception-increase-rate-input}}";
@@ -28,7 +40,7 @@ healthbot {
                 frequency 60s;
                 term are-jnh-packet-drops-increasing {
                     when {
-                        min-rate-of-increase "$packets" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$packet-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$exception-increase-rate";
                             time-range 300s;
                         }
@@ -58,7 +70,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

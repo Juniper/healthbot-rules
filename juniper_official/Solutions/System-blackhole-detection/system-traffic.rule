@@ -5,7 +5,7 @@
  * 
  *   1) traffic-diff-threshold, is the threshold that causes the rule to
  *      report a anomaly. This rule will set a dashboard color to red when
- *      system input($pfe-input-packets) and output ($pfe-output-packets)
+ *      system input($pfe-in-packets) and output ($pfe-out-packets)
  *      traffic difference exceeds static threshold 'traffic-diff-threshold'.
  * 
  */
@@ -47,6 +47,18 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field pfe-in-packets {
+                sensor SystemStatistics {
+                    path pfe-input-packets;
+                }
+                type integer;
+            }
+            field pfe-out-packets {
+                sensor SystemStatistics {
+                    path pfe-output-packets;
+                }
+                type integer;
+            }
             /*
              * Fields defined with variables and values are calculated based on k-means algorithm
              */
@@ -60,8 +72,8 @@ healthbot {
                 formula {
                     user-defined-function {
                         function-name traffic_diff;
-                        argument inpkts "$pfe-input-packets";
-                        argument outpkts "$pfe-output-packets";
+                        argument inpkts "$pfe-in-packets";
+                        argument outpkts "$pfe-out-packets";
                     }
                 }
                 type integer;
@@ -92,7 +104,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Difference($traffic-difference %) in input($pfe-input-packets pkts) and output($pfe-output-packets pkts) traffic exceeds $threshold";
+                            message "Difference($traffic-difference %) in input($pfe-in-packets pkts) and output($pfe-out-packets pkts) traffic exceeds $threshold";
                         }
                     }
                 }
@@ -105,7 +117,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Difference($traffic-difference %) in input($pfe-input-packets pkts) and output($pfe-output-packets pkts) traffic exceeds dynamic threshold";
+                            message "Difference($traffic-difference %) in input($pfe-in-packets pkts) and output($pfe-out-packets pkts) traffic exceeds dynamic threshold";
                         }
                     }
                 }
@@ -113,7 +125,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Difference($traffic-difference %) in input($pfe-input-packets pkts) and output($pfe-output-packets pkts) traffic is normal";
+                            message "Difference($traffic-difference %) in input($pfe-in-packets pkts) and output($pfe-out-packets pkts) traffic is normal";
                         }
                     }
                 }
@@ -128,7 +140,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 1;
+                    tier 2;
                 }
                 supported-devices {
                     juniper {

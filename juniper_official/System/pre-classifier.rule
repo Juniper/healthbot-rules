@@ -15,16 +15,54 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field id {
+                sensor preclstatstable {
+                    path id;
+                }
+                type string;
+            }
+            field port {
+                sensor preclstatstable {
+                    path port;
+                }
+                type string;
+            }
+            field precl_index {
+                sensor preclstatstable {
+                    path precl_index;
+                }
+                type string;
+            }
+            field target {
+                sensor preclstatstable {
+                    path target;
+                }
+                type string;
+            }
+            field received-packet-count {
+                sensor preclstatstable {
+                    path recieved-packets;
+                }
+                type integer;
+            }
+            field dropped-packet-count {
+                sensor preclstatstable {
+                    path dropped-packets;
+                }
+                type integer;
+            }
             field linecard-pre-classifier-count-threshold {
                 constant {
                     value "{{fpc-preclassifier-count-threshold}}";
                 }
+                type integer;
                 description "Linecard pre-classifier count threshold value";
             }
             field linecard-pre-classifier-rate-threshold {
                 constant {
                     value "{{fpc-preclassifier-rate-threshold}}";
                 }
+                type integer;
                 description "Linecard pre-classifier rate threshold value";
             }
             trigger pre-classifier-packet-drops {
@@ -33,7 +71,7 @@ healthbot {
                 frequency 60s;
                 term is-packet-drop-increasing {
                     when {
-                        min-rate-of-increase "$dropped-packets" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$dropped-packet-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$linecard-pre-classifier-rate-threshold";
                             time-range 300s;
                         }
@@ -41,18 +79,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Pre-classifier dropped packets ($dropped-packets) increasing";
+                            message "Pre-classifier dropped packets ($dropped-packet-count) increasing";
                         }
                     }
                 }
                 term is-packet-drop-non-zero {
                     when {
-                        greater-than "$dropped-packets" "$linecard-pre-classifier-count-threshold";
+                        greater-than "$dropped-packet-count" "$linecard-pre-classifier-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Pre-classifier dropped packets counter ($dropped-packets) larger than threshold ($linecard-pre-classifier-count-threshold)";
+                            message "Pre-classifier dropped packets counter ($dropped-packet-count) larger than threshold ($linecard-pre-classifier-count-threshold)";
                         }
                     }
                 }
@@ -80,7 +118,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

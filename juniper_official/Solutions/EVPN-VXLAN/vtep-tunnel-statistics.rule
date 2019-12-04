@@ -1,0 +1,220 @@
+/*
+ * Monitors VTEP logical interface status, input traffic, output traffic and
+ * notifies when anomalies are found.
+ * Two inputs control detection
+ *   1) high-threshold,  is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 800000000 octets. This rule will
+ *      set a dashboard color to red when *all* the input traffic is above
+ *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
+ *      800000000 for 100G interface.
+ *
+ *   2) low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 180 seconds period, otherwise color is set to green.
+ *      Use 5000000000 octets for 10G & 500000000 for 100G interface.
+ */
+healthbot {
+    topic protocol.evpn {
+        description "Monitors and notify VTEP logical interface status, input & output traffic";
+        synopsis "VTEP logical Interface statistics analyzer";
+        rule check-vtep-tunnel-statistics {
+            keys vtep-tunnel;
+            synopsis "VTEP logical interface statistics analyzer";
+            description "Collects statistics periodically and notifies in case of any anomaly";
+            sensor vxlan {
+                synopsis "VTEP iagent sensor definition";
+                description "Interfaces iagent sensor to collect telemetry data from network device";
+                iAgent {
+                    file VtepCountTable.yml;
+                    table VtepCountTable;
+                    frequency 60s;
+                }
+            }
+            
+            field input-bytes {
+                sensor vxlan {
+                    path input-bytes;
+                }
+                type integer;
+                description "VTEP total input bytes";
+            }
+            field output-bytes {
+                sensor vxlan {
+                    path output-bytes;
+                }
+                type integer;
+                description "Total VTEP output bytes";
+            }
+            field vtep-tunnel {
+                sensor vxlan {
+                    path name;
+                }
+                type string;
+                description "VTEP logical interface name";
+            }
+            field vtep-tunnel-status {
+                sensor vxlan {
+                    path state;
+                }
+                type string;
+                description "Interface operational status";
+            }
+            field high-threshold-value {
+                constant {
+                    value "{{high-threshold-variable}}";
+                }
+                type integer;
+                description "High threshold value for input and output bytes";
+            }
+            field low-threshold-value {
+                constant {
+                    value "{{low-threshold-variable}}";
+                }
+                type integer;
+                description "Low threshold value for input and output bytes";
+            }
+            trigger VTEP-tunel-status {
+                synopsis "operational state kpi";
+                description "Sets health based on operational state";
+                frequency 90s;
+                term check-operational-status {
+                    when {
+                        matches-with "$vtep-tunnel-status" True {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$vtep-tunnel operational status is UP";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color red;
+                            message "$vtep-tunnel operational status is DOWN";
+                        }
+                    }
+                }
+            }
+            trigger VTEP-tunnel-input-traffic {
+                synopsis "VTEP tunnel interface input traffic kpi";
+                description "Sets health based on VTEP tunnel input traffic threhold";
+                frequency 90s;
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$input-bytes" {
+                            value "$high-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$vtep-tunnel input traffic($input-bytes) is above high threshold($high-threshold bytes)";
+                        }
+                    }
+                }
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$input-bytes" {
+                            value "$low-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$vtep-tunnel input traffic($input-bytes) is in medium range(>=$low-threshold)";
+                        }
+                    }
+                }
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$vtep-tunnel input traffic is normal";
+                        }
+                    }
+                }
+            }
+            trigger VTEP-tunnel-output-traffic {
+                synopsis "VTEP tunnel interface input traffic kpi";
+                description "Sets health based on VTEP tunnel output traffic threhold";
+                frequency 90s;
+                term is-interface-out-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$high-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$vtep-tunnel output traffic($output-bytes) is above high threshold($high-threshold bytes)";
+                        }
+                    }
+                }
+                term is-interface-out-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$low-threshold";
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$vtep-tunnel output traffic($input-bytes) is in medium range(>=$low-threshold)";
+                        }
+                    }
+                }
+                term interface-out-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$vtep-tunnel output traffic is normal";
+                        }
+                    }
+                }
+            }
+            variable high-threshold-variable {
+                value 800000000;
+                description "traffic high threshold";
+                type int;
+            }
+            variable low-threshold-variable {
+                value 500000000;
+                description "traffic low threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files VtepCountTable.yml;
+                }
+            }
+        }
+    }
+}

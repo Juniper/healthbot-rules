@@ -33,8 +33,43 @@ healthbot {
                 }
             }
             /*
-             * Fields defined with dynamic threshold ML algorithms
+             * Fields defined with sensor path
              */
+            field destination-count {
+                sensor route-summary {
+                    path destination-count;
+                }
+                type integer;
+                description "destination route count";
+            }
+            field table-total-route-count {
+                sensor route-summary {
+                    path total-route-count;
+                }
+                type integer;
+                description "Table total route count";
+            }
+            field active-route-count {
+                sensor route-summary {
+                    path active-route-count;
+                }
+                type integer;
+                description "Active route count";
+            }
+            field holddown-route-count {
+                sensor route-summary {
+                    path holddown-route-count;
+                }
+                type integer;
+                description "Hold down route count";
+            }
+            field hidden-route-count {
+                sensor route-summary {
+                    path hidden-route-count;
+                }
+                type integer;
+                description "Hidden route count";
+            }
             field table-name {
                 sensor route-summary {
                     where "table-name =~ /^{{route-table-name}}$/";
@@ -50,13 +85,16 @@ healthbot {
                 type integer;
                 description "Route count static threshold";
             }
+            /*
+             * Fields defined with dynamic threshold ML algorithms
+             */
             field route-count-dynamic-threshold {
                 formula {
                     dynamic-threshold {
                         algorithm 3sigma;
                         learning-period 7d;
                         pattern-periodicity 1h;
-                        field-name "$total-route-count";
+                        field-name "$table-total-route-count";
                     }
                 }
                 type integer;
@@ -75,14 +113,14 @@ healthbot {
                  frequency 10m;
                  term is-route-count-abnormal {
                     when {              
-                        greater-than-or-equal-to "$total-route-count" "$threshold" {
+                        greater-than-or-equal-to "$table-total-route-count" "$threshold" {
                             time-range 30m;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Anomaly detected: Route table($table-name) total route count($total-route-count) is abnormal";
+                            message "Anomaly detected: Route table($table-name) total route count($table-total-route-count) is abnormal";
                         }
                     }
                 }
@@ -101,7 +139,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Route table($table-name) total route count($total-route-count) is above dynamic threshold";
+                            message "Route table($table-name) total route count($table-total-route-count) is above dynamic threshold";
                         }
                     }
                 }
@@ -112,7 +150,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Route table($table-name) total route count($total-route-count) is normal";
+                            message "Route table($table-name) total route count($table-total-route-count) is normal";
                         }
                     }
                 }

@@ -1,0 +1,124 @@
+/*
+ * This rule helps in monitoring the health of the system on the basis of the resolve request error count parameter.
+ *
+ * The sensor used is iAgent.
+ * The rule collects resolve request error count and notifies anomaly if
+ * resolve request error count exceeds threshold.
+ */
+healthbot {
+    topic kernel.multicast {
+        rule check-resolve-request-error-cnt-iagent {
+            synopsis "Check resolve request error count";
+            description "This rule helps to monitor the system health with the help of the parameter resolve request error count. The sensor used is iAgent";
+            sensor rslv-req-cnt-sensor {
+                synopsis rslv-req-cnt-sensor;
+                description "iAgent sensor for resolve request error count";
+                iAgent {
+                    file rslv_req_err_cnt.yml;
+                    table rslvReqErrCountTable;
+                    frequency 10m;
+                }
+            }
+	    field rslv-req-err-cnt-red-threshold {
+                constant {
+                    value "{{rslv-req-err-cnt-red-threshold-input}}";
+		}
+	    }
+	    field rslv-req-err-cnt-yellow-threshold {
+                constant {
+                    value "{{rslv-req-err-cnt-yellow-threshold-input}}";
+		}
+	    }
+            field resolve-request-error-cnt {
+                sensor rslv-req-cnt-sensor {
+                    path rslv_req_err_cnt;
+                }
+                type integer;
+                description "Multicast Resolve Request Error Count";
+            }
+            trigger report-resolve-req-error-cnt-iagent {
+                synopsis "Trigger for resolve request error count, with iAgent sensor";
+                description "The trigger monitors the system health, based on the value of the resovle request error count. If this value is greater than 20, red alarm is thrown. If it is between 11-20, yellow alarm is thrown. Else, green alarm is thrown";
+                frequency 15m;
+                term resolve-request-error-cnt-diff-gt-20 {
+                    when {
+                        not-equal-to "$resolve-request-error-cnt" 0;
+                        increasing-at-least-by-value "$resolve-request-error-cnt" {
+                            value "$rslv-req-err-cnt-red-threshold";
+                            time-range 1810s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Resolve request error count difference between successive samples is greater than 20. Urgent action required. Resolve request error count = $resolve-request-error-cnt";
+                        }
+                    }
+                }
+                term resolve-request-error-cnt-diff-gt-10 {
+                    when {
+                        not-equal-to "$resolve-request-error-cnt" 0;
+                        increasing-at-least-by-value "$resolve-request-error-cnt" {
+                            value "$rslv-req-err-cnt-yellow-threshold";
+                            time-range 1810s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Resolve request error count difference between successive samples is in the range 10-20. Resolve request error count = $resolve-request-error-cnt";
+                        }
+                    }
+                }
+                term resolve-request-error-cnt-lt-eq-10 {
+                    then {
+                        status {
+                            color green;
+                            message "Resolve request error count difference between successive samples is less than or equal to 10. Health is good. Resolve request error count = $resolve-request-error-cnt";
+                        }
+                    }
+                }
+            }
+	    variable rslv-req-err-cnt-red-threshold-input {
+		    value 21;
+		    description "Resolve request error count red threshold value";
+		    type int;
+	    }
+	    variable rslv-req-err-cnt-yellow-threshold-input {
+		    value 11;
+		    description "Resolve request error count yellow threshold value";
+		    type int;
+	    }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

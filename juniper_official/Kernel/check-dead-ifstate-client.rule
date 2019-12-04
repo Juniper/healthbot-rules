@@ -5,12 +5,12 @@
  * By default, it checks if all the samples collected every 1 minute are
  * non-zero for contiguous 20 minutes.
  */
-iceberg {
+healthbot {
     topic kernel.ifstate {
         rule check-dead-ifstate-client {
             sensor kernel-ifstate-sensor {
-                synopsis "dead ifstate client sensor";
-                description "monitor any dead ifstates are not cleaned up on a network device for a predefined time period";
+                synopsis "Dead ifstate client sensor";
+                description "Monitor any dead ifstates are not cleaned up on a network device for a predefined time period";
                 open-config {
                     sensor-name /junos/kernel-ifstate;
                     frequency 1m;
@@ -24,8 +24,8 @@ iceberg {
                 description "Dead ifstate clients count in the system";
             }
             trigger report-dead-ifstate-clients {
-                synopsis "any dead ifstates not cleaned up on the network device";
-                description "monitor and raise a RED alaram if dead ifstates are not cleaned up in the system for the last 20 minutes";
+                synopsis "Any dead ifstates not cleaned up on the network device";
+                description "Monitor and raise a RED alaram if dead ifstates are not cleaned up in the system for the last 20 minutes";
                 frequency 1m;
                 term dead-ifstate-clients-20mins {
                     when {
@@ -46,6 +46,35 @@ iceberg {
                         status {
                             color green;
                             message "No dead Ifstate clients found in the system";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
                         }
                     }
                 }

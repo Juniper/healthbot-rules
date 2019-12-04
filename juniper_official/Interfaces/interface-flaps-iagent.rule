@@ -1,0 +1,133 @@
+/*
+ * Detects interface flaps and notifies when anomalies are found.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-interface-flaps-iagent {
+            keys name;
+            synopsis "Link flaps detector";
+            description "Collects link flap count periodically and notifies when flap count increases";
+            sensor interface-stats {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file interface-details.yml;
+                    table intfaceStats;
+                    frequency 60s;
+                }
+            }
+            field carrier_transitions {
+                sensor interface-stats {
+                    path carrier_transitions;
+                }
+                type integer;
+                description "Interface flaps count";
+            }
+            field flaps-threshold {
+                constant {
+                    value "{{flaps-threshold-variable}}";
+                }
+                type integer;
+                description "Flap count increase threshold";
+            }
+            field name {
+                sensor interface-stats {
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            trigger link-flap {
+                synopsis "Interface flap  kpi";
+                description "Sets health based on the change in flap count";
+                frequency 90s;
+                term is-link-flapping-consistently {
+                    when {
+                        increasing-at-least-by-value "$carrier_transitions" {
+                            value "$flaps-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ERROR: Flaps are increasing continuously on $name, flap count is:$carrier_transitions";
+                        }
+                    }
+                }
+                term is-link-fluctuating {
+                    when {
+                        increasing-at-least-by-value "$carrier_transitions" {
+                            value "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ERROR: Interface $name flaps($carrier_transitions) is intermittent";
+                        }
+                    }
+                }
+                term is-link-stable {
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name is stable";
+                        }
+                    }
+                }
+            }
+            variable flaps-threshold-variable {
+                value 1;
+                description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable interface-name {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

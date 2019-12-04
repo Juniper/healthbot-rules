@@ -1,0 +1,158 @@
+/*
+ *   This rule monitors IRB next hop count and notify in case any of the health monitored field crosses threshold
+ */
+healthbot {
+    topic protocol.evpn {
+        description "This topic is to monitor IRB next hop count";
+        synopsis "IRB next hop check";
+        rule check-irb-next-hops {
+            keys irb-name;
+            synopsis "IRB next hop analyzer";
+            description "This rule collects IRB next hop periodically and notifies in case of anomalies";
+            function decimal_to_percent {
+                description "Function to derive nh count in percentage";
+                path generic_functions.py;
+                method decimal_to_percent;
+                argument denominator {
+                    mandatory;
+                }
+                argument numerator {
+                    mandatory;
+                }
+            }
+            sensor irb-sensor {
+                synopsis "IRB interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file IrbIntefaceStatsTable.yml;
+                    table IrbIntefaceStatsTable;
+                    frequency 60s;
+                }
+            }
+            field irb-name {
+                sensor irb-sensor {
+                    where "name =~ /{{irb-if-name}}/";
+                    path name;
+                }
+                type string;
+                description "IRB interface name";
+            }
+            field nh-count {
+                sensor irb-sensor {
+                    path nh-count;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "IRB nh count value";
+            }
+            field nh-drop-count {
+                sensor irb-sensor {
+                    path nh-drop-count;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "IRB nh drop count value";
+            }
+            field nh-limit {
+                sensor irb-sensor {
+                    path nh-limit;
+                }
+                type integer;
+                description "IRB nh limit";
+            }
+            field nh-util-percent {
+                formula {
+                    user-defined-function {
+                        function-name decimal_to_percent;
+                        argument numerator "$nh-count";
+                        argument denominator "$nh-limit";
+                    }
+                }
+                type float;
+                description "NH utilization percent";
+            }
+            trigger irb-nh-drop-count {
+                synopsis "IRB next hop kpi";
+                description "Sets health based on IRB next hop count.";
+                frequency 90s;
+                term is-nh-drop-count-increasing {
+                    when {
+                        increasing-at-least-by-value "$nh-drop-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$irb-name next-hop drop count($nh-drop-count) is increasing";
+                        }
+                    }
+                }
+                term nh-drop-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$irb-name next-hop drop count($nh-drop-count) is normal";
+                        }
+                    }
+                }
+            }
+            trigger irb-nh-limit {
+                synopsis "IRB next hop utiliation kpi";
+                description "Sets health based on IRB next hop untilization.";
+                frequency 90s;
+                term is-nh-limit-above-threshold {
+                    when {
+                        greater-than-or-equal-to "$nh-util-percent" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$irb-name nh count:$nh-count($nh-util-percent%) exceeds threshold";
+                        }
+                    }
+                }
+                term nh-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$irb-name nh count:$nh-count($nh-util-percent%) is normal";
+                        }
+                    }
+                }
+            }
+            variable irb-if-name {
+                value .*;
+                description "Enter IRB interface name";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files [ IrbIntefaceStatsTable.yml generic_functions.py ];
+                }
+            }
+        }
+    }
+}

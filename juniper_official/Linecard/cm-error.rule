@@ -16,18 +16,36 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field module {
+                sensor cm-error-table {
+                    path module;
+                }
+                type string;
+            }
+            field target {
+                sensor cm-error-table {
+                    path target;
+                }
+                type string;
+            }
+            field cm-errors {
+                sensor cm-error-table {
+                    path errors;
+                }
+                type integer;
+            }
             trigger cm-errors-active {
                 synopsis "cm error kpi";
                 description "Sets health based on cm errors on the system.";
                 frequency 60s;
                 term are-cm-errors-active {
                     when {
-                        greater-than "$errors" 0;
+                        greater-than "$cm-errors" 0;
                     }
                     then {
                         status {
                             color red;
-                            message "Linecard Chassis Manager for $name has active errors";
+                            message "Linecard Chassis Manager for $name has active errors($cm-errors)";
                         }
                     }
                 }
@@ -35,6 +53,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Linecard Chassis Manager for $name is error free";
                         }
                     }
                 }
@@ -44,7 +63,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

@@ -1,0 +1,133 @@
+/*
+ * Detects interface in errors and notifies when anomalies are found.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface input errors";
+        synopsis "Interface input error statistics analyzer";
+        rule check-in-errors-iagent {
+            keys name;
+            synopsis "Interface in-error analyzer";
+            description "Collects the interface input error (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            sensor interface-stats {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file interface-details.yml;
+                    table intfaceStats;
+                    frequency 60s;
+                }
+            }
+            field error-threshold {
+                constant {
+                    value "{{error-threshold-variable}}";
+                }
+                type integer;
+                description "In errors count increase threshold";
+            }
+            field input_errors {
+                sensor interface-stats {
+                    path input_errors;
+                }
+                type integer;
+                description "Interfaces input error";
+            }
+            field name {
+                sensor interface-stats {
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            trigger input-errors {
+                synopsis "Interface in-errors kpi";
+                description "Sets health based on the change in in-errors count";
+                frequency 90s;
+                term is-interface-in-errors-abnormal {
+                    when {
+                        increasing-at-least-by-value "$input_errors" {
+                            value "$error-threshold";
+                            time-range 180s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ERROR: Input errors are increasing continuously on $name, Error count is:$input_errors";
+                        }
+                    }
+                }
+                term is-interface-in-errors-median {
+                    when {
+                        increasing-at-least-by-value "$input_errors" {
+                            value "$error-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ERROR: Interface $name input errors($input_errors) are intermittent";
+                        }
+                    }
+                }
+                term no-interface-in-errors {
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name input error is not incrementing";
+                        }
+                    }
+                }
+            }
+            variable error-threshold-variable {
+                value 1;
+                description "Input and output interface error threshold value.";
+                type int;
+            }
+            variable interface-name {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -16,10 +16,46 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field task-memory-overall-report {
+                sensor task-memory-usage {
+                    path task-memory-overall-report;
+                }
+                type string;
+                description "IO task name";
+            }
+            field dynamic-allocation {
+                sensor task-memory-usage {
+                    path dynamic-allocation;
+                }
+                type integer;
+                description "Task memory dynamic allocation";
+            }
+            field max-allocation {
+                sensor task-memory-usage {
+                    path max-allocation;
+                }
+                type integer;
+                description "Task memory max allocation";
+            }
+            field in-use {
+                sensor task-memory-usage {
+                    path in-use;
+                }
+                type integer;
+                description "Used task memory";
+            }
+            field in-mem-use-percent {
+                sensor task-memory-usage {
+                    path in-use-percent;
+                }
+                type integer;
+                description "Used task memory in percent";
+            }
             field configured-threshold {
                 constant {
                     value "{{memory-threshold}}";
                 }
+                type integer;
                 description "This field is for task memory threshold";
             }
             trigger percentage-of-task-memory-in-use {
@@ -28,12 +64,12 @@ healthbot {
                 frequency 60s;
                 term is-task-memory-in-use-above-threshold {  
                     when {
-                        greater-than-or-equal-to "$in-use-percent" memory-threshold;
+                        greater-than-or-equal-to "$in-mem-use-percent" memory-threshold;
                     }
                     then {
                         status {
                             color red;
-                            message "Routing Protocol Daemon in use task memory ($in-use-percent) greater than configured threshold($configured-threshold)";
+                            message "Routing Protocol Daemon in user task memory ($in-mem-use-percent) greater than configured threshold($configured-threshold)";
                         }
                     }
                 }
@@ -41,7 +77,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Routing Protocol Daemon in user task memory ($in-use-percent) lower than configured threshold($configured-threshold)";
+                            message "Routing Protocol Daemon in user task memory ($in-mem-use-percent) lower than configured threshold($configured-threshold)";
                         }
                     }
                 }
@@ -49,14 +85,14 @@ healthbot {
             variable memory-threshold {
                 value 80;
                 description "RPD Task Memory threshold value";
-                type string;
+                type int;
             }
             rule-properties {
                 version 2;
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

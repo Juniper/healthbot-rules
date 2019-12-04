@@ -1,0 +1,119 @@
+/*
+ * Monitors VTEP interface admin status, operations status and
+ * notifies when anomalies are found.
+*/
+healthbot {
+    topic protocol.evpn {
+        description "Monitors and notify VTEP interface admin status and link status";
+        synopsis "VTEP Interface status analyzer";
+        rule check-vtep-interface-status {
+            keys vtep-name;
+            synopsis "VTEP interface status analyzer";
+            description "Collects VTEP status periodically and notifies in case of any anomaly";
+            sensor vxlan {
+                synopsis "VTEP iagent sensor definition";
+                description "Interfaces iagent sensor to collect telemetry data from network device";
+                iAgent {
+                    file vtep-statistics.yml;
+                    table VtepTable;
+                    frequency 60s;
+                }
+            }
+            field vtep-name {
+                sensor vxlan {
+                    path name;
+                }
+                type string;
+                description "Vtep interface name";
+            }
+            field vtep-oper-status {
+                sensor vxlan {
+                    where "oper-status =~ /{{oper-status-var}}/";
+                    path oper-status;
+                }
+                type string;
+                description "Interface operational status";
+            }
+            trigger VTEP-admin-status {
+                synopsis "admin state kpi";
+                description "Sets health based on admin state";
+                frequency 90s;
+                term check-admin-status {
+                    when {
+                        matches-with "$admin-status" up {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "VTEP interface admin status is \"$admin-status\"";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color red;
+                            message "VTEP interface admin status is \"$vtep-admin-status\"";
+                        }
+                    }
+                }
+            }
+            trigger VTEP-oper-status {
+                synopsis "operational state kpi";
+                description "Sets health based on operational state";
+                frequency 90s;
+                term check-operational-status {
+                    when {
+                        matches-with "$vtep-oper-status" up {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "VTEP interface operational status is \"$vtep-oper-status\"";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color red;
+                            message "VTEP interface operational status is \"$vtep-oper-status\"";
+                        }
+                    }
+                }
+            }
+            variable oper-status-var {
+                value .+;
+                description " VTEP interface operational state";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files vtep-statistics.yml;
+                }
+            }
+        }
+    }
+}

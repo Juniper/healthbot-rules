@@ -15,13 +15,49 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field instance {
+                sensor center-chip-fabric-in {
+                    path instance;
+                }
+                type string;
+            }
+            field target {
+                sensor center-chip-fabric-in {
+                    path target;
+                }
+                type string;
+            }
+            field cchip-fi-received-packets {
+                sensor center-chip-fabric-in {
+                    path cchip-fi-packets-received;
+                }
+                type integer;
+            }
+            field cchip-fi-packets-drops {
+                sensor center-chip-fabric-in {
+                    path cchip-fi-packets-dropped;
+                }
+                type integer;
+            }
+            field cchip-fi-sent-packets {
+                sensor center-chip-fabric-in {
+                    path cchip-fi-packets-sent-ok;
+                }
+                type integer;
+            }
+            field cchip-fi-error-packets {
+                sensor center-chip-fabric-in {
+                    path cchip-fi-packets-with-error;
+                }
+                type integer;
+            }
             trigger center-chip-fabric-in-dropped {
                 synopsis "center chip fabric kpi";
                 description "Sets health based on center chip fabric dropped packets ";
                 frequency 60s; 
                 term are-center-chip-fabric-in-dropped-packets-increasing {
                     when {
-                        increasing-at-least-by-value "$cchip-fi-packets-dropped" {
+                        increasing-at-least-by-value "$cchip-fi-packets-drops" {
                             value 1;
                             time-range 3m;
                         }
@@ -29,13 +65,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Center chip fabric in dropped counters incrementing ($cchip-fi-packets-dropped)";
+                            message "Center chip fabric in dropped counters incrementing ($cchip-fi-packets-drops)";
                         }
                     }
                 }
                 term are-center-chip-fabric-in-dropped-packets-non-zero {
                     when {
-                        greater-than "$cchip-fi-packets-dropped" 0;
+                        greater-than "$cchip-fi-packets-drops" 0;
                     }
                     then {
                         status {
@@ -58,7 +94,7 @@ healthbot {
                 frequency 60s; 
                 term are-center-chip-fabric-in-errors-present {
                     when {
-                        greater-than "$cchip-fi-packets-with-error" 0;
+                        greater-than "$cchip-fi-error-packets" 0;
                     }
                     then {
                         status {
@@ -81,7 +117,7 @@ healthbot {
                 frequency 60s; 
                 term are-center-chip-fabric-in-received-packets-increasing {
                     when {
-                        increasing-at-least-by-value "$cchip-fi-packets-received" {
+                        increasing-at-least-by-value "$cchip-fi-received-packets" {
                             value 1;
                             time-range 3m;
                         }
@@ -89,6 +125,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Center chip fabric in received counters are increasing";
                         }
                     }
                 }
@@ -107,7 +144,7 @@ healthbot {
                 frequency 60s;
                 term are-center-chip-fabric-in-sent-ok-packets-increasing {
                     when {
-                        increasing-at-least-by-value "$cchip-fi-packets-sent-ok" {
+                        increasing-at-least-by-value "$cchip-fi-sent-packets" {
                             value 1;
                             time-range 3m;
                         }
@@ -115,6 +152,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Center chip fabric in sent-ok counters are increasing";
                         }
                     }
                 }
@@ -132,7 +170,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

@@ -1,0 +1,182 @@
+/*
+ * Monitors VTEP interface interface input traffic, output traffic and
+ * notifies when anomalies are found.
+ * Two inputs control detection
+ *   1) high-threshold,  is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 800000000 octets. This rule will
+ *      set a dashboard color to red when *all* the input traffic is above
+ *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
+ *      80000000000 for 100G interface.
+ *
+ *   2) low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 180 seconds period, otherwise color is set to green.
+ *      Use 5000000000 octets for 10G & 50000000000 for 100G interface.
+ */
+healthbot {
+    topic protocol.evpn {
+        description "Monitors and notify VTEP interface input & output traffic";
+        synopsis "VTEP Interface statistics analyzer";
+        rule check-vtep-interface-traffic {
+            keys vtep-name;
+            synopsis "VTEP interface statistics analyzer";
+            description "Collects statistics periodically and notifies in case of any anomaly";
+            sensor vxlan {
+                synopsis "VTEP iagent sensor definition";
+                description "Interfaces iagent sensor to collect telemetry data from network device";
+                iAgent {
+                    file vtep-statistics.yml;
+                    table VtepTable;
+                    frequency 60s;
+                }
+            }
+            field high-threshold-value {
+                constant {
+                    value "{{high-threshold}}";
+                }
+                type integer;
+                description "High threshold value for input and output bytes";
+            }
+            field input-bytes {
+                sensor vxlan {
+                    path input-bytes;
+                }
+                type integer;
+                description "Total vtep input bytes";
+            }
+            field low-threshold-value {
+                constant {
+                    value "{{low-threshold}}";
+                }
+                type integer;
+                description "Low threshold value for input and output bytes";
+            }
+            field output-bytes {
+                sensor vxlan {
+                    path output-bytes;
+                }
+                type integer;
+                description "Vtep total output bytes";
+            }
+            field vtep-name {
+                sensor vxlan {
+                    path name;
+                }
+                type string;
+                description "Vtep interface name";
+            }
+            trigger VTEP-input-traffic {
+                synopsis "VTEP Interface input traffic kpi";
+                description "Sets health based on VTEP input traffic exceed threshold";
+                frequency 90s;
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$input-bytes" {
+                            value "$high-threshold-value";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$vtep-name input traffic ($input-bytes) is above high threshold ($high-threshold-value bytes)";
+                        }
+                    }
+                }
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$input-bytes" {
+                            value "$low-threshold-value";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$vtep-name input traffic ($input-bytes) is in medium range(>=$low-threshold-value,<=$high-threshold-value bytes)";
+                        }
+                    }
+                }
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$vtep-name input traffic is normal";
+                        }
+                    }
+                }
+            }
+            trigger VTEP-output-traffic {
+                synopsis "VTEP Interface output traffic kpi";
+                description "Sets health based on VTEP output traffic exceed threshold";
+                frequency 90s;
+                term is-interface-out-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$high-threshold-value";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$vtep-name output traffic ($output-bytes) is above high threshold($high-threshold-value bytes)";
+                        }
+                    }
+                }
+                term is-interface-out-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$output-bytes" {
+                            value "$low-threshold-value";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$vtep-name output traffic ($output-bytes)is in medium range(>=$low-threshold-value,<=$high-threshold-value bytes)";
+                        }
+                    }
+                }
+                term interface-out-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$vtep-name output traffic is normal";
+                        }
+                    }
+                }
+            }
+            variable high-threshold {
+                value 80000000000;
+                description "traffic high threshold";
+                type int;
+            }
+            variable low-threshold {
+                value 500000000;
+                description "traffic low threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files vtep-statistics.yml;
+                }
+            }
+        }
+    }
+}

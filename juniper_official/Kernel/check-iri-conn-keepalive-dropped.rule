@@ -2,30 +2,30 @@
  * This rule detects any intra-chassis connection (part of Internal Routing
  * Instance) drops because of keep alive expiry.
  */
-iceberg {
+healthbot {
     topic kernel.tcpip {
         rule check-iri-conn-keepalive-dropped {
             synopsis "Detect IRI connection drops because of Keepalive";
             description "This rule detects any intra-chassis connection drops because of keep alive expiry";
             sensor iri-conn-dropped-sensor {
                 synopsis "IRI connection dropped iAgent sensor";
-                description "monitor IRI connection drops on a network device";
+                description "Monitor IRI connection drops on a network device";
                 iAgent {
                     file tcpconn.yml;
                     table tcpconnTable;
-                    frequency 20s;
+                    frequency 60s;
                 }
             }
             trigger report-iri-conn-keepalive-dropped {
-                synopsis "trigger to monitor report any IRI connection drops";
+                synopsis "Trigger to monitor report any IRI connection drops";
                 description "Report IRI connection drops";
-                frequency 20s;
+                frequency 60s;
                 term has-iri-conn-keepalive-dropped {
                     when {
                         not-equal-to "$keepalive" 0;
                         increasing-at-least-by-value "$keepalive" {
                             value 1;
-                            time-range 1m;
+                            time-range 3m;
                             any;
                         }
                     }
@@ -41,6 +41,35 @@ iceberg {
                         status {
                             color green;
                             message "No new intra-chassis connections found dropped because of Keepalive expiry";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
                         }
                     }
                 }

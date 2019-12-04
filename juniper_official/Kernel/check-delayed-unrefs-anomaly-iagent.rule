@@ -6,16 +6,16 @@
  * major events and is not a cause for worry. But, if this situation persists for
  * significant amount of time (say in minutes), then it can result in traffic loss.
  */
-iceberg {
+healthbot {
     topic kernel.ifstate {
         rule check-delayed-unrefs-anomaly-iagent {
             sensor delayed-unref-sensor {
-                synopsis "delayed unref iAgent sensor";
-                description "monitor delayed unrefs on the system";
+                synopsis "Delayed unref iAgent sensor";
+                description "Monitor delayed unrefs on the system";
                 iAgent {
                     file delayed_unref.yml;
                     table delayedunrefTable;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             field delayedcnt {
@@ -33,7 +33,7 @@ iceberg {
             trigger report-delayed-unrefs-iagent {
                 synopsis "monitor presence of delayed unrefs on the system";
                 description "Raise a red alarm if number of delayed unrefs are greater than a threshold value";
-                frequency 30s;
+                frequency 60s;
                 term delayed-unrefs-gt-max-10mins-iagent {
                     when {
                         not-equal-to "$delayedcnt" 0;
@@ -45,7 +45,7 @@ iceberg {
                     then {
                         status {
                             color red;
-                            message "Too many Delayed unrefs detected. May result in traffic loss. delayed-unref-cnt: $delayedcnt, delayed-unref-max: $delayedmax, Refer readme for details.";
+                            message "Too many Delayed unrefs detected. May result in traffic loss. delayed-unref-cnt: $delayedcnt, delayed-unref-max: $delayedmax, Refer readme for details";
                         }
                     }
                 }
@@ -65,6 +65,35 @@ iceberg {
                         status {
                             color green;
                             message "Delayed unref count under threshold. No anomaly detected. delayed-unref-cnt: $delayedcnt, delayed-unref-max: $delayedmax";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
                         }
                     }
                 }

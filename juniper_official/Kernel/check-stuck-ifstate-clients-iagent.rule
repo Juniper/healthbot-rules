@@ -5,11 +5,11 @@
  *
  * It checks if the "slow peers" alarm has been raised on the device.
  */
-iceberg {
+healthbot {
     topic kernel.ifstate {
         rule check-stuck-ifstate-clients-iagent {
             sensor stuck-client-sensor {
-                synopsis "stuck ifstate client iAgent sensor";
+                synopsis "Stuck ifstate client iAgent sensor";
                 description "iAgent sensor to monitor any stuck ifstate client on a network device";
                 iAgent {
                     file fetch_stuck_client.yml;
@@ -24,9 +24,9 @@ iceberg {
                 type string;
             }
             trigger report-stuck-ifstate-clients-iagent {
-                synopsis "report stuck ifstate clients";
-                description "monitor and report any stuck ifstate clients on the network device";
-                frequency 1m;
+                synopsis "Report stuck ifstate clients";
+                description "Monitor and report any stuck ifstate clients on the network device";
+                frequency 90s;
                 term found-stuck-clients {
                     when {
                         matches-with "$stuck-client-info" "slow peers are"
@@ -43,6 +43,35 @@ iceberg {
                         status {
                             color green;
                             message "There are no stuck clients found in the system";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
                         }
                     }
                 }

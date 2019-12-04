@@ -5,13 +5,13 @@
  *
  * This rule monitors and ungraceful connection drops in these pfeman connections.
  */
-iceberg {
+healthbot {
     topic kernel.peer-infra {
         synopsis "Monitor peer-infra activities on the system";
         rule check-pfeman-conn-drops {
             sensor kernel-peer-infra-sensor {
-                synopsis "peer-infra(pfeman) connection drops open-config sensor";
-                description "monitor pfeman connections drops";
+                synopsis "Peer-infra(pfeman) connection drops open-config sensor";
+                description "Monitor pfeman connections drops";
                 open-config {
                     sensor-name /junos/kernel/peer-infra;
                     frequency 5m;
@@ -25,15 +25,15 @@ iceberg {
                 description "Number of pfeman connection drops";
             }
             trigger report-pfeman-conn-drops {
-                synopsis "report pfeman connection drops";
-                description "report and raise a resd alarm if there are at least 5 pfeman connection drops in the last 5 minutes";
+                synopsis "Report pfeman connection drops";
+                description "Report and raise a resd alarm if there are at least 5 pfeman connection drops in the last 5 minutes";
                 frequency 5m;
                 term pfeman-conn-drops-present-gt-5 {
                     when {
                         not-equal-to "$peer-pfeman-conn-drops" 0;
                         increasing-at-least-by-value "$peer-pfeman-conn-drops" {
                             value 5;
-                            time-range 5m;
+                            time-range 15m;
                             any;
                         }
                     }
@@ -65,6 +65,35 @@ iceberg {
                         status {
                             color green;
                             message "No ungraceful PFEMAN connection drops detected";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.1R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
                         }
                     }
                 }

@@ -15,22 +15,55 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field group-name {
+                sensor ddosstats {
+                    path group-name;
+                }
+                type string;
+            }
+            field protocol-states-locale {
+                sensor ddosstats {
+                    path protocol-states-locale;
+                }
+                type string;
+            }
+            field max-packet-arrival-rate {
+                sensor ddosstats {
+                    path packet-arrival-rate-max;
+                }
+                type integer;
+            }
+            field drop-packets {
+                sensor ddosstats {
+                    path dropped-packets;
+                }
+                type integer;
+            }
+            field drop-packets-others {
+                sensor ddosstats {
+                    path dropped-packets-others;
+                }
+                type integer;
+            }
             field ddos-arrival-rate-threshold {
                 constant {
                     value "{{ddos-arrival-rate-threshold}}";
                 }
+                type integer;
                 description "This field is for ddos arive rate threshold";
             }
             field ddos-drop-count-threshold {
                 constant {
                     value "{{ddos-drop-count-threshold}}";
                 }
+                type integer;
                 description "This field is for ddos drop count threshold";
             }
             field ddos-drop-rate-threshold {
                 constant {
                     value "{{ddos-drop-rate-threshold}}";
                 }
+                type integer;
                 description "This field is for ddos drop rate threshold";
             }
             trigger ddos-drops {
@@ -39,7 +72,7 @@ healthbot {
                 frequency 60s;
                 term is-ddos-drops-increasing {
                     when {
-                        min-rate-of-increase "$dropped-packets" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$drop-packets" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ddos-drop-rate-threshold";
                             time-range 5m;
                         }
@@ -47,18 +80,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "DDOS packet drops ($dropped-packets) increasing";
+                            message "DDOS packet drops ($drop-packets) increasing";
                         }
                     }
                 }
                 term are-ddos-drops-over-threshold {
                     when {
-                        greater-than "$dropped-packets" "$ddos-drop-count-threshold";
+                        greater-than "$drop-packets" "$ddos-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "DDOS packet drops ($dropped-packets) over threshold ($ddos-drop-count-threshold)";
+                            message "DDOS packet drops ($drop-packets) over threshold ($ddos-drop-count-threshold)";
                         }
                     }
                 }
@@ -66,6 +99,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "No DDOS packet drops ($drop-packets)";
                         }
                     }
                 }
@@ -76,7 +110,7 @@ healthbot {
                 frequency 60s;
                 term is-max-packet-arrival-rate-greater-than-threshold {
                     when {
-                        greater-than-or-equal-to "$packet-arrival-rate-max" "$ddos-arrival-rate-threshold";
+                        greater-than-or-equal-to "$max-packet-arrival-rate" "$ddos-arrival-rate-threshold";
                     }
                     then {
                         status {
@@ -89,6 +123,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "DDOS packet max arrival rate is normal";
                         }
                     }
                 }
@@ -99,7 +134,7 @@ healthbot {
                 frequency 60s;
                 term is-ddos-packet-dropped-others-increasing {
                     when {
-                        min-rate-of-increase "$dropped-packets-others" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$drop-packets-others" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$ddos-drop-rate-threshold";
                             time-range 5m;
                         }
@@ -107,27 +142,26 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "DDOS packet dropped others ($dropped-packets-others) increasing";
+                            message "DDOS packet dropped others ($drop-packets-others) increasing";
                         }
                     }
                 }
                 term is-ddos-packet-drop-others-over-threshold {
                     when {
-                        greater-than "$dropped-packets-others" "$ddos-drop-count-threshold";
+                        greater-than "$drop-packets-others" "$ddos-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "DDOS packet dropped others ($dropped-packets-others) over threshold ($ddos-drop-count-threshold)";
+                            message "DDOS packet dropped others ($drop-packets-others) over threshold ($ddos-drop-count-threshold)";
                         }
                     }
                 }
                 term ddos-packet-drop-others-not-increasing {
                     then {
                         status {
-                        
-                        
                             color green;
+                            message "DDOS packet dropped others ($drop-packets-others) or normal";
                         }
                     }
                 }
@@ -152,7 +186,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

@@ -15,16 +15,54 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field interface {
+                sensor system-input-queues {
+                    path interface;
+                }
+                type string;
+            }
+            field bytes {
+                sensor system-input-queues {
+                    path bytes;
+                }
+                type integer;
+            }
+            field max-bytes {
+                sensor system-input-queues {
+                    path max-bytes;
+                }
+                type integer;
+            }
+            field packets {
+                sensor system-input-queues {
+                    path packets;
+                }
+                type integer;
+            }
+            field max-packets {
+                sensor system-input-queues {
+                    path max-packets;
+                }
+                type integer;
+            }
+            field drop-count {
+                sensor system-input-queues {
+                    path drops;
+                }
+                type integer;
+            }
             field system-queue-drop-count-threshold {
                 constant {
                     value "{{queue-drop-count-threshold}}";
                 }
+                type integer;
                 description "System queue drop count threshold for input interface";
             }
             field system-queue-drop-rate-threshold {
                 constant {
                     value "{{queue-drop-rate-threshold}}";
                 }
+                type integer;
                 description "System queue drop rate threshold for input interface";
             }
             trigger system-input-queue-drops {
@@ -33,7 +71,7 @@ healthbot {
                 frequency 60s;
                 term are-system-input-queue-drops-increasing {
                     when {
-                        min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$drop-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$system-queue-drop-rate-threshold";
                             time-range 300s;
                         }
@@ -41,18 +79,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "System interface input drops ($drops) increasing";
+                            message "System interface($interface) input drops ($drop-count) increasing";
                         }
                     }
                 }
                 term are-system-input-queue-drops-above-threshold {
                     when {
-                        greater-than "$drops" "$system-queue-drop-count-threshold";
+                        greater-than "$drop-count" "$system-queue-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "System interface input drops ($drops) are non-zero";
+                            message "System interface($interface) input drops ($drop-count) are non-zero";
                         }
                     }
                 }
@@ -60,6 +98,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "No system interface($interface) input drops($drop-count)";
                         }
                     }
                 }
@@ -79,7 +118,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {
@@ -141,16 +180,61 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field interface {
+                sensor system-output-queues {
+                    path interface;
+                }
+                type string;
+            }
+            field bytes {
+                sensor system-output-queues {
+                    path bytes;
+                }
+                type integer;
+            }
+            field max-bytes {
+                sensor system-output-queues {
+                    path max-bytes;
+                }
+                type integer;
+            }
+            field packets {
+                sensor system-output-queues {
+                    path packets;
+                }
+                type integer;
+            }
+            field max-packets {
+                sensor system-output-queues {
+                    path max-packets;
+                }
+                type integer;
+            }
+            field drop-count {
+                sensor system-output-queues {
+                    path drops;
+                }
+                type integer;
+            }
             field system-queue-drop-count-threshold {
                 constant {
                     value "{{queue-drop-count-threshold}}";
                 }
+                type integer;
+                description "System queue drop count threshold for input interface";
+            }
+            field system-queue-drop-count-threshold {
+                constant {
+                    value "{{queue-drop-count-threshold}}";
+                }
+                type integer;
                 description "System queue drop count threshold for output interface";
             }
             field system-queue-drop-rate-threshold {
                 constant {
                     value "{{queue-drop-rate-threshold}}";
                 }
+                type integer;
                 description "System queue drop rate threshold for output interface";
             }
             trigger system-output-queue-drops {
@@ -159,7 +243,7 @@ healthbot {
                 frequency 60s;
                 term are-system-output-queue-drops-increasing {
                     when {
-                        min-rate-of-increase "$drops" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$drop-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$system-queue-drop-rate-threshold";
                             time-range 300s;
                         }
@@ -167,18 +251,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "System interface output drops ($drops) increasing";
+                            message "System interface($interface) output drops ($drop-count) increasing";
                         }
                     }
                 }
                 term are-system-output-queue-drops-above-threshold {
                     when {
-                        greater-than "$drops" "$system-queue-drop-count-threshold";
+                        greater-than "$drop-count" "$system-queue-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "System interface output drops ($drops) are non-zero";
+                            message "System interface($interface) output drops ($drop-count) are non-zero";
                         }
                     }
                 }
@@ -186,6 +270,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "No system interface($interface) output drops($drop-count)";
                         }
                     }
                 }
@@ -205,7 +290,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

@@ -3,7 +3,6 @@ healthbot {
         description "Rules relevant to metrics and KPI of the system";
         synopsis "Virtual memory information analyzer";
         rule check-system-virtual-memory-information {
-            keys vm-kmem-map-free;
             synopsis "Virtual memory information analyzer";
             description "Monitors the virtual memory and interrupt rate";
             sensor system-virtual-memory {
@@ -15,16 +14,30 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field interrupt-rate {
+                sensor system-virtual-memory {
+                    path interrupt-rate;
+                }
+                type integer;
+            }
+            field system-kmem-map-free {
+                sensor system-virtual-memory {
+                    path system-kmem-map-free;
+                }
+                type integer;
+            }
             field free-virtual-memory-threshold {
                 constant {
                     value "{{virtual-memory-threshold}}";
                 }
+                type integer;
                 description "This field is for Virtual memory threshold";
             }
             field interrupt-rate-threshold {
                 constant {
                     value "{{interrupt-rate-threshold-value}}";
                 }
+                type integer;
                 description "This field is for Interrupt rate threshold";
             }
             trigger interrupt-rate {
@@ -46,6 +59,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Interrupt rate($interrupt-rate) is normal";
                         }
                     }
                 }
@@ -69,6 +83,7 @@ healthbot {
                     then {
                         status {
                             color green;
+                            message "Virtual memory($vm-kmem-map-free) is normal";
                         }
                     }
                 }
@@ -88,7 +103,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {

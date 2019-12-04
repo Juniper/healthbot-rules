@@ -1,0 +1,260 @@
+healthbot {
+    topic krt.statistics {
+        rule check-krt-async-all {
+            rule-frequency 90s;
+            field krt-tree-current-count {
+                reference {
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-current-count";
+                }
+                type integer;
+                description "KRT tree current count";
+            }
+            field krt-tree-delete-count {
+                reference {
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-delete-count";
+                }
+                type integer;
+                description "KRT tree delete count";
+            }
+            field krt-tree-insert-count {
+                reference {
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-corrtable]/krt-tree-insert-count";
+                }
+                type integer;
+                description "KRT tree insert count";
+            }
+            field krtq-async-count {
+                reference {
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-state]/krtq-async-count";
+                }
+                type integer;
+                description "KRT queue async count";
+            }
+            field krtq-operations-queued {
+                reference {
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-state]/krtq-operations-queued";
+                }
+                type integer;
+                description "KRT operations queued";
+            }
+            field write-count {
+                reference {
+                    path "/topic[topic-name=krt.statistics]/rule[rule-name=check-krt-io-table]/krt-io-write-count";
+                }
+                type integer;
+                description "KRT write count";
+            }
+            trigger krt-stuck-1 {
+                frequency 90s;
+                term is-krt-write-count-different {
+                    when {
+                        increasing-at-least-by-value "$write-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "krt not stuck";
+                        }
+                    }
+                }
+                term is-krt-async-count-non-zero {
+                    when {
+                        not-equal-to "$krtq-async-count" 0;
+                        increasing-at-most-by-value "$krtq-async-count" {
+                            value 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "krt stuck!!!";
+                        }
+                    }
+                }
+                term is-krtq-operations-queued-non-zero {
+                    when {
+                        not-equal-to "$krtq-operations-queued" 0;
+                        increasing-at-most-by-value "$krtq-operations-queued" {
+                            value 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "krt stuck!!!";
+                        }
+                    }
+                }
+                term krtq-not-stuck {
+                    then {
+                        status {
+                            color green;
+                            message "krt not stuck";
+                        }
+                    }
+                }
+            }
+            trigger krt-stuck-2 {
+                frequency 90s;
+                term is-krt-tree-insert-count-greater {
+                    when {
+                        greater-than "$krt-tree-insert-count" "$krt-tree-delete-count";
+                        increasing-at-most-by-value "$krt-tree-delete-count" {
+                            value 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "krt stuck!!!";
+                        }
+                    }
+                }
+                term krt-not-stuck {
+                    then {
+                        status {
+                            color green;
+                            message "krt not stuck";
+                        }
+                    }
+                }
+            }
+            trigger krt-stuck-3 {
+                frequency 90s;
+                term is-krt-stuck {
+                    when {
+                        range "$krt-tree-current-count" {
+                            min 1;
+                            max 20000;
+                            time-range 1m;
+                        }
+                        range "$krtq-async-count" {
+                            min 1;
+                            max 20000;
+                            time-range 1m;
+                        }
+                        increasing-at-least-by-value "$krt-tree-current-count" {
+                            value 0;
+                        }
+                        increasing-at-least-by-value "$krtq-async-count" {
+                            value 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "krt stuck!!!";
+                        }
+                    }
+                }
+                term krt-not-stuck {
+                    then {
+                        status {
+                            color green;
+                            message "krt not stuck";
+                        }
+                    }
+                }
+            }
+        }
+        rule check-krt-corrtable {
+            sensor krtcorrtable {
+                iAgent {
+                    file krtcorrtable.yml;
+                    table krtcorrtable;
+                    frequency 60s;
+                }
+            }
+            field krt-tree-current-count {
+                sensor krtcorrtable {
+                    path current-count;
+                }
+                type integer;
+                description "KRT tree current count";
+            }
+            field krt-tree-delete-count {
+                sensor krtcorrtable {
+                    path delete-count;
+                }
+                type integer;
+                description "KRT tree delete count";
+            }
+            field krt-tree-insert-count {
+                sensor krtcorrtable {
+                    path insert-count;
+                }
+                type integer;
+                description "KRT tree insert count";
+            }
+            field krt-tree-lookup-count {
+                sensor krtcorrtable {
+                    path lookup-count;
+                }
+                type integer;
+                description "KRT tree lookup count";
+            }
+        }
+        rule check-krt-io-table {
+            sensor krtiotable {
+                iAgent {
+                    file krtiotable.yml;
+                    table krtiotable;
+                    frequency 60s;
+                }
+            }
+            field krt-io-read-count {
+                sensor krtiotable {
+                    path read-count;
+                }
+                type integer;
+                description "KRT IO read count";
+            }
+            field krt-io-task-name {
+                sensor krtiotable {
+                    path krt-io-task-name;
+                }
+                type string;
+                description "KRT IO task name";
+            }
+            field krt-io-write-count {
+                sensor krtiotable {
+                    path write-count;
+                }
+                type integer;
+                description "KRT IO write count";
+            }
+        }
+        rule check-krt-state {
+            sensor krtstate {
+                iAgent {
+                    file krtstate.yml;
+                    table krtstate;
+                    frequency 60s;
+                }
+            }
+            field krt-queue-state {
+                sensor krtstate {
+                    path krt-queue-state;
+                }
+                type string;
+                description "KRT queue state";
+            }
+            field krtq-async-count {
+                sensor krtstate {
+                    path Krt-Async-Count;
+                }
+                type integer;
+                description "KRT queue async count";
+            }
+            field krtq-operations-queued {
+                sensor krtstate {
+                    path Krt-Operations-Queued;
+                }
+                type integer;
+                description "KRT operations queued";
+            }
+        }
+    }
+}

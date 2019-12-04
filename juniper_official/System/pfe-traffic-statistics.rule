@@ -14,16 +14,36 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field fabric-drop-count {
+                sensor pfestats {
+                    path fabric-drops;
+                }
+                type integer;
+            }
+            field info-cell-discard-count {
+                sensor pfestats {
+                    path info-cell-discards;
+                }
+                type integer;
+            }
+            field host-path-hardware-drop-count {
+                sensor pfestats {
+                    path host-path-hardware-drops;
+                }
+                type integer;
+            }
             field pfe-drop-count-threshold {
                 constant {
                     value "{{pfe-drop-count-threshold-input}}";
                 }
+                type integer;
                 description "Linecard PFE drop count threshold";
             }
             field pfe-drop-rate-threshold {
                 constant {
                     value "{{pfe-drop-rate-threshold-input}}";
                 }
+                type integer;
                 description "Linecard PFE drop rate threshold";
             }
             trigger fabric-drops {
@@ -32,7 +52,7 @@ healthbot {
                 frequency 60s;
                 term are-fabric-drops-increasing {
                     when {
-                        min-rate-of-increase "$fabric-drops" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$fabric-drop-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 300s;
                         }
@@ -40,18 +60,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Fabric drops ($fabric-drops) increasing";
+                            message "Fabric drops ($fabric-drop-count) increasing";
                         }
                     }
                 }
                 term are-fabric-drops-over-threshold {
                     when {
-                        greater-than "$fabric-drops" "$pfe-drop-count-threshold";
+                        greater-than "$fabric-drop-count" "$pfe-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Fabric drops ($fabric-drops) over threshold ($pfe-drop-count-threshold)";
+                            message "Fabric drops ($fabric-drop-count) over threshold ($pfe-drop-count-threshold)";
                         }
                     }
                 }
@@ -70,7 +90,7 @@ healthbot {
                 frequency 60s;
                 term are-host-path-drops-increasing {
                     when {
-                        min-rate-of-increase "$host-path-hardware-drops" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$host-path-hardware-drop-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 300s;
                         }
@@ -78,18 +98,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Host path hardware input drops ($host-path-hardware-drops) increasing";
+                            message "Host path hardware input drops ($host-path-hardware-drop-count) increasing";
                         }
                     }
                 }
                 term are-host-path-drops-over-threshold {
                     when {
-                        greater-than "$host-path-hardware-drops" "$pfe-drop-count-threshold";
+                        greater-than "$host-path-hardware-drop-count" "$pfe-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Host path hardware input drops ($host-path-hardware-drops) over threshold ($pfe-drop-count-threshold)";
+                            message "Host path hardware input drops ($host-path-hardware-drop-count) over threshold ($pfe-drop-count-threshold)";
                         }
                     }
                 }
@@ -108,7 +128,7 @@ healthbot {
                 frequency 60s;
                 term are-info-cell-discards-increasing {
                     when {
-                        min-rate-of-increase "$info-cell-discards" { ## Warning: 'min-rate-of-increase' is deprecated
+                        min-rate-of-increase "$info-cell-discard-count" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$pfe-drop-rate-threshold";
                             time-range 300s;
                         }
@@ -116,18 +136,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Info cell discards ($info-cell-discards) increasing";
+                            message "Info cell discards ($info-cell-discard-count) increasing";
                         }
                     }
                 }
                 term are-info-cell-discards-over-threshold {
                     when {
-                        greater-than "$info-cell-discards" "$pfe-drop-count-threshold";
+                        greater-than "$info-cell-discard-count" "$pfe-drop-count-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Info cell discards ($info-cell-discards) over threshold ($pfe-drop-count-threshold)";
+                            message "Info cell discards ($info-cell-discard-count) over threshold ($pfe-drop-count-threshold)";
                         }
                     }
                 }
@@ -182,7 +202,7 @@ healthbot {
                 contributor juniper;
                 supported-healthbot-version 1.0.1;
                 catalogue {
-                    tier 2;
+                    tier 1;
                 }
                 supported-devices {
                     juniper {
