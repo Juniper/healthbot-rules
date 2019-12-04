@@ -1,0 +1,125 @@
+/*
+ * This rule monitors the system health on the basis of the tnp fragment drop count parameter.
+ *
+ * Open config sensor is used here.
+ * The rule collects the TNP fragment drop count and notifies anomaly if
+ * the parameter exceeds the threshold.
+ */
+
+healthbot {
+    topic kernel.tnp {
+        rule check-tnp-fragment-drops {
+            synopsis "Check TNP fragment drop count";
+            description "Monitors system health with the help of TNP fragment drop count parameter. The sensor used is open-config";
+            sensor kernel-tnp-sensor {
+                synopsis kernel-tnp-sensor;
+                description "Open config sensor for tnp fragment drops";
+                open-config {
+                    sensor-name /junos/kernel/tnp;
+                    frequency 1m;
+                }
+            }
+            field tnp-frag-drop-cnt {
+                sensor kernel-tnp-sensor {
+                    path /junos/kernel/tnp/tnp-frag-drop-cnt;
+                }
+                type integer;
+                description "TNP Fragment Packets Drop Count";
+            }
+	    field tnp-fragment-drop-cnt-red-threshold {
+		    constant {
+			    value "{{tnp-fragment-drop-cnt-red-threshold-input}}";
+		    }
+	    }
+	    field tnp-fragment-drop-cnt-yellow-threshold {
+		    constant {
+			    value "{{tnp-fragment-drop-cnt-yellow-threshold-input}}";
+		    }
+	    }
+            trigger report-tnp-fragment-drops {
+                synopsis "Trigger to report tnp fragment drops";
+                description "This trigger helps in monitoring system health through the parameter tnp fragment drop count. If this value is in the range 100-1000, there is a warning. If it is above 1000, the system is under risk. Else, the system is healthy";
+                frequency 90s;
+                term tnp-frag-cnt-diff-gt-1000 {
+                    when {
+                        not-equal-to "$tnp-frag-drop-cnt" 0;
+                        increasing-at-least-by-value "$tnp-frag-drop-cnt" {
+                            value "$tnp-fragment-drop-cnt-red-threshold";
+                            time-range 200s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "TNP fragment drop count difference between successive samples is above 1000. Urgent action is required. Tnp fragment drop count = $tnp-frag-drop-cnt";
+                        }
+                    }
+                }
+                term tnp-frag-drop-cnt-diff-gt-100 {
+                    when {
+                        not-equal-to "$tnp-frag-drop-cnt" 0;
+                        increasing-at-least-by-value "$tnp-frag-drop-cnt" {
+                            value "$tnp-fragment-drop-cnt-yellow-threshold";
+                            time-range 200s;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "TNP fragment drop count difference between successive samples is in the range 100-1000. Tnp fragment drop count = $tnp-frag-drop-cnt";
+                        }
+                    }
+                }
+                term tnp-frag-drop-cnt-lt-100 {
+                    then {
+                        status {
+                            color green;
+                            message "TNP fragment drop count difference between two successive samples is less than 100. Health is good. Tnp fragment drop count = $tnp-frag-drop-cnt";
+                        }
+                    }
+                }
+            }
+	    variable tnp-fragment-drop-cnt-red-threshold-input {
+		    value 1001;
+		    description "TNP fragment drop count red threshold. Urgent action needs to be taken";
+		    type int;
+	    }
+	    variable tnp-fragment-drop-cnt-yellow-threshold-input {
+		    value 101;
+		    description "TNP fragment drop count yellow threshold. The system needs some monitoring";
+		    type int;
+	    }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform PTX-Series-All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
