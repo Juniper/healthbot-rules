@@ -7,42 +7,42 @@
  * This rule will check if the error has benn increased by 100 from its previous value in ALL the samples
  * for the last 70 or 130 seconds and raises the alarm accordingly.
  */
-iceberg {
+healthbot {
     topic kernel.rtsock {
         rule detect-routing-socket-errors-iagent {
-            synopsis "Detect Routing Socket errors in the system.";
-            description "Detect errors in rtsock, veto and mproc layers.";
+            synopsis "Detect Routing Socket errors in the system";
+            description "Detect errors in rtsock, veto and mproc layers";
             sensor rtsock-error-count-sensor {
-                synopsis "Rtsock error count sensor.";
-                description "sensor to keep track of rtsock error counts.";
+                synopsis "Rtsock error count sensor";
+                description "Sensor to keep track of rtsock error counts";
                 iAgent {
                     file rtsock-error-count.yml;
                     table getRtsockErrorCountTable;
-                    frequency 20s;
+                    frequency 15s;
                 }
             }
             field rtsock-error-count-threshold {
                 constant {
                     value "{{rtsock-error-count-threshold-input}}";
                 }
-                description "RTSOCK Error count threshold value.";
+                description "RTSOCK Error count threshold value";
             }
             field rtsock-total-error-count {
                 sensor rtsock-error-count-sensor {
                     path total_error_count;
                 }
                 type integer;
-                description "Total rtsock error count - includes veto, mproc and generic errors.";
+                description "Total rtsock error count - includes veto, mproc and generic errors";
             }
             field rtsock-total-veto-count {
                 sensor rtsock-error-count-sensor {
                     path total_veto_count;
                 }
                 type integer;
-                description "Total rtsock veto count.";
+                description "Total rtsock veto count";
             }
             trigger report-rtsock-errors-iagent {
-                synopsis "Trigger to check rtsock error count.";
+                synopsis "Trigger to check rtsock error count";
                 description "Trigger to check rtsock error count";
                 frequency 20s;
                 term rtsock-errors-critical-iagent {
@@ -81,14 +81,14 @@ iceberg {
                     then {
                         status {
                             color green;
-                            message "Rtsock error count is under threshold. No anomaly detected.";
+                            message "Rtsock error count is under threshold. No anomaly detected";
                         }
                     }
                 }
             }
             variable rtsock-error-count-threshold-input {
                 value 100;
-                description "RTSOCK Error count threshold value.";
+                description "RTSOCK Error count threshold value";
                 type int;
             }
             rule-properties {
