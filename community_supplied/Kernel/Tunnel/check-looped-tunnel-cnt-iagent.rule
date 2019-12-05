@@ -1,0 +1,86 @@
+/*
+ * This rule monitors system health based on looped tunnel count. 
+ *
+ * The sensor used is iAgent.
+ * The rule throws red alarm if this value is non-zero, else it remains green.
+ * If the value remains green, we also check whether consecutive samples are zero. If not, we raise a red alarm
+ */
+healthbot {
+    topic kernel.tunnel {
+        rule check-looped-tunnel-cnt-iagent {
+            synopsis "Check looped tunnel id count";
+            description "Monitors system health with looped tunnel id count parameter. The sensor used is iAgent";
+            sensor looped-tunnel-cnt-sensor {
+                synopsis "looped tunnel count sensor";
+                description "iAgent sensor for looped tunnel count";
+                iAgent {
+                    file looped_tun_cnt.yml;
+                    table loopedTunnelCountTable;
+                    frequency 1m;
+                }
+            }
+            field looped-tunnel-cnt {
+                sensor looped-tunnel-cnt-sensor {
+                    path looped_tun_cnt;
+                }
+                type integer;
+                description "Looped tunnel count";
+            }
+            trigger report-looped-tunnel-cnt-iagent {
+                synopsis "Trigger for looped tunnel count, with the sensor being iAgent";
+                description "This trigger helps in monitoring the system health based on the value of the looped tunnel count. If this value is non-zero, we raise a red alarm, else it remains green. If the value remains green, we also check whether consecutive samples are zero. If not, we raise a red alarm";
+                frequency 90s;
+                term looped-tunnel-cnt-nonzero {
+                    when {
+                        not-equal-to "$looped-tunnel-cnt" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Looped tunnel count is non-zero. Urgent action is required";
+                        }
+                    }
+                }
+                term looped-tunnel-cnt-eq-0 {
+                    when {
+                        equal-to "$looped-tunnel-cnt" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Looped tunnel count is zero. No corrective action required";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 19.3R1 {
+                                    platform [ EX9200 EX9251 EX9253 ];
+                                }
+                            }
+                            products MX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+                                }
+                            }
+                            products PTX {
+                                releases 19.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX-Series-All PTX-Series-Allset ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
