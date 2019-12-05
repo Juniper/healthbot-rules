@@ -58,7 +58,7 @@ healthbot {
                 synopsis "Interface open-config sensor definition";
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
-                    sensor-name /interfaces/;
+                    sensor-name /interfaces/interface/state;
                     frequency 30s;
                 }
             }
@@ -69,6 +69,7 @@ healthbot {
             field description {
                 sensor interfaces {
                     path /interfaces/interface/state/description;
+                    where "/interfaces/interface/state/description =~ /{{interface-description}}/";
                 }
                 type string;
                 description "This field is for interface description";
@@ -126,15 +127,6 @@ healthbot {
                 synopsis "interface statistics kpi";
                 description "Sets health based on interface statistics exceed threshold";
                 frequency 60s;
-                /*
-                 * Skips evaluation for the interfaces where keyword unmatched
-                 * in interface description.
-                 */
-                term is-interface-description-not-matching {
-                    when {
-                        does-not-match-with "$description" "$user-description";
-                    }
-                }
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the interface input traffic ($stats-value) is above high
