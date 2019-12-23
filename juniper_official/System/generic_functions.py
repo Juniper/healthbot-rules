@@ -56,6 +56,10 @@ def get_config(**kwargs):
         with connect_to_device(**device_details) as dev:
                 return dev.rpc.get_config(options={'format':'json'})
 
+# subtract function
+def difference(num1,num2, **kwargs):
+        return (int(num1)-num2)
+
 # Calculate the percentage
 def decimal_to_percent(numerator,denominator, **kwargs):
         percent = (numerator/denominator)*100

@@ -1,0 +1,103 @@
+/*
+ * Monitors VMhost resource status and notifies when anomalies are found.
+ */
+healthbot {
+    topic system.vmhost {
+        rule check-vmhost-resource-iagent {
+            synopsis "VM Host Resource analyzer";
+            description "Collects vmhost resource status periodically and notifies anomaly";
+            /*
+             * Monitors the vmhost resource status. Notifies via the 
+             * dashboard colors (red) when state is not normal.
+             * When the status is normal color is set to green.
+             *
+             * Sensor configuration to get data from network devices.
+             *
+             */
+            sensor vjunos-status {
+                synopsis    "iAgent sensor definition";
+                description "Vmhost netconf sensor to collect data from network device";
+                iAgent {
+                    file vmhost_vjunos_resource_status.yml;
+                    table VMhostVJunosTable;
+                    frequency 60s;
+                }
+            }
+            field vjunos-status {
+                sensor vjunos-status {
+                    path vjunos-status;
+                }
+                type string;
+                description "Describes the status of vjunos ";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vmhost-Vjunos-status {
+                frequency 90s;
+    	        /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the resource state is not normal.
+                 */
+                term is-resource-status-not-normal {
+                    when {
+                        does-not-match-with "$vjunos-status" Normal;
+                    }
+                    then {
+                        status {
+                        color red;
+                        message "The vJunos resource status is $vjunos-status";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green and sends notification when the resource
+                 * state is normal.
+                 */
+                term is-resource-status-normal {
+                    when {
+                        matches-with "$vjunos-status" Normal;
+                    }
+                    then {
+                        status {
+                        color green;
+                        message "vJunos resource status:$vjunos-status";
+                        }
+                    }
+                }
+            }
+       	    rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [MX240 MX480 MX960 MX2010 MX2020];
+                                }
+                            }
+                            products PTX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [PTX500 PTX1000 PTX5000 PTX10000];
+                                }
+                            }
+                            products QFX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [QFX10002 QFX10008 QFX10016];
+                                }
+                            }                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

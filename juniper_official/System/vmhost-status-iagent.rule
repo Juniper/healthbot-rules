@@ -1,0 +1,119 @@
+/*
+ * Detects VMhost status and notifies when anomalies are found.
+ */
+ healthbot {
+    topic system.vmhost {
+        rule check-vmhost-status-iagent {
+            synopsis "VMhost status analyzer";
+            description "Collects VMhost  status periodically and notifies anomalies ";
+            /*
+             * Monitors the vmhost compute node status. Notifies via the 
+             * dashboard colors to red when status is offline. Otherwise 
+             * the color is set to green
+             *
+             * Sensor configuration to get data from network devices.
+             *
+             */
+            sensor vmhoststatus {
+			    synopsis "iAgent sensor definition";
+                description "Vmhost netconf sensor to collect data from network device";
+                iAgent {
+                    file vmhost_status.yml;
+                    table VMhostStatusTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names to
+             * the shorter field names used in the rules.
+             */
+            field status-compute-cluster-name {
+                sensor vmhoststatus {
+                    path status-compute-cluster-name;
+                }
+                type string;
+                description "Name of the cluster in VM Host environment";
+            }
+            field status-compute-node-name {
+                sensor vmhoststatus {
+                    path status-compute-node-name;
+                }
+                type string;
+                description "Name of the node in VMHost environment";
+            }
+            field status-compute-node-status {
+                sensor vmhoststatus {
+                    path status-compute-node-status;
+                }
+                type string;
+                description "Status of the cluster node in VMHost environment";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vmhost-status {
+                frequency 90s;
+				synopsis "Vmhost status KPI";
+                description "Sets health based on the vmhost status";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the vmhost status is offline
+                 */
+                term is-node-status-offline {
+                    when {
+                        does-not-match-with "$status-compute-node-status" Online;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Cluster($status-compute-cluster-name) and compute node($status-compute-node-name) is $status-compute-node-status";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green and sends notification.
+                 */
+                term is-node-status-online {
+                    then {
+                        status {
+                            color green;
+                            message "Cluster($status-compute-cluster-name) and compute node($status-compute-node-name) is $status-compute-node-status";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [MX240 MX480 MX960 MX2010 MX2020];
+                                }
+                            }
+                            products PTX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [PTX500 PTX1000 PTX5000 PTX10000];
+                                }
+                            }
+                            products QFX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [QFX10002 QFX10008 QFX10016];
+                                }
+                            }                            
+                        }
+                    }
+                }
+            }	
+        }	
+    }	
+}	
