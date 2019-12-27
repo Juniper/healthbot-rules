@@ -1,0 +1,140 @@
+/*
+ * Detects management interface state changes and notifies when anomalies are found.
+ */
+healthbot {
+    topic system.vmhost {
+        rule check-vmhost-management-interface-iagent {
+            synopsis "VM Host Management interface analyzer";
+            description "Collects VMhost  Management interface status periodically and notifies anomaly";
+            /*
+             * Monitors the vmhost management interface status. Notifies via the
+             * dashboard colors (red) when interface is down or when the link is in
+             * half-dulplex mode. Otherwise the color is set to green.
+             *
+             * Sensor configuration to get data from network devices.
+             *
+             */
+            sensor vmhostmgmtifstatus {
+			    synopsis "iAgent sensor definition";
+                description "Vmhost netconf sensor to collect data from network device";
+                iAgent {
+				    file vmhost_management_inteface_status.yml;
+                    table VMhostMgmtTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field vmhost-management-if-admin-status {
+                sensor vmhostmgmtifstatus {
+                    where "vmhost-management-if-admin-status =~ /Up/";
+                    path vmhost-management-if-admin-status;
+                }
+                type string;
+                description "Describes the admin-status of the vmhost management interface";
+            }
+            field vmhost-management-if-link-status {
+                sensor vmhostmgmtifstatus {
+                    path vmhost-management-if-link-status;
+                }
+                type string;
+                description "Describes the link-status of the vmhost management interface";
+            }
+            field vmhost-management-if-linkmode {
+                sensor vmhostmgmtifstatus {
+                    path vmhost-management-if-linkmode;
+                }
+                type string;
+                description "Describes the linkmode(Full, Half etc) of the vmhost management interface";
+            }
+            field vmhost-management-if-speed {
+                sensor vmhostmgmtifstatus {
+                    path vmhost-management-if-speed;
+                }
+                type string;
+                description "Describes the speed of the vmhost management interface";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vmhost-management-interface-status {
+                frequency 90s;
+				/*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the management interface is in admin down state.
+                 */
+                term is-link-status-down {
+                    when {
+                        does-not-match-with "$vmhost-management-if-link-status" Up;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The VMHost management interface link status is $vmhost-management-if-link-status";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the management interface is in half-dulplex mode.
+                 */
+                term is-link-mode-not-full {
+                    when {
+                        does-not-match-with "$vmhost-management-if-linkmode" Full;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The VMHost management interface link mode is $vmhost-management-if-linkmode";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green and sends notification.
+                 */
+                term is-interface-status-normal {
+                    then {
+                        status {
+                            color green;
+                            message "VMHost management interface link status:$vmhost-management-if-link-status, admin status:$vmhost-management-if-admin-status, link mode:$vmhost-management-if-linkmode and speed:$vmhost-management-if-speed";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [MX240 MX480 MX960 MX2010 MX2020];
+                                }
+                            }
+                            products PTX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [PTX500 PTX1000 PTX5000 PTX10000];
+                                }
+                            }
+                            products QFX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [QFX10002 QFX10008 QFX10016];
+                                }
+                            }                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
