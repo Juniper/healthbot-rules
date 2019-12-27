@@ -58,7 +58,10 @@ def get_config(**kwargs):
 
 # subtract function
 def difference(num1,num2, **kwargs):
-        return (int(num1)-num2)
+        try:
+            return (int(num1)-int(num2))
+        except Exception:
+            print("Hit Exception, invalid arg type")
 
 # Calculate the percentage
 def decimal_to_percent(numerator,denominator, **kwargs):
