@@ -1,0 +1,246 @@
+/*
+ * Detects cpu and memory utilization and notifies when anomalies are
+ * found in high availability SRX cluster system.
+ *
+ * Two input control detection.
+ * 
+ *  1) "h-threshold" variable, is the threshold that causes the rule to report
+ *  an anomaly.By default it's 80. This rule will set a dashboard color to red
+ *  when *all* the memory or cpu utilisation are greater than
+ *  'h-threshold'.
+ *  2) "l-threshold" variable, is the threshold that causes the rule to report
+ *   an anomaly.By default it's 60. This rule will set a dashboard color to yellow
+ *   when *all* the memory or cpu utilisation are greater than
+ *   'l-threshold'.If it is less than l-threshold it is set to green.
+ *  
+ */
+healthbot {
+    topic security.spu {
+        rule check-cpu-memory-utilization-iagent-ha {
+            /*
+             * Monitors the cpu and memory utilization and notifies via the
+             * dashboard colors, when the cpu and memory utilization is above 
+             * high threshold {{h-threshold}} it will mark as red. The color 
+             * is set to yellow when the cpu and memory utilization is above 
+             * low threshold {{l-threshold}}. Otherwise the color is set to 
+             * green.
+             *
+             * Use re-name, fpc and pic as keys for rule.
+             */
+            keys [ fpc pic re-name ];
+            synopsis "SPU cpu and memory analyzer";
+            description "SPU cpu and memory utilization of SRX cluster";
+            /*
+             * Sensor configuration to get data from network devices.
+             * 
+             */
+            sensor check-cpu-memory-utilization-ha {
+                iAgent {
+                    file SecurityCPUMemoryUtilizationHA.yml;
+                    table PerfStatsTableHA;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{h-threshold}}";
+                }
+                type integer;
+                description "high threshold for trigger";
+            }
+            field low-threshold {
+                constant {
+                    value "{{l-threshold}}";
+                }
+                type integer;
+                description "low threshold for trigger";
+            }
+            field re-name {
+                sensor check-cpu-memory-utilization-ha {
+                    path re-name;
+                }
+                type string;
+                description "re-name in the cluster";
+            }
+            field fpc {
+                sensor check-cpu-memory-utilization-ha {
+                    path fpc-number;
+                }
+                type string;
+                description "FPC number of the cluster";
+            }
+            field pic {                             
+                sensor check-cpu-memory-utilization-ha {
+                    path pic-number;                
+                }                                   
+                type string;                        
+                description "PIC number of the cluster";
+            }
+            field spu-cpu-utilization {
+                sensor check-cpu-memory-utilization-ha {
+                    path spu-cpu-utilization;
+                }
+                type integer;
+                description "cpu utilization value";
+            }
+            field spu-memory-utilization {
+                sensor check-cpu-memory-utilization-ha {
+                    path spu-memory-utilization;
+                }
+                type integer;
+                description "memory utilization value";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger spu-cpu-utilization {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to red when *all* the cpu 
+                 * utilisation are greater than 'h-threshold'.
+                 */
+                term cpu-utilization-high-threshold {
+                    when {
+                        greater-than "$spu-cpu-utilization" "$high-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$re-name:Fpc$fpc:pic$pic CPU utilization($spu-cpu-utilization%) is above high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to yellow when *all* the cpu 
+                 * utilisation are greater than 'l-threshold'.
+                 */
+                term cpu-utilization-low-threshold {
+                    when {
+                        greater-than "$spu-cpu-utilization" "$low-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$re-name:Fpc$fpc:pic$pic CPU utilization($spu-cpu-utilization%) is above low threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when *all* the cpu 
+                 * utilisation are less than 'l-threshold'.
+                 */
+                term cpu-utilization-normal-threshold {
+                    when {
+                        less-than-or-equal-to "$spu-cpu-utilization" "$low-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$re-name:Fpc$fpc:pic$pic CPU utilization($spu-cpu-utilization%) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger spu-memory-utilization {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to red when *all* the memory 
+                 * utilisation are greater than 'h-threshold'.
+                 */
+                term memory-utilization-high-threshold {
+                    when {
+                        greater-than "$spu-memory-utilization" "$high-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$re-name:Fpc$fpc:pic$pic memory utilization($spu-memory-utilization%) is above high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to yellow when *all* the memory 
+                 * utilisation are greater than 'l-threshold'.
+                 */
+                term memory-utilization-low-threshold {
+                    when {
+                        greater-than "$spu-memory-utilization" "$low-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$re-name:Fpc$fpc:pic$pic memory utilization($spu-memory-utilization%) is above low threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when *all* the memory 
+                 * utilisation is less than 'l-threshold'.
+                 */
+                term memory-utilization-normal-threshold {
+                    when {
+                        less-than-or-equal-to "$spu-memory-utilization" "$low-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$re-name:Fpc$fpc:pic$pic memory utilization($spu-memory-utilization%) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable h-threshold {
+                value 80;
+                description "Enter high threshold value";
+                type int;
+            }
+            variable l-threshold {
+                value 60;
+                description "Enter medium threshold value";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                    catalogue {
+                        tier 1;
+                    }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

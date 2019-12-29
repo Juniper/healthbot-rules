@@ -1,0 +1,488 @@
+/*
+ * Monitors idp memory counters and notifies when anomalies are found in 
+ * SRX cluster.
+ */
+healthbot {
+    topic security.idp {
+        rule check-idp-memory-counter-iagent-ha {
+            /*
+             * Monitors the idp counters and notifies via the dashboard colors,
+             * when all counter values are equal to 0 it will mark as green.
+             * When the values are not equal to 0 it will mark red.
+             * 
+             * Use name and re-name as keys for rule.
+             */
+            keys [ name re-name ];
+            synopsis "IDP memory counters analyzer";
+            description "Check idp memory counters of SRX cluster";
+            /*
+             * Sensor configuration to get data from network devices.
+             * 
+             */
+            sensor check_idp_memory_counter_ha {
+                iAgent {
+                    file SecurityIDPCountersMemoryHA.yml;
+                    table IDPCountersMemoryTableHA;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field name {
+                sensor check_idp_memory_counter_ha {
+                    path name;
+                }
+                type string;
+                description "idp memory counter name";
+            }
+            field re-name {
+                sensor check_idp_memory_counter_ha {
+                    path re-name;
+                }
+                type string;
+                description "re-name for the cluster";
+            }
+            field value {
+                sensor check_idp_memory_counter_ha {
+                    path value;
+                }
+                type integer;
+                description "idp memory counter value";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Detector-arena-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters
+                 * matching the name "Detector Arena failed" are equal to 0.
+                 */
+                term is-detector-arena-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Detector Arena failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Detector Arena failed" are not equal to 0.
+                 */
+                term is-detector-arena-failed-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" Detector-Arena-failed {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Detector-objcache-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters matching
+                 * the name "Detector Objcache failed" are equal to 0.
+                 */
+                term is-Detector-Objcache-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Detector Objcache failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Detector Objcache failed" are not equal to 0.
+                 */
+                term is-Detector-Objcache-failed-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Detector Objcache failed" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger IDP-arena-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters matching
+                 * the name "IDP Arena failed" are equal to 0.
+                 */
+                term is-IDP-Arena-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "IDP Arena failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "IDP Arena failed" are not equal to 0.
+                 */
+                term is-IDP-Arena-failed-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "IDP Arena failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Kzalloc-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters matching
+                 * the name "Kzalloc failed" are equal to 0.
+                 */
+                term is-Kzalloc-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Kzalloc failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Kzalloc failed"are not equal to 0.
+                 */
+                term is-Kzalloc-failed-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Kzalloc failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Memory-allocation-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters matching
+                 * the name "Memory allocation failed"  are equal to 0.
+                 */
+                term is-Memory-allocation-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Memory allocation failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Memory allocation failed"  are not equal to 0.
+                 */
+                term is-Memory-allocation-failed-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Memory allocation failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Memory-free-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Memory free failed" are equal to 0 or not equal to 0.
+                 */
+                term is-Memory-free-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        not-equal-to "$value" "$value" {
+                            all;
+                        }
+                        matches-with "$name" "Memory free failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Memory-reallocation-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters matching
+                 * the name "Memory reallocation failed"  are equal to 0.
+                 */
+                term is-Memory-reallocation-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Memory reallocation failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Memory reallocation failed" are not equal to 0.
+                 */
+                term is-Memory-reallocation-failed-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Memory reallocation failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Objcache-failures {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters
+                 * matching the name "Objcache failed"  are equal to 0.
+                 */
+                term is-Objcache-failed-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Objcache failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Objcache failed" are not equal to 0.
+                 */
+                term is-Objcache-failed-field-abnormal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Objcache failed" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Objcache-invalid-records {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the counters matching
+                 * the name "Objcache invalid record"  are equal to 0.
+                 */
+                term is-Objcache-invalid-record-field-normal {
+                    when {
+                        equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Objcache invalid record" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when *all* the counters matching
+                 * the name "Objcache invalid record" are not equal to 0.
+                 */
+                term is-Objcache-invalid-record-field-abnormal {
+                    when {
+                        not-equal-to "$value" 0 {
+                            all;
+                        }
+                        matches-with "$name" "Objcache invalid record" {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "'$name' count is $value";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                    catalogue {
+                        tier 1;
+                    }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

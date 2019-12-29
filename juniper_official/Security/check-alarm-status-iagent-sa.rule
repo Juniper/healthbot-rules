@@ -1,0 +1,113 @@
+/*
+ * Detects system alarms and notifies when anomalies are found in standalone SRX system.
+ * Two input control detection.
+ * 
+ *   1) "input-alarm-class" is used to filter the based on the class of the
+ *      alarms (major/minor/etc).
+ *
+ *   2) "input-alarm-type "  is used to filter the based on the type of the
+ *      alarms (chassis/configurations/etc).
+ *  
+ */
+healthbot {
+    topic system.alarm {
+        rule check-alarm-status-iagent-sa {
+    	    /*
+             * Monitors system alarms and notifies anomalies when alarms found.
+             *
+             * Use alarm-description as keys for rule.
+             */
+            keys alarm-description;
+            synopsis "System alarm analyzer";
+            description "Collects system alarm details periodically and notifies anomalies when alarms found in SRX standalone system ";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor check-alarm-status-sa {
+                iAgent {
+                    file SystemAlarmStatusSA.yml;
+                    table AlarmStatusTableSA;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field alarm-class {
+                sensor check-alarm-status-sa {
+                    where "alarm-class =~ /{{input-alarm-class}}/";
+                    path alarm-class;
+                }
+                type string;
+                description "Alarm class";
+            }
+            field alarm-description {
+                sensor check-alarm-status-sa {
+                    path alarm-description;
+                }
+                type string;
+                description "Alarm long description";
+            }
+            field alarm-type {
+                sensor check-alarm-status-sa {
+                    where "alarm-type =~ /{{input-alarm-type}}/";
+                    path alarm-type;
+                }
+                type string;
+                description "Alarm type";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger security-alarms {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to red when alarms are detected and
+                 * sends notification.
+                 */
+                term alarm-status {
+                    then {
+                        status {
+                            color red;
+                            message "$alarm-class:$alarm-type:$alarm-description";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter alarms based on class
+             * or types while deploying playbook instance.
+             */
+            variable input-alarm-class {
+                value .*;
+                description "Enter system alarm class in regex. e.g. major/minor etc.";
+                type string;
+            }
+            variable input-alarm-type {
+                value .*;
+                description "Enter system alarm type in regex. e.g. chassis/configuration etc.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                    catalogue {
+                        tier 1;
+                    }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

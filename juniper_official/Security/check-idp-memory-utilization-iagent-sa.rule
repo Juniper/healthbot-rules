@@ -1,0 +1,154 @@
+/*
+ * Detects idp memory utilization and notifies when anomalies are found in
+ * standalone SRX system.
+ *
+ * Two input control detection.
+ * 
+ *  1) "h-threshold" variable, is the threshold that causes the rule to report
+ *  an anomaly.By default it's 80. This rule will set a dashboard color to red
+ *  when *all* the idp-data plane memory utilisation are greater than
+ *  'h-threshold'.
+ *
+ *  2) "l-threshold" variable, is the threshold that causes the rule to report
+ *   an anomaly.By default it's 60.This rule will set a dashboard color to 
+ *   yellow when *all* the idp-data plane memory utilisation are greater than
+ *   'l-threshold'.If it is less than l-threshold it is set to green.
+ *  
+ */
+healthbot {
+    topic security.idp {
+        rule check-idp-memory-utilization-iagent-sa {
+            /*
+             * Monitors the idp data-plane memory utilization and notifies via the
+             * dashboard colors, when the threshold is above or-equal-to 
+             * {{h-threshold}} it will mark as red.The color is set to yellow when the
+             * memory utilization is above or-equal-to {{l-threshold}}.Otherwise the
+             * color is set to green when memory utilization is less than 
+             * {{l-threshold}}.
+             */
+            synopsis "IDP data plane memory utilization";
+            description "Used for to check the memory utilization of IDP data plane";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor total-idp-data-plane-memory-used-in-percentage-sensor {
+                iAgent {
+                    file SecurityIdpMemoryUsageSA.yml;
+                    table IdpMemoryInfoTableSA;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{h-threshold}}";
+                }
+                type float;
+                description "high threshold for idp data plane memory utilization";
+            }
+            field low-threshold {
+                constant {
+                    value "{{l-threshold}}";
+                }
+                type float;
+                description "low threshold for idp data plane memory utilization";
+            }
+            field idp-data-plane-memory-usage {
+                sensor total-idp-data-plane-memory-used-in-percentage-sensor {
+                    path total-idp-data-plane-memory-used-in-percentage;
+                }
+                type float;
+                description "data plane memory usage for IDP ";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger IDP-data-plane-memory-usage {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when *all* the memory 
+                 * utilisation percentage is greater than or equal to the
+                 * high-threshold value.
+                 */
+                term is-total-idp-data-plane-memory-used-in-percentage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$idp-data-plane-memory-usage" "$high-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "IDP data plane memory utilization($idp-data-plane-memory-usage %) exceeds high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to yellow when *all* the memory
+                 * utilisation percentage is greater than or equal to the 
+                 *low-threshold value.
+                 */
+                term is-total-idp-data-plane-memory-used-in-percentage-medium {
+                    when {
+                        greater-than-or-equal-to "$idp-data-plane-memory-usage" "$low-threshold" {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "IDP data plane memory utilization($idp-data-plane-memory-usage %) exceeds low threshold";
+                        }
+                    }
+                }
+                /*
+                 * Otherwise set the color to green.
+                 */
+                term is-total-idp-data-plane-memory-used-in-percentage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "IDP data plane memory utilization($idp-data-plane-memory-usage %) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable h-threshold {
+                value 80.0;
+                description "High threshold for idp data plane memory utilization";
+                type float;
+            }
+            variable l-threshold {
+                value 60.0;
+                description "Low threshold for idp data plane memory utilization";
+                type float;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                    catalogue {
+                        tier 1;
+                    }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

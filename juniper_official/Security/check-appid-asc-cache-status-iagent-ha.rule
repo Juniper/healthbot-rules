@@ -1,0 +1,95 @@
+/*
+ * Detects status of application system cache and notifies when anomalies are
+ * found in High Availability system i.e. SRX cluster.
+ *  
+ */
+healthbot {
+    topic security.application {
+        rule check-appid-asc-cache-status-iagent-ha {
+            synopsis "Check for application system cache status";
+            description "To check the status of application system cache on SRX cluster";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor appid-asc-usp-enable {
+                iAgent {
+                    file Security_APPID_ASC_Status_HA.yml;
+                    table AppSysCacheTableHA;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field appid-asc-usp-enable {
+                sensor appid-asc-usp-enable {
+                    path appid-asc-usp-enable;
+                }
+                type string;
+                description "Application system cache status stored in this variable";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger appid-asc-usp-enable {
+                frequency 90s;
+                /*
+                 * Sets dashboard color to green when matching the condition 
+                 * "$appid-asc-usp-enable" and sends notification.
+                 */
+                term is-appid-asc-usp-enabled {
+                    when {
+                        matches-with "$appid-asc-usp-enable" on {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Application system cache is enabled";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to red when the condition 
+                 * "$appid-asc-usp-enable" does not match and sends notification.
+                 */
+                term is-appid-asc-usp-disabled {
+                    when {
+                        does-not-match-with "$appid-asc-usp-enable" on {
+                            ignore-case;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Application system cache is disabled";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                    catalogue {
+                        tier 1;
+                    }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products SRX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
