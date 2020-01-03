@@ -2,10 +2,10 @@
  * Detects flow session details for each PIC in SRX cluster device and notifies when anomalies are found.
  *  
  *   1) "active-sessions-threshold-value" is the threshold that causes the rule to report
- *      an anomaly.  By default it's 5000000. This rule will set a dashboard
+ *      an anomaly.  By default it's 50000000. This rule will set a dashboard
  *      color to red when active sessions for a PIC slot is greater than this value.
  *   2) "max-sessions-threshold-value" is the threshold that causes the rule to report
- *      an anomaly.  By default it's 8000000. This rule will set a dashboard
+ *      an anomaly.  By default it's 10485761. This rule will set a dashboard
  *      color to red when active sessions for a PIC slot is greater than this value.
  *  
  */
@@ -35,8 +35,8 @@ healthbot {
                 synopsis "Flow session sensor initialization";
                 description "Security flow session sensor to collect data from network device";
                 iAgent {
-                    file srx-cluster-flow-session-summary.yml;
-                    table SPUSessionSummaryTable;
+                    file flow-session-summary.yml;
+                    table SecurityFlowSessionSummaryTable;
                     frequency 60s;
                 }
             }
@@ -85,6 +85,9 @@ healthbot {
             field fpc-pic-id {
                 sensor flow-session {
                     path flow-fpc-pic-id;
+                    data-if-missing {           
+                        value default;          
+                    }
                 }
                 type string;
                 description "This field contains flow FPC & PIC id details";
@@ -106,6 +109,9 @@ healthbot {
             field re-name {
                 sensor flow-session {
                     path re-name;
+                    data-if-missing {           
+                        value stand-alone;          
+                    }
                 }
                 type string;
                 description "This field contains node details";
@@ -221,7 +227,7 @@ healthbot {
                 type int;
             }
             variable max-sessions-threshold-value {
-                value 8000000;
+                value 10485761;
                 description "Default threshold value for maximum flow sessions threshold value";
                 type int;
             }
