@@ -43,6 +43,16 @@ healthbot {
             /*
              * Fields defined with variables, dynamic thresholds and constant values
              */
+            function decimal_to_percent {
+                path generic_functions.py;
+                method decimal_to_percent;
+                argument denominator {
+                    mandatory;
+                }
+                argument numerator {
+                    mandatory;
+                }
+            }
             field active-sessions {
                 sensor flow-session {
                     path active-sessions;
@@ -52,7 +62,7 @@ healthbot {
             }
             field active-sessions-threshold {
                 constant {
-                    value "{{active-sessions-threshold-value}}";
+                    value "{{active-sessions-threshold-percent}}";
                 }
                 type integer;
                 description "This filed contains the active flow session threshold value";
@@ -63,29 +73,17 @@ healthbot {
                         algorithm 3sigma;
                         learning-period 7days;
                         pattern-periodicity 1days,1hours;
-                        field-name "$active-sessions";
+                        field-name "$flows-percent";
                     }
                 }
-                type integer;
+                type float;
                 description "ML derived active flow sessions threshold value";
             }
-            field dt-max-sessions {
-                formula {
-                    dynamic-threshold {
-                        algorithm 3sigma;
-                        learning-period 7days;
-                        pattern-periodicity 1days,1hours;
-                        field-name "$max-sessions";
-                    }
-                }
-                type integer;
-                description "ML derived maximum flow sessions threshold value";
-            }
-            field flow-fpc-pic-id {
+            field fpc-pic-id {
                 sensor flow-session {
                     path flow-fpc-pic-id;
-                    data-if-missing {
-                        value default;
+                    data-if-missing {           
+                        value default;          
                     }
                 }
                 type string;
@@ -98,22 +96,25 @@ healthbot {
                 type integer;
                 description "This field contains number of maximum sessions for flow pic id";
             }
-            field max-sessions-threshold {
-                constant {
-                    value "{{max-sessions-threshold-value}}";
-                }
-                type integer;                       
-                description "This filed contains the maximum flow session threshold value";
-            }
             field re-name {
                 sensor flow-session {
                     path re-name;
-                    data-if-missing {
-                        value stand-alone;
+                    data-if-missing {           
+                        value stand-alone;          
                     }
                 }
                 type string;
                 description "This field contains node details";
+            }
+            field flows-percent {
+                formula {
+                    user-defined-function {
+                        function-name decimal_to_percent;
+                        argument numerator "$active-sessions";
+                        argument denominator "$max-sessions";
+                    }
+                }
+                type float;
             }
             /*
              * Anomaly detection logic for active flow sessions
@@ -127,14 +128,14 @@ healthbot {
                  */ 
                 term is-active-sessions-abnormal {
                     when {
-                        greater-than-or-equal-to "$active-sessions" "$active-sessions-threshold" {
+                        greater-than-or-equal-to "$flows-percent" "$active-sessions-threshold" {
                             time-range 180s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Active flow sessions ($active-sessions) for flow_id:$flow-fpc-pic-id has crossed static threshold value ($active-sessions-threshold)";
+                            message "Active flow session count($active-sessions) and utilization percent($flows-percent%) exceeds static threshold value($active-sessions-threshold) on Node:$re-name,flow id:$fpc-pic-id";
                         }
                     }
                 }
@@ -152,7 +153,7 @@ healthbot {
                     then {                          
                         status {
                             color yellow;
-                            message "Active flow sessions ($active-sessions) for flow_id:$flow-fpc-pic-id has crossed dynamic threshold value";
+                            message "Active flow session count($active-sessions) and utilization percent($flows-percent%) exceeds dynamic threshold on Node:$re-name,flow id:$fpc-pic-id ";
                         }
                     }
                 }
@@ -163,73 +164,15 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Active flow sessions ($active-sessions) for flow_id:$flow-fpc-pic-id is normal";
-                        }
-                    }
-                }
-            }
-            /*
-             * Anomaly detection logic for maximum flow sessions
-             */
-            trigger max-sessions {
-                frequency 90s;
-                /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * maximum sessions value for FPC-PIC id is more than threshold ($max-sessions-threshold)
-                 * 
-                 */ 
-                term is-max-sessions-abnormal {
-                    when {
-                        greater-than-or-equal-to "$max-sessions" "$max-sessions-threshold" {
-                            time-range 180s;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Maximum flow sessions ($max-sessions) for flow_id:$flow-fpc-pic-id has crossed static threshold value ($max-sessions-threshold)";
-                        }
-                    }                               
-                }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification 
-                 * when maximum sessions value for FPC-PIC id is more than
-                 * $dt-max-sessions
-                 */
-                term is-max-sessions-above-dt {
-                    when {
-                        equal-to "$dt-max-sessions" 1 {
-                            time-range 180s;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "Maximum flow sessions ($max-sessions) for flow_id:$flow-fpc-pic-id has crossed dynamic threshold value";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */
-                term is-max-sessions-normal {
-                    then {
-                        status {
-                            color green;
-                            message "Maximum flow sessions ($max-sessions) for flow_id:$flow-fpc-pic-id is normal";
+                            message "Active flow session count($active-sessions) and utilization percent($flows-percent%) is normal on Node:$re-name,flow id:$fpc-pic-id";
                         }
                     }
                 }
             }
             variable active-sessions-threshold-value {
-                value 5000000;
-                description "Default threshold value for active flow sessions threshold value";
-                type int;
-            }
-            variable max-sessions-threshold-value {
-                value 80000000;
-                description "Default threshold value for maximum flow sessions threshold value";
-                type int;
+                value 75.00;
+                description "Default threshold percent of active flow sessions";
+                type float;
             }
             rule-properties {
                 version 2;
