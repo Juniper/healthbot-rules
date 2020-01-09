@@ -1,76 +1,106 @@
 healthbot {
     topic system {
-    description "Rules relevant to metrics and KPI of the system";
-    rule check-system-process-memory {
-      /* description "Monitors active, free and swap memory"; */
-      keys buffered;
-      sensor system-process-memory {
-        iAgent {
-          file sys-proc-ext.yml;
-          table SystemProcExtMemTable;
-          frequency 60s;
-        }
-      }
-      trigger active-memory {
-        term is-active-memory-greater-than-200M {
-          when {
-            greater-than "$active" 209715200;
-          }
-          then {
-            status {
-              color red;
-              message "Active memory is greater than 200M";
+        description "Rules relevant to metrics and KPI of the system";
+        rule check-system-process-memory {
+            /* description "Monitors active, free and swap memory"; */
+            keys buffered;
+            sensor system-process-memory {
+                iAgent {
+                    file sys-proc-ext.yml;
+                    table SystemProcExtMemTable;
+                    frequency 60s;
+                }
             }
-          }
-        }
-        term active-memory-less-than-or-equal-to-200M {
-          then {
-            status {
-              color green;
+            field active-memory-threshold {
+                constant {
+                    value "{{active-memory-high-threshold}}";
+                }
+                type integer;
+                description "Active memory high threshold";
             }
-          }
-        }
-      }
-      trigger free-memory {
-        term is-free-memory-less-than-1G {
-          when {
-            less-than "$free" 1073741824;
-          }
-          then {
-            status {
-              color red;
-              message "Free memory is lesser than 1G";
+            field free-memory-threshold {
+                constant {
+                    value "{{free-memory-low-threshold}}";
+                }
+                type integer;
+                description "Free momory low threshold";
             }
-          }
-        }
-        term free-memory-greater-than-or-equal-to-1G {
-          then {
-            status {
-              color green;
+            trigger active-memory {
+                frequency 90s;
+                term is-active-memory-greater-than-expected {
+                    when {
+                        greater-than "$active" "$active-memory-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Active memory is greater than $active-memory-threshold";
+                        }
+                    }
+                }
+                term active-memory-less-than-or-equal-to-expected {
+                    then {
+                        status {
+                            color green;
+                            message "Active memory is within the lime";
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
-      trigger swap-total {
-        term is-swap-memory-used {
-          when {
-            not-equal-to "$swap-total" "$swap-free";
-          }
-          then {
-            status {
-              color red;
-              message "Swap memory is being used";
+            trigger free-memory {
+                frequency 90s;
+                term is-free-memory-less-than-expected {
+                    when {
+                        less-than "$free" "$free-memory-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Free memory is lesser than $free-memory-threshold";
+                        }
+                    }
+                }
+                term free-memory-greater-than-or-equal-to-expected {
+                    then {
+                        status {
+                            color green;
+                            message "Free memory is available";
+                        }
+                    }
+                }
             }
-          }
-        }
-        term swap-memory-not-used {
-          then {
-            status {
-              color green;
+            trigger swap-total {
+                frequency 90s;
+                term is-swap-memory-used {
+                    when {
+                        not-equal-to "$swap-total" "$swap-free";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Swap memory is being used";
+                        }
+                    }
+                }
+                term swap-memory-not-used {
+                    then {
+                        status {
+                            color green;
+                            message "Swap memory is not being used";
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
+            variable active-memory-high-threshold {
+                value 209715200;
+                description "Active memory high threshold";
+                type int;
+            }
+            variable free-memory-low-threshold {
+                value 1073741824;
+                description "Free momory low threshold";
+                type int;
+            }
             rule-properties {
                 version 2;
                 contributor juniper;
@@ -81,6 +111,18 @@ healthbot {
                 supported-devices {
                     juniper {
                         operating-system junos {
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
                             products MX {
                                 releases 11.4R1 {
                                     release-support min-supported-release;
@@ -99,18 +141,6 @@ healthbot {
                                     platform All;
                                 }
                             }
-                            products EX {
-                                releases 15.2R1 {
-                                    release-support min-supported-release;
-                                    platform All;
-                                }
-                            }
-                            products ACX {
-                                releases 15.2R1 {
-                                    release-support min-supported-release;
-                                    platform All;
-                                }
-                            }
                             products SRX {
                                 releases 15.2R1 {
                                     release-support min-supported-release;
@@ -121,7 +151,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files system-process-memory;
+                    list-of-files sys-proc-ext.yml;
                 }
             }
         }

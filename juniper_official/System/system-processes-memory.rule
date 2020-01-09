@@ -2,21 +2,21 @@
  * Detects junos processes (daemons) memory utilization threshold breaches and
  * notifies when anomalies are found.
  * Three inputs control detection
- * 
+ *
  *   1) process-name-input, is a regular expression that matches the daemons that you
  *      would like to monitor. By default it's '.*', which matches all daemons.
  *      Use something like 'rpd|dfwd|dcd' to match only routing, firewall and
  *      interface daemons.
- * 
- *   2) process-memory-high-threshold, is the threshold that causes the rule 
- *      to report an anomaly. By default it's 80% of daemon memory utilization. 
- *      This rule will set a dashboard color to red when daemon memory 
+ *
+ *   2) process-memory-high-threshold, is the threshold that causes the rule
+ *      to report an anomaly. By default it's 80% of daemon memory utilization.
+ *      This rule will set a dashboard color to red when daemon memory
  *      utilization exceed high threshold 'process-memory-high-threshold'
  *      for a period of 5 minutes.
- * 
+ *
  *   3) process-memory-low-threshold, is the threshold that causes the rule to
- *      report an anomaly. By default it's 50% of daemon memory utilization. 
- *      This rule will set a dashboard color to red when daemon memory 
+ *      report an anomaly. By default it's 50% of daemon memory utilization.
+ *      This rule will set a dashboard color to red when daemon memory
  *      utilization exceed low threshold 'process-memory-low-threshold'
  *      for a period of 5 minutes. Otherwise color is set to green.
  */
@@ -25,36 +25,35 @@ healthbot {
         description "Monitors system statistics i.e. CPU, memory, storage, processes & queues and notifies anomalies";
         synopsis "System statistics analyzer";
         rule check-process-memory {
-            description "Collects system process's memory utilization periodically and notifies anomalies when daemon memory usage exceed threshold";
-            synopsis "System processes memory utilization analyzer";
             /*
              * Monitors *all* the daemons memory utilization. Notifies via the
              * dashboard colors when the daemon memory utilization exceed by
              * {{process-memory-high-threshold}} for every collected metric
              * during a 5 minute time range (red). The color is set to yellow
-             * if we see daemon memory utilization exceed 
+             * if we see daemon memory utilization exceed
              * {{process-memory-low-threshold}} for every collected metric
              * during a 5 minutes time range.
-             * 
+             *
              * Use daemon name and pid as key for rule.
              */
             keys [ daemon pid ];
-            /*
-             * Function derives memory utilization in percent from KB and MB.
-             */
-            function isExceeding {
+            synopsis "System processes memory utilization analyzer";
+            description "Collects system process's memory utilization periodically and notifies anomalies when daemon memory usage exceed threshold";
+            function decimal_to_percent {
+                path generic_functions.py;
+                method decimal_to_percent;
+                argument numerator {
+                    mandatory;
+                }
+                argument denominator {
+                    mandatory;
+                }
+            }
+            function mem_common_form {
                 description "Function isExceeding returns 'True' if % of size used out of resident memory is not exceeding the threshold";
                 path system-processes.py;
-                method isExceeding;
-                argument res {
-                    mandatory;
-                }
-                argument size {
-                    mandatory;
-                }
-                argument threshold {
-                    mandatory;
-                }
+                method mem_common_form;
+                argument mem;
             }
             /*
              * Sensor configuration to get data from network devices.
@@ -72,6 +71,16 @@ healthbot {
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */
+            field allocated-memory {
+                formula {
+                    user-defined-function {
+                        function-name mem_common_form;
+                        argument mem "$size";
+                    }
+                }
+                type integer;
+                description "Allocated memory for each daemon";
+            }
             field daemon {
                 sensor systemprocexttable {
                     path cmd;
@@ -79,30 +88,6 @@ healthbot {
                 type string;
                 description "Daemon to be monitored";
             }
-            field reseved {
-                sensor systemprocexttable {
-                    path res;
-                }
-                type string;
-                description "Reserved memory of daemon";
-            }
-            field size {
-                sensor systemprocexttable {
-                    path size;
-                }
-                type string;
-                description "Daemon memory size";
-            }
-            field pid {
-                sensor systemprocexttable {
-                    path pid;
-                }
-                type string;
-                description "PID to be monitored";
-            }
-            /*
-             * Fields defined with variables and constant values
-             */
             field max-threshold {
                 constant {
                     value "{{process-memory-high-threshold}}";
@@ -117,12 +102,54 @@ healthbot {
                 type integer;
                 description "Daemon memory low threshold";
             }
+            field pid {
+                sensor systemprocexttable {
+                    path pid;
+                }
+                type string;
+                description "PID to be monitored";
+            }
             field process-name {
                 constant {
                     value "{{process-name-input}}";
                 }
                 type string;
                 description "Selected daemon to be monitored";
+            }
+            field res {
+                sensor systemprocexttable {
+                    path res;
+                }
+                type string;
+                description "Reserved memory of daemon";
+            }
+            field size {
+                sensor systemprocexttable {
+                    path size;
+                }
+                type string;
+                description "Daemon memory size";
+            }
+            field used-memory {
+                formula {
+                    user-defined-function {
+                        function-name mem_common_form;
+                        argument mem "$res";
+                    }
+                }
+                type integer;
+                description "Used memory of each daemon";
+            }
+            field used-percent {
+                formula {
+                    user-defined-function {
+                        function-name decimal_to_percent;
+                        argument numerator "$used-memory";
+                        argument denominator "$allocated-memory";
+                    }
+                }
+                type float;
+                description "Memory used in percent for each daemon";
             }
             /*
              * Anomaly detection logic.
@@ -139,58 +166,37 @@ healthbot {
                         does-not-match-with "$daemon" "$process-name";
                     }
                 }
-                /*
-                 * Sets color to red and sends out an anomaly notification
-                 * when any of the daemon memory usage (isExceeding) exceed
-                 * high threshold ($max-threshold) for all points in a
-                 * 5 minute period.
-                 */ 
                 term is-memory-utilization-abnormal {
                     when {
-                        user-defined-function isExceeding {
-                            argument size "$size";
-                            argument res "$reserved";
-                            argument threshold "$max-threshold";
+                        greater-than-or-equal-to "$used-percent" "$max-threshold" {
                             time-range 5m;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$daemon memory utilization is above high threshold($max-threshold)";
+                            message "$daemon memory utilization($used-percent) is above high threshold($max-threshold)";
                         }
                     }
                 }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when any of the daemon memory usage (isExceeding) exceed
-                 * low threshold ($min-threshold) for all points in a 
-                 * 5 minute period.
-                 */ 
                 term is-memory-utilization-middle {
                     when {
-                        user-defined-function isExceeding {
-                            argument size "$size";
-                            argument res "$reserved";
-                            argument threshold "$min-threshold";
+                        greater-than-or-equal-to "$used-percent" "$min-threshold" {
                             time-range 5m;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$daemon memory utilization is in middle range(>=$min-threshold, <=$max-threshold)";
+                            message "$daemon memory utilization($used-percent) is in middle range(>=$min-threshold, <=$max-threshold)";
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */ 
-                term is-memory-utilization-normal  {
+                term is-memory-utilization-normal {
                     then {
                         status {
                             color green;
-                            message "$daemon memory utilization is normal";
+                            message "$daemon memory utilization($used-percent) is normal";
                         }
                     }
                 }
@@ -224,6 +230,18 @@ healthbot {
                 supported-devices {
                     juniper {
                         operating-system junos {
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
                             products MX {
                                 releases 15.2R1 {
                                     release-support min-supported-release;
@@ -242,18 +260,6 @@ healthbot {
                                     platform All;
                                 }
                             }
-                            products EX {
-                                releases 15.2R1 {
-                                    release-support min-supported-release;
-                                    platform All;
-                                }
-                            }
-                            products ACX {
-                                releases 15.2R1 {
-                                    release-support min-supported-release;
-                                    platform All;
-                                }
-                            }
                             products SRX {
                                 releases 15.2R1 {
                                     release-support min-supported-release;
@@ -264,7 +270,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files [ system-proc-ext.yml system-processes.py ];
+                    list-of-files [ generic_functions.py system-proc-ext.yml system-processes.py ];
                 }
             }
         }
