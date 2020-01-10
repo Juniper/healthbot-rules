@@ -1,26 +1,36 @@
 /*
- * Detects status of application system cache and notifies when anomalies are
- * found in Standalone SRX system.
+ * Monitors application system cache and notifies anomalies 
  *  
  */
 healthbot {
     topic security.application {
-        rule check-appid-asc-cache-status-iagent-sa {
+        rule check-appid-asc-cache-status-netconf {
             synopsis "Check for application system cache status";
-            description "To check the status of application system cache on standalone SRX system";
+            description "To check the status of application system cache on SRX cluster";
+            keys re-name;
             /*
              * Sensor configuration to get data from network devices.
              */
             sensor appid-asc-usp-enable {
                 iAgent {
-                    file Security_APPID_ASC_Status_SA.yml;
-                    table AppSysCacheTableSA;
+                    file Security_APPID_ASC_Status.yml;
+                    table AppSysCacheTable;
                     frequency 60s;
                 }
             }
             /*
              * Fields defined with variables and constant values
              */
+            field re-name {
+                sensor appid-asc-usp-enable {
+                    path re-name;
+                    data-if-missing {               
+                        value StandaloneSRX;           
+                    }
+                }
+                type string;
+                description "Node name";
+            }
             field appid-asc-usp-enable {
                 sensor appid-asc-usp-enable {
                     path appid-asc-usp-enable;
@@ -47,7 +57,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Application system cache is enabled ";
+                            message "Application system cache is enabled on $re-name";
                         }
                     }
                 }
@@ -65,7 +75,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Application system cache is disabled";
+                            message "Application system cache is disabled on $re-name";
                         }
                     }
                 }

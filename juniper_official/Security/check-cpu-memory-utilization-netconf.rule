@@ -1,28 +1,28 @@
 /*
- * Detects cpu and memory utilization and notifies when anomalies are
- * found in high availability SRX cluster system.
+ * Monitors SPU's CPU and memory and notifies anomalies when CPU and memory
+ * utilization exceeds threshold.
  *
  * Two input control detection.
  * 
- *  1) "h-threshold" variable, is the threshold that causes the rule to report
+ *  1) "max-threshold" variable, is the threshold that causes the rule to report
  *  an anomaly.By default it's 80. This rule will set a dashboard color to red
  *  when *all* the memory or cpu utilisation are greater than
- *  'h-threshold'.
- *  2) "l-threshold" variable, is the threshold that causes the rule to report
+ *  'max-threshold'.
+ *  2) "min-threshold" variable, is the threshold that causes the rule to report
  *   an anomaly.By default it's 60. This rule will set a dashboard color to yellow
  *   when *all* the memory or cpu utilisation are greater than
- *   'l-threshold'.If it is less than l-threshold it is set to green.
+ *   'min-threshold'.If it is less than min-threshold it is set to green.
  *  
  */
 healthbot {
     topic security.spu {
-        rule check-cpu-memory-utilization-iagent-ha {
+        rule check-cpu-memory-utilization-netconf {
             /*
              * Monitors the cpu and memory utilization and notifies via the
              * dashboard colors, when the cpu and memory utilization is above 
-             * high threshold {{h-threshold}} it will mark as red. The color 
+             * high threshold {{max-threshold}} it will mark as red. The color 
              * is set to yellow when the cpu and memory utilization is above 
-             * low threshold {{l-threshold}}. Otherwise the color is set to 
+             * low threshold {{min-threshold}}. Otherwise the color is set to 
              * green.
              *
              * Use re-name, fpc and pic as keys for rule.
@@ -36,24 +36,24 @@ healthbot {
              */
             sensor check-cpu-memory-utilization-ha {
                 iAgent {
-                    file SecurityCPUMemoryUtilizationHA.yml;
-                    table PerfStatsTableHA;
+                    file SecurityCPUMemoryUtilization.yml;
+                    table PerfStatsTable;
                     frequency 60s;
                 }
             }
             /*
              * Fields defined with variables and constant values
              */
-            field high-threshold {
+            field higmax-threshold {
                 constant {
-                    value "{{h-threshold}}";
+                    value "{{max-threshold}}";
                 }
                 type integer;
                 description "high threshold for trigger";
             }
             field low-threshold {
                 constant {
-                    value "{{l-threshold}}";
+                    value "{{min-threshold}}";
                 }
                 type integer;
                 description "low threshold for trigger";
@@ -61,6 +61,9 @@ healthbot {
             field re-name {
                 sensor check-cpu-memory-utilization-ha {
                     path re-name;
+                    data-if-missing {               
+                        value StandaloneSRX;           
+                    }
                 }
                 type string;
                 description "re-name in the cluster";
@@ -68,13 +71,19 @@ healthbot {
             field fpc {
                 sensor check-cpu-memory-utilization-ha {
                     path fpc-number;
+                    data-if-missing {               
+                        value 0;           
+                    }
                 }
                 type string;
                 description "FPC number of the cluster";
             }
             field pic {                             
                 sensor check-cpu-memory-utilization-ha {
-                    path pic-number;                
+                    path pic-number; 
+                    data-if-missing {               
+                        value 0;           
+                    }               
                 }                                   
                 type string;                        
                 description "PIC number of the cluster";
@@ -100,11 +109,11 @@ healthbot {
                 frequency 90s;
                 /*
                  * Sets dashboard color to red when *all* the cpu 
-                 * utilisation are greater than 'h-threshold'.
+                 * utilisation are greater than 'max-threshold'.
                  */
-                term cpu-utilization-high-threshold {
+                term cpu-utilization-higmax-threshold {
                     when {
-                        greater-than "$spu-cpu-utilization" "$high-threshold" {
+                        greater-than "$spu-cpu-utilization" "$higmax-threshold" {
                             all;
                         }
                     }
@@ -117,7 +126,7 @@ healthbot {
                 }
                 /*
                  * Sets dashboard color to yellow when *all* the cpu 
-                 * utilisation are greater than 'l-threshold'.
+                 * utilisation are greater than 'min-threshold'.
                  */
                 term cpu-utilization-low-threshold {
                     when {
@@ -134,9 +143,9 @@ healthbot {
                 }
                 /*
                  * Sets dashboard color to green when *all* the cpu 
-                 * utilisation are less than 'l-threshold'.
+                 * utilisation are less than 'min-threshold'.
                  */
-                term cpu-utilization-normal-threshold {
+                term cpu-utilization-normamin-threshold {
                     when {
                         less-than-or-equal-to "$spu-cpu-utilization" "$low-threshold" {
                             all;
@@ -157,11 +166,11 @@ healthbot {
                 frequency 90s;
                 /*
                  * Sets dashboard color to red when *all* the memory 
-                 * utilisation are greater than 'h-threshold'.
+                 * utilisation are greater than 'max-threshold'.
                  */
-                term memory-utilization-high-threshold {
+                term memory-utilization-higmax-threshold {
                     when {
-                        greater-than "$spu-memory-utilization" "$high-threshold" {
+                        greater-than "$spu-memory-utilization" "$higmax-threshold" {
                             all;
                         }
                     }
@@ -174,7 +183,7 @@ healthbot {
                 }
                 /*
                  * Sets dashboard color to yellow when *all* the memory 
-                 * utilisation are greater than 'l-threshold'.
+                 * utilisation are greater than 'min-threshold'.
                  */
                 term memory-utilization-low-threshold {
                     when {
@@ -191,9 +200,9 @@ healthbot {
                 }
                 /*
                  * Sets dashboard color to green when *all* the memory 
-                 * utilisation is less than 'l-threshold'.
+                 * utilisation is less than 'min-threshold'.
                  */
-                term memory-utilization-normal-threshold {
+                term memory-utilization-normamin-threshold {
                     when {
                         less-than-or-equal-to "$spu-memory-utilization" "$low-threshold" {
                             all;
@@ -211,12 +220,12 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable h-threshold {
+            variable max-threshold {
                 value 80;
                 description "Enter high threshold value";
                 type int;
             }
-            variable l-threshold {
+            variable min-threshold {
                 value 60;
                 description "Enter medium threshold value";
                 type int;

@@ -1,63 +1,96 @@
 /*
- * Detects idp memory utilization and notifies when anomalies are found in
- * standalone SRX system.
+ * Monitors IDP memory and notifies anomalies when memory utilization exceeds 
+ * threshold.
  *
  * Two input control detection.
  * 
- *  1) "h-threshold" variable, is the threshold that causes the rule to report
+ *  1) "max-threshold" variable, is the threshold that causes the rule to report
  *  an anomaly.By default it's 80. This rule will set a dashboard color to red
  *  when *all* the idp-data plane memory utilisation are greater than
- *  'h-threshold'.
+ *  'max-threshold'.
  *
- *  2) "l-threshold" variable, is the threshold that causes the rule to report
+ *   2) "min-threshold" variable, is the threshold that causes the rule to report
  *   an anomaly.By default it's 60.This rule will set a dashboard color to 
  *   yellow when *all* the idp-data plane memory utilisation are greater than
- *   'l-threshold'.If it is less than l-threshold it is set to green.
+ *   'min-threshold'.If it is less than min-threshold it is set to green.
  *  
  */
 healthbot {
     topic security.idp {
-        rule check-idp-memory-utilization-iagent-sa {
+        rule check-idp-memory-utilization-netconf {
             /*
-             * Monitors the idp data-plane memory utilization and notifies via the
-             * dashboard colors, when the threshold is above or-equal-to 
-             * {{h-threshold}} it will mark as red.The color is set to yellow when the
-             * memory utilization is above or-equal-to {{l-threshold}}.Otherwise the
-             * color is set to green when memory utilization is less than 
-             * {{l-threshold}}.
+             * Monitors the idp data-plane memory utilization and notifies via 
+             * the dashboard colors, when the idp memory utilization is above 
+             * or-equal-to high threshold {{max-threshold}} it will mark as red.
+             * The color is set to yellow when the memory utilization is above
+             * or-equal-to low threshold {{min-threshold}}. Otherwise the color
+             * is set to green.
+             *
+             * Use pic-name and re-name as keys for rule.
              */
+            keys [ pic-name fpc-name re-name ];
             synopsis "IDP data plane memory utilization";
             description "Used for to check the memory utilization of IDP data plane";
             /*
              * Sensor configuration to get data from network devices.
              */
-            sensor total-idp-data-plane-memory-used-in-percentage-sensor {
+            sensor check-idp-memory-counter-ha {
                 iAgent {
-                    file SecurityIdpMemoryUsageSA.yml;
-                    table IdpMemoryInfoTableSA;
+                    file SecurityIdpMemoryUsage.yml;
+                    table IdpMemoryInfoTable;
                     frequency 60s;
                 }
             }
             /*
              * Fields defined with variables and constant values
              */
-            field high-threshold {
+            field higmax-threshold {
                 constant {
-                    value "{{h-threshold}}";
+                    value "{{max-threshold}}";
                 }
                 type float;
                 description "high threshold for idp data plane memory utilization";
             }
             field low-threshold {
                 constant {
-                    value "{{l-threshold}}";
+                    value "{{min-threshold}}";
                 }
                 type float;
                 description "low threshold for idp data plane memory utilization";
             }
+            field pic-name {
+                sensor check-idp-memory-counter-ha {
+                    path pic-name;
+                    data-if-missing {               
+                        value 0;           
+                    }
+                }
+                type string;
+                description "pic-name for the nodes";
+            }
+            field fpc-name {
+                sensor check-idp-memory-counter-ha {
+                    path fpc-name;
+                    data-if-missing {               
+                        value 0;           
+                    }
+                }
+                type string;
+                description "pic-name for the nodes";
+            }
+            field re-name {
+                sensor check-idp-memory-counter-ha {
+                    path re-name;
+                    data-if-missing {               
+                        value StandaloneSRX;           
+                    }
+                }
+                type string;
+                description "re-name for the cluster";
+            }
             field idp-data-plane-memory-usage {
-                sensor total-idp-data-plane-memory-used-in-percentage-sensor {
-                    path total-idp-data-plane-memory-used-in-percentage;
+                sensor check-idp-memory-counter-ha {
+                    path idp-mem-util-percent;
                 }
                 type float;
                 description "data plane memory usage for IDP ";
@@ -65,30 +98,28 @@ healthbot {
             /*
              * Anomaly detection logic.
              */
-            trigger IDP-data-plane-memory-usage {
+            trigger IDP-data-plane-memory-utilization {
                 frequency 90s;
                 /*
-                 * Sets dashboard color to green when *all* the memory 
-                 * utilisation percentage is greater than or equal to the
-                 * high-threshold value.
+                 * Sets dashboard color to green when *all* the memory utilisation 
+                 * percentage is greater than or equal to the higmax-threshold value.
                  */
                 term is-total-idp-data-plane-memory-used-in-percentage-abnormal {
                     when {
-                        greater-than-or-equal-to "$idp-data-plane-memory-usage" "$high-threshold" {
+                        greater-than-or-equal-to "$idp-data-plane-memory-usage" "$higmax-threshold" {
                             all;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "IDP data plane memory utilization($idp-data-plane-memory-usage %) exceeds high threshold";
+                            message "$re-name:Fpc$fpc:pic$pic IDP data plane memory utilization($idp-data-plane-memory-usage%) exceeds high threshold";
                         }
                     }
                 }
                 /*
-                 * Sets dashboard color to yellow when *all* the memory
-                 * utilisation percentage is greater than or equal to the 
-                 *low-threshold value.
+                 * Sets dashboard color to yellow when *all* the memory utilisation 
+                 * percentage is greater than or equal to the low-threshold value.
                  */
                 term is-total-idp-data-plane-memory-used-in-percentage-medium {
                     when {
@@ -99,7 +130,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "IDP data plane memory utilization($idp-data-plane-memory-usage %) exceeds low threshold";
+                            message "$re-name:Fpc$fpc:pic$pic IDP data plane memory utilization($idp-data-plane-memory-usage%) exceeds high threshold";
                         }
                     }
                 }
@@ -110,7 +141,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "IDP data plane memory utilization($idp-data-plane-memory-usage %) is normal";
+                            message "$re-name:Fpc$fpc:pic$pic IDP data plane memory utilization($idp-data-plane-memory-usage%) is normal";
                         }
                     }
                 }
@@ -119,12 +150,12 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable h-threshold {
+            variable max-threshold {
                 value 80.0;
                 description "High threshold for idp data plane memory utilization";
                 type float;
             }
-            variable l-threshold {
+            variable min-threshold {
                 value 60.0;
                 description "Low threshold for idp data plane memory utilization";
                 type float;

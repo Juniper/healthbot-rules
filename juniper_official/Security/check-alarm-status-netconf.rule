@@ -1,6 +1,5 @@
 /*
- * Detects system alarms and notifies when anomalies are found in high 
- * availability SRX cluster system.
+ * Detects system security alarms and notifies
  *
  * Two input control detection.
  * 
@@ -13,13 +12,13 @@
  */
 healthbot {
     topic system.alarm {
-        rule check-alarm-status-iagent-ha {
+        rule check-alarm-status-netconf {
             /*
              * Monitors system alarms and notifies anomalies when alarms found.
              *
              * Use alarm-description as keys for rule.
              */
-            keys alarm-description;
+            keys [ alarm-description re-name ];
             synopsis "System alarm analyzer";
             description "Collects system alarm details periodically and notifies anomalies when alarms found in SRX cluster";
             /*
@@ -27,8 +26,8 @@ healthbot {
              */
             sensor check-alarm-status-ha {
                 iAgent {
-                    file SystemAlarmStatusHA.yml;
-                    table AlarmStatusTableHA;
+                    file SystemAlarmStatus.yml;
+                    table SystemAlarmStatusTable;
                     frequency 60s;
                 }
             }
@@ -61,6 +60,9 @@ healthbot {
             field re-name {
                 sensor check-alarm-status-ha {
                     path re-name;
+                    data-if-missing {               
+                        value StandaloneSRX;           
+                    }
                 }
                 type string;
                 description "re-name ";
@@ -78,7 +80,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$alarm-class:$alarm-type:$alarm-description";
+                            message "Alarm-class:$alarm-class;Alarm-type:$alarm-type;Description:$alarm-description on $re-name";
                         }
                     }
                 }
