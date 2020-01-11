@@ -1,0 +1,185 @@
+/*
+ * Detects VMhost storage utilization and notifies when anomalies are found.
+ *
+ * One input control detection
+ * 
+ * 1) storage-threshold-variable, is the threshold that causes the rule to report
+ * an anomaly.By default it's 80. This rule will set a dashboard color to red
+ * when *all* the storage-utilisation-increases are greater than
+ * 'storage-threshold-variable' for 5 mins or more. If it sees any 
+ * storage-utilisation increase more than threshold-variable it'll turn the 
+ * color to yellow,else color is set to green.
+ * 
+ */
+healthbot {
+    topic system.vmhost {
+        rule check-vmhost-storage-iagent {
+            keys mount;
+            synopsis "VMhost Storage Analyzer";
+            description "Collects VMhost  storage status periodically and notifies anomaly";
+            /*
+             * Monitors the VMhost storage utilization. Notifies via the 
+             * dashboard color red when utilsation exceeds threshold for 5mins
+             * or more,color yellow when utilsation exceeds threshold for less
+             * than 5 mins, else the color is set to green
+             *
+             * Sensor configuration to get data from network devices.
+             *
+             */
+             sensor storageanalyzer {
+			    synopsis "VM Host Storage analyzer";
+		        description "Collects VMhost storage utilization periodically and notifies anomaly";
+                iAgent {
+                    file vmhost_storage_monitoring.yml;
+                    table VMhostStorageTable;
+                    frequency 60s;
+                }
+            }
+           /*
+            * Fields defined using sensor path. Map the longer sensor names
+            * to the shorter field names used in the rules.
+            */
+            field avail {
+                sensor storageanalyzer {
+                    path avail;
+                }
+                type string;
+                description "Available disk space for the file system";
+            }
+            field filesystem {
+                sensor storageanalyzer {        
+                    path filesystem;
+                }
+                type string;
+                description "Name of the file system";
+            }
+            field max-threshold {
+                constant {
+                    value "{{max-threshold}}";
+                }
+                type integer;
+                description "User defined threshold value of the mount path";
+            }
+            field mount {
+                sensor storageanalyzer {
+                    path mount;
+                }
+                type string;
+                description "Mounted path of the file system";
+            }
+            field size {
+                sensor storageanalyzer {
+                    path size;
+                }
+                type string;
+                description "Size of the disk space of the file system";
+            }
+            field used {
+                sensor storageanalyzer {
+                    path used;
+                }
+                type string;
+                description "Used disk space of the file system";
+            }
+            field used-percentage {
+                sensor storageanalyzer {
+                    path used-percentage;
+                }
+                type integer;
+                description "Percentage of storage used by the file system";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vmhost-storage-usage {
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the vmhost storage utilisation for all mounts is greater 
+                 * than threshold in 5 mins time-range.
+                 */
+                term is-storage-utilization-above-threshold {
+                    when {
+                        greater-than-or-equal-to "$used-percentage" "$max-threshold" {
+                            time-range 5m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {                
+                            color red;
+                            message "File system($filesystem) storage utilization($used-percentage%) exceeds threshold continuously";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when vmhost storage utilisation is greater than threshold.
+                 */
+                term is-storage-utilization-spike {
+                    when {
+                        greater-than-or-equal-to "$used-percentage" "$max-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "File system($filesystem) storage utilization($used-percentage%) exceeds threshold";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green and sends notification.
+                 */
+                term is-storage-utilization-normal {
+                    then {
+                        status {
+                            color green;
+                            message "File system($filesystem) storage utilization($used-percentage%) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable max-threshold {
+                value 80;
+                description "Enter storage threshold percentage to monitor e.g \"80\", \"75\" etc.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [MX240 MX480 MX960 MX2010 MX2020];
+                                }
+                            }
+                            products PTX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [PTX500 PTX1000 PTX5000 PTX10000];
+                                }
+                            }
+                            products QFX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [QFX10002 QFX10008 QFX10016];
+                                }
+                            }                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

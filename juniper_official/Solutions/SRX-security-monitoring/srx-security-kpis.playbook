@@ -1,5 +1,5 @@
 /*
- * Playbook contains multiple rules which monitors standalone SRX's system,
+ * Playbook contains multiple rules which monitors standalone SRX system,
  * linecard, SPU's CPU & Memory and security parameters and notifies when
  * anomalies are found.
  *
@@ -13,11 +13,22 @@
  * 4) Rule "check-interface-in-out-traffic-snmp" collects input and output
  *    traffic periodically and notifies in case of traffic is above threshold.
  * 5) Rule "check-system-cpu-memory-snmp" collects CPU, Memory Utilization
- *    details from Routing Engines and notify anomalies based on threshold values.
+ *    details from Routing Engines and notify anomalies based on threshold 
+ *    values.
+ * 6) Rule "check-alarm-status-netconf" Monitors system security alarms and 
+ *    notifies anomalies when alarms found.
+ * 7) Rule "check-appid-asc-cache-status-netconf" Verifies the status of 
+ *    application system cache.
+ * 8) Rule "check-cpu-memory-utilization-netconf" Monitors spu cpu and memory
+ *    utilization and notifies when anomalies are found.
+ * 9) Rule "check-idp-memory-counter-netconf" Monitors idp memory counters 
+ *    and notifies when anomalies are found.
+ * 10)Rule "check-idp-memory-utilization-netconf" Monitors idp memory 
+ *    utilization and notifies anomalies when utilization exceeds threshold.
  */
 healthbot {
     playbook srx-security-kpis-playbook {
-        rules [ security.spu/check-spu-performance-netconf security.flow/check-flow-session-summary-netconf linecard.fpc/check-fpc-cpu-memory-usage-netconf interface.statistics/check-interface-in-out-traffic-snmp system.cpu.memory/check-system-cpu-memory-snmp ];
+        rules [ security.idp/check-idp-memory-utilization-netconf security.idp/check-idp-memory-counter-netconf security.spu/check-cpu-memory-utilization-netconf security.application/check-appid-asc-cache-status-netconf system.alarm/check-alarm-status-netconf security.spu/check-spu-performance-netconf security.flow/check-flow-session-summary-netconf linecard.fpc/check-fpc-cpu-memory-usage-netconf interface.statistics/check-interface-in-out-traffic-snmp system.cpu.memory/check-system-cpu-memory-snmp ];
         description "Playbook checks SRX's system, linecard, SPU's cpu, memory and security parameters";
         synopsis "SRX's system, linecard and security performance indicators";
     }

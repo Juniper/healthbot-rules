@@ -1,0 +1,220 @@
+/*
+ * Detects VMhost memory utilization and notifies when anomalies are found.
+ *
+ * One input control detection
+ *  
+ * 1) memory-threshold-variable, is the threshold that causes the rule to report
+ *   an anomaly.By default it's 80. This rule will set a dashboard color to red
+ *   when *all* the memory-utilisation-increases are greater than
+ *   'memory-threshold-variable' for 5 mins or more. If it sees any
+ *   memory-utilisation increase by more than threshold, it'll turn the color 
+ *   to yellow,else the color is set to green.
+ *   
+ */
+healthbot {
+    topic system.vmhost {
+        rule check-vmhost-memory-iagent {
+             keys memory;
+             synopsis "VM Host Memory analyzer";
+		     description "Collects VMhost memory utilization periodically and notifies anomaly";
+             /*
+              * Monitors the VMhost memory utilization. Notifies via the 
+              * dashboard color red when utilsation exceeds threshold for 5mins,
+              * color yellow when utilsation exceeds threshold,
+              * else the color is set to green
+              *
+              * Function to find the memory utilisation by calculating difference
+              * of total memory and free memory.
+              *
+              */
+            function decimal_to_percent {
+                description "Functions derives used Memory percentage";
+                path generic_functions.py;
+                method decimal_to_percent;
+                argument denominator {
+                    mandatory;
+                }
+                argument numerator {
+                    mandatory;
+                }
+            }
+            /*
+		     * Sensor configuration to collect date from the monitored device.
+             */
+            sensor memoryanalyzer {
+	            synopsis "iAgent sensor definition";
+                description "Vmhost netconf sensor to collect data from network device";
+                iAgent {
+                    file vmhost_memory_monitoring.yml;
+                    table VMhostMemoryTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field buffers {
+               sensor memoryanalyzer {
+                   path buffers;
+                }
+               type integer;
+               description "Buffer memory of the vmhost";
+            }
+            field memory {
+               sensor memoryanalyzer {
+                   path memory;
+                }
+               type string;
+               description "Memory name of the vmhost";
+            }
+            field cached {
+                sensor memoryanalyzer {
+                    path cached;
+                }
+                type integer;
+                description "Cached memory of the vmhost";
+            }
+            field free {
+                sensor memoryanalyzer {
+                     path free;
+                }
+                type integer;
+                description "Free memory of the vmhost";
+            }
+            field max-threshold {
+                 constant {
+                      value "{{memory-threshold}}";
+                 }
+                 type integer;
+                 description "Static threshold of memory";
+            }
+            field shared {
+                sensor memoryanalyzer {
+                    path shared;
+                }
+                type integer;
+                description "Shared memory of the vmhost";
+            }
+            field total {
+                sensor memoryanalyzer {
+                    path total;
+                }
+                type integer;
+                description "Total memory available of the vmhost";
+            }
+            field used {
+                sensor memoryanalyzer {
+                    path used;
+                }
+                type integer;
+                description "Used memory in the vmhost";
+            }
+            field used_percent {                    
+                formula {                           
+                    user-defined-function {         
+                        function-name decimal_to_percent;
+                        argument denominator "$total";
+                        argument numerator "$used"; 
+                    }                               
+                }                                   
+                type float;                         
+                description "Used memory in percentage";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+	        trigger vmhost-memory-usage {
+                frequency 90s;
+		        synopsis    "Vmhost memory utilisation KPI";
+                description "Sets colour based on the vmhost memory utilisation";
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the vmhost memory utilisation is greater than threshold in 
+                 * 5 mins time-range.
+                 */
+                term is-memory-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used_percent" "$max-threshold" {
+                            time-range 5m;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "VMHost memory utilization($used_percent%) exceeds high threshold($max-threshold%) frequently";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the vmhost memory utilisation is greater than threshold
+                 */
+                term is-memory-utilization-spiked {
+                    when {
+                        greater-than-or-equal-to "$used_percent" "$max-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "VMHost memory utilization($used_percent%) exceeds high threshold($max-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green and sends notification.
+                 */
+                term is-memory-utilization-normal {
+                    then {
+                        status {
+                            color green;
+                            message "VMHost memory utilization($used_percent%) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable memory-threshold {
+                value 80;
+                description "Enter memory threshold percentage to monitor e.g \"80\", \"75\" etc.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                    catalogue {
+                        tier 1;
+                    }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [MX240 MX480 MX960 MX2010 MX2020];
+                                }
+                            }
+                            products PTX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [PTX500 PTX1000 PTX5000 PTX10000];
+                                }
+                            }
+                            products QFX {
+                                releases 18.2R1 {
+                                    release-support min-supported-release;
+                                    platform [QFX10002 QFX10008 QFX10016];
+                                }
+                            }                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

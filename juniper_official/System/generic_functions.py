@@ -56,10 +56,20 @@ def get_config(**kwargs):
         with connect_to_device(**device_details) as dev:
                 return dev.rpc.get_config(options={'format':'json'})
 
+# subtract function
+def difference(num1,num2, **kwargs):
+        try:
+            return (int(num1)-int(num2))
+        except Exception:
+            print("Hit Exception, invalid arg type")
+
 # Calculate the percentage
 def decimal_to_percent(numerator,denominator, **kwargs):
-        percent = (numerator/denominator)*100
-        round_percent = round(percent,3)
+        if denominator == 0:
+                round_percent = 0
+        else:
+                percent = (numerator/denominator)*100
+                round_percent = round(percent,3)
         return round_percent
 
 #Change the percentage to decimal
