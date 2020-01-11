@@ -1,14 +1,11 @@
 /*
  * Detects system security alarms and notifies
  *
- * Two input control detection.
+ * One input control detection.
  * 
- *   1) "input-alarm-class" is used to filter the based on the class of the
- *      alarms (major/minor/etc).
+ * 1) "input-alarm-description" is used to filter the based on the alarm
+ *    description    
  *
- *   2) "input-alarm-type "  is used to filter the based on the type of the
- *      alarms (chassis/configurations/etc).
- *  
  */
 healthbot {
     topic system.alarm {
@@ -36,7 +33,6 @@ healthbot {
              */
             field alarm-class {
                 sensor check-alarm-status-ha {
-                    where "alarm-class =~ /{{input-alarm-class}}/";
                     path alarm-class;
                 }
                 type string;
@@ -44,6 +40,7 @@ healthbot {
             }
             field alarm-description {
                 sensor check-alarm-status-ha {
+                    where "alarm-description =~ /{{input-alarm-description}}/";
                     path alarm-description;
                 }
                 type string;
@@ -51,7 +48,6 @@ healthbot {
             }
             field alarm-type {
                 sensor check-alarm-status-ha {
-                    where "alarm-type =~ /{{input-alarm-type}}/";
                     path alarm-type;
                 }
                 type string;
@@ -89,14 +85,9 @@ healthbot {
              * Values can be changed while trying to filter alarms based on class
              * or types while deploying playbook instance.
              */
-            variable input-alarm-class {
+            variable input-alarm-description {
                 value .*;
-                description "Enter system alarm class in regex. e.g. major/minor etc.";
-                type string;
-            }
-            variable input-alarm-type {
-                value .*;
-                description "Enter system alarm type in regex. e.g. chassis/configuration etc.";
+                description "Enter system alarm description in regex";
                 type string;
             }
             rule-properties {
