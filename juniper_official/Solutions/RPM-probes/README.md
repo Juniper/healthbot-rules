@@ -8,6 +8,7 @@ The example topology used in this solution is shown in the picture below:
 
 There are few elements of this solutions that require to be explained:
 
+
 ## SLA
 
 The SLA monitoring systems monitors whether a SLA of 6-nines and 5-nines have been breached between two points of tests (i.e., between two probes).
@@ -22,6 +23,7 @@ Additionally, the SLA is calculated over the period of 1-YEAR. Hence, it is impo
 
 > Note: this can be worked around if the InfluxDB query defined in the UDF `cumm-pkt-loss-from-db.py` is adjusted to be performed within a particular time-frame.
 > Note2: this behaviour is a design decision in order to keep things simple
+
 
 ## Custom OpenConfig sensor for RPM probes
 
@@ -51,6 +53,7 @@ Package ID            :rpm
 XML Proxy YANG Module(s) :xmlproxyd_rpm.yang
 ```
 
+
 ## gRPC must be enabled in the routers where the RPM probes are running
 
 To enable gRPC in the router, use the configuration below:
@@ -69,6 +72,7 @@ system {
 }
 ```
 
+
 ## RPM probe configuration
 
 The probe configuration for each of the probes in the example topology are listed here.
@@ -76,13 +80,21 @@ The probe configuration for each of the probes in the example topology are liste
 > Note: both PE1 and PE2 also run RPM probes
 
 [Probe configuration for PE1](probes_configuration/pe1.cnf)
+
 [Probe configuration for PE2](probes_configuration/pe2.cnf)
+
 [Probe configuration for probe1](probes_configuration/probe1.cnf)
+
 [Probe configuration for probe2](probes_configuration/probe2.cnf)
+
 [Probe configuration for probe3](probes_configuration/probe3.cnf)
+
 [Probe configuration for probe4](probes_configuration/probe4.cnf)
+
 [Probe configuration for probe5](probes_configuration/probe5.cnf)
+
 [Probe configuration for probe6](probes_configuration/probe6.cnf)
+
 
 ## HealthBot UDF
 
@@ -91,7 +103,9 @@ This HealthBot playbook uses two user defined functions.
 Make sure you upload both files to `/var/local/healthbot/input` directory before running the playbook.
 
 [Cummulative packet loss from DB](udf/cumm-pkt-loss-from-db.py)
+
 [SLA](udf/sla.py)
+
 
 ## Behaviour if the probe goes offline
 
@@ -106,20 +120,23 @@ You need to set the data-if-missing as per below:
 
 The above will ensure that the calculation of the SLA for the probe that went offline is not misleading.
 
+
 # Playbook and rule files
 
 [RPM probe solution file](rpm-probe-playbook.cnf)
+
 [RPM probe rule file](rpm-probe-rule.cnf)
+
 
 # Screenshots of the playbook in action
 
-[1: Playbook deployed to device group PROBES](1.Playbook-deployed-to-PROBES-device-group.png)
+[1: Playbook deployed to device group PROBES](pictures/1.Playbook-deployed-to-PROBES-device-group.png)
 
-[2: SLA is all GREEN as no outages have happened so far](2.SLA_is_all_green_as_no_outages_have_occurred.png)
+[2: SLA is all GREEN as no outages have happened so far](pictures/2.SLA_is_all_green_as_no_outages_have_occurred.png)
 
-[3: Probe3 went offline. SLA of 6-nines is the first one to be breached](3.Probe3_went_offline_first_SLA_to_breach_is_6_nines.png)
+[3: Probe3 went offline. SLA of 6-nines is the first one to be breached](pictures/3.Probe3_went_offline_first_SLA_to_breach_is_6_nines.png)
 
-[4: Details of the breached SLA](4.Details_of_the_SLA_breach.png)
+[4: Details of the breached SLA](pictures/4.Details_of_the_SLA_breach.png)
 
-[5: After just over 5 minutes, the 5-nines SLA gets breached](5.After_just_over_5_minutes_the_5_nines_SLA_gets_breached.png)
+[5: After just over 5 minutes, the 5-nines SLA gets breached](pictures/5.After_just_over_5_minutes_the_5_nines_SLA_gets_breached.png)
 
