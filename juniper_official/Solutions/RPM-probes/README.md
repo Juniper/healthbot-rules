@@ -113,3 +113,13 @@ The above will ensure that the calculation of the SLA for the probe that went of
 
 # Screenshots of the playbook in action
 
+[1: Playbook deployed to device group PROBES](1.Playbook-deployed-to-PROBES-device-group.png)
+
+[2: SLA is all GREEN as no outages have happened so far](2.SLA_is_all_green_as_no_outages_have_occurred.png)
+
+[3: Probe3 went offline. SLA of 6-nines is the first one to be breached](3.Probe3_went_offline_first_SLA_to_breach_is_6_nines.png)
+
+[4: Details of the breached SLA](4.Details_of_the_SLA_breach.png)
+
+[5: After just over 5 minutes, the 5-nines SLA gets breached](5.After_just_over_5_minutes_the_5_nines_SLA_gets_breached.png)
+
