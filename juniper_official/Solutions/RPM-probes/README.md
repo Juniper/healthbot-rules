@@ -107,18 +107,17 @@ Make sure you upload both files to `/var/local/healthbot/input` directory before
 [SLA](udf/sla.py)
 
 
-## Behaviour if the probe goes offline
+## Behaviour if the probe goes offline (RED vs GREY)
 
-If the probe goes offline, instead of a RED alarm, the probe will turn grey. The issue occurs when it comes back online. The time offline is not considered in the calculation and this could mislead the operator.
+If the probe goes offline, instead of a RED alarm, the probe will turn grey. 
 
-The way to change this behaviour is by tweaking the data-if-missing parameter for both `probes_sent` and `probe_response` fields.
+One way to avoid the scenario above is by configuring the OpenConfig subscription to the probes via the management address (fxp0).
+Of course this assumes that you have both an inline path and out-of-band path to the probe.
 
-You need to set the data-if-missing as per below:
+However, the probe will still turn grey when it is completely offline (both inline and out-of-band paths).
 
-- probes_sent: 5
-- probe_response: 0
+Check out the suggested traffic flow for the probes here: [Traffic Flow](pictures/6.Topology_traffic_flow.png)
 
-The above will ensure that the calculation of the SLA for the probe that went offline is not misleading.
 
 
 # Playbook and rule files
