@@ -122,9 +122,9 @@ Check out the suggested traffic flow for the probes here: [Traffic Flow](picture
 
 # Playbook and rule files
 
-[RPM probe solution file](rpm-probe-playbook.cnf)
+[RPM probe solution file](rpm-probe.playbook)
 
-[RPM probe rule file](rpm-probe-rule.cnf)
+[RPM probe rule file](rpm-probe.rule)
 
 
 # Screenshots of the playbook in action
