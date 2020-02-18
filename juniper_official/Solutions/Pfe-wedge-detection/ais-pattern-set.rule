@@ -1,0 +1,162 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern AIS_EVENT1 {
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DATA_AVAILABLE: Activated AI-Scripts version";
+                description "The AI Script package has been loaded.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+                ## Warning: missing mandatory statement(s): 'event-id'
+            }
+            pattern AIS_EVENT10 {
+                event-id AIS_EVENT10;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DATA_AVAILABLE: ERROR";
+                description "AI-Scripts has encountered an error.  Please investigate the error to resume normal AI-Script operation.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Investigate the error";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT2 {
+                event-id AIS_EVENT2;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DATA_AVAILABLE: Completed full deactivation";
+                description "The AI Script package has been uninstalled.";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT3a {
+                event-id AIS_EVENT3a;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DEINSTALL";
+                description "These logs indicate the progress of the AI-Script installation or deinstallation process.  They are uninteresting, because the tool will monitor for the logs which indicate this process is complete.";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT3b {
+                event-id AIS_EVENT3b;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_INSTALL";
+                description "These logs indicate the progress of the AI-Script installation or deinstallation process.  They are uninteresting, because the tool will monitor for the logs which indicate this process is complete.";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT4a {
+                event-id AIS_EVENT4a;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_PROCESSING: File ready from another Routing Engine";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT4b {
+                event-id AIS_EVENT4b;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_PROCESSING: Exit background process";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }                       
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT4c {
+                event-id AIS_EVENT4c;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_PROCESSING: Background process";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT5 {
+                event-id AIS_EVENT5;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_PROCESSING.*JMB.*triggered by match with";
+                description "These logs indicate that AI-Scripts detected an event.  A JMB is being created for this event and will be updated to Service Now.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Investigate the log that triggered this event and If JTAC involvement is required, submit the incident to JSS in Service Now";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT6 {
+                event-id AIS_EVENT6;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DATA_AVAILABLE: AI-SCRIPTS MISMATCH ERROR: Not installed on";
+                description "The AI-Script package is running on one routing engine, but not the other.  This might be because one RE in a dual RE system was replace, but the AI-Script package was not reinstalled.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Re-install the AI-Script package on this device.  A complete reinstallation will install the package to both routing engines.";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT7 {
+                event-id AIS_EVENT7;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DATA_AVAILABLE.*ERROR: Disk Full";
+                description "The RE's disk is at least 75% full.  AI-Scripts will not generate JMB files until space is freed.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Free space on this device's REs so that the AI-Script package can generate JMBs.";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT8 {
+                event-id AIS_EVENT8;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_DATA_AVAILABLE.*WARNING: Disk at.*percent Full";
+                description "The RE's disk is at least 50% full.  AI-Scripts will not generate JMB files until space is freed.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Free space on this device's REs.";
+                }
+                key-fields fpc_number;
+            }
+            pattern AIS_EVENT9 {
+                event-id AIS_EVENT9;
+                filter "fpc%{NUMBER:fpc_number}.*AIS_PROCESSING: Finishing event.*processing";
+                description "AI-Scripts has completed processing an event JMB.  Service Now will now copy the JMB file and delete the old file from the device.";
+                constant syslog-trigger-color {
+                    value yellow;
+                }
+                constant syslog-trigger-message {
+                    value "No action is necessary";
+                }
+                key-fields fpc_number;
+            }
+            pattern-set AIS {
+                pattern-names [ AIS_EVENT1 AIS_EVENT10 AIS_EVENT2 AIS_EVENT3a AIS_EVENT3b AIS_EVENT4a AIS_EVENT4b AIS_EVENT4c AIS_EVENT5 AIS_EVENT6 AIS_EVENT7 AIS_EVENT8 AIS_EVENT9 ];
+            }
+        }
+    }
+}

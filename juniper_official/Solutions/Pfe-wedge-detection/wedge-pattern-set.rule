@@ -1,0 +1,60 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern SNMP_1 {
+                event-id SNMP_1;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_SNMP_TRAP.*Fru Offline";
+                description "This log indicates that a FRU has gone offline and an SNMP trap was generated to signal this to management platforms.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Contact JTAC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern SNMP_2 {
+                event-id SNMP_2;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_SNMP_TRAP.*FRU power off";
+                description "This log indicates that a FRU was powered off and an SNMP trap was generated to signal this to management platforms.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Investigate the error";
+                }
+                key-fields fpc_number;
+            }
+            pattern WEDGE_EVENT001 {
+                event-id WEDGE_EVENT001;
+                filter "fpc%{NUMBER:fpc_number}.*HOST LOOPBACK WEDGE DETECTED";
+                description "The \"HOST LOOPBACK WEDGE DETECTED\" message is caused due to packet forwarding readiness from WAN interfaces to the Host got compromised.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Restart FPC and contact JTAC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern WEDGE_EVENT002 {
+                event-id WEDGE_EVENT002;
+                filter "fpc%{NUMBER:fpc_number}.*Wedge detected.*Active Zones";
+                description "";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Contact JTAC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern-set SNMP {
+                pattern-names [ SNMP_1 SNMP_2 ];
+            }
+            pattern-set WEDGE {
+                pattern-names [ WEDGE_EVENT001 WEDGE_EVENT002 ];
+            }
+        }
+    }
+}

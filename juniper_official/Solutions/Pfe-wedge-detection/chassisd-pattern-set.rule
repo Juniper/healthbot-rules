@@ -1,0 +1,80 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern CHASSISD_EVENT1 {
+                event-id CHASSISD_EVENT1;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_I2CS_READBACK_ERROR.*Readback error from I2C slave for FPC.*";
+                description "This is transient error caused by parity error detected in the I2C response while reading a device";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No action if <4 logs. Else probable RMA.";
+                }
+                key-fields fpc_number;
+            }
+            pattern CHASSISD_EVENT2 {
+                event-id CHASSISD_EVENT2;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FPC_OPTICS_HOT_NOTICE";
+                description "The temperature of the FPC is over 54 degrees.  Third party optics which are not toleratant to high temps will be proactively shut down to protect them.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Investigate the FPCs high temperature";
+                }
+                key-fields fpc_number;
+            }
+            pattern CHASSISD_EVENT3a {
+                event-id CHASSISD_EVENT3a;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_IPC_CONNECTION_DROPPED";
+                description "The message is logged whenever the interprocess connection to a component is terminated or reset. This message reports an event, not an error.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Contact JTAC immediately";
+                }
+                key-fields fpc_number;
+            }
+            pattern CHASSISD_EVENT3b {  
+                event-id CHASSISD_EVENT3b;
+                filter "fpc%{NUMBER:fpc_number}.*fru_nmi_timer.*Restart.*due to NMI timeout";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Contact JTAC immediately";
+                }
+                key-fields fpc_number;
+            }
+            pattern CHASSISD_EVENT4a {
+                event-id CHASSISD_EVENT4a;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FASIC_HSL_LINK_ERROR";
+                description "The CHASSISD_FASIC_HSL_LINK_ERROR means the chassis process (chassisd) detected an error for the indicated high speed link (HSL) for the indicated F chip on the indicated Control Board (CB).  This usually leads to alarms on the fabric planes.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Contact JTAC immediately";
+                }
+                key-fields fpc_number;
+            }
+            pattern CHASSISD_EVENT4b {
+                event-id CHASSISD_EVENT4b;
+                filter "fpc%{NUMBER:fpc_number}.*Link failure happened for DPC.*PFE";
+                description "The CHASSISD_FASIC_HSL_LINK_ERROR means the chassis process (chassisd) detected an error for the indicated high speed link (HSL) for the indicated F chip on the indicated Control Board (CB).  This usually leads to alarms on the fabric planes.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Contact JTAC immediately";
+                }
+                key-fields fpc_number;
+            }
+            pattern-set CHASSISD {
+                pattern-names [ CHASSISD_EVENT1 CHASSISD_EVENT2 CHASSISD_EVENT3a CHASSISD_EVENT3b CHASSISD_EVENT4a CHASSISD_EVENT4b ];
+            }
+        }
+    }
+}
