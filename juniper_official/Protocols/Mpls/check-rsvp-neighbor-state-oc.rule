@@ -1,0 +1,100 @@
+/*
+ * Monitors MPLS LSP state and notifies when LSP state is UP or DOWN.
+ * One inputs control detection
+ * 
+ * 1) input-rsvp-neighbor, is a regular expression that matches the RSVP
+ *    neighbor address you would like to monitor.  By default it's '.*',
+ *    which matches all neighbors. Use something like '192.168.1.*' to 
+ *    match neighbors with 192.168.1.0 subnet.
+ */
+healthbot {
+    topic protocol.mpls {
+        synopsis "MPLS statistics analyzer";
+        description "Monitors MPLS LSP and RSVP TE statistics and notifies anomalies";
+        rule check-rsvp-neighbor-state-oc {
+            /*
+             * Use rsvp neighbor address name as key for rule.
+             */
+            keys neighbor-address;
+            synopsis "RSVP neighbor state analyzer";
+            description "Collects RSVP neighbor stats periodically and notifies when rsvp neighbor state is down";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor rsvp {
+                open-config {
+                    sensor-name /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field neighbor-address {
+                sensor rsvp {
+                    where "/network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/@address =~ /{{input-rsvp-neighbor}}/";
+                    path "/network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/@address";
+                }
+                type string;
+                description "Neighbor address to be monitored";
+            }
+            field neighbor-interface {
+                sensor rsvp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/state/detected-interface;
+                    zero-suppression;
+                    data-if-missing {
+                        value node;
+                    }
+                }
+                type string;
+                description "RSVP neighbor detected interface";
+            }
+            field neighbor-state {
+                sensor rsvp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/state/neighbor-status;
+                }
+                type string;
+                description "RSVP neighbor state";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rsvp-neighbor-state {
+                frequency 90s;
+                term rsvp-neighbor-state-up {
+                    when {
+                        matches-with "$neighbor-state" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "RSVP neighbor($neighbor-address) state is $neighbor-state and detected interface is $neighbor-interface";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        does-not-match-with "$neighbor-state" UP {
+                            ignore-case;
+                        }
+                        exists "$neighbor-address";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "RSVP neighbor($neighbor-address) state is $neighbor-state and detected interface is $neighbor-interface";
+                        }
+                    }
+                }
+            }
+            variable input-rsvp-neighbor {
+                value .*;
+                description "Input RSVP neighbor to monitor, regular expression, eg '192.168.1.1*'";
+                type string;
+            }
+        }
+    }
+} 	
