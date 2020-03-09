@@ -1,0 +1,120 @@
+/*
+ * Collects lacp statistics periodically and notifies anomalies when lacp  
+ * distribution status is false.
+ *
+ * One input control detection
+ * 
+ *  1) ae-name, is the interface name to monitor. By default monitors all lacp
+ *     interfaces. For specific interfaces to monitor, use regular expression
+ *     for e.g. ae1 or ae1|ae1.
+ */
+ healthbot {
+    topic protocol.evpn {
+        rule check-lacp-state-netconf {
+            keys [ lacp-role member-if-name ];
+            synopsis "Lacp state analyzer";
+            description "Collects LACP interfaces status  periodically and notifies when distribution status is false";
+            sensor lacp {
+                iAgent {
+                    file lacp-statistcs.yml;
+                    table LacpPortTable;
+                    frequency 180s;
+                }
+            }
+            field activity {
+                sensor lacp {
+                    path activity;
+                }
+                type string;
+                description "Member interface LACP state";
+            }
+            field aggregate-name {
+                sensor lacp {
+                    where " lag-lacp-header/aggregate-name =~ /{{ae-name}}/";
+                    path lag-lacp-header/aggregate-name;
+                }
+                type string;
+                description "LACP aggregate interface name";
+            }
+            field distributing {
+                sensor lacp {
+                    path distributing;
+                }
+                type string;
+            }
+            field lacp-role {
+                sensor lacp {
+                    path lacp-role;
+                }
+                type string;
+                description "Member interface LACP role";
+            }
+            field member-if-name {
+                sensor lacp {
+                    path name;
+                }
+                type string;
+                description "LACP member interface name";
+            }
+            trigger lacp-interface-distribution-status {
+                synopsis "lacp interface distribution status kpi";
+                description "sets health based on lacp interface distribution status";
+                frequency 200s;
+                term is-lacp-not-distributing {
+                    when {
+                        matches-with "$distributing" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$aggregate-name member interface($member-if-name) LACP distribution status is $distributing and state is $activity";
+                        }
+                    }
+                }
+                term lacp-distributing {
+                    when {
+                        does-not-match-with "$distributing" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$aggregate-name member interface($member-if-name) LACP distribution status is $distributing and state is $activity";
+                        }
+                    }
+                }
+            }
+            variable ae-name {
+                value .*;
+                description "Input AE interface name/s to be monitored in regex format.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files lacp-statistcs.yml;
+                }
+            }
+        }
+    }
+}

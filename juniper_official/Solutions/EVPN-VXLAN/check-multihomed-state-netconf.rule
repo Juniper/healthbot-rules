@@ -1,0 +1,83 @@
+/*
+ * This rule checks multi-home status of AE interfaces and notify in case
+ * state is not forwarding
+ */
+healthbot {
+    topic protocol.evpn {
+        rule check-multihomed-state-netconf {
+            keys ae-name;
+            synopsis "Evpn multihome status analyzer";
+            description "Collects evpn multihome status periodically and notifies anomaly when state if not forwarding";
+            sensor multihome {
+                iAgent {
+                    file EvpnMultihomedTable.yml;
+                    table EvpnMultihomedTable;
+                    frequency 180s;
+                }
+            }
+            field ae-name {
+                sensor multihome {
+                    path name;
+                }
+                type string;
+                description "AE interface name";
+            }
+            field multihomed-state {
+                sensor multihome {
+                    path evpn-mh-state;
+                }
+                type string;
+                description "AE interface multihome status";
+            }
+            trigger evpn-multihomed-status {
+                synopsis "EVPN multihomed status kpi";
+                description "sets health based on EVPN multihomed status";
+                frequency 200s;
+                term is-mh-state-nfot-forwarding {
+                    when {
+                        matches-with "$multihomed-state" Forwarding {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ae-name EVPN multihomed status is '$multihomed-state'";
+                        }
+                    }
+                }
+                term mh-state-nfot-forwarding {
+                    then {
+                        status {
+                            color red;
+                            message "$ae-name EVPN multihomed status is '$multihomed-state'";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files EvpnMultihomedTable.yml;
+                }
+            }
+        }
+    }
+}
