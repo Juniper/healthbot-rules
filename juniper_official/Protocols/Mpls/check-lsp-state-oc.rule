@@ -1,0 +1,121 @@
+/*
+ * Monitors MPLS LSP state and notifies when LSP state is UP or DOWN.
+ * One input controls detection
+ *
+ *   1) input-lsp-name, is a regular expression that matches the LSP name that
+ *      you would like to monitor.  By default it's '.*', which matches all
+ *      LSPs. Use something like 'LSP1|LSP2' to match only LSP1 and LSP2.
+ */
+healthbot {
+    topic protocol.mpls {
+        synopsis "MPLS statistics analyzer";
+        description "Monitors MPLS LSP and RSVP TE statistics and notifies anomalies";
+        rule check-lsp-state-oc {
+            /*
+             * Use LSP name as key for rule.
+             */
+            keys lsp-name;
+            synopsis "LSP state analyzer";
+            description "Collects LSP stats periodically and notifies when LSP state is down";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor lsp {
+                open-config {
+                    sensor-name /network-instances/network-instance/mpls/lsps;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field lsp-name {
+                sensor lsp {
+                    where "/network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/@name =~ /{{input-lsp-name}}/";
+                    where "/network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/state/admin-status =~ /ADMIN_UP/";
+                    path "/network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/@name";
+                }
+                type string;
+                description "LSP name to be monitored";
+            }
+            field oper-status {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/state/oper-status;
+                }
+                type string;
+                description "LSP operation status";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger lsp-state {
+                frequency 90s;
+                term is-lsp-down {
+                    when {
+                        does-not-match-with "$oper-status" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "MPLS lsp($lsp-name) state is $oper-status";
+                        }
+                    }
+                }
+                term lsp-up {
+                    when {
+                        matches-with "$oper-status" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "MPLS lsp($lsp-name) state is $oper-status";
+                        }
+                        next;
+                    }
+                }
+            }
+            variable input-lsp-name {
+                value .*;
+                description "LSP names to monitor, regular expression, eg 'LSP-1.*|LSP-A.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 17.4R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                            }
+                            products PTX {
+                                releases 17.4R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.4R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
