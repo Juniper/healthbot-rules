@@ -1,5 +1,5 @@
 /*
- * Playbook contains multiple rules which monitors Data Center Spine and Leaf
+ * Playbook contains multiple rules which monitors Data Center Leaf
  * nodes and notifies when anomalies are found.
  *
  * 1) Rule evpn-advertised-prefix.rule, detects the advertised route count
@@ -61,14 +61,24 @@
  *     static threshold
  * 29) Rule check-mac-count-netconf.rule, monitors MAC count in ethernet switching
  *     table periodically and notifies in case of anomalies
+ * 30) Rule check-stp-state-netconf.rule, Monitors member vlan's STP state 
+ *     periodically and notifies anomalies when stp is not in forwarding state
+ * 31) Rule check-df-correlation-netconf.rule, evpn esi desinated forwarder
+ *     information periodically and notifies anomaly when df id changes
+ * 32) Rule check-multihomed-state-netconf.rule, evpn multihome status periodically
+ *     and notifies anomaly when state if not forwarding
+ * 33) Rule check-lacp-state-netconf.rule, collects LACP interfaces status 
+ *     periodically and notifies when distribution status is false
+ * 34) Rule check-bpdu-errors-netconf.rule, Collects aggregate ethernet BPDU
+ *     statistics and notify anomalies when error count increases
  *
  * NOTE: If you don't want to include any of the rule in the list, please create
  * new playbook and include only the required rules for your case.
  */
  healthbot {
-    playbook evpn-vxlan-kpis {
-        rules [ protocol.evpn/check-evpn-advertised-prefix protocol.evpn/check-evpn-received-prefix protocol.evpn/check-evpn-routes protocol.evpn/check-evpn-route-count protocol.evpn/check-mac-count protocol.bfd/check-bfd-session-state  protocol.evpn/check-vtep-interface  protocol.evpn/check-vtep-interface-count protocol.evpn/check-vtep-interface-status protocol.evpn/check-vtep-interface-traffic protocol.evpn/check-vtep-interface-flap protocol.evpn/check-vtep-interface-errors protocol.evpn/check-vtep-tunnel-statistics protocol.evpn/check-irb-status protocol.evpn/check-irb-traffic protocol.evpn/check-irb-next-hops interface.statistics/check-in-errors-iagent interface.statistics/check-out-errors-iagent interface.statistics/check-in-traffic-iagent interface.statistics/check-out-traffic-iagent interface.statistics/check-interface-flaps-iagent interface.statistics/check-interface-status-iagent protocol.bgp/check-bgp-neighbor-state-iagent protocol.bgp/check-bgp-neighbor-flap-iagent protocol.evpn/check-vport protocol.evpn/verify-duplicate-mac-netconf protocol.evpn/update-ethswarptable-netconf protocol.evpn/verify-mac-ip-netconf protocol.evpn/check-remote-vtep-count-netconf protocol.evpn/check-remote-vtep-interfaces-netconf protocol.evpn/check-nhcount-netconf protocol.evpn/check-vport-count-netconf protocol.evpn/check-flabel-count-netconf protocol.evpn/check-mac-count-netconf ];
-        description "Playbook to check EVPN-VXLAN health w.r.t. EVPN, VXLAN, Interfaces, VTEP, IRB, BFD";
-        synopsis "EVPN-VXLAN key performance indicators";
+    playbook leaf-evpn-vxlan-kpis {
+        rules [ protocol.evpn/check-evpn-advertised-prefix protocol.evpn/check-evpn-received-prefix protocol.evpn/check-evpn-routes protocol.evpn/check-evpn-route-count protocol.evpn/check-mac-count protocol.bfd/check-bfd-session-state  protocol.evpn/check-vtep-interface  protocol.evpn/check-vtep-interface-count protocol.evpn/check-vtep-interface-status protocol.evpn/check-vtep-interface-traffic protocol.evpn/check-vtep-interface-flap protocol.evpn/check-vtep-interface-errors protocol.evpn/check-vtep-tunnel-statistics protocol.evpn/check-irb-status protocol.evpn/check-irb-traffic protocol.evpn/check-irb-next-hops interface.statistics/check-in-errors-iagent interface.statistics/check-out-errors-iagent interface.statistics/check-in-traffic-iagent interface.statistics/check-out-traffic-iagent interface.statistics/check-interface-flaps-iagent interface.statistics/check-interface-status-iagent protocol.bgp/check-bgp-neighbor-state-iagent protocol.bgp/check-bgp-neighbor-flap-iagent protocol.evpn/check-vport protocol.evpn/verify-duplicate-mac-netconf protocol.evpn/update-ethswarptable-netconf protocol.evpn/verify-mac-ip-netconf protocol.evpn/check-remote-vtep-count-netconf protocol.evpn/check-remote-vtep-interfaces-netconf protocol.evpn/check-nhcount-netconf protocol.evpn/check-vport-count-netconf protocol.evpn/check-flabel-count-netconf protocol.evpn/check-mac-count-netconf protocol.evpn/check-stp-state-netconf protocol.evpn/check-df-correlation-netconf protocol.evpn/check-multihomed-state-netconf protocol.evpn/check-lacp-state-netconf protocol.evpn/check-bpdu-errors-netconf];
+        description "Playbook to check EVPN-VXLAN leaf node health w.r.t. EVPN, VXLAN, Interfaces, VTEP, IRB, BFD, STP, LACP";
+        synopsis "EVPN-VXLAN key performance indicators for leaf node";
     }
 }
