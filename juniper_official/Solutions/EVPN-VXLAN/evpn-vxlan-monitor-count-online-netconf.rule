@@ -3,9 +3,9 @@
  * provided threshold. Also check-vport-count monitor vport count and notifies
  * anomalies when vport count is more then provided threshold value.
  *
- * One input control detection
+ * One input controls detection
  *
- *  1) high-threshold-count, is the NHCount maximum threshold value.
+ *  1) high-threshold-count variable, is the NHCount maximum threshold value.
  *
  */
 healthbot {
@@ -21,17 +21,23 @@ healthbot {
                     frequency 180s;
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field fpc {
                 sensor nh-count {
                     path target;
                 }
                 type string;
+                description "Target fpc";
             }
             field max-high-threshold {
                 constant {
                     value "{{high-threshold-count}}";
                 }
                 type integer;
+                description "Provided high threshold count to monitor nh count";
             }
             field nhcount {
                 sensor nh-count {
@@ -40,6 +46,9 @@ healthbot {
                 type integer;
                 description "NH count on fpc";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger compare-nhcount {
                 synopsis "nhcount statistics kpi";
                 description "sets health based on nhcount statistics";
@@ -75,6 +84,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable high-threshold-count {
                 value 40000;
                 description "Enter max-high-threshold, default is 40000";
@@ -136,6 +149,9 @@ healthbot {
                 type integer;
                 description "Virtual vport count";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger compare-vport-count {
                 synopsis "vport count kpi";
                 description "sets health based on vport count";
@@ -171,6 +187,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable high-threshold-count {
                 value 11000;
                 description "Enter max threshold count for Virtual vport";

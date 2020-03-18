@@ -2,9 +2,9 @@
  * Collects lacp statistics periodically and notifies anomalies when lacp  
  * distribution status is false.
  *
- * One input control detection
+ * One input controls detection
  * 
- *  1) ae-name, is the interface name to monitor. By default monitors all lacp
+ *  1) ae-name variable, is the interface name to monitor. By default monitors all lacp
  *     interfaces. For specific interfaces to monitor, use regular expression
  *     for e.g. ae1 or ae1|ae1.
  */
@@ -21,6 +21,10 @@
                     frequency 180s;
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field activity {
                 sensor lacp {
                     path activity;
@@ -56,6 +60,9 @@
                 type string;
                 description "LACP member interface name";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger lacp-interface-distribution-status {
                 synopsis "lacp interface distribution status kpi";
                 description "sets health based on lacp interface distribution status";
@@ -87,6 +94,10 @@
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable ae-name {
                 value .*;
                 description "Input AE interface name/s to be monitored in regex format.";

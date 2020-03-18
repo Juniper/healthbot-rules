@@ -2,9 +2,9 @@
  * Collects lacp statistics periodically and notifies anomalies when lacp  
  * distribution status is false.
  *
- * One input control detection
+ * One input controls detection
  * 
- *  1) ae-name, is the interface name to monitor. By default monitors all AE
+ *  1) ae-name variable, is the interface name to monitor. By default monitors all AE
  *     interfaces. For specific interfaces to monitor, use regular expression
  *     for e.g. ae1 or ae1|ae1.
  */
@@ -13,6 +13,7 @@
         rule check-bpdu-errors-netconf {
             synopsis "BPDU error detector";
             description "Collects aggregate ethernet BPDU statistics and notify anomalies when error count increases";
+            keys interface-name;
             sensor bpdu {
                 iAgent {
                     file BpduStats.yml;
@@ -20,6 +21,10 @@
                     frequency 180s;
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field bpdu-error {
                 sensor bpdu {
                     path bpdu-error;
@@ -35,9 +40,12 @@
                 type string;
                 description "Interface to monitor";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger trigger_tcedix {
                 synopsis "LACP statistics kpi";
-                description "sets health based on lacp statistics";  
+                description "sets health based on LACP BPDU error count";
                 frequency 200s;
                 term is-bpdu-error-found {
                     when {
@@ -54,11 +62,15 @@
                     then {
                         status {
                             color green;
-                            message "BPDU errors are $bpdu-error on interface $interface-name";
+                            message "BPDU error count $bpdu-error on interface $interface-name is normal";
                         }
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable ae-name {
                 value .*;
                 description "Input AE interface name in form of regular expression. For e.g. ae*";

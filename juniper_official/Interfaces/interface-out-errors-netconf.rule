@@ -1,11 +1,11 @@
 /*
- * Detects interface out errors and notifies when anomalies are found.
+ * Detects interface out errors and notifies anomalies when error count increases.
  */
 healthbot {
     topic interface.statistics {
         description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
-        rule check-out-errors-iagent {
+        rule check-out-errors-netconf {
             keys name;
             synopsis "Interface out-error analyzer";
             description "Collects the interface output error (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
@@ -18,6 +18,10 @@ healthbot {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field error-threshold {
                 constant {
                     value "{{error-threshold-variable}}";
@@ -40,6 +44,9 @@ healthbot {
                 type integer;
                 description "Interfaces output error";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger output-errors {
                 synopsis "Interface out-errors kpi";
                 description "Sets health based on the change in out-errors count";
@@ -80,6 +87,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable error-threshold-variable {
                 value 1;
                 description "Input and output interface error threshold value";

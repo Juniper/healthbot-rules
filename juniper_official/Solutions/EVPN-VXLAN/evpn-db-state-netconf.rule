@@ -1,9 +1,9 @@
 /*
  * Rule 'verify-duplicate-mac' determine evpn database state has duplicate mac entry
  * 
- * One input control detection
+ * One input controls detection
  *
- *  1) status, Enter state based on allowed/possible entries
+ *  1) status variable, Enter state based on allowed/possible entries
  *     Possible entries are default-gateway, pinned, static, duplicate.
  */
 healthbot {
@@ -22,6 +22,10 @@ healthbot {
                     }
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field active-source {
                 sensor evpndb {
                     path active-source;
@@ -45,6 +49,9 @@ healthbot {
                 }
                 description "Vlan or vni for duplicate Mac address found.";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger verify-duplicate-mac-exists {
                 synopsis "Duplicate mac kpi";
                 description "sets health based on duplicate mac";
@@ -69,6 +76,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable status {
                 value duplicate;
                 description "Enter state based on allowed/possible entries for command \"show evpn database state <status>\".Possible entries are default-gateway, pinned, static, duplicate.";

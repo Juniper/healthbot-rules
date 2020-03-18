@@ -1,8 +1,8 @@
 /*
- * Collects remote VTEP counts per VLAN and notifies anomalies when counts
- * less then the provided the limit
+ * Collects remote VTEP counts per VLAN and notifies anomalies when vtep count
+ * is less than threshold
  *
- * Two input control detection
+ * Two inputs control detection
  *
  *  1) vlan-name-variable, is the vlan name to monitor. By default monitors 
  *     all vlans. For specific vlan to monitor, provide the vlan name
@@ -16,7 +16,7 @@ healthbot {
         rule check-remote-vtep-count-netconf {
             keys vlan-name;
             synopsis "Monitor remote VTEPs count";
-            description "Monitor the remote VTEPs count for provided VLAN name";
+            description "Monitor the remote VTEPs count for provided VLAN name and notify anomaly when count is less than threshold";
             function subtract-function {
                 path subtract.py;
                 method subtract;
@@ -47,6 +47,10 @@ healthbot {
                 type integer;
                 description "Actual remote VTEP interfaces";
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field remote-vtep {
                 sensor vtep-count {
                     path tagged-count;
@@ -69,6 +73,9 @@ healthbot {
                 type integer;
                 description "Remote VTEP threshold for provided VLAN";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger Remote-VTEP-Count {
                 synopsis "VLAN VTEP interface kpi";
                 description "sets health based on remote VTEP interfaces count";
@@ -93,6 +100,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable remote-count-variable {
                 value 1;
                 description "Remote VTEP count threshold for provided VLAN";
@@ -156,6 +167,9 @@ healthbot {
                 type string;
                 description "VLAN name to monitor the remove VTEP interface count";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger Remote-VTEP-interface {
                 synopsis "VLAN VTEP count interface kpi";
                 description "sets health based on remote VTEP interfaces interfaces";
@@ -169,6 +183,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable vlan-name-variable {
                 value .*;
                 description "VLAN table name";

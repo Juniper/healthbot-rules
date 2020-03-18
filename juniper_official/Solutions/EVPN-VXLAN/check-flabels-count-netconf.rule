@@ -2,9 +2,9 @@
  * Collects flabels token count periodically and notifies anomalies when flabels token 
  * count is above static threshold.
  *
- * One input control detection
+ * One input controls detection
  * 
- *   1) token-threshold, is the threshold that causes the rule to report an anomaly. By 
+ *   1) token-threshold variable, is the threshold that causes the rule to report an anomaly. By 
  *      default it's 94000. This rule will set a dashboard color to red when flabels token
  *      count is greater than token-threshold. Otherwise color is set to green.
  */
@@ -22,6 +22,10 @@
                     frequency 180s;
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field threshold {
                 constant {
                     value "{{token-threshold}}";
@@ -70,6 +74,10 @@
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable token-threshold {
                 value 94000;
                 description "Flabels token threshold: Number of flabel tokens are above metric, before we report anomaly";

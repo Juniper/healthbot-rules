@@ -24,15 +24,15 @@
  *     anomalies when error count increases.
  * 11) Rule vtep-tunnel-statistics.rule, detects logical interface statisticsr
  *     and notifies anomalies when error count increases.
- * 12) Rule irb-interface-status.rule, detects the irb interface status
- *     notify anomalies.
+ * 12) Rule irb-interface-status.rule, monitors irb interface and notify
+ *     anomaly when irb state is down.
  * 13) Rule irb-interface-traffic.rule,monitors interface traffic and notifies
  *     anomalies when traffic exceeds threshold.
  * 14) Rule irb-next-hops.rule, monitors irb interface next-hops and notifies
  *     anomalies when exceeds threshold.
  * 15) Rule interface-in-errors-iagent.rule, monitors interface input errors 
  *     and notifies anomalies when exceeds threshold.
- * 16) Rule interface-out-errors-iagent.rule, monitors interface output errors
+ * 16) Rule interface-out-errors-netconf.rule, monitors interface output errors
  *     and notifies anomalies when exceeds threshold.
  * 17) Rule interface-in-traffic-iagent.rule, monitors interface input traffic
  *     and notifies anomalies when exceeds threshold.
@@ -43,7 +43,7 @@
  * 20) Rule interface-status-iagent.rule, monitors interface status and notifies
  *     anomalies when exceeds threshold. 
  * 21) Rule bgp-neighbor-state-iagent.rule, monitors bgp state and notifies
- *     anomalies 
+ *     anomaly when neighbor state is down.
  * 22) Rule bgp-neighbor-flap-iagent.rule, monitors interface status and notifies
  *     anomalies when exceeds threshold.
  * 23) Rule vxlan-vport.rule, monitors vport count and notifies anomalies
@@ -60,14 +60,14 @@
  *     periodically and notifies anomalies when flabels token count is above
  *     static threshold
  * 29) Rule check-mac-count-netconf.rule, monitors MAC count in ethernet switching
- *     table periodically and notifies in case of anomalies
+ *     table periodically and notifies anomaly when MAC count is above threshold. 
  *
  * NOTE: If you don't want to include any of the rule in the list, please create
  * new playbook and include only the required rules for your case.
  */
  healthbot {
     playbook evpn-vxlan-kpis {
-        rules [ protocol.evpn/check-evpn-advertised-prefix protocol.evpn/check-evpn-received-prefix protocol.evpn/check-evpn-routes protocol.evpn/check-evpn-route-count protocol.bfd/check-bfd-session-state  protocol.evpn/check-vtep-interface  protocol.evpn/check-vtep-interface-count protocol.evpn/check-vtep-interface-status protocol.evpn/check-vtep-interface-traffic protocol.evpn/check-vtep-interface-flap protocol.evpn/check-vtep-interface-errors protocol.evpn/check-vtep-tunnel-statistics protocol.evpn/check-irb-status protocol.evpn/check-irb-traffic protocol.evpn/check-irb-next-hops interface.statistics/check-in-errors-iagent interface.statistics/check-out-errors-iagent interface.statistics/check-in-traffic-iagent interface.statistics/check-out-traffic-iagent interface.statistics/check-interface-flaps-iagent interface.statistics/check-interface-status-iagent protocol.bgp/check-bgp-neighbor-state-iagent protocol.bgp/check-bgp-neighbor-flap-iagent protocol.evpn/check-vport protocol.evpn/verify-duplicate-mac-netconf protocol.evpn/update-ethswarptable-netconf protocol.evpn/verify-mac-ip-netconf protocol.evpn/check-remote-vtep-count-netconf protocol.evpn/check-remote-vtep-interfaces-netconf protocol.evpn/check-nhcount-netconf protocol.evpn/check-vport-count-netconf protocol.evpn/check-flabel-count-netconf protocol.evpn/check-mac-count-netconf ];
+        rules [ protocol.evpn/check-evpn-advertised-prefix protocol.evpn/check-evpn-received-prefix protocol.evpn/check-evpn-routes protocol.evpn/check-evpn-route-count protocol.bfd/check-bfd-session-state  protocol.evpn/check-vtep-interface  protocol.evpn/check-vtep-interface-count protocol.evpn/check-vtep-interface-status protocol.evpn/check-vtep-interface-traffic protocol.evpn/check-vtep-interface-flap protocol.evpn/check-vtep-interface-errors protocol.evpn/check-vtep-tunnel-statistics protocol.evpn/check-irb-status protocol.evpn/check-irb-traffic protocol.evpn/check-irb-next-hops interface.statistics/check-in-errors-iagent interface.statistics/check-out-errors-netconf interface.statistics/check-in-traffic-iagent interface.statistics/check-out-traffic-iagent interface.statistics/check-interface-flaps-iagent interface.statistics/check-interface-status-iagent protocol.bgp/check-bgp-neighbor-state-iagent protocol.bgp/check-bgp-neighbor-flap-iagent protocol.evpn/check-vport protocol.evpn/verify-duplicate-mac-netconf protocol.evpn/update-ethswarptable-netconf protocol.evpn/verify-mac-ip-netconf protocol.evpn/check-remote-vtep-count-netconf protocol.evpn/check-remote-vtep-interfaces-netconf protocol.evpn/check-nhcount-netconf protocol.evpn/check-vport-count-netconf protocol.evpn/check-flabel-count-netconf protocol.evpn/check-mac-count-netconf ];
         description "Playbook to check EVPN-VXLAN health w.r.t. EVPN, VXLAN, Interfaces, VTEP, IRB, BFD";
         synopsis "EVPN-VXLAN key performance indicators";
     }

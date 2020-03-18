@@ -10,7 +10,7 @@ healthbot {
         rule check-rvi-reachability-netconf {
             keys [ irb-name remote-device ];
             synopsis "RVI reachability analyzer";
-            description "This rule pings remote IRB interfaces and notifies incase RVI is unreachable";
+            description "This rule sends icmp probe to remote IRB interfaces and notifies anomaly when RVI is unreachable";
             sensor rvi {
                 iAgent {
                     file update_irb_data.yml;
@@ -18,6 +18,10 @@ healthbot {
                     frequency 180s;
                 }
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field irb-name {
                 sensor rvi {
                     path irb;
@@ -60,6 +64,9 @@ healthbot {
                 type string;
                 description "Routing instance name";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger rvi-reachability {
                 synopsis "RVI reachability kpi";
                 description "sets health based on RVI reachability";
