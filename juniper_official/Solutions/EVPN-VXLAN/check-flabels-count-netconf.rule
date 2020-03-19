@@ -1,0 +1,111 @@
+/*
+ * Collects flabels token count periodically and notifies anomalies when flabels token 
+ * count is above static threshold.
+ *
+ * One input controls detection
+ * 
+ *   1) token-threshold variable, is the threshold that causes the rule to report an anomaly. By 
+ *      default it's 94000. This rule will set a dashboard color to red when flabels token
+ *      count is greater than token-threshold. Otherwise color is set to green.
+ */
+ healthbot {
+    topic protocol.evpn {
+        rule check-flabel-count-netconf {
+            synopsis "Flabel count analyzer";
+            description "Collects flabel token count periodically and notifies in case of anomalies";
+            sensor flabel {
+                synopsis "iAgent sensor definition";
+                description "Netconf command sysctl net.prds_token_cnts to collect data from network device";
+                iAgent {
+                    file flables.yml;
+                    table FlabelsTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field threshold {
+                constant {
+                    value "{{token-threshold}}";
+                }
+                type integer;
+                description "Flabels token count threshold";
+            }
+            field token-count {
+                sensor flabel {
+                    path token-count;
+                }
+                type integer;
+                description "Flabels token count ";
+            }
+            field token-words-count {
+                sensor flabel {
+                    path token-words-count;
+                }
+                type integer;
+                description "Flabels token words count ";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger flabel-count {
+                description "sets health based on flabel count";
+                synopsis "flap count  kpi";
+                frequency 200s;
+                term is-flabel-count-above-threshold {
+                    when {
+                        greater-than-or-equal-to "$token-count" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Flabel token count($token-count) exceeds threshold";
+                        }
+                    }
+                }
+                term is-flabel-count-below-threshold {
+                    then {
+                        status {
+                            color green;
+                            message "Flabel token count($token-count) is normal";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable token-threshold {
+                value 94000;
+                description "Flabels token threshold: Number of flabel tokens are above metric, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX10k;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files flables.yml;
+                }
+            }
+        }
+    }
+}

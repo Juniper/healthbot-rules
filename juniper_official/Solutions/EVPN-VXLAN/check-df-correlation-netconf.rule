@@ -1,0 +1,137 @@
+/*
+ * THis rule collects esi designated forwarder information periodically and
+ * notifies anomalies when there is a change in DF ID.
+ *
+ */
+healthbot {
+    topic protocol.evpn {
+        description "Collects evpn esi designated forwarder information periodically and notifies anomaly when df id changes";
+        synopsis "EVPN ESI desinated forwarder kpi";
+        rule check-df-correlation-netconf {
+            keys [ esi-no instance-name ];
+            synopsis "Evpn esi df correlator";
+            description "Collects evpn esi desinated forwarder information periodically and notifies anomaly when df id changes";
+            sensor df {
+                synopsis "EVPN ESI desinated iAgent sensor definition";
+                description "Netconf rpc get-evpn-instance-information to collect data from network device";
+                iAgent {
+                    file DfInfoTable.yml;
+                    table DfInfoTable;
+                    frequency 180s;
+                }
+            }
+            field df-count {
+                formula {
+                    count {
+                        field-name "@unique-df";
+                    }
+                }
+                type integer;
+                description "Evpn esi desinated forwarder count";
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field df-ip {
+                sensor df {
+                    path esi-designated-forwarder;
+                }
+                type string;
+                description "Evpn esi desinated forwarder IP";
+            }
+            field esi-no {
+                sensor df {
+                    path ../evpn-esi-value;
+                }
+                type string;
+                description "Evpn esi value";
+            }
+            field instance-name {
+                sensor df {
+                    path ../../evpn-instance-name;
+                }
+                type string;
+                description "Evpn instance name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ESI-df-snap {
+                synopsis "EVPN ESI desinated forwarder kpi";
+                description "sets health based on EVPN ESI desinated forwarder";
+                frequency 365s;
+                term is-df-state-not-available {
+                    when {
+                        matches-with "$df-ip" "DF not elected yet" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Designated forwarder(DF) of  $instance-name ESI:$esi-no) not elected.";
+                        }
+                    }
+                }
+                term is-df-snap-not-same {
+                    when {
+                        greater-than "$df-count" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Observed change in designated forwarding($df-ip) of  $instance-name ESI:$esi-no)";
+                        }
+                    }
+                }
+                term df-snap-same {
+                    then {
+                        status {
+                            color green;
+                            message "No change in designated forwarding($df-ip) of  $instance-name ESI:$esi-no)";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            vector df-field {
+                path "$df-ip";
+                time-range 360s;
+            }
+            vector unique-df {
+                formula {
+                    unique {
+                        vector-name "@df-field";
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files DfInfoTable.yml;
+                }
+            }
+        }
+    }
+}

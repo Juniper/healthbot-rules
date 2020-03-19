@@ -1,0 +1,113 @@
+/*
+ * Rule 'verify-duplicate-mac' determine evpn database state has duplicate mac entry
+ * 
+ * One input controls detection
+ *
+ *  1) status variable, Enter state based on allowed/possible entries
+ *     Possible entries are default-gateway, pinned, static, duplicate.
+ */
+healthbot {
+    topic protocol.evpn {
+        rule verify-duplicate-mac-netconf {
+            keys active-source;
+            synopsis "Rule to determine evpn database state has duplicate mac entry using iagent sensor uses command \"show evpn database state duplicate\", if command returns output then duplicate entries found and Red Alert. Health state will show grey which means no duplicate";
+            description "Verify evpn database state has duplicate mac entry";
+            sensor evpndb {
+                iAgent {
+                    file evpndbstate.yml;
+                    table EvpnDBStateTable;
+                    frequency 180s;
+                    args state {
+                        arg-value "{{status}}";
+                    }
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field active-source {
+                sensor evpndb {
+                    path active-source;
+                }
+                type string;
+                description "Active-source for MAC address learnt";
+            }
+            field mac-address {
+                sensor evpndb {
+                    path mac-addr;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+                description "MAC address value if duplicate state found";
+            }
+            field vlan {
+                sensor evpndb {
+                    path vlan;
+                }
+                description "Vlan or vni for duplicate Mac address found.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger verify-duplicate-mac-exists {
+                synopsis "Duplicate mac kpi";
+                description "sets health based on duplicate mac";
+                frequency 200s;
+                term evpndb-duplicate-mac-exists {
+                    when {
+                        exists "$vlan";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Duplicate MAC address found for $vlan and $active-source.";
+                        }
+                    }
+                }
+                term evpndb-no-duplicate-mac-exists {
+                    then {
+                        status {
+                            color green;
+                            message "EVPN DB State normal as there are no duplicate MAC Addresses!";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable status {
+                value duplicate;
+                description "Enter state based on allowed/possible entries for command \"show evpn database state <status>\".Possible entries are default-gateway, pinned, static, duplicate.";
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files evpndbstate.yml;
+                }
+            }
+        }
+    }
+}

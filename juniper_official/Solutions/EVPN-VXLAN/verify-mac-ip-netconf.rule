@@ -1,0 +1,126 @@
+/*
+ * Retrieves IP address for dynamic MAC address and triggers an alert 
+ * if IP address not present
+ *
+ */
+healthbot {
+    topic protocol.evpn {
+        rule update-ethswarptable-netconf {
+            synopsis "collects dynamic MAC address using udf and updates dependent rules sensor table";
+            description "collects dynamic MAC address using udf and updates dependent rules sensor table";
+            sensor update-ethsw {
+                iAgent {
+                    file update_ethswevpn.yml;
+                    table UpdateTable;
+                    frequency 180s;
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files update_ethswevpn.yml;
+                }
+            }
+        }
+        rule verify-mac-ip-netconf {
+            keys mac-address;
+            synopsis "This rule retrieves IP address for dynamic MAC address and triggers an alert if IP address not present.";
+            description "This rule retrieves IP address for dynamic MAC address and triggers an alert if IP address not present.";
+            sensor arp {
+                iAgent {
+                    file ethswitchevpnarp.yml;
+                    table EthSwEvpnArpTable;
+                    frequency 200s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field inet-address {
+                sensor arp {
+                    path evpn-arp-inet-address;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+                description "IPv4 address for the Mac address";
+            }
+            field mac-address {
+                sensor arp {
+                    path mac-address;
+                }
+                type string;
+                description "Dynamic mac address";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger validate-mac-ip {
+                synopsis "Dynamic mac address kpi";
+                description "sets health based on dynamic mac address present in inet";
+                frequency 230s;
+                term mac-ip-not-present {
+                    when {
+                        equal-to "$inet-address" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Dynamic mac address $mac-address doesnt have inet address.";
+                        }
+                    }
+                }
+                term mac-ip-present {
+                    then {
+                        status {
+                            color green;
+                            message "Dynamic mac address $mac-address normal.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ethswitchevpnarp.yml;
+                }
+            }
+        }
+    }
+}

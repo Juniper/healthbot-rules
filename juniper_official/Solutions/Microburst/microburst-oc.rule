@@ -1,0 +1,136 @@
+/*
+ * Detects microburst in all monitored interface egress queues.
+ */
+healthbot {
+    topic class-of-service.microburst {
+        description "Interface egress queues microburst detection";
+        synopsis "Microburst detector";
+        rule check-queue-oc {
+            keys [ if-name queue-no ];
+            synopsis " Microbust detector";
+            description "Collects all interfaces egress queues data using open-config qmon-sw sensor and detects microbursts";
+            sensor mb {
+                synopsis "Qmon native gpb sensor";
+                description "Sensor configuration to get bgp data from network devices";
+                open-config {
+                    sensor-name /junos/system/linecard/qmon-sw/;
+                    frequency 30s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field buffer-percentage {
+                sensor mb {
+                    path /junos/system/linecard/qmon-sw//egress//peak-buffer-occupancy-percent;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type float;
+                description "Interface egress buffer percent";
+            }
+            field egress-packets {
+                sensor mb {
+                    path /junos/system/linecard/qmon-sw//egress//packets;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface egress packets";
+            }
+            field if-name {
+                sensor mb {
+                    where "/junos/system/linecard/qmon-sw//@name =~ /{{if-name-expr}}/";
+                    path "/junos/system/linecard/qmon-sw//@name";
+                }
+                type string;
+                description "Interface name to monitor";
+            }                                       
+            field queue-no {
+                sensor mb {
+                    where "/junos/system/linecard/qmon-sw//egress//@queue-number =~ /{{queue-no-expr}}/";
+                    path "/junos/system/linecard/qmon-sw//egress//@queue-number";
+                }
+                type string;
+                description "Queue name or number to monitor";
+            }
+            field microburst {
+                formula {
+                    microburst {
+                        if-name "$if-name";
+                        queue-no "$queue-no";
+                        percentage "$buffer-percentage";
+                        packets "$egress-packets";
+                    }
+                }
+                type integer;
+                description "Derives microburst value";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger microburst {
+                synopsis "Microburst KPI";
+                description "Sets health based on the increase in microburst count";
+                frequency 30s;
+                term green {
+                    when {
+                        equal-to "$microburst" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No Microburst seen";
+                        }
+                    }
+                }
+                term red {
+                    when {
+                        matches-with True True;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Microburst detected";
+                        }
+                    }
+                }
+            }
+            variable if-name-expr {
+                value .*;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            variable queue-no-expr {
+                value .*;
+                description "Queue number or name to monitor, regular expression, eg '1|2'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 2.1.1;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.2 {
+                                    release-support min-supported-release;
+                                    platform [ QFX5100 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

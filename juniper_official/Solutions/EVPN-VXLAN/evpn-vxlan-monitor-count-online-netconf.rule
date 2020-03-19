@@ -1,0 +1,224 @@
+/*
+ * Collects NHCount of fpc and notifies anomalies when NHCount is more then
+ * provided threshold. Also check-vport-count monitor vport count and notifies
+ * anomalies when vport count is more then provided threshold value.
+ *
+ * One input controls detection
+ *
+ *  1) high-threshold-count variable, is the NHCount maximum threshold value.
+ *
+ */
+healthbot {
+    topic protocol.evpn {
+        rule check-nhcount-netconf {
+            keys fpc;
+            synopsis "Check NHCount on fpc below threshold passed as argument, fpc is dynamically derived.";
+            description "EVPN VXLAN Rules for leaf QFX5110/QFX5120/QFX5100";
+            sensor nh-count {
+                iAgent {
+                    file nhcount.yml;
+                    table NHCountTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field fpc {
+                sensor nh-count {
+                    path target;
+                }
+                type string;
+                description "Target fpc";
+            }
+            field max-high-threshold {
+                constant {
+                    value "{{high-threshold-count}}";
+                }
+                type integer;
+                description "Provided high threshold count to monitor nh count";
+            }
+            field nhcount {
+                sensor nh-count {
+                    path nhcount;
+                }
+                type integer;
+                description "NH count on fpc";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger compare-nhcount {
+                synopsis "nhcount statistics kpi";
+                description "sets health based on nhcount statistics";
+                frequency 200s;
+                term nhcount_wayover {
+                    when {
+                        greater-than "$nhcount" "$max-high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "NHcount for $fpc is over the threshold of $max-high-threshold: $nhcount.";
+                        }
+                    }
+                }
+                term nhcount_equal {
+                    when {
+                        equal-to "$nhcount" "$max-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "NHcount for $fpc is equal to the threshold of $max-high-threshold: $nhcount.";
+                        }
+                    }
+                }
+                term nhcount_normal {
+                    then {
+                        status {
+                            color green;
+                            message "NHcount for $fpc is less than the threshold of $max-high-threshold: $nhcount.";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable high-threshold-count {
+                value 40000;
+                description "Enter max-high-threshold, default is 40000";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5k;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files nhcount.yml;
+                }
+            }
+        }
+        rule check-vport-count-netconf {
+            keys fpc;
+            synopsis "Check vport on fpc below threshold passed as argument, fpc is dynamically derived.";
+            description "EVPN VXLAN Rules for leaf QFX5110/QFX5120/QFX5100";
+            sensor vport {
+                iAgent {
+                    file evpn-vport.yml;
+                    table VirtualPortTable;
+                    frequency 180s;
+                }
+            }
+            field fpc {
+                sensor vport {
+                    path target;
+                }
+                type string;
+                description "Target fpc";
+            }
+            field max-high-threshold {
+                constant {
+                    value "{{ high-threshold-count }}";
+                }
+                type integer;
+            }
+            field vport-count {
+                sensor vport {
+                    where "vport-count > 0";
+                    path vport-count;
+                }
+                type integer;
+                description "Virtual vport count";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger compare-vport-count {
+                synopsis "vport count kpi";
+                description "sets health based on vport count";
+                frequency 200s;
+                term vport-count-wayover {
+                    when {
+                        greater-than "$vport-count" "$max-high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Virtual vport count for $fpc is way over the max threshold $max-high-threshold: $vport-count.";
+                        }
+                    }
+                }
+                term vport-count-equal {
+                    when {
+                        equal-to "$vport-count" "$max-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Virtual vport count for $fpc is equal to the max threshold $max-high-threshold: $vport-count.";
+                        }
+                    }
+                }
+                term vport-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Virtual vport count for $fpc is normal: $vport-count.";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable high-threshold-count {
+                value 11000;
+                description "Enter max threshold count for Virtual vport";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5k;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files evpn-vport.yml;
+                }
+            }
+        }
+    }
+}
