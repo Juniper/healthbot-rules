@@ -63,6 +63,20 @@ healthbot {
                 type string;
                 description "Corrective Action to be performed based on the syslog message received from the device";
             }
+			field high-threshold {
+                sensor syslog-input {
+                    path high-threshold;
+                }
+                type integer;
+                description "high threshold of syslog messages";
+            }
+			field low-threshold {
+                sensor syslog-input {
+                    path low-threshold;
+                }
+                type integer;
+                description "low threshold of syslog messages";
+            }
             /*
              * Anomaly detection logic.
              */	
@@ -72,7 +86,7 @@ healthbot {
                 frequency 30s;
                 term state-change-major {
                     when {
-                        greater-than "$event-frequency" 4 {
+                        greater-than "$event-frequency" $high-threshold {
                             time-range 3d;
                             any;
                         }
@@ -90,7 +104,7 @@ healthbot {
                 }
                 term state-change-minor {
                     when {
-                        greater-than "$event-frequency" 0 {
+                        greater-than "$event-frequency" $low-threshold {
                             time-range 3d;
                             any;
                         }
