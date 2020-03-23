@@ -3,19 +3,19 @@
  */
 healthbot {
     topic protocol.evpn {
-        description "This topic is to monitor MAC count in ethernet switching table";
+        description "This rule checks health of MAC count in ethernet switching table and notify in case any of the health monitored field crosses threshold";
         synopsis "MAC count check in ethernet switching";
-        rule check-mac-count {
+        rule check-mac-count-netconf {
             keys vlan-name;
-            synopsis "MAC count analyzer";
-            description "This rule monitors MAC count in ethernet switching table periodically and notifies in case of anomalies";
+            synopsis "MAC count in ethernet switching table analyzer";
+            description "This rule checks health of MAC count in ethernet switching table and notify in case any of the health monitored field crosses threshold";
             sensor mac-count {
                 synopsis "mac count netconf based iAgent sensor definition";
                 description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
                 iAgent {
                     file mac-count.yml;
                     table MacCountTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             field dt-mac-count {
@@ -29,6 +29,10 @@ healthbot {
                 }
                 type integer;
             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
             field mac-count {
                 sensor mac-count {
                     path rtb-mac-count;
@@ -50,10 +54,13 @@ healthbot {
                 type string;
                 description "VLAN ID";
             }
+            /*
+             * Anomaly detection logic.
+             */
             trigger mac-count {
                 synopsis "MAC count kpi";
                 description "Sets health based on MAC count in ethernet switching table.";
-                frequency 90s;
+                frequency 200s;
                 term is-mac-count-above-static-threshold {
                     when {
                         greater-than-or-equal-to "$mac-count" "$threshold";
@@ -85,6 +92,10 @@ healthbot {
                     }
                 }
             }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
             variable static-threshold {
                 value 800;
                 description "Enter MAC limit threshold per VLAN";
@@ -98,7 +109,7 @@ healthbot {
             rule-properties {
                 version 1;
                 contributor juniper;
-                supported-healthbot-version 2.1.0;
+                supported-healthbot-version 3.0.0;
                 catalogue {
                     tier 2;
                 }

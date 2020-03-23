@@ -1,0 +1,220 @@
+/*
+ * Collects remote VTEP counts per VLAN and notifies anomalies when vtep count
+ * is less than threshold
+ *
+ * Two inputs control detection
+ *
+ *  1) vlan-name-variable, is the vlan name to monitor. By default monitors 
+ *     all vlans. For specific vlan to monitor, provide the vlan name
+ *  2) remote-count-variable, is the minimum threshold value of remote 
+ *     VTEP counts
+ */
+healthbot {
+    topic protocol.evpn {
+        description "This topic is to monitor remote VTEP counts per VLAN name";
+        synopsis "Remote VTEP count check per VLAN name";
+        rule check-remote-vtep-count-netconf {
+            keys vlan-name;
+            synopsis "Monitor remote VTEPs count";
+            description "Monitor the remote VTEPs count for provided VLAN name and notify anomaly when count is less than threshold";
+            function subtract-function {
+                path subtract.py;
+                method subtract;
+                argument subtract {
+                    mandatory;
+                }
+                argument subtract_from {
+                    mandatory;
+                }
+            }
+            sensor vtep-count {
+                synopsis "Remote VTEP interface count iAgent sensor definition";
+                description "Netconf rpc get-vlan-information to collect data from network device";
+                iAgent {
+                    file vlantable.yml;
+                    table VtepTable;
+                    frequency 180s;
+                }
+            }
+            field actual-remote-vtep {
+                formula {
+                    user-defined-function {
+                        function-name subtract-function;
+                        argument subtract_from "$remote-vtep";
+                        argument subtract 1;
+                    }
+                }
+                type integer;
+                description "Actual remote VTEP interfaces";
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field remote-vtep {
+                sensor vtep-count {
+                    path tagged-count;
+                }
+                type integer;
+                description "Remote VTEP interface count";
+            }
+            field vlan-name {
+                sensor vtep-count {
+                    where "l2ng-l2rtb-vlan-name =~ /{{vlan-name-variable}}/";
+                    path l2ng-l2rtb-vlan-name;
+                }
+                type string;
+                description "VLAN name to monitor the remove VTEP interface count";
+            }
+            field vtep-threshold {
+                constant {
+                    value "{{remote-count-variable}}";
+                }
+                type integer;
+                description "Remote VTEP threshold for provided VLAN";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Remote-VTEP-Count {
+                synopsis "VLAN VTEP interface kpi";
+                description "sets health based on remote VTEP interfaces count";
+                frequency 200s;
+                term remote-vtep-count-greater-than-threshold {
+                    when {
+                        greater-than-or-equal-to "$actual-remote-vtep" "$vtep-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$vlan-name has more than $vtep-threshold remote VTEPs";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color red;
+                            message "$vlan-name has less than $vtep-threshold remote VTEPs";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable remote-count-variable {
+                value 1;
+                description "Remote VTEP count threshold for provided VLAN";
+                type int;
+            }
+            variable vlan-name-variable {
+                value .*;
+                description "VLAN table name";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files [ vlantable.yml subtract.py ];
+                }
+            }
+        }
+        rule check-remote-vtep-interfaces-netconf {
+            keys [ interface-name vlan-name ];
+            synopsis "Monitor the remote VTEPs";
+            description "Monitor the remote VTEP interfaces for provided VLAN name";
+            sensor vlan-name-sensor {
+                synopsis "Remote VTEP interface count iAgent sensor definition";
+                description "Netconf rpc get-vlan-information to collect data from network device";
+                iAgent {
+                    file vlantable.yml;
+                    table VtepTable;
+                    frequency 180s;
+                }
+            }
+            field interface-name {
+                sensor vlan-name-sensor {
+                    where "l2ng-l2rtb-vlan-member-interface =~ /vtep*/";
+                    path l2ng-l2rtb-vlan-member-interface;
+                }
+                type string;
+                description "Remote VTEP interfaces";
+            }
+            field vlan-name {
+                sensor vlan-name-sensor {
+                    where "l2ng-l2rtb-vlan-name =~ /{{vlan-name-variable}}/";
+                    path l2ng-l2rtb-vlan-name;
+                }
+                type string;
+                description "VLAN name to monitor the remove VTEP interface count";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger Remote-VTEP-interface {
+                synopsis "VLAN VTEP count interface kpi";
+                description "sets health based on remote VTEP interfaces interfaces";
+                frequency 200s;
+                term is-remote-vtep-available {
+                    then {
+                        status {
+                            color green;
+                            message "VLAN ID $vlan-name has $interface-name";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable vlan-name-variable {
+                value .*;
+                description "VLAN table name";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files vlantable.yml;
+                }
+            }
+        }
+    }
+}

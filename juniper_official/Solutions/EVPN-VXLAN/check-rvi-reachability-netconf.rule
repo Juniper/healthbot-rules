@@ -1,0 +1,153 @@
+/*
+ * Rule 'fetch-irb-data' collects IRB interface names, IP and routing-instance
+ * name from all routers and maps remote router IRB details with local router.
+ *
+ * Rule 'check-rvi-reachability' checks RVI reachability across the network and
+ * notify in case any of the remote IRB interface IP is not reachable.
+ */
+healthbot {
+    topic protocol.evpn {
+        rule check-rvi-reachability-netconf {
+            keys [ irb-name remote-device ];
+            synopsis "RVI reachability analyzer";
+            description "This rule sends icmp probe to remote IRB interfaces and notifies anomaly when RVI is unreachable";
+            sensor rvi {
+                iAgent {
+                    file update_irb_data.yml;
+                    table UpdateIRBTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field irb-name {
+                sensor rvi {
+                    path irb;
+                }
+                type string;
+                description "Remote IRB interface name";
+            }
+            field packet-loss {
+                sensor rvi {
+                    path packet-loss;
+                }
+                type integer;
+                description "Ping response in terms of packet loss";
+            }
+            field remote-device {
+                sensor rvi {
+                    path remote_host;
+                }
+                type string;
+                description "Remote device name";
+            }
+            field remote-irb-ip {
+                sensor rvi {
+                    path host-ip;
+                }
+                type string;
+                description "Remote IRB interface ip";
+            }
+            field rtt-average {
+                sensor rvi {
+                    path rtt-average;
+                }
+                type integer;
+                description "Ping average response in terms of RTT";
+            }
+            field vrf-name {
+                sensor rvi {
+                    path vrfname;
+                }
+                type string;
+                description "Routing instance name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rvi-reachability {
+                synopsis "RVI reachability kpi";
+                description "sets health based on RVI reachability";
+                frequency 200s;
+                term is-rvi-not-reachable {
+                    when {
+                        greater-than "$packet-loss" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Packet-loss($packet-loss) observed on RVI '$remote-device:$irb-name:$vrf-name:$remote-irb-ip'";
+                        }
+                    }
+                }
+                term rvi-reachable {
+                    then {
+                        status {
+                            color green;
+                            message "RVI '$remote-device:$irb-name:$vrf-name:$remote-irb-ip' reachable";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files update_irb_data.yml;
+                }
+            }
+        }
+        rule fetch-irb-data-netconf {
+            synopsis "IRB collector";
+            description "This rule collects al IRB interafce details of all routing instances.  And also maps local and remote devices data based on IRB, IP and routing instance";
+            sensor irb {
+                iAgent {
+                    file get_irb_data.yml;
+                    table FetchIRBTable;
+                    frequency 1h;
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files get_irb_data.yml;
+                }
+            }
+        }
+    }
+}
