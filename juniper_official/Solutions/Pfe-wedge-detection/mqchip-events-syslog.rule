@@ -1,0 +1,169 @@
+/*
+ * Monitors mqchip syslog events as per the GROK patterns defined by the user.
+ */
+healthbot {
+    topic linecard.pfe.wedge {
+        rule check-pfe-mqchip-events {
+            keys fpcnumber;
+            synopsis "mqchip events monitor";
+            description "Using this rule the mqchip events will be monitored";
+            sensor syslog-input {
+                syslog {
+                    pattern-set MQCHIP;
+                }
+            }
+            field check-for-recurrence {
+                sensor syslog-input {
+                    path reoccur;
+                }
+                type string;
+                description "Check for recurrence of syslog";
+            }
+            field event-frequency {
+                formula {
+                    count {
+                        field-name "$syslog-message";
+                        time-range 3d;
+                    }
+                }
+                type integer;
+            }
+            field eventid {
+                sensor syslog-input {
+                    path event-id;
+                }
+                type string;
+                description "User Defined event ID of  mqchip events";
+            }
+            field fpcnumber {
+                sensor syslog-input {
+                    path fpc_number;
+                }                       
+                type string;
+                description "FPC number present in the syslog message";
+            }
+            field syslog-message {
+                sensor syslog-input {
+                    path __log_message_payload__;
+                }
+                type string;
+                description "Syslog Message received from the device.";
+            }
+            field trigger-color {
+                sensor syslog-input {
+                    path syslog-trigger-color;
+                }
+                type string;
+                description "Trigger color set in the pattern matching the syslog message received from the device";
+            }
+            field trigger-message {
+                sensor syslog-input {
+                    path syslog-trigger-message;
+                }
+                type string;
+                description "Corrective Action to be performed based on the syslog message received from the device";
+            }
+            field high-threshold {
+                sensor syslog-input {
+                    path high-threshold;
+                }
+                type integer;
+                description "high threshold of syslog messages";
+            }
+            field low-threshold {
+                sensor syslog-input {
+                    path low-threshold;
+                }
+                type integer;
+                description "low threshold of syslog messages";
+            }
+            /*
+             * Anomaly detection logic.
+             */    
+            trigger event-trigger {
+                synopsis "mqchip events monitor";
+                description "Sets health based on the mqchip events received from the device";
+                frequency 30s;
+                term state-change-major {
+                    when {
+                        greater-than "$event-frequency" $high-threshold {
+                            time-range 3d;
+                            any;
+                        }
+                        matches-with "$check-for-recurrence" TRUE {
+                            time-range 3d;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;  
+                            message "Syslog message:\"$syslog-message\" generated on router $event-frequency times in last 3 day. Action:$trigger-message";
+                        }
+                    }
+                }
+                term state-change-minor {
+                    when {
+                        greater-than "$event-frequency" $low-threshold {
+                            time-range 3d;
+                            any;
+                        }
+                        matches-with "$check-for-recurrence" TRUE {
+                            time-range 3d;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Syslog message:\"$syslog-message\" generated on router $event-frequency times in last 3 day. Action:$trigger-message";
+                        }
+                    }
+                }
+                term red-term {
+                    when {
+                        matches-with "$trigger-color" red {
+                            time-range 3d;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Message:$syslog-message  Action:$trigger-message";
+                        }
+                    }
+                }
+                term yellow-term {
+                    when {              
+                        matches-with "$trigger-color" yellow {
+                            time-range 3d;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Message:$syslog-message  Action:$trigger-message";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 16.1R4-S2 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

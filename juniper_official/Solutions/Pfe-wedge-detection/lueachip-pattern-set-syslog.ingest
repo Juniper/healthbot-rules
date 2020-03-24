@@ -1,0 +1,124 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern LUEA_EVENT001 {
+                event-id LUEA_EVENT001;
+                filter "fpc%{NUMBER:fpc_number}.*lmem addr error";
+                description "The \"lmem addr error\" message is caused by a transient hardware or software defect. This error is caused by a transient hardware or software defect. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUEA_EVENT002 {
+                event-id LUEA_EVENT002;
+                filter "fpc%{NUMBER:fpc_number}.*lmem data error";
+                description "LMEM data errors are parity errors and the software will repair those errors automatically. If the number of errors exceed the threshold of 7, then a particular zone will be disabled for further usage. If this threshold is reached for shared zones, the entire PPE (Packet Processing Engine) will become disabled";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC only if Wedge is seen.  Otherwise no action";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUEA_EVENT003 {
+                event-id LUEA_EVENT003;
+                filter "fpc%{NUMBER:fpc_number}.*Errors async xtxn error";
+                description "The \"Errors sync axtxn error\" message is likely caused by a software related error condition accessing illegal memory space.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Look for other accompanying errors";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;  
+            }
+            pattern LUEA_EVENT004 {
+                event-id LUEA_EVENT004;
+                filter "fpc%{NUMBER:fpc_number}.*Errors sync xtxn error";
+                description "The \"Errors sync xtxn error\" message is likely to be caused due to Hardware related error condition since synchronous transaction to external device is not possible.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Look for other accompanying errors";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUEA_EVENT005 {
+                event-id LUEA_EVENT005;
+                filter "fpc%{NUMBER:fpc_number}.*Uninitialized Read Error";
+                description "The \"Uninitialized Read Error\" message is caused by a transient hardware or software error.Access to unintialized memory with predefined patterns are software errors and the rest are hardware errors.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No action if only a few occurrences.  If seen repeatedly, contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern-set LUEA {
+                pattern-names [ LUEA_EVENT001 LUEA_EVENT002 LUEA_EVENT003 LUEA_EVENT004 LUEA_EVENT005 ];
+            }
+        }
+    }
+}

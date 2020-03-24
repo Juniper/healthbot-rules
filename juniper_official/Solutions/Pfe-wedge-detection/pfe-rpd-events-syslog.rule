@@ -1,0 +1,103 @@
+/*
+ * Monitors PFE RPD syslog events as per the GROK patterns defined by the user.
+ */
+healthbot {
+    topic linecard.pfe.wedge {
+        rule check-pfe-rpd-events {
+            keys fpcnumber;
+            synopsis "rpd events monitor";
+            description "Using this rule the rpd events will be monitored";
+            sensor syslog-input {
+                syslog {                
+                    pattern-set RPD;
+                }
+            }
+            field eventid {
+                sensor syslog-input {
+                    path event-id;
+                }
+                type string;
+                description "User Defined event ID of  rpd events";
+            }
+            field fpcnumber {
+                sensor syslog-input {
+                    path fpc_number;
+                }
+                type string;
+                description "FPC number present in the syslog message";
+            }
+            field syslog-message {
+                sensor syslog-input {
+                    path __log_message_payload__;
+                }
+                type string;
+                description "Syslog Message received from the device.";
+            }
+            field trigger-color {
+                sensor syslog-input {
+                    path syslog-trigger-color;
+                }
+                type string;
+                description "Trigger color set in the pattern matching the syslog message received from the device";
+            }
+            field trigger-message {
+                sensor syslog-input {
+                    path syslog-trigger-message;
+                }
+                type string;
+                description "Corrective Action to be performed based on the syslog message received from the device";
+            }
+            /*
+             * Anomaly detection logic.
+             */	
+            trigger event-trigger {
+                synopsis "rpd events monitor";
+                description "Sets health based on the rpd events received from the device";
+                frequency 30s;
+                term red-term {         
+                    when {
+                        matches-with "$trigger-color" red {
+                            time-range 3d;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Message:$syslog-message  Action:$trigger-message";
+                        }
+                    }
+                }
+                term yellow-term {
+                    when {
+                        matches-with "$trigger-color" yellow {
+                            time-range 3d;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Message:$syslog-message  Action:$trigger-message";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }                           
+        }
+    }
+}

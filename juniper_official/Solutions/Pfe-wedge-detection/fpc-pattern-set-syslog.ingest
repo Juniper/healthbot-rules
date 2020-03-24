@@ -1,0 +1,81 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern FPC_Offline1 {
+                event-id FPC_Offline1;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FRU_OFFLINE_NOTICE: Taking.*offline: Configured power off";
+                description "The FPC was taken offline by configuration.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Check with the engineer who shut down the FPC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern FPC_Offline2 {
+                event-id FPC_Offline2;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FRU_OFFLINE_NOTICE: Taking.*offline: FPC reset by error manager";
+                description "The FPC was reset by the error manager";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Check for other logs regarding this FPC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern FPC_Offline3 {
+                event-id FPC_Offline3;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FRU_OFFLINE_NOTICE: Taking.*offline: Restarted by cli command";
+                description "The FPC was reset on the command line.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Check with the engineer who shut down the FPC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern FPC_Offline4 {
+                event-id FPC_Offline4;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FRU_OFFLINE_NOTICE: Taking.*offline: FPC offlined due to unreachable destinations";
+                description "The FPC was taken down by fabric healing.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Check for other logs regarding this FPC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern FPC_Offline5 {
+                event-id FPC_Offline5;
+                filter "fpc%{NUMBER:fpc_number}.*CHASSISD_FRU_OFFLINE_NOTICE: Taking.*offline:";
+                description "The FPC was taken down by some means not explicitly listed in another signature.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Check for other logs regarding this FPC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern FPC_Offline6 {
+                event-id FPC_Offline6;
+                filter "fpc%{NUMBER:fpc_number}.*ASIC Error detected errorno.* restart action performed";
+                description "CMALARM detected an error condition which requires the FPC to be reset.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Check for other logs regarding this FPC.";
+                }
+                key-fields fpc_number;
+            }
+            pattern-set FPC {
+                pattern-names [ FPC_Offline1 FPC_Offline2 FPC_Offline3 FPC_Offline4 FPC_Offline5 FPC_Offline6 ];
+            }
+        }
+    }
+}

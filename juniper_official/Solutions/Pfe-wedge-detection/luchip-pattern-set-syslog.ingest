@@ -1,0 +1,446 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern LUCHIP_EVENT001 {
+                event-id LUCHIP_EVENT001;
+                filter "fpc%{NUMBER:fpc_number}.*PPE.*Errors ucode data error";
+                description "The \"ucode data error\" message is seen due to a transient hardware issue. This is a transient memory parity error. Software will automatically correct this condition. A single occurrence of this error is not service impacting if no traps are seen along with the ucode data error.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC if 7 errors at same location.  If it recurs, then RMA.  If errors are all different memory locations, no action.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT002 {
+                event-id LUCHIP_EVENT002;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.* DDR.*VERIFY_RETRY_LIMIT of.*exceeded";
+                description "The \"DDR VERIFY_RETRY_LIMIT of \" message reports a memory training failure which exceeded the limit of 10 or more retries. The VERIFY_PASSED messages is only informational and does not indicate a problem. Once the retry exceeded limit of 10 or higher VERIFY_RETRY_LIMIT​ will get reported due to memory training failures.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "This is a hardware error mostly caused by the component failure. This is a memory error. If this symptom is seen after MPC reboot, contact your tech";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT003 {
+                event-id LUCHIP_EVENT003;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.* IDMEM.*read error";
+                description "The \"IDMEM read error\" message reports a transient hardware issue. This is due to a memory error detected when performing periodic memory integrity check in the IDMEM section of an LUCHIP. JUNOS would be able to complete memory integrity check on an entire memory block in ~7-13min on the card.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No action if only a few occurrences.  If seen repeatedly, contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT005 {
+                event-id LUCHIP_EVENT005;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*RMC.*Uncorrectable ECC.*EDMEM";
+                description "The \"Uncorrectable ECC ​EDMEM\" message reports a transient hardware issue. Single occurrence of this error can be ignored. Uncorrectable ECC error in LU usually means a double bit ECC error.  In some rare scenarios, an uninitialized memory location access can lead to false reporting of this error. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If this only happens once, then you can ignore this error.  If continuous errors, shutdown FPC immediately.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT006 {
+                event-id LUCHIP_EVENT006;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*RMC.*Uncorrectable ECC 0x6db6db6d6db6db6d.*EDMEM";
+                description "The \"Uncorrectable ECC EDMEM\" message reports the Error Checking and Correction (ECC) has identified uncorrectable errors on the LUCHIP. The cause is due to a transient software issue being reported by the LUCHIP, which resides on the FPC and has reported an ECC error.The LUCHIP ECC detection circuit, in rare circumstances, may get a false detection on uninitialized memory which has the 0x6DB pattern.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT007 {
+                event-id LUCHIP_EVENT007;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*RMC.*Uninitialized EDMEM.*Read";
+                description "The \"RMC Uninitialized EDMEM Read\" message reports a software issue. The cause is due to the LUCHIP PPE hitting an uninitialized memory area. If this is seen for a short period (< 1 sec), then it could be a transient software issue and only cause a temporary packet loss for that much time. If this message is reported continuously, then it could be a software programming error, resulting in traffic being dropped or a permanent impact on forwarding of packet flows.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT008 {
+                event-id LUCHIP_EVENT008;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*RD_NACK.*TOE Read";
+                description "The \"LUCHIP TOE Read\" message reports a transient hardware issue. The cause is due to a transient memory error detected in the LUCHIP and usually followed with the report of a parity error. This can be transient in nature, and a one time occurrence can be ignored.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No action if only a few occurrences.  If seen repeatedly, contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT009 {
+                event-id LUCHIP_EVENT009;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*PPE.*CBO.*mismatch.*rd.*exp";
+                description "The \"PPE CBO mismatch\" message reports a transient hardware issue. This is due to a memory integrity check finding an error in the CBO (Conditional Branch Outcome) registers, which are part of the PPE microcode.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If multiple errors at same location, shut down and RMA.  If multiple errors at different locations, reset and monitor.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT010a {
+                event-id LUCHIP_EVENT010a;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*pio_handle.*jspec_pio_read_u.*generic failure.*gumem";
+                description "The pio_read_u64() failed\" or  \"jspec_pio_read_u256 failed\" error message is reported in the system message file whenever a memory integrity check is performed by the LU driver and encounters an error. These are transient hardware problems. These error messages are always followed by additional syslog entries that explain why read had failed. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No issue if single error.  If multiple errors, shutdown the FPC and contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }                       
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT010b {
+                event-id LUCHIP_EVENT010b;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*pio_handle.*pio_read_u.*failed";
+                description "The pio_read_u64() failed\" or  \"jspec_pio_read_u256 failed\" error message is reported in the system message file whenever a memory integrity check is performed by the LU driver and encounters an error. These are transient hardware problems. These error messages are always followed by additional syslog entries that explain why read had failed. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No issue if single error.  If multiple errors, shutdown the FPC and contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT011a {
+                event-id LUCHIP_EVENT011a;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*HASH FPM ERROR.*Alloc OMI Ram IF Error";
+                description "The \"HASH INT Status FPM Error\" message reports a transient software issue. This is due to a flow that could not be inserted into the hash table due to resource issues, and the flow will not be accounted. This is a transient SW or HW problem. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT011b {
+                event-id LUCHIP_EVENT011b;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*HASH INT Status FPM Error";
+                description "The \"HASH INT Status FPM Error\" message reports a transient software issue. This is due to a flow that could not be inserted into the hash table due to resource issues, and the flow will not be accounted. This is a transient SW or HW problem. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT012 {   
+                event-id LUCHIP_EVENT012;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*PPE.*Errors.*KM.*parity error";
+                description "The \"KMB parity error\" message reports a transient hardware or software issue. The cause is due to either hardware or software issues resulting in a parity error in the LUCHIP KMB memory. The exact root cause will have to be determined by further examining the syslog and FPC log data.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If multiple errors at same location, shut down and RMA.  If multiple errors at different locations, reset and monitor.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT013 {
+                event-id LUCHIP_EVENT013;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*Secondary PPE.*zone.*timeout";
+                description "The \"Secondary PPE zone timeout\" message reports a software or hardware issue.Secondary PPE timeouts indicates of permanent impact on packet-forwarding.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC immediately and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT015 {
+                event-id LUCHIP_EVENT015;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*RMC.*Correctable ECC.*cnt.*syn.*EDMEM";
+                description "The \"LUCHIP RMC Correctable ECC\" message reports a transient hardware issue. This is due to a transient memory error detected at the specified address and are automatically corrected. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC if multiple errors at same location.  If it recurs, then RMA.  If errors are all different memory locations, no action.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT016 {
+                event-id LUCHIP_EVENT016;
+                filter "fpc%{NUMBER:fpc_number}.*RamBIST:LU-CHIP.*BIST.*Memory Error";
+                description "The \"BIST: Memory Error\" message reports a hardware issue. The cause is due to a memory error detected at POST (Power on Self Test) one FPC does initialize all components. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Disable FPC and RMA immediately";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT019 {
+                event-id LUCHIP_EVENT019;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*Display trap-info logic not initialized";
+                description "The \"trap-info logic not initialized\" message reports a transient software initialization issue while system has encountered other Hardware issues during boot-up.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT020 {
+                event-id LUCHIP_EVENT020;
+                filter "fpc%{NUMBER:fpc_number}.*LUCHIP.*SHARED LMEM errors require LUCHIP.*PPE.*disable";
+                description "The \"SHARED LMEM errors\" message reports a hardware issue. This is due to the LUCHIP LMEM repair counter reaching a threshold of 8 repairs while this zone is shared. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Disable FPC and RMA";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern LUCHIP_EVENT024 {
+                event-id LUCHIP_EVENT024;
+                filter "fpc%{NUMBER:fpc_number}.*TOE ERROR.*DETECTED IN PFE.*TOE LU Stats ";
+                description "The \"TOE ERROR\" message reports a transient hardware issue. TOE stands for Traffic Offload Engine.";
+                constant syslog-trigger-color {
+                    value red;          
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern-set LUCHIP {
+                pattern-names [ LUCHIP_EVENT001 LUCHIP_EVENT002 LUCHIP_EVENT003 LUCHIP_EVENT005 LUCHIP_EVENT006 LUCHIP_EVENT007 LUCHIP_EVENT008 LUCHIP_EVENT009 LUCHIP_EVENT010a LUCHIP_EVENT010b LUCHIP_EVENT011a LUCHIP_EVENT011b LUCHIP_EVENT012 LUCHIP_EVENT013 LUCHIP_EVENT015 LUCHIP_EVENT016 LUCHIP_EVENT019 LUCHIP_EVENT020 LUCHIP_EVENT024 ];
+            }
+        }
+    }
+}
