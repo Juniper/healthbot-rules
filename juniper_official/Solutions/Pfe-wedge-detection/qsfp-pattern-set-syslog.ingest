@@ -1,0 +1,21 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern QSFP_1 {
+                event-id QSFP_1;
+                filter "fpc%{NUMBER:fpc_number}.*smic_qsfp_check_misconfiguration Mismatch port";
+                description "This log indicates that a QSFP28 port has been configured for a speed which is incompatible with the optic installed in this port.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Either correct the configuration error or swap out the optic for the correct model.";
+                }
+                key-fields fpc_number;
+            }
+            pattern-set QSFP {
+                pattern-names QSFP_1;
+            }
+        }
+    }
+}

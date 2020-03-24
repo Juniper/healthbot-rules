@@ -1,0 +1,377 @@
+healthbot {
+    ingest-settings {
+        syslog {
+            pattern MQCHIP_EVENT004 {
+                event-id MQCHIP_EVENT004;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*PT CPT parity error detected";
+                description "The \"PT CPT parity error detected\" message reports a transient hardware issue. The cause is due to a transient hardware issue occurring on the PFE, which affects CPT memory.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, clear alarm from CLI ('clear chassis fpc errors fpc-slot <fpc> all' in 17.X+).  If multiple logs, reset FPC and monitor.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT007 {
+                event-id MQCHIP_EVENT007;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*WI parity error detected when read from ibuf";
+                description "The \"WI parity error detected\" message reports a transient hardware issue. The cause is due to a parity error detected in the internal MQCHIP memory.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, clear alarm from CLI ('clear chassis fpc errors fpc-slot <fpc> all', only in 17.X+).  If multiple logs, reset FPC and monitor.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT008 {
+                event-id MQCHIP_EVENT008;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*CPQ RLDRAM single bit ECC error.*bank.*addr";
+                description "The \"CPQ RLDRAM single bit ECC error\" message reports a transient hardware issue. The cause is due to an ECC error detected in the MQCHIP CPQ memory. The error is self-correcting.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "No action necessary.  If this is seen continuously, contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }                       
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT009 {
+                event-id MQCHIP_EVENT009;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*CPQ RLDRAM double bit ECC error.*bank.*addr";
+                description "The \"CPQ RLDRAM double bit ECC error\" message reports a transient hardware issue. The cause is due to a detected double bit error in ECC memory on the specified FPC.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT010 {
+                event-id MQCHIP_EVENT010;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*FI Error-cell sent to reorder engine";
+                description "The \"FI Error-cell sent to reorder engine\" message reports a transient hardware issue. This is a transient hardware issue.  The MQCHIP Fabric output encountered a packet checksum error. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Restart each fabric plane.  If persists, then determine originating bad packets from stream mapping table and reset it.  If logs recur after reset, contact JTAC.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT012 {
+                event-id MQCHIP_EVENT012;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*CPQ Sram parity error.*errlog";
+                description "The \"CPQ Sram parity error\" message reports a transient hardware error.​ The cause is due to SRAM parity error in the CPQ block.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT013 {   
+                event-id MQCHIP_EVENT013;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*FI Enqueuing error.*type.*seq.*stream";
+                description "The \"FI Enqueuing error\" message reports a transient hardware error. This means that the fabric cells arrived too late in the MQ chip.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT014 {
+                event-id MQCHIP_EVENT014;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*DDRIF WO Checksum Error";
+                description "The \"DDRIF WO Checksum Error\" message reports that there is a checksum error in the DDRIF memory.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Reset FPC during MW and monitor for recurrence.  If it recurs, then RMA.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT015 {
+                event-id MQCHIP_EVENT015;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*FO Request time-out error";
+                description "The \"FO Request time-out error\" message reports a transient software or hardware error which means the fabric grant was not received.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Fabric hardening should kick in automatically to mitigate.  Contact JTAC for RCA and further troubleshooting.";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT016 {
+                event-id MQCHIP_EVENT016;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*DDRIF FO.*Checksum Error";
+                description "The \"Checksum Error\" message reports detected cell checksum errors on the FPC.";
+                constant syslog-trigger-color {
+                    value red;          
+                }
+                constant syslog-trigger-message {
+                    value "Disable FPC and RMA";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT017 {
+                event-id MQCHIP_EVENT017;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*FI Cell underflow at the state stage";
+                description "The \"FI Cell underflow at the state stage\" message reports that Fabric Cells arrived too late but are not dropped.";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Fabric hardening should kick in automatically to mitigate.  Contact JTAC for RCA and further troubleshooting.";
+                }
+                constant reoccur {
+                    value FALSE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT018a {
+                event-id MQCHIP_EVENT018a;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*MALLOC Pre-Q Reference Count underflow.*decrement below zero";
+                description "The \"MALLOC Pre-Q Reference Count underflow\" message reports a software error. The cause is due to an LU microcode error or misconfiguration. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT018b {
+                event-id MQCHIP_EVENT018b;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*MALLOC Q Reference Count Memory parity error";
+                description "The \"MALLOC Pre-Q Reference Count underflow\" message reports a software error. The cause is due to an LU microcode error or misconfiguration. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;  
+            }
+            pattern MQCHIP_EVENT018c {
+                event-id MQCHIP_EVENT018c;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*MALLOC Two or more Q Ref-Count Memory parity errors";
+                description "The \"MALLOC Pre-Q Reference Count underflow\" message reports a software error. The cause is due to an LU microcode error or misconfiguration. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT019a {
+                event-id MQCHIP_EVENT019a;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*OCM Fo.*Ddrif Parity Error";
+                description "This is transient HW error caused by on-chip memory parity errors. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern MQCHIP_EVENT019b {
+                event-id MQCHIP_EVENT019b;
+                filter "fpc%{NUMBER:fpc_number}.*MQCHIP.*OCM Parity Error Log.*rddst.*bnk_vec.*addr.*bank.*data";
+                description "This is transient HW error caused by on-chip memory parity errors. ";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "If single log, no action.  If numerous errors, reset the MPC and monitor for recurrence.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
+            pattern-set MQCHIP {
+                pattern-names [ MQCHIP_EVENT004 MQCHIP_EVENT007 MQCHIP_EVENT008 MQCHIP_EVENT009 MQCHIP_EVENT010 MQCHIP_EVENT012 MQCHIP_EVENT013 MQCHIP_EVENT014 MQCHIP_EVENT015 MQCHIP_EVENT016 MQCHIP_EVENT017 MQCHIP_EVENT018a MQCHIP_EVENT018b MQCHIP_EVENT018c MQCHIP_EVENT019a MQCHIP_EVENT019b ];
+            }
+        }                               
+    }
+}
