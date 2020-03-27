@@ -2,8 +2,8 @@
 
 ## Chassis playbooks
 ### Playbook name: netsvc-playbook 
-
-
+		> Description: "Verifies network-services configuration versus service state and notify anomaly if there is a mismatch"
+		> Synopsis: "Network services detector"
 		> Playbook file name: netsvc.playbook
 		> Detals:
 		 Detects mismatched chassis network-services setting, will advise corrective action if detected
@@ -39,7 +39,20 @@
 		> Description: "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold"
 		> Synopsis: "PEM power check"
 		> Rule file name: pem-power-usage.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
 		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
 			> Supported platforms: EX4600;
 
 
@@ -60,7 +73,20 @@
 		> Description: "Collects chassis temperature periodically and notifies anomalies when temperature exceed threshold"
 		> Synopsis: "Chassis temperature check"
 		> Rule file name: chassis-temperature.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
 		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
 			> Supported platforms: EX4600;
 
 
@@ -117,7 +143,20 @@
 		> Description: "Collects RE CPU temperature periodically and notifies anomaly when temperature exceed threshold"
 		> Synopsis: "RE CPU temperature check"
 		> Rule file name: re-cpu-temperature.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
 		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
 			> Supported platforms: EX4600;
 
 
@@ -143,7 +182,19 @@
 		> Description: "Collects chassis zone power usage periodically and notifies anomaly when power usage exceed threshold"
 		> Synopsis: "Zone power check"
 		> Rule file name: zone-power-usage.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+		> Supported products: ACX 
 		> Supported products: SRX 
+
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
 			> Supported platforms: All;
 		> Helper files: [ chassis-power.yml used-percentage.py ];
 		> Supported healthbot version: 1.0.1
@@ -159,7 +210,20 @@
 		> Description: "Collects routing-engine (RE) temperature periodically and notifies anomaly when temperature exceed threshold"
 		> Synopsis: "Routing-engine temperature check"
 		> Rule file name: re-temperature.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
 		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
 			> Supported platforms: EX4600;
 
 
@@ -185,7 +249,19 @@
 		> Description: "Monitors the virtual memory and interrupt rate"
 		> Synopsis: "Virtual memory information analyzer"
 		> Rule file name: system-virtual-memory.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+		> Supported products: ACX 
 		> Supported products: SRX 
+
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
 			> Supported platforms: All;
 		> Helper files: system-virtual-memory.yml;
 		> Supported healthbot version: 1.0.1
@@ -194,7 +270,20 @@
 		> Description: "Collects FPC temperature periodically and notifies anomaly when temperature exceed threshold"
 		> Synopsis: "FPC temperature check"
 		> Rule file name: fpc-temperature.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
 		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
 			> Supported platforms: EX4600;
 
 
@@ -219,7 +308,19 @@
 		> Description: "Collects chassis fan statistics periodically and notifies anomalies when fan status is NOK"
 		> Synopsis: "Chassis fans health analyzer"
 		> Rule file name: chassis-fan-health.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+		> Supported products: ACX 
 		> Supported products: SRX 
+
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
 			> Supported platforms: All;
 		> Helper files: chassis-fan.yml;
 		> Supported healthbot version: 1.0.1
@@ -240,7 +341,20 @@
 		> Description: "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold"
 		> Synopsis: "Chassis system power check"
 		> Rule file name: system-power-usage.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
 		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
 			> Supported platforms: EX4600;
 
 
@@ -269,7 +383,19 @@
 
 
 		> Rule file name: netsvc.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+		> Supported products: ACX 
 		> Supported products: SRX 
+
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
 			> Supported platforms: All;
 		> Helper files: netsvc.yml;
 		> Supported healthbot version: 1.0.1
