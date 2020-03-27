@@ -1,230 +1,307 @@
-# Chassis management healthbot key performance indicators
-# 
-** Synopsis **
-
-This folder contains healthbot rules and playbooks to check the chassis health and notify when anomaly
-
-** Rule Index **
-
-Rule1 – chassis-fan-health.rule – This rule checks health of fan and notify in case any of the health monitored fields crosses threshold   
-Sensor type : iAgent    
-Input variables : N/A    
-Dependency file(s) : chassis-fan.yml    
-
-Rule2 – chassis-temperature.rule – This rule checks health of whole chassis temperature and notify in case any of the health monitored fields crosses threshold   
-sensor type: open-config   
-Input variables : chassis-temperature-high-threshold(default value 55), chassis-temperature-low-threshold(default value 45)   
-Dependency file(s): No   
-
-Rule3 – fpc-temperature.rule – This rule checks health of FPC temperature and notify in case any of the health monitored fields crosses threshold    
-sensor type: open-config   
-Input variables : FPC-Slot-No(default value 0-9), FPC-Temperature-Higher-Threshold(default value 55), FPC-Temperature-Lower-Threshold(default value 45)   
-Dependency file(s) : No   
-
-Rule4 – pem-power-usage.rule –  This rule checks pem status and power usage and notify in case any of the health monitored fields crosses threshold   
-sensor type: open-config   
-Input variables : pem-power-usage-threshold(default value 888888880)   
-Dependency file(s) : used-percentage.py   
-
-Rule5 – re-cpu-temperature.rule – This rule checks health of RE CPU temperature and notify in case any of the health monitored fields crosses threshold   
-sensor type: open-config   
-Input variables : RE-CPU-Temperature-Higher-Threshold(default value 55), RE-CPU-Temperature-Lower-Threshold(default value 45), RE-Slot-No(default value 0-1)   
-Dependency file(s) : No   
-
-Rule6 – system-power-usage.rule – This rule checks system power usage and notify in case any of the health monitored fields crosses threshold   
-sensor type: open-config   
-Input variables : system-power-usage-threshold(default value 20)   
-Dependency file(s) : used-percentage.py   
-
-Rule7 – zone-power-usage.rule – This rule checks health of pem power zones usage and notify in case any of the health monitored fields crosses threshold   
-sensor type: iAgent   
-Input variables : zone-power-usage-threshold(default value 80)   
-Dependency file(s) : used-percentage.py   
-
-
-Playbook – chassis-kpis.playbook – This playbook checks health of chassis and notify in case any of the health monitored fields crosses threshold   
-This playbook contains following rules:-   
-chassis.fan/check-fan-health    
-chassis.temperatures/check-fpc-temperature    
-chassis.power/check-pem-power-usage    
-chassis.power/check-system-power-usage    
-chassis.power/check-zone-power-usage    
-chassis.temperatures/check-chassis-temperature    
-chassis.temperatures/check-re-cpu-temperature    
-chassis.temperatures/check-re-temperature   
-
-
-# Synopsis
-Rules under chassis.gres topic.
-
-# Description
-This section comprises of the rules that monitor health of Graceful Routing Engine Switchover (GRES) Junos high-availability/failover feature. 
-
-# Rules Index
-
-## Rule 1: check-failover-configured.rule
-**Description**  
-This rule checks if graceful-switchover is configured or not, on a dual Routing Engine chassis.
-
-**Sensor type**  
-iAgent
-
-**Dependent files**  
-failover-info.yml, get_failover_info.py
-
-**Input variables**  
-_gres-state_ : iAgent sensor 'sysctl hw.re.failover'
-_ore-present_ : iAgent sensor 'sysctl hw.ore.present'
-
-**Platforms supported**  
-All platforms
-
-**Junos release supported**  
-All Junos releases
-
-**Threshold**  
-The rule checks whether graceful-switchover is configured on dual RE chassis or not.
-
-**Suggested action**  
-If the chassis has dual RE and "chassis redundancy graceful-switchover" is not configured, this rule will report yellow color. For high availability, it is recommended to configure GRES on dual RE chassis.
-
-**References**  
-[Understanding Graceful Routing Engine Switchover](https://www.juniper.net/documentation/en_US/junos/topics/concept/gres-overview.html)
-
-## Rule 2: check-failover-init-error.rule
-**Description**  
-This rule checks if Ksyncd (Junos Kernel State Synchronization daemon) has reported an initialization error or not.
-
-**Sensor type**  
-open-config
-
-**Dependent files**  
-N/A
-
-**Input variables**  
-_gres-error-state_ : open-config sensor '/junos/chassis/gres/error-state'
-
-**Platforms supported**  
-MX series, PTX series, EX92XXX
-
-**Junos release supported**  
-19.1 Junos release onwards
-
-**Threshold**  
-The rule checks for Ksyncd initialization error every 15 minutes and displays red color if contiguous 2 samples report the error.
-
-**Suggested action**  
-If this rule detects a continuous Ksyncd initialization error, it is recommended to reboot Slave Routing Engine to recover from the situation.
-
-**References**  
-[Understanding Graceful Routing Engine Switchover](https://www.juniper.net/documentation/en_US/junos/topics/concept/gres-overview.html)
-
-## Rule 3: check-ksyncd-core.rule
-**Description**  
-This rule checks if Ksyncd (Junos Kernel State Synchronization daemon) core file is present in /var/tmp or not.
-
-**Sensor type**  
-iAgent
-
-**Dependent files**  
-find_ksyncd_cores.yml, find_ksyncd_cores.py
-
-**Input variables**  
-_ksyncd-cores_ : iAgent sensor 'cli show system core-dumps routing-engine other | grep -c ksyncd'
-
-**Platforms supported**  
-All dual RE platforms
-
-**Junos release supported**  
-All Junos releases
-
-**Threshold**  
-The rule checks for presence of Ksyncd core files every 15 minutes.
-
-**Suggested action**  
-Contact Juniper and provide below information.
-1) Ksyncd core file(s) located in /var/tmp/ on the device. Check both routing engines.
-2) Any kernel live vmcore files in /var/crash/, on both routing engines.
-3) Crashinfo file located in /var/tmp/, if available.
-4) All log files in /var/log/, from both routing engines.
-
-**References**  
-[Understanding Graceful Routing Engine Switchover](https://www.juniper.net/documentation/en_US/junos/topics/concept/gres-overview.html)
-
-## Rule 4: report-gres-readiness.rule
-**Description**  
-This rule checks if system is ready for graceful-switchover or not.
-Needs check-failover-configured.rule delpoyed too.
-
-**Sensor type**  
-open-config, also refers to one iAgent field in "check-failover-configured" rule.
-
-**Dependent rules**  
-check-failover-configured.rule
-
-**Dependent files**  
-N/A
-
-**Input variables**  
-_configured-state_ : open-config sensor '/junos/chassis/gres/configured-state'
-_slave-connect-time_ : open-config sensor '/junos/chassis/gres/slave-connect-time'
-_slave-kernel-ready_ : open-config sensor '/junos/chassis/gres/slave-kernel-ready'
-_ore-present_ : Reference to iAgent field in rule "check-failover-configured.rule"
-
-**Platforms supported**  
-MX series, PTX series, EX92XXX
-
-**Junos release supported**  
-19.1 Junos release onwards
-
-**Threshold**  
-The rule checks if the system is not ready for GRES switchover for more than 1 hour, in which case it displays red color. It first checks if the chassis is dual RE or not and whether GRES is configured. Then it checks if Slave has been connected to Master RE for at least 60 minutes and if still system is not ready for failover, this rule complains.
-
-**Suggested action**  
-This rule displays red color if system is not ready for GRES switchover. When this occurs, try restaring kernel-replication daemon on Slave RE by issuing "restart kernel-replication" command on CLI. If again the rule displays a problem, try rebooting Slave RE.
-
-**References**  
-[Understanding Graceful Routing Engine Switchover](https://www.juniper.net/documentation/en_US/junos/topics/concept/gres-overview.html)
-
-# Synopsis
-Rules under chassis.issu topic.
-
-# Description
-This section comprises of all the rules that monitor health of In Service Software Upgrade (ISSU) Junos feature. 
-
-# Rules Index
-
-## Rule 1: check-issu-failure.rule
-**Description**  
-This rule detects ISSU failure and displays the ISSU stage when the failure occurred.
-
-**Sensor type**  
-open-config
-
-**Dependent files**
-N/A
-
-**Input variables**
-_failure-stage_ : open-config sensor '/junos/chassis/issu/failure-stage'
-_current-issu-stage_ : open-config sensor '/junos/chassis/issu/current-issu-stage'
-
-**Platforms supported**
-All MX series, PTX series & EX92XXX that support ISSU
-
-**Junos release supported**
-19.1 Junos release onwards
-
-**Threshold**  
-The rule displays red color and the ISSU failure state, when it detects a non-zero ISSU failure stage sensor.
-
-**Suggested action**  
-If an ISSU failure is detected, this rule will display the ISSU state when the failure occured, as part of the message. If a failure is reported, please collect below information from the device:
-1) All log files under /var/log, from both routing engines
-2) From and To Junos releases
-3) Output of "show chassis hardware"
-4) Output of "request system software validate in-service-upgrade <new Junos s/w image>"
-
-*Note*: The ISSU failure count will be reset when next ISSU is performed. If you manually want to reset it, issue "sysctl hw.re.issu_failure_stage=0" command on the routing engine at the shell prompt.
-
-**References**  
-[ISSU overview](https://www.juniper.net/documentation/en_US/junos/topics/concept/issu-oveview.html)
+# HealthBot Chassis KPI rules and playbooks
+
+## Chassis playbooks
+### Playbook name: netsvc-playbook 
+
+
+		> Playbook file name: netsvc.playbook
+		> Detals:
+		 Detects mismatched chassis network-services setting, will advise corrective action if detected
+		 Rule netsvc-rule, calls netsvc.py to determine the state and advise action if required
+### Playbook name: chassis-kpis-playbook 
+		> Description: "Playbook monitor the chassis health i.e. chassis, RE, RE CPU and linecards temperatures, power and fan health"
+		> Synopsis: "Chassis key performance indicators"
+		> Playbook file name: chassis-kpis.playbook
+		> Detals:
+		 Playbook contains multiple rules which checks the health of chassis and
+		 notifies when anomalies are found.
+		 1) Rule "check-chassis-temperature" detects the chassis temperature
+		    threshold breaches and notifies anomalies.
+		 2) Rule "check-re-temperature" detects the RE temperature threshold breaches
+		    and notifies anomalies.
+		 3) Rule "check-re-cpu-temperature" detects the RE CPU temperature threshold
+		    breaches and notifies anomalies.
+		 4) Rule "check-fpc-temperature" detects the FPC temperature threshold
+		    breaches and notifies anomalies.
+		 5) Rule "check-system-power-usage" detects the system power usage threshold
+		    breaches and notifies anomalies.
+		 6) Rule "check-zone-power-usage" detects the zone power usage threshold
+		    breaches and notifies anomalies.
+		 7) Rule "check-pem-power-usage" detects the PEM power usage threshold
+		    breaches and notifies anomalies.
+		 8) Rule "check-fan-health" Monitors the fan state changes and notifies
+		    anomalies.
+		 9) Rule "check-chassis-alarms" detects chassis alarms
+
+## Chassis rules
+
+### Rule name: check-pem-power-usage 
+		> Description: "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold"
+		> Synopsis: "PEM power check"
+		> Rule file name: pem-power-usage.rule
+		> Supported products: EX 
+			> Supported platforms: EX4600;
+
+
+		> Detals:
+		 Detects PEMs (Power Entry Modules) power usage threshold breaches and
+		 notifies when anomalies are found.
+		 Detects PEMs state changes and notifies when anomalies are found.
+		 Detects PEMs temperature changes and notifies when anomalies are found.
+		 Detects PEMs AC or DC input state changes and notifies when anomalies are found.
+		 One input control detection
+		   1) "pem-power-usage-threshold" is the threshold that causes the rule to
+		      report an anomaly. By default it's 80% of PEM power usage. This rule
+		      will set a dashboard color to red when PEM power usage exceed
+		      threshold 'pem-power-usage-threshold'. Otherwise color is set to green.
+		   2) "power-input-type" is selects the input type as power-dc-input or
+		      power-ac-input
+### Rule name: check-chassis-temperature 
+		> Description: "Collects chassis temperature periodically and notifies anomalies when temperature exceed threshold"
+		> Synopsis: "Chassis temperature check"
+		> Rule file name: chassis-temperature.rule
+		> Supported products: EX 
+			> Supported platforms: EX4600;
+
+
+		> Detals:
+		 Detects chassis temperature threshold breaches and notifies when anomalies
+		 are found.
+		 Two inputs control detection
+		
+		   1) "chassis-temperature-low-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 45 degree Cecilius of
+		      chassis temperature. This rule will set a dashboard color to green
+		      when temperature is below low threshold.
+		
+		   2) "chassis-temperature-high-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 55 degree Cecilius of
+		      chassis temperature. This rule will set a dashboard color to yellow
+		      when temperature is below high threshold. Otherwise color is set to
+		      red and notify anomaly.
+### Rule name: check-failover-configured 
+		> Description: "Checks if other RE is present and if GRES/failover is configured or not"
+		> Synopsis: "Check whether graceful-switchover is configured or not"
+		> Rule file name: check-failover-configured.rule
+
+
+
+
+		> Detals:
+		 Checks if graceful-switchover is configured on a dual RE chassis or not
+		 First checks if other routing engine is present or not. If present, checks
+		 if failover (set chassis redundancy graceful-switchover) is configured or not.
+		
+		 In dual RE chassis, for high availability it is recommended to have faiover
+		 configured. A yellow color is reported if this configuration is not found
+		 in a dual Routing Engine chassis.
+### Rule name: check-failover-init-error 
+		> Description: "Check if Ksyncd (Junos Kernel State Synchronization daemon) has reported an initialization error"
+		> Synopsis: "Check failover Initialization error"
+		> Rule file name: check-failover-init-error.rule
+
+
+
+
+		> Detals:
+		 Check failover Initialization error
+		 Checks if Ksyncd (Junos Kernel State Synchronization daemon) has reported an
+		 initialization error or not.
+		 Ksyncd cleans up the FIB states on replicated routing engine before it
+		 starts to resync the FIB states from the Master routing engine. It is possible
+		 for this cleanup to fail in certain scenarios. But, if these cleanup failures
+		 are persistent and are seen for more than 30 minutes, it can comprise high
+		 availability feature and should be reported.
+		 Rebooting backup RE should help in recovery.
+### Rule name: check-re-cpu-temperature 
+		> Description: "Collects RE CPU temperature periodically and notifies anomaly when temperature exceed threshold"
+		> Synopsis: "RE CPU temperature check"
+		> Rule file name: re-cpu-temperature.rule
+		> Supported products: EX 
+			> Supported platforms: EX4600;
+
+
+		> Detals:
+		 Detects routing-engine CPU temperature threshold breaches and notifies when
+		 anomalies are found.
+		 Three inputs control detection
+		   1) "re-slot-no" is a regular expression that matches the routing engine
+		      that you would like to monitor.  By default it's '0-1', which matches
+		      both the routing engines. Use something like '0' to match only
+		      routing engine 0.
+		   2) "re-cpu-temperature-low-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 45 degree Cecilius of
+		      RE CPU temperature. This rule will set a dashboard color to green
+		      when temperature is below low threshold.
+		
+		   3) "re-cpu-temperature-high-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 55 degree Cecilius of RE
+		      CPU temperature. This rule will set a dashboard color to yellow when
+		      temperature is below high threshold. Otherwise color is set to
+		      red and notify anomaly.
+### Rule name: check-zone-power-usage 
+		> Description: "Collects chassis zone power usage periodically and notifies anomaly when power usage exceed threshold"
+		> Synopsis: "Zone power check"
+		> Rule file name: zone-power-usage.rule
+		> Supported products: SRX 
+			> Supported platforms: All;
+		> Helper files: [ chassis-power.yml used-percentage.py ];
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 Detects chassis power zone usage threshold breaches and notifies when
+		 anomalies are found.
+		 One input control detection
+		   1) "zone-power-usage-threshold" is the threshold that causes the rule to
+		      report an anomaly. By default it's 80% of zone power usage. This rule
+		      will set a dashboard color to red when power usage exceed threshold
+		      'zone-power-usage-threshold'. Otherwise color is set to green.
+### Rule name: check-re-temperature 
+		> Description: "Collects routing-engine (RE) temperature periodically and notifies anomaly when temperature exceed threshold"
+		> Synopsis: "Routing-engine temperature check"
+		> Rule file name: re-temperature.rule
+		> Supported products: EX 
+			> Supported platforms: EX4600;
+
+
+		> Detals:
+		 Detects routing-engine temperature threshold breaches and notifies when
+		 anomalies are found.
+		 Three inputs control detection
+		   1) "re-slot-no" is a regular expression that matches the routing engine
+		      that you would like to monitor.  By default it's '0-1', which matches
+		      both the routing engines. Use something like '0' to match only
+		      routing engine 0.
+		   2) "re-temperature-low-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 45 degree Cecilius of
+		      RE temperature. This rule will set a dashboard color to green
+		      when temperature is below low threshold.
+		
+		   3) "re-temperature-high-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 55 degree Cecilius of RE
+		      temperature. This rule will set a dashboard color to yellow when
+		      temperature is below high threshold. Otherwise color is set to
+		      red and notify anomaly.
+### Rule name: check-system-virtual-memory-information 
+		> Description: "Monitors the virtual memory and interrupt rate"
+		> Synopsis: "Virtual memory information analyzer"
+		> Rule file name: system-virtual-memory.rule
+		> Supported products: SRX 
+			> Supported platforms: All;
+		> Helper files: system-virtual-memory.yml;
+		> Supported healthbot version: 1.0.1
+		> Detals:
+### Rule name: check-fpc-temperature 
+		> Description: "Collects FPC temperature periodically and notifies anomaly when temperature exceed threshold"
+		> Synopsis: "FPC temperature check"
+		> Rule file name: fpc-temperature.rule
+		> Supported products: EX 
+			> Supported platforms: EX4600;
+
+
+		> Detals:
+		 Detects FPC temperature threshold breaches and notifies when
+		 anomalies are found.
+		 Three inputs control detection
+		   1) "fpc-slot-no" is a regular expression that matches the FPCs that you
+		      would like to monitor.  By default it's '0-20', which matches 0 to 20
+		      FPC slots. Use something like '0-3' to match only FPC slots 0 to 3.
+		   2) "fpc-temperature-low-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 45 degree Cecilius of
+		      FPC temperature. This rule will set a dashboard color to green
+		      when temperature is below low threshold.
+		
+		   3) "fpc-temperature-high-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 55 degree Cecilius of FPC
+		      temperature. This rule will set a dashboard color to yellow when
+		      temperature is below high threshold. Otherwise color is set to
+		      red and notify anomaly.
+### Rule name: check-fan-health 
+		> Description: "Collects chassis fan statistics periodically and notifies anomalies when fan status is NOK"
+		> Synopsis: "Chassis fans health analyzer"
+		> Rule file name: chassis-fan-health.rule
+		> Supported products: SRX 
+			> Supported platforms: All;
+		> Helper files: chassis-fan.yml;
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 Monitors chassis fan health status and notifies when anomalies are found.
+### Rule name: check-chassis-alarms 
+		> Description: "Collects chassis stats and notify anomalies when alarms found"
+		> Synopsis: "Chassis alarms detector"
+		> Rule file name: chassis-alarms.rule
+
+
+
+
+		> Detals:
+		 Detects chassis alarms and notifies when anomalies are found.
+		
+### Rule name: check-system-power-usage 
+		> Description: "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold"
+		> Synopsis: "Chassis system power check"
+		> Rule file name: system-power-usage.rule
+		> Supported products: EX 
+			> Supported platforms: EX4600;
+
+
+		> Detals:
+		 Detects system power usage threshold breaches and notifies when  anomalies
+		 are found.
+		 One input control detection
+		   1) "system-power-remaining-threshold" is the threshold that causes the
+		      rule to report an anomaly. By default it's 20% of system remaining
+		      power. This rule will set a dashboard color to red when system
+		      remaining power is below threshold 'system-power-remaining-threshold'.
+		      Otherwise color is set to green.
+### Rule name: check-issu-failure 
+		> Description: "This rule detects ISSU failure and displays the ISSU stage when it failed"
+		> Synopsis: "Detect ISSU failure"
+		> Rule file name: check-issu-failure.rule
+
+
+
+
+		> Detals:
+		 ISSU (In-Service Software Upgrade) failure detection
+		 If ISSU is triggered and it fails, this rule will detect the failure.
+		 It will also report during which phase the ISSU failed (validation, slave upgrade etc.).
+### Rule name: netsvc-rule 
+
+
+		> Rule file name: netsvc.rule
+		> Supported products: SRX 
+			> Supported platforms: All;
+		> Helper files: netsvc.yml;
+		> Supported healthbot version: 1.0.1
+		> Detals:
+### Rule name: check-ksyncd-core 
+		> Description: "Check if Ksyncd core files are present in /var/tmp on the other RE"
+		> Synopsis: "Check presence of Ksyncd core files"
+		> Rule file name: check-ksyncd-core.rule
+
+
+
+
+		> Detals:
+		 Check presence of Ksyncd core files
+		 Checks if Ksyncd core files are present in /var/tmp on the other RE.
+		
+		 While replicating a FIB state, if Ksyncd (Kernel state synchronization daemon)
+		 gets an error from the backup routing engine kernel, it generates a ksyncd core
+		 and Kernel live vmcores for debugging.
+		 This rule detects the presence of Ksyncd core(s) and reports a yellow alarm.
+### Rule name: report-gres-readiness 
+		> Description: "Check whether Failover/GRES is configured and if slave RE is ready for a switchover"
+		> Synopsis: "Check if slave RE is ready for failover"
+		> Rule file name: report-gres-readiness.rule
+
+
+
+
+		> Detals:
+		 Check if slave RE is ready for failover
+		 In dual routing engine chassis, if graceful-switchover is configured, the
+		 slave routing engine syncs the FIB states from Master RE and declares itself
+		 ready for failover event.
+		 If for some reason, Slave does not become ready for failover for significant
+		 amount of time, this rule will report it.
