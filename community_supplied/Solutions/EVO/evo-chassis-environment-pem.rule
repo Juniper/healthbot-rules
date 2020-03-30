@@ -1,0 +1,77 @@
+healthbot {
+    topic chassis.environment {
+        description "Collects temperature and state from all chassis component sensors using iAgent";
+        synopsis "All chassis components temperature and state checks";
+        rule evo-check-pem-temperature {
+            keys name;
+            rule-frequency 60s;
+            sensor environment {
+                synopsis "iAgent sensor definition";
+                description "iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file evo-chassis-environment.yml;
+                    table EvoChassisEnvironmentPemTable;
+                    frequency 60s;
+                }
+            }
+            field temp-threshold {
+                constant {
+                    value "{{temp-threshold}}";
+                }
+                type integer;
+                description "Maximum temperature";
+            }
+            trigger check-temperature {
+                frequency 60s;
+                term is-temp-above-threshold {
+                    when {
+                        greater-than "$temperature" "$temp-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($name) temperature is above threshold: ($temperature)";
+                        }
+                    }
+                }
+                term is-temp-normal {
+                    then {
+                        status {
+                            color green;
+                            message "($name) temperature is normal: ($temperature)";
+                        }
+                    }
+                }
+            }
+            trigger state {
+                frequency 60s;
+                term is_comp_online {
+                    when {
+                        matches-with "$state" Online {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($name) is online";
+                        }
+                    }
+                }
+                term is_comp_offline {
+                    then {
+                        status {
+                            color red;
+                            message "($name) is offline";
+                        }
+                    }
+                }
+            }
+            variable temp-threshold {
+                value 55;
+                description "temperature threshold";
+                type int;
+            }
+        }
+    }
+}
