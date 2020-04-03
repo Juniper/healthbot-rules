@@ -1,0 +1,255 @@
+/*
+ * Monitors netflow version 9 IPv4 traffic flows and notified anomaly when 
+ * traffic rate is above threshold.
+ * Seven inputs controls detection
+ * 
+ *   1) input-source-address variable, is a regular expression that matches the
+ *      source ip address of the flow that you would like to monitor. By
+ *      default it's '.*', which matches all ip addresses. Use something like
+ *      '192.162.1.1|172.16.1.1' to match specific source addresses.
+ * 
+ *   2) input-destination-address variable, is a regular expression that matches
+ *      the destination ip address of the flow that you would like to monitor.
+ *      By default it's '.*', which matches all ip addresses. Use something 
+ *      like '192.162.1.1|172.16.1.1' to match specific destination addresses.
+ *
+ *   3) input-source-port variable, is a regular expression that matches
+ *      the source port of the flow that you would like to monitor. By default
+ *      it's '.*', which matches all ports. Use something like '22' to match
+ *      source scp port.
+ *
+ *   4) input-destination-port variable, is a regular expression that matches
+ *      the destination port of the flow that you would like to monitor. By 
+ *      default it's '.*', which matches all ports. Use something like '22'
+ *      to match source scp port.
+ *
+ *   5) input-in-interface variable, is a regular expression that matches
+ *      the ingress interface of the flow that you would like to monitor. By 
+ *      default it's '.*', which matches all interfaces. Use something like 
+ *      'ge.*' to match only gigabit ethernet interfaces.
+ *
+ *   6) input-protocol variable, is a regular expression that matches protocol
+ *      of the flow that you would like to monitor. By default it's '.*', which
+ *      matches all protocols. Use something like '179' to match only protocol
+ *      BGP.
+ *
+ *   7) traffic-rate-threshold variable, is the threshold that causes the rule 
+ *      to report an anomaly. By default it's 50MB. This rule will set a
+ *      dashboard color to red when traffic rate is greater than  
+ *      'traffic-rate-threshold', otherwise color is set to green.
+ */
+healthbot {
+    topic services.flow {
+        rule monitor-nfv9-ipv4-flows-traffic {
+            /*
+             * Monitors the IPv4 flows traffic rate. Notifies via the dashboard
+             * colors when traffic rate increase by {{traffic-rate-threshold}}
+             * for every collected metric during a 60s time range (red).
+             * Otherwise the color is set to green
+             * 
+             * Use source address, port, destination address port and ingress 
+             * interface name as keys for rule.
+             */
+            keys [ destination-address destination-port in-interface protocol-id source-address source-port ];
+            synopsis "Netflow version 9 IPv4 flow analyzer";
+            description "Monitors netflow version9 IPv4 flows and notifies anomaly when each flow's traffic rate is above threshold";
+            /*
+             * Sensor configuration to get data from network devices.
+    	     */
+            sensor v9-flow {
+                flow {
+                    template-name hb-nfv9-ipv4-template;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field delta-traffic-bytes {
+                sensor v9-flow {
+                    path octetDeltaCount;
+                }
+                type integer;
+                description "Flow's traffic rate in bytes";
+            }
+            field destination-address {
+                sensor v9-flow {
+                    where "destinationIPv4Address =~ /{{input-destination-address}}/";
+                    path destinationIPv4Address;
+                }
+                type string;
+                description "Flow's destination address";
+            }
+            field destination-ip-length {
+                sensor v9-flow {
+                    path destinationIPv4PrefixLength;
+                }
+                type string;
+                description "Flow's destination address's subnet length";
+            }
+            field destination-port {
+                sensor v9-flow {
+                    where "destinationTransportPort =~ /{{input-destination-port}}/";
+                    path destinationTransportPort;
+                }
+                type string;
+                description "Flow's destination port";
+            }
+            field in-interface {
+                sensor v9-flow {
+                    where "ingressInterface =~ /{{input-in-interface}}/";
+                    path ingressInterface;
+                }
+                type string;
+                description "Ingress interface";
+            }
+            field ip-version {
+                sensor v9-flow {
+                    path ipVersion;
+                }
+                type string;
+                description "IP version";
+            }
+            field next-hop-ip {
+                sensor v9-flow {
+                    path ipNextHopIPv4Address;
+                }
+                type string;
+                description "Next hop ip address";
+            }
+            field protocol-id {
+                sensor v9-flow {
+                    where "protocolIdentifier =~ /{{input-protocol}}/";
+                    path protocolIdentifier;
+                }
+                type string;
+                description "Protocol name";
+            }
+            field source-address {
+                sensor v9-flow {
+                    where "sourceIPv4Address =~ /{{input-source-address}}/";
+                    path sourceIPv4Address;
+                }
+                type string;
+                description "Flow's source address";
+            }
+            field source-ip-length {
+                sensor v9-flow {
+                    path sourceIPv4PrefixLength;
+                }
+                type string;
+                description "Flow's source address's subnet length";
+            }
+            field source-port {
+                sensor v9-flow {
+                    where "sourceTransportPort =~ /{{input-source-port}}/";
+                    path sourceTransportPort;
+                }
+                type string;
+                description "Source port";
+            }
+            field traffic-threshold {
+                constant {
+                    value "{{traffic-rate-threshold}}";
+                }
+                type integer;
+                description "Traffic rate threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger nfv9-ipv4-traffic-flows {
+                frequency 60s;
+                term flow-traffic-normal {
+                    when {
+                        less-than "$delta-traffic-bytes" "$traffic-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Flow src-addr:$source-address dst-addr:$destination-address protocol:$protocol-id intf:$in-interface nhop:$next-hop-ip traffic rate($delta-traffic-bytes bytes) is normal";
+                        }
+                    }
+                }
+                term is-flow-traffic-above-threshold {
+                    when {
+                        greater-than-or-equal-to "$delta-traffic-bytes" "$traffic-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Flow src-addr:$source-address dst-addr:$destination-address protocol:$protocol-id intf:$in-interface nhop:$next-hop-ip traffic rate($delta-traffic-bytes bytes) is above threshold";
+                        }
+                    }
+                }
+            }
+            variable input-destination-address {
+                value .*;
+                description "Flow monitor based on destination address, regular expression, eg '192.168.1.1|172.16.1.1'";
+                type string;
+            }
+            variable input-destination-port {
+                value .*;
+                description "Flow monitor based on destination port, regular expression, eg '8080|443'";
+                type string;
+            }
+            variable input-in-interface {
+                value .*;
+                description "Flow monitor based on interface index id, regular expression, eg '100|123'";
+                type string;
+            }
+            variable input-protocol {
+                value .*;
+                description "Flow monitor based on protocol, regular expression, eg '8080|443'";
+                type string;
+            }
+            variable input-source-address {
+                value .*;
+                description "Flow monitor based on source address, regular expression, eg '192.168.1.1|172.16.1.1'";
+                type string;
+            }
+            variable input-source-port {
+                value .*;
+                description "Flow monitor based on source port, regular expression, eg '8080|443'";
+                type string;
+            }
+            variable traffic-rate-threshold {
+                value 50000000;
+                description "Traffic rate threshold: Rate increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                catalogue {
+                    tier 2;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                            }
+                            products PTX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
