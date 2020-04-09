@@ -1,0 +1,71 @@
+/*
+ * The template definitions in this file are the templates supported for
+ * IPFIX flow export protocol by Junos.
+ * These are the default templates supported by Healthbot which can be used in
+ * flow sensor rules. 
+ * NOTE- This file can be accessed from ingest-settings/flow section of
+ * Healthbot rules public repository.
+ */
+healthbot {
+    ingest-settings {
+        flow {
+            template hb-ipfix-ipv4-template {
+                description "Default IPv4 template for IPFIX protocol";
+                protocol-version v10;
+                priority 5;
+                recognition-pattern {
+                    include-fields [ sourceIPv4Address destinationIPv4Address ];
+                    exclude-fields mplsTopLabelStackSection;
+                }
+                key-fields [ sourceIPv4Address destinationIPv4Address ipClassOfService protocolIdentifier sourceTransportPort destinationTransportPort icmpTypeCodeIPv4 ingressInterface ];
+            }
+            template hb-ipfix-ipv6-template {
+                description "Default IPv6 template for IPFIX protocol";
+                protocol-version v10;
+                priority 5;
+                recognition-pattern {
+                    include-fields [ sourceIPv6Address destinationIPv6Address ];
+                    exclude-fields mplsTopLabelStackSection;
+                }
+                key-fields [ sourceIPv6Address destinationIPv6Address ipClassOfService protocolIdentifier sourceTransportPort destinationTransportPort icmpTypeCodeIPv6 ingressInterface ];
+            }
+            template hb-ipfix-vpls-template {
+                description "Default VPLS template for IPFIX protocol";
+                protocol-version v10;
+                priority 5;
+                recognition-pattern {
+                    include-fields [ destinationMacAddress sourceMacAddress ];
+                }
+                key-fields [ destinationMacAddress sourceMacAddress ethernetType ingressInterface ];
+            }
+            template hb-ipfix-mpls-template {
+                description "Default MPLS template for IPFIX protocol";
+                protocol-version v10;
+                priority 5;
+                recognition-pattern {
+                    include-fields mplsTopLabelStackSection;
+                    exclude-fields protocolIdentifier;
+                }
+                key-fields [ mplsTopLabelStackSection mplsLabelStackSection2 mplsLabelStackSection3 ingressInterface ];
+            }
+            template hb-ipfix-mpls-ipv4-template {
+                description "Default MPLS-IPv4 template for IPFIX protocol";
+                protocol-version v10;
+                priority 5;
+                recognition-pattern {
+                    include-fields [ mplsTopLabelStackSection sourceIPv4Address destinationIPv4Address ];
+                }
+                key-fields [ mplsTopLabelStackSection mplsLabelStackSection2 mplsLabelStackSection3 sourceIPv4Address destinationIPv4Address ipClassOfService protocolIdentifier sourceTransportPort destinationTransportPort icmpTypeCodeIPv4 ingressInterface ];
+            }
+            template hb-ipfix-mpls-ipv6-template {
+                description "Default MPLS-IPv6 template for IPFIX protocol";
+                protocol-version v10;
+                priority 5;
+                recognition-pattern {
+                    include-fields [ mplsTopLabelStackSection sourceIPv6PrefixLength destinationIPv6PrefixLength ];
+                }
+                key-fields [ mplsTopLabelStackSection mplsLabelStackSection2 mplsLabelStackSection3 protocolIdentifier sourceTransportPort destinationTransportPort icmpTypeCodeIPv6 ingressInterface ];
+            }
+        }
+    }
+}
