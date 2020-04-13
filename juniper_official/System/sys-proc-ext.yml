@@ -1,31 +1,31 @@
 ---
 SystemProcExtTable:
-  command: show system processes extensive
-  key: cmd
-  view: SystemProcExtView
+  command: show system processes extensive
+  key: cmd
+  view: SystemProcExtView
 
 SystemProcExtView:
-  regex:
-    pid: '\d+'
-    wcpu: '.*(\d+\.\d+)%'
-    cmd: '\w+$'
+  regex:
+    pid: '\d+'
+    wcpu: '.*(\d+\.\d+)%'
+    cmd: '\w+$'
 
 SystemProcExtMemTable:
-  command: show system processes extensive
-  item: '*'
-  view: SystemProcExtMemView
+  command: show system processes extensive
+  item: '*'
+  view: SystemProcExtMemView
 
 SystemProcExtMemView:
-  eval:
-    free: str(int({{free[:-1]}})*1024*1024 if "{{free}}".endswith('M') else int({{free[:-1]}})*1024*1024*1024)
-    active: str(int({{active[:-1]}})*1024*1024 if "{{active}}".endswith('M') else int({{active[:-1]}})*1024*1024*1024)
-    swap-total: str(int({{swap_total[:-1]}})*1024*1024 if "{{swap_total}}".endswith('M') else int({{swap_total[:-1]}})*1024*1024*1024)
-    swap-free: str(int({{swap_free[:-1]}})*1024*1024 if "{{swap_free}}".endswith('M') else int({{swap_free[:-1]}})*1024*1024*1024)
-  regex:
-    active: 'Mem:\s+([0-9MG]+)\s+Active,'
-    inactive: '\s+([0-9MG]+)\s+Inact,'
-    wired: '\s+([0-9MG]+)\s+Wired,'
-    buffered: '\s+([0-9MG]+)\s+Buf,'
-    free: '\s+([0-9MG]+)\s+Free'
-    swap_total: 'Swap:\s+([0-9MG]+)\s+Total,'
-    swap_free: '\s+([0-9MG]+)\s+Free'
+  eval:
+    free: str(int({{free[:-1]}})*1024*1024 if "{{free}}".endswith('M') else int({{free[:-1]}})*1024*1024*1024)
+    active: str(int({{active[:-1]}})*1024*1024 if "{{active}}".endswith('M') else int({{active[:-1]}})*1024*1024*1024)
+    swap-total: str(int({{swap_total[:-1]}})*1024*1024 if "{{swap_total}}".endswith('M') else int({{swap_total[:-1]}})*1024*1024*1024)
+    swap-free: str(int({{swap_free[:-1]}})*1024*1024 if "{{swap_free}}".endswith('M') else int({{swap_free[:-1]}})*1024*1024*1024)
+  regex:
+    active: 'Mem:\s+([0-9MG]+)\s+Active,'
+    inactive: '\s+([0-9MG]+)\s+Inact,'
+    wired: '\s+([0-9MG]+)\s+Wired,'
+    buffered: '\s+([0-9MG]+)\s+Buf,'
+    free: '\s+([0-9MG]+)\s+Free'
+    swap_total: 'Swap:\s+([0-9MG]+)\s+Total,'
+    swap_free: '\s+([0-9MG]+)\s+Free'
