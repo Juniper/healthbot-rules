@@ -103,15 +103,23 @@
             trigger packet-loss {
                 synopsis "ICMP packet loss KPI";
                 description "Sets health based on the packet loss";
-                frequency 1o;
+                /*
+                 * Trigger evaluation time is in offset, which is multiplied by
+                 * sensor frequency or value defined in frequency profile.
+                 * e.g. if sensor frequency is 1m and offset is set to 2 then 
+                 * trigger frequency is 2 minutes.
+                 */
+                frequency 1offset;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the packet ($packet-loss-percent) is 100.
+                 * the packet ($packet-loss-percent) is 100 continuously for
+                 * the offset duration. Offset is multiplied by sensor frequency
+                 * or value defined in frequency profile.
                  */
                 term is-device-not-reachable {
                     when {
                         equal-to "$packet-loss-percent" 100 {
-                            time-range 2o;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -123,12 +131,14 @@
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the packet ($packet-loss-percent) is more than 0.
+                 * when the packet ($packet-loss-percent) is more than 0 
+                 * continuously for the offset duration. Offset is multiplied
+                 * by sensor frequency or value defined in frequency profile.
                  */
                 term is-device-up {
                     when {
                         greater-than "$packet-loss-percent" 0 {
-                            time-range 2o;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -153,7 +163,13 @@
             trigger round-trip-time {
                 synopsis "Round trip time KPI";
                 description "Sets health based on the RTT";
-                frequency 1o;
+                /*
+                 * Trigger evaluation time is in offset, which is multiplied by
+                 * sensor frequency or value defined in frequency profile.
+                 * e.g. if sensor frequency is 1m and offset is set to 1 then 
+                 * trigger frequency is 1 minute.
+                 */
+                frequency 1offset;
                 /*
                  * Sets color to red and sends out an anomaly notification
                  * when the response time ($rtt-average-ms) is more than static
@@ -255,7 +271,13 @@
             trigger icmp-outlier-detection {
                 synopsis "ICMP outlier KPI";
                 description "Sets health based on the RTT average response time across devices";
-                frequency 1o;
+                /*
+                 * Trigger evaluation time is in offset, which is multiplied by
+                 * sensor frequency or value defined in frequency profile.
+                 * e.g. if sensor frequency is 1m and offset is set to 2 then 
+                 * trigger frequency is 2 minutes.
+                 */
+                frequency 1offset;
                 /*
                  * Sets color to red and sends out an anomaly notification
                  * when outlier detected by algorithm across devices.
