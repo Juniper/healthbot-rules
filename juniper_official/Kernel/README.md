@@ -1,448 +1,466 @@
-# Synopsis
-All rules under Kernel.ifstate topic.
+# HealthBot Kernel KPI rules and playbooks
 
-# Description
-This section comprises of all the rules which monitor the sensors related to Ifstate
-(FIB metadata) in Junos.
+## Kernel playbooks
+### Playbook name: krt-statistics-kpis 
 
-# Rules Index
 
-## Rule 1:  check-client-limit-reached.rule
-**Synopsis**            
-This rule checks if any application has opened more than the allowed number of Ifstate
-based routing sockets.
-
-**Sensor type**         
-open-config
-
-**Input variables**     
-_client-limit-reached_ : open-config path /junos/kernel-ifstate/client-limit-reached
-
-**Platforms supported**       
-MX series, PTX series, EX92XXX
-
-**Junos release supported**         
-19.1 Junos release onwards
-
-**Threshold**           
-It checks if the count has incremented by at least one, in the last 10 mins
-
-**Suggested action**    
-Contact Juniper and provide below information.     
-1) All log files in /var/log/, from both routing engines.      
-2) Collect and share 'gcore' of the application reporting this error in logs.
-   Search for "rts_ifstate_chk_multi_registration" in the /var/log/messages\* to
-    to look for the application complaining.
-
-## Rule 2:  check-too-many-dead-ifstates.rule
+		> Playbook file name: krt-statistics-kpis.playbook
+		> Detals:
+		 This playbook is used to detect KRT Async queue stuck condition and raise alarm.
 		
-**Synopsis**            
-This rule checks for the number of dead ifstates at any given time in the
-system. It monitors the number of dead Ifstates and raises an alarm if there
-are too many of these (> 50% of alive ifstates) detected for significant
-duration of time (1 hour).
-
-**Sensor type**         
-open-config
-
-**Dependent files**     
-deadalive.yml, get-dead-alive-ratio.py
- 
-**Input variables**    
-_alive-ifstates-cnt_ :openconfig path  `/junos/kernel-ifstate/alive-ifstates-cnt`     
-_dead-ifstates-cnt_  :openconfig path  `/junos/kernel-ifstate/dead-ifstates-cnt`    
-
-**Platforms supported**     
-MX series, PTX series, EX92XXX
-
-**Junos release supported**    
-19.1 Junos release onwards
-
-**Threshold**           
-50 percent of alive ifstates
-
-**Suggested action**    
-Collect below information and contact Juniper:
-1) Take a kernel live vmcore by issuing "sysctl kern.live_core_dump" and share vmcore generated in
-   /var/crash
-2) All log files in /var/log/, from both routing engines
-3) Output of `ifsmon -p, ifsmon -c, ifsmon -Id, ifsmon -g`     
-
-## Rule 3:  check-too-many-dead-ifstates-iagent.rule
-
-**Synopsis**            
-This rule checks for the number of dead ifstates at any given time in the
-system. It monitors the number of dead Ifstates and raises an alarm if there
-are too many of these (> 50% of alive ifstates) detected for significant
-duration of time (1 hour).
-Note: This is the iAgent version of Rule 2 above, for targets < 19.1 Junos
-      release or for non MX/PTX/EX platforms.
-
-**Sensor type**         
-iAgent
-
-**Dependent files**     
-deadalive.yml, get-dead-alive-ratio.py
- 
-**Input variables**    
-_dead-cnt_  : iAgent sensor `ifsmon -I`     
-_live-cnt_  : iAgent sensor `ifsmon -I`    
-
-**Platforms supported**     
-All platforms
-
-**Junos release supported**      
-All Junos releases
-
-**Threshold**           
-50 percent of alive ifstates
-
-**Suggested action**    
-Collect below information and contact Juniper:
-1) Take a kernel live vmcore by issuing "sysctl kern.live\_core\_dump" and share vmcore generated in
-   /var/crash
-2) All log files in /var/log/, from both routing engines
-3) Output of below commands from shell, run as a root user:
-   a> ifsmon -Id
-   b> ifsmon -c
-   c> ifsmon -p
-   d> ifsmon -g
-
-## Rule 4:  check-stuck-ifstate-clients.rule
-
-**Synopsis**            
-This rule checks if there are any stuck ifstate clients present in the system.
-Though rare, but when any Ifstate client (application/FPC peer) gets stuck,
-it can result in resource accumulation and eventually can lead to traffic loss.
-
-**Sensor Type**         
-open-config
-
-**Dependent files**     
-fetch_stuck_client.py, fetch_stuck_client.yml 
-
-**Input variables**    
-_stuck-clients_  : openconfig path `/junos/kernel-ifstate/stuck-clients-cnt` 
-
-**Platforms supported**    
-MX series, PTX series, EX92XXX
-
-**Junos release supported**    
-19.1 Junos release onwards
-
-**Threshold**           
-It checks if the count has incremented for stuck clients in the last one minute. 
-
-**Suggested action**    
-Check Following CLI for the further details on which client/peer is slow.
-  \> show system alarms
-
-Once a stuck Ifstate client is detected, it should ideally be restarted or
-a GRES switchover (if configured) should be tried. It is recommended to
-take these actions during a maintainence window.
-
-Contact Juniper and provide below information.     
-1) Any kernel live vmcore files in /var/crash/, on both routing engines.      
-2) All log files in /var/log/, from both routing engines.      
-3) If daemon is stuck, take gcore using `gcore -c <core_file_name> <pid>`         
-4) Daemon log file located at /var/log/<daemon_name>       
-
-## Rule 5:  check-stuck-ifstate-clients-iagent.rule
-
-**Synopsis**            
-This rule checks if there are any stuck ifstate clients present in the system.
-Though rare, but when any Ifstate client (application/FPC peer) gets stuck,
-it can result in resource accumulation and eventually can lead to traffic loss.
-
-**Sensor Type**         
-iAgent
-
-**Dependent files**     
-fetch_stuck_client.py, fetch_stuck_client.yml 
-
-**Input variables**    
-_stuck-client-info_ : iAgent sensor `show system alarms`
-
-**Platforms supported**    
-All platforms
-
-**Junos release supported**    
-All Junos releases
-
-**Threshold**
-This rule checks if "slow peers" alarm has been raised on the device or not.
-
-**Suggested action**    
-Check Following CLI for the further details on which client/peer is slow.
-  \> show system alarms
-
-Once a stuck Ifstate client is detected, it should ideally be restarted or
-a GRES switchover (if configured) should be tried. It is recommended to
-take these actions during a maintainence window.
-
-Contact Juniper and provide below information.     
-1) Any kernel live vmcore files in /var/crash/, on both routing engines.     
-2) All log files in /var/log/, from both routing engines.     
-3) Take gcore using `gcore -c <core_file_name> <pid>`     
-4) Daemon log file located at /var/log/<daemon_name>    
-
-## Rule 6:  check-delayed-unrefs-anomaly.rule
-
-**Synopsis**            
-This rule checks if there are any delayed unrefs and if they are greater than a
-particular threshold. Transient spikes in delayed unref count is expected in
-certain catastrophic or major events and is not a cause for worry. But, if this
-situation persists for significant amount of time (say in minutes), then it can
-result in traffic loss.
-
-**Sensor Type**         
-open-config
-
-**Input variables**     
-_delayed-unrefs-cnt_  : openconfig path `/junos/kernel-ifstate/delayed-unrefs-cnt`
-_delayed-unrefs-max_  : openconfig path `/junos/kernel-ifstate/delayed-unrefs-max`
-
-**Dependent files**     
-delayed_unref.yml, delayed_unref.py
-
-**Platforms supported**    
-MX series, PTX series, EX92XXX
-
-**Junos release supported**    
-19.1 Junos release onwards
-
-**Threshold**           
-The threshold for this rule is detected via `sysctl net.rt_nh_max_delayed_unrefs`. 
-
-**Suggested action**    
-Contact Juniper and provide below information.    
-1) Collect the live core by enabling sysctl `kern.live_core_dump=1`    
-2) Kernel live vmcore files in /var/crash/, on both routing engines.    
-2) All log files in /var/log/, from both routing engines.    
-3) Output of `ifsmon -p, ifsmon -c, ifsmon -Id, ifsmon -kd, ifsmon -Pd`     
-4) Collect marker debugs by enabling `sysctl -w net.ifs_marker_debug=1`    
-
-## Rule 7:  check-delayed-unrefs-anomaly-iagent.rule
-
-**Synopsis**            
-This rule checks if there are any delayed unrefs and if they are greater than a
-particular threshold. Transient spikes in delayed unref count is expected in
-certain catastrophic or major events and is not a cause for worry. But, if this
-situation persists for significant amount of time (say in minutes), then it can
-result in traffic loss.
-
-**Sensor Type**         
-iAgent
-
-**Dependent files**     
-delayed_unref.yml, delayed_unref.py
-
-**Input variables**     
-_delayedcnt_    : iAgent sensor `ifsmon -I`    
-_delayedmax_  : iAgent sensor `sysctl net.rt_nh_max_delayed_unrefs`
-
-**Platforms supported**    
-All platforms
-
-**Junos release supported**    
-All Junos releases
-
-**Threshold**           
-The threshold for this rule is detected via `sysctl net.rt_nh_max_delayed_unrefs`. 
-
-**Suggested action**       
-Contact Juniper and provide below information.           
-1) Any kernel live vmcore files in /var/crash/, on both routing engines.           
-2) All log files in /var/log/, from both routing engines.          
-3) Output of `ifsmon -p, ifsmon -c, ifsmon -Id, ifsmon -kd, ifsmon -Pd`     
-4) Collect marker debugs by enabling `sysctl -w net.ifs_marker_debug=1`     
-5) Collect the live core by enabling sysctl `kern.live_core_dump=1`     
-
-## Rule 8:  check-dead-ifstate-client.rule
-
-**Synopsis**            
-This rule checks if there are any dead ifstate clients not cleaned up in the
-system for the last 20 minutes.
-
-**Sensor Type**         
-open-config
-
-**Input variables**     
-_dead-clients-cnt_  : openconfig path `/junos/kernel-ifstate/dead-clients-cnt`
-
-**Platforms supported**    
-MX series, PTX series, EX92XXX
-
-**Junos release supported**    
-19.1 Junos release onwards
-
-**Threshold**           
-It checks if all the samples collected every 1 minute are non-zero for contiguous
-20 minutes.
-
-**Suggested action**    
-Contact Juniper and provide below information.       
-1) Any kernel live vmcore files in /var/crash/, on both routing engines.    
-2) All log files in /var/log/, from both routing engines.    
-3) Check for any symptoms of ENOBUFS/Veto messages from kernel in /var/log/messages\*    
-
-# Synopsis              
-All rules under kernel.peer-infra topic. 
-
-# Description           
-This section comprises of all the rules which monitors all the parameters related
-to peer-infra module in Junos Kernel. This module is responsible for replicating
-FIB states to the line cards and also to process incoming IPCs from them.
-
-#Rules Index
-
-## Rule 1 - check-pfeman-conn-drops.rule
-**Synopsis**            
-This rule checks if there are any pfeman connection drops.
-
-**Sensor type**         
-open-config
-
-**Input variables**     
-_peer-pfeman-conn-drops_ : openconfig path `/junos/kernel/peer-infra/pfeman-conn-drops`
-
-**Threshold**           
-It checks if the count is incremented by atleast 5 in the last 5 minutes.
-
-**Platforms supported**   
-MX series, PTX series, EX92XXX
-
-**Junos release supported**     
-19.1 Junos release onwards
-
-**Suggested action      
-If there is an impact seen along with this (say, FPC restart or traffic loss),
-then collect /var/log/\* and report to Juniper.
-
-## Rule 2 - check-spurious-ppt-wkups.rule
-**Synopsis**            
-This rule checks for any spurious peer proxy threads (ppt) wakeups.
-These spurious wakeups can result in performance issues, hence it is
-important to detect any such issues.
-
-**Sensor type**         
-open-config
-
-**Input variables**     
-_spurious-ppt-wkups_  : open-config path `/junos/kernel/peer-infra/spurious-ppt-wkups`
-
-**Threshold**           
-This rule checks if the count is incremented for the last 't' mins and doesn't comapre this with any threshold.
-
-**Platforms supported**
-MX series, PTX series, EX92XXX
-
-**Junos release supported**
-19.1 Junos release onwards
-
-**Suggested action**
-If this reported consistently, it should be reported to Juniper along with
-the /var/log/\* files.
-# Synopsis
-Rules under kernel.tcpip topic.
-
-# Description
-This section comprises of the rules that monitor health of TCP/IP stack in the Junos RE kernel. 
-
-# Rules Index
-
-## Rule 1: check-iri-conn-keepalive-dropped.rule
-**Description**   
-This rule detects any intra-chassis connection (part of Internal Routing
-Instance) drops because of keep alive expiry.
-
-**Sensor type**  
-iAgent
-
-**Dependent files**
-tcpconn.yml, tcp_conn.py
-
-**Input variables**
-_keepalive_ : iAgent sensor 'sysctl net.inet.tcp.irs_kto'
-
-**Threshold**  
-The rule displays yellow color if any of the two contiguous samples 20 seconds
-apart, report increase in counter that captures IRI connection drops.
-
-**Platforms supported**
-All Junos platforms
-
-**Junos release supported**
-19.1 Junos release onwards
-
-**Suggested action**  
-If there are repeated keepalive drops reported by this rule, search for
-"Dropping socket connection due to keepalive timer expiration" in
-/var/log/messages\* on the affected routing engine. Also, check if any
-jlock hogs or TCP connection drop messages get reported in these log files
-around the same time. Report to Juniper if this is happening consistently
-or if there is a noticeable side effect seen (such as protocol flaps / traffic
-loss) around the same time.
-
-# Synopsis
-All rules under kernel.rtsock topic.
-
-# Description
-This section comprises of all the rules which monitor the sensors related to rtsock in Junos.
-
-# Rules Index
-
-## Rule 1: detect-routing-socket-errors.rule
-**Synopsis**
-This rule checks for the total number of routing socket errors at any given time in the system. It monitors the total number of errors and raises an alarm if there are too many of these detected for significant duration of time. routing socket errors includes errors returned from veto, mproc and rtsock layers.
-
-**Sensor type**
-open-config
-
-**Input variables**
-rtsock-error-count-threshold : theshold value.
-rtsock-total-error-count: open-config path /junos/kernel/rtsock/total-error-cnt
-rtsock-total-veto-count: open-config path /junos/kernel/rtsock/total-veto-cnt
-
-**Platforms supported**
-MX series, PTX series, EX series
-
-**Junos release supported**
-19.3R1 Junos release onwards
-
-**Threshold**
-Check if routing socket errors has been increased by 100 from its previous value in ALL the samples for the last 70 or 130 seconds.
-
-**Suggested action**
-Collect below information and contact Juniper:
-1)Take a kernel live vmcore by issuing "sysctl kern.live_core_dump" and share vmcore generated in /var/crash
-2)All log files in /var/log/, from both routing engines
-3)Output of ifsmon -p, ifsmon -c, ifsmon -Id, ifsmon -g
-
-## Rule 2: detect-routing-socket-errors-iagent.rule
-
-**Synopsis**
-This rule checks for the total number of routing socket errors at any given time in the system. It monitors the total number of errors and raises an alarm if there are too many of these detected for significant duration of time. routing socket errors includes errors returned from veto, mproc and rtsock layers.
-
-**Sensor type**
-iAgent
-
-**Input variables**
-rtsock-error-count-threshold : theshold value.
-rtsock-total-error-count: sysctl net.rtsock_total_error_count
-rtsock-total-veto-count: sysctl net.rtsock_total_veto_count
-
-**Platforms supported**
-MX series, PTX series, EX series
-
-**Junos release supported**
-18.3R3 Junos release onwards
-
-**Threshold**
-Check if routing socket errors has been increased by 100 from its previous value in ALL the samples for the last 70 or 130 seconds.
-
-**Suggested action**
-Collect below information and contact Juniper:
-1)Take a kernel live Vmcore by issuing "sysctl kern.live_core_dump" and share vmcore generated in /var/crash
-2)All log files in /var/log/, from both routing engines
-3)Output of ifsmon -p, ifsmon -c, ifsmon -Id, ifsmon -g
+		 Following are the set of commands and the corresponding RPCs used to detect the problematic state.
+		
+		 labroot@jtac-mx960> show krt state | display xml rpc
+		 <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+		     <rpc>
+		         <get-krt-state>
+		         </get-krt-state>
+		     </rpc>
+		     <cli>
+		         <banner></banner>
+		     </cli>
+		 </rpc-reply>
+		
+		 labroot@jtac-ptx10001-20c-proto-r2001> show krt async io statistics | display xml rpc
+		 <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+		     <rpc>
+		         <get-async-io-stats>
+		         </get-async-io-stats>
+		     </rpc>
+		     <cli>
+		         <banner></banner>
+		     </cli>
+		 </rpc-reply>
+		
+		 labroot@jtac-ptx10001-20c-proto-r2001> show krt async correlator statistics | display xml rpc
+		 <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+		     <rpc>
+		         <get-async-cor-stats>
+		         </get-async-cor-stats>
+		     </rpc>
+		     <cli>
+		         <banner></banner>
+		     </cli>
+		 </rpc-reply>
+		
+		 labroot@jtac-mx960> show krt state | display xml
+		 <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+		     <krt-state-information>
+		         <krt-options>IndirectPFE IndirectChangeACK</krt-options>
+		         <krt-install-job-not-running/>
+		         <krt-queue-state>
+		             <krtq-operations-queued>0</krtq-operations-queued>
+		             <krtq-rt-table-adds>0</krtq-rt-table-adds>
+		             <krtq-interface-routes>0</krtq-interface-routes>
+		             <krtq-high-multicast-adds-changes>0</krtq-high-multicast-adds-changes>
+		             <krtq-top-indirect-adds-changes>0</krtq-top-indirect-adds-changes>
+		             <krtq-indirect-adds-changes>0</krtq-indirect-adds-changes>
+		             <krtq-indirect-deletes>0</krtq-indirect-deletes>
+		             <krtq-high-mpls-adds>0</krtq-high-mpls-adds>
+		             <krtq-high-mpls-changes>0</krtq-high-mpls-changes>
+		             <krtq-top-priority-adds>0</krtq-top-priority-adds>
+		             <krtq-top-priority-changes>0</krtq-top-priority-changes>
+		             <krtq-top-priority-deletes>0</krtq-top-priority-deletes>
+		             <krtq-high-priority-adds>0</krtq-high-priority-adds>
+		             <krtq-high-priority-changes>0</krtq-high-priority-changes>
+		             <krtq-high-priority-deletes>0</krtq-high-priority-deletes>
+		             <krtq-normal-priority-indirects>0</krtq-normal-priority-indirects>
+		             <krtq-normal-priority-adds>0</krtq-normal-priority-adds>
+		             <krtq-normal-priority-changes>0</krtq-normal-priority-changes>
+		             <krtq-normal-priority-deletes>0</krtq-normal-priority-deletes>
+		             <krtq-least-priority-adds>0</krtq-least-priority-adds>
+		             <krtq-least-priority-changes>0</krtq-least-priority-changes>
+		             <krtq-least-priority-deletes>0</krtq-least-priority-deletes>
+		             <krtq-normal-priority-cnh-deletes>0</krtq-normal-priority-cnh-deletes>
+		             <krtq-normal-priority-gmp>0</krtq-normal-priority-gmp>
+		             <krtq-rt-table-deletes>0</krtq-rt-table-deletes>
+		             <krtq-operations-deferred>0</krtq-operations-deferred>
+		             <krtq-operations-canceled>0</krtq-operations-canceled>
+		             <krtq-async-count>0</krtq-async-count>
+		             <krtq-async-non-q-count>0</krtq-async-non-q-count>
+		             <krtq-time-until-next-run>0</krtq-time-until-next-run>
+		             <krtq-kernel-rt-learnt>44</krtq-kernel-rt-learnt>
+		         </krt-queue-state>
+		         <rtsock-time-until-next-scan>38</rtsock-time-until-next-scan>
+		     </krt-state-information>
+		     <cli>
+		         <banner></banner>
+		     </cli>
+		 </rpc-reply>
+		
+		 labroot@jtac-mx960> show krt async io statistics | display xml
+		 <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+		     <krt-io-statistics xmlns="http://xml.juniper.net/junos/18.2I0/junos-routing">
+		         <krt-io-statistics-entry>
+		             <krt-io-task-name>KRT IO task</krt-io-task-name>
+		             <krt-io-write-count>64</krt-io-write-count>
+		             <krt-io-read-count>28</krt-io-read-count>
+		         </krt-io-statistics-entry>
+		         <krt-io-statistics-entry>
+		             <krt-io-task-name>KStat</krt-io-task-name>
+		         </krt-io-statistics-entry>
+		         <krt-io-statistics-entry>
+		             <krt-io-task-name>krt unsolic client</krt-io-task-name>
+		         </krt-io-statistics-entry>
+		         <krt-io-statistics-entry>
+		             <krt-io-task-name>krt solic client JUNOS</krt-io-task-name>
+		         </krt-io-statistics-entry>
+		     </krt-io-statistics>
+		     <cli>
+		         <banner></banner>
+		     </cli>
+		 </rpc-reply>
+		
+		 labroot@jtac-mx960> show krt async correlator statistics | display xml
+		 <rpc-reply xmlns:junos="http://xml.juniper.net/junos/18.2I0/junos">
+		     <krt-correlator-statistics junos:style="brief">
+		         <krt-tree-statistics>
+		             <krt-tree-insert-count>73</krt-tree-insert-count>
+		             <krt-tree-delete-count>73</krt-tree-delete-count>
+		             <krt-tree-lookup-count>264</krt-tree-lookup-count>
+		             <krt-tree-current-count>0</krt-tree-current-count>
+		         </krt-tree-statistics>
+		     </krt-correlator-statistics>
+		     <cli>
+		         <banner></banner>
+		     </cli>
+		 </rpc-reply>
+		
+		
+		 Any one of the following conditions becoming true will cause the alarms to be set to indicate KRT ASYNC stuck condition and user can perform any recovery actions accordingly.
+		
+		 Polling of the parameters that are part of the commands needed to detect the stuck condition is done every minute and internal databases are populated.
+		
+		 First Condition :
+		 -----------------
+		 Previous && Current values of "krtq-operations-queued" is not zero 
+		 Previous && Current values of "krtq-async-count" is not zero &&
+		 Previous && Current values of "krt-io-write-count" are same
+		 then declare KRT stuck/Raise Red Alarm
+		
+		 (or)
+		
+		 Second Condition :
+		 ------------------
+		 "krt-tree-insert-count" is greater than "krt-tree-delete-count" &&
+		 Previous and Current values of "krt-tree-delete-count" are same
+		 then declare KRT stuck/Raise Red Alarm
+		
+		 (or)
+		
+		 Third Condition:
+		 ----------------
+		 Current value of "krtq-async-count" is greater than 0 and lessthan/equal to 20000 &&
+		 Previous value of "krtq-async-count" is greater than 0 and lessthan/equal to 20000 &&
+		 Current value of "krtq-async-count" is greater than/equal to previous value of "krtq-async-count" &&
+		 Current value of "krt-tree-current-count" is greater than 0 and lessthan/equal to 20000 &&
+		 Previous value of "krt-tree-current-count" is greater than 0 and lessthan/equal to 20000 &&
+		 Current value of "krt-tree-current-count" is greater than/equal to previous value of "krt-tree-current-count"
+		 then declare KRT stuck/Raise Red Alarm
+### Playbook name: kernel-infra-playbook 
+		> Description: "This playbooks encapsulates all the junos kernel(ifstate, peer-infra,rtsock) rules which keeps a check on junos-kernel parameters"
+		> Synopsis: "Junos-Kernel infra parameters"
+		> Playbook file name: kernel-infra-playbook.playbook
+		> Detals:
+### Playbook name: kernel-tcp-ip-playbook 
+		> Description: "This playbook encapsulates rules related to kernel tcp ip parameters"
+		> Synopsis: "Kernel tcp ip parameters"
+		> Playbook file name: kernel-tcp-ip-playbook.playbook
+		> Detals:
+
+## Kernel rules
+
+### Rule name: detect-routing-socket-errors-iagent 
+		> Description: "Detect errors in rtsock, veto and mproc layers"
+		> Synopsis: "Detect Routing Socket errors in the system"
+		> Rule file name: detect-routing-socket-errors-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 This rule checks for the total number of routing socket errors at any given time in the system.
+		 Routing socket errors includes errors returned from rtsock, veto and mproc layers.
+		 It monitors the total number of routing socket errors and raises an alarm if there are too many of
+		 these detected for significant duration of time.
+		 This rule checks if the error has benn increased by 100 from its previous value in ALL the samples
+		 for the last 70 or 130 seconds and raises the alarm accordingly.
+### Rule name: check-too-many-dead-ifstates-iagent 
+
+
+		> Rule file name: check-too-many-dead-ifstates-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks for the number of dead ifstates at any given time in
+		 the system. A dead Ifstate gets garbage collected once all the consumers
+		 see the corresponding delete message. If these dead ifstates continue to
+		 pile up, this indicates a garbage collection problem and can eat up
+		 significant resources such as memory and indices.
+		 This rule monitors the number of dead Ifstates and raises an alarm if there
+		 are too many of these (> 50% of alive ifstates) detected for significant
+		 duration of time (1 hour).
+### Rule name: check-pfeman-conn-drops 
+
+
+		> Rule file name: check-pfeman-conn-drops.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 Peer infra module is responsible for replicating FIB states to the line cards
+		 and also to process incoming IPCs from them. Each line card has a connection
+		 with Master Routing Engine Junos Kernel.
+		 This rule monitors and ungraceful connection drops in these pfeman connections.
+### Rule name: check-stuck-ifstate-clients-iagent 
+
+
+		> Rule file name: check-stuck-ifstate-clients-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any stuck ifstate clients present in the system.
+		 Though rare, but when any Ifstate client (application/FPC peer) gets stuck,
+		 it can result in resource accumulation and eventually can lead to traffic loss.
+		 It checks if the "slow peers" alarm has been raised on the device.
+### Rule name: check-stuck-ifstate-clients 
+
+
+		> Rule file name: check-stuck-ifstate-clients.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any stuck ifstate clients present in the system.
+		 A stuck Ifstate client can cause resource release issues and eventually lead to
+		 Kernel to veto incoming routing socket messages from applications, which further
+		 can result in traffic loss. Though very rare, if this happens, it is a serious
+		 condition and should be mitigated asap by restarting the client. See readme
+		 in healthbot rules folder for details.
+### Rule name: check-krt-state 
+
+
+		> Rule file name: krtasync.rule
+
+
+
+
+		> Detals:
+### Rule name: check-krt-tx-bulk-msg-fail 
+		> Description: "Collect KRT bulking statistics and notifies when message fail count increases"
+		> Synopsis: "KRT bulking statistics analyzer"
+		> Rule file name: check-krt-tx-bulk-msg-fail.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 2.0.1
+		> Detals:
+### Rule name: check-iri-conn-keepalive-dropped 
+		> Description: "This rule detects any intra-chassis connection drops because of keep alive expiry"
+		> Synopsis: "Detect IRI connection drops because of Keepalive"
+		> Rule file name: check-iri-conn-keepalive-dropped.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule detects any intra-chassis connection (part of Internal Routing
+		 Instance) drops because of keep alive expiry.
+### Rule name: check-client-limit-reached 
+
+
+		> Rule file name: check-client-limit-reached.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if any application has opened more than the allowed number
+		 of Ifstate based routing sockets.
+### Rule name: check-dead-ifstate-client 
+
+
+		> Rule file name: check-dead-ifstate-client.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any dead ifstate clients not cleaned up in the
+		 system for the last 20 minutes.
+		 By default, it checks if all the samples collected every 1 minute are
+		 non-zero for contiguous 20 minutes.
+### Rule name: check-delayed-unrefs-anomaly-iagent 
+
+
+		> Rule file name: check-delayed-unrefs-anomaly-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any delayed unrefs and if they are greater than
+		 a particular threshold (sysctl net.rt_nh_max_delayed_unrefs).
+		 Transient spikes in delayed unref count is expected in certain catastrophic or
+		 major events and is not a cause for worry. But, if this situation persists for
+		 significant amount of time (say in minutes), then it can result in traffic loss.
+### Rule name: check-krt-ack-timeouts 
+		> Description: "This rule collects kernel route and next-hop acknowledgement statistics  periodically and notifies anomaly in case of timeout"
+		> Synopsis: "Kernel route and next-hop acknowledgements statistics analyzer "
+		> Rule file name: check-krt-ack-timeouts.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 2.0.1
+		> Detals:
+### Rule name: check-too-many-dead-ifstates 
+
+
+		> Rule file name: check-too-many-dead-ifstates.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks for the number of dead ifstates at any given time in
+		 the system. A dead Ifstate gets garbage collected once all the consumers
+		 see the corresponding delete message. If these dead ifstates continue to
+		 pile up, this indicates a garbage collection problem and can eat up
+		 significant resources such as memory and indices.
+		 This rule monitors the number of dead Ifstates and raises an alarm if there
+		 are too many of these (> 50% of alive ifstates) detected for significant
+		 duration of time (1 hour).
+### Rule name: check-spurious-ppt-wkups 
+
+
+		> Rule file name: check-spurious-ppt-wkups.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 Peer infra module is responsible for replicating FIB states to the line cards
+		 and also to process incoming IPCs from them. Each line card has a connection
+		 with Master Routing Engine Junos Kernel, and a peer proxy kernel thread
+		 represents this remote line card in the Junos Kernel.
+		 If the peer proxy kernel thread gets woken up spuriously (i.e. without any
+		 pending events to be processed), it can result in performance issues and
+		 should thus be monitored. This rule does exactly that.
+### Rule name: check-delayed-unrefs-anomaly 
+
+
+		> Rule file name: check-delayed-unrefs-anomaly.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any delayed unrefs and if they are greater than
+		 a particular threshol (sysctl net.rt_nh_max_delayed_unrefs).
+		 Transient spikes in delayed unref count is expected in certain catastrophic or
+		 major events and is not a cause for worry. But, if this situation persists for
+		 significant amount of time (say in minutes), then it can result in traffic loss.
+### Rule name: detect-routing-socket-errors 
+		> Description: "Detect errors in rtsock, veto and mproc layers"
+		> Synopsis: "Detect Routing Socket errors in the system"
+		> Rule file name: detect-routing-socket-errors.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 This rule checks for the total number of routing socket errors at any given time in the system.
+		 Routing socket errors includes errors returned from rtsock, veto and mproc layers.
+		 It monitors the total number of routing socket errors and raises an alarm if there are too many of
+		 these detected for significant duration of time.
+		
+		 This rule checks if the error has been increased by 100 from its previous value in ALL the samples
+		 for the last 70 or 130 seconds and raises the alarm accordingly.
