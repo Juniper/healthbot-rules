@@ -1,0 +1,124 @@
+/*
+ * Detects DHCP relay server statistics and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) threshold-value-variable, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when the value for dhcp decline is greater than
+ *      threshold-value-variable continuosly for 300s. If it sees any count increase,
+ *      it'll turn the color to yellow,otherwise color is set to green.
+ *      
+ */
+healthbot {
+    topic dhcp.relayserver {
+        description "Monitors DHCP decline count for different durations and raises alarm accordingly";
+        synopsis "DHCP relay statistics analyzer";	
+        rule check-statistics-iagent {
+            synopsis "DHCP relay server statistics KPI";
+            description "Monitors DHCP relay server statistics and display anomaly when dhcp packets drop";
+            /*
+             * Monitors the dhcp relay decline statistics. Notifies via the dashboard colors
+             * when the counters increase continuosly by {{threshold-value-variable}}
+             * for every collected metric during time range of 300s(red).
+             * The color is set to yellow if we see any increase by 
+             * {{threshold-value-variable}}.Otherwise the color is set to green.
+             *
+             * Sensor configuration to get data from network devices.
+             *
+             */			 
+            sensor dhcp-relay {
+                iAgent {
+                    file dhcp-relay-statistics.yml;
+                    table Dhcp_RelayStatisticsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field increment-threshold {
+                constant {
+                    value "{{threshold-value}}";
+                }
+                type integer;
+                description "Maximum increment threshold value";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger DHCP_request_decline_count {
+                synopsis "DHCP request decline KPI";
+                description "Sets health based on the change in request decline count";			
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$dchpdecline" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP Relay request decline count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$dchpdecline" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP Relay request decline count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP Relay request decline count is not increasing. ";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable threshold-value {
+                value 1;
+                description "Incremental value for every data point";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+							}	
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                 }
+            }
+        }
+    }
+}

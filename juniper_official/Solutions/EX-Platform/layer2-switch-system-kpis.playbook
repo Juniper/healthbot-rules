@@ -1,0 +1,27 @@
+/*
+* Playbook contains multiple rules which checks the health of System and notifies when 
+* anomalies are found.
+*
+* 1) Rule check-process-cpu, detects the system **all** daemon cpu utilization
+*    threshold breaches and notifies anomalies.
+* 2) Rule check-process-memory, detects the system **all** daemon memory
+*    utilization threshold breaches and notifies anomalies.
+* 3) Rule check-system-cpu-memory-snmp, detects the system cpu utilization and memory utilization
+*    threshold breaches and notifies anomalies.
+* 4) Rule check-system-input-queues, monitors packet drops on the input interface and notifies 
+*    anomalies when input drop count exceeds threshold.
+* 5) Rule check-system-output-queues, monitors packet drops on the output interface and notifies 
+*    anomalies when output drop count exceeds threshold.
+* 6) Rule check-system-statistics-ip, monitors the incoming IP packets no socket buffer drops and 
+*    notifies when anomalies are found.
+* 7) Rule check-system-uptime-snmp, detects the system uptime and 
+*    notifies when anomalies are found
+*/
+healthbot {
+    playbook layer2-switch-system-kpis {
+        rules [ system.processes/check-process-cpu system.processes/check-process-memory system.cpu.memory/check-system-cpu-memory-snmp system.statistics/check-system-input-queues system.statistics/check-system-output-queues system.statistics/check-system-statistics-ip system.uptime/check-system-uptime-snmp ];
+        description "Playbook checks the system health i.e. system cpu and memory utilization, process cpu and memory utilization,packet drops on input and output interface, IP no socket buffer drops and System uptime";
+        synopsis "System key performance indicators";
+    }
+}
+

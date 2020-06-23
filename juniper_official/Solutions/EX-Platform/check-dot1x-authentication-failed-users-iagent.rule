@@ -1,0 +1,101 @@
+/*
+ * Detects authentication failure and displays details.
+ */
+healthbot {
+    topic ethernet.security {
+        description "Monitors the failed authentic user name, mac-id, interface and fail count";
+        synopsis "dot1x authentication failed users analyzer";	
+        rule check-dot1x-authentication-failed-users-iagent {
+            synopsis "dot1x authentication failed user mac ,userid, fail count  KPI";
+            description "Monitors dot1x authentication failed users and displays information";
+            /*
+             * Monitors and notifies the dot1x authentication failed user name,their
+             * mac id,interface and fail count.Notifies via the dashboard color (red).
+             * 
+             * Use mac-id as key for rule.
+             */						
+            keys mac-id;
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor dot1x {
+                iAgent {
+                    file Dot1xUserAuthFailTable.yml;
+                    table Dot1xUserAuthFailTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field fail-count {
+                sensor dot1x {
+                    path fail-count;
+                }
+                type integer;
+		description "Number of times authentication has failed";
+            }
+            field interface-name {
+                sensor dot1x {
+                    path interface;
+                }
+                type string;
+		description "Interface name";
+            }
+            field mac-id {
+                sensor dot1x {
+                    path mac-id;
+                }
+                type string;
+		description "mac of the user who is trying to authenticate";
+            }
+            field user-name {
+                sensor dot1x {
+                    path user-name;
+                }
+                type string;
+		description "username of who is trying to authenticate";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger dot1x-authentication-failed-users {
+                synopsis "dot1x authentication failed user KPI";
+                description "Sets health and notifies about authentication failed username,mac,fail count and the interface name";
+	        frequency 90s;
+                term dot1x-authentication-failed-users {
+                    then {
+                        status {
+                            color red;
+                            message "dot1x-authentication-failed-user:$user-name on $interface-name, mac-id:$mac-id and fail-count:$fail-count";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+		            }	
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+	        }
+	   }			
+        }
+    }
+}

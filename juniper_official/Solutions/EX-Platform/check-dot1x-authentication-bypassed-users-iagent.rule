@@ -1,0 +1,96 @@
+/*
+ * Detects mac-id that has bypassed authentication and the interface through which user tries to login..
+ */
+healthbot {
+    topic ethernet.security {
+        description "Monitors the mac of authentication bypassed users and the interfaces";
+        synopsis "dot1x authenticated bypass users analyzer";	
+        rule check-dot1x-authentication-bypassed-users-iagent {
+            synopsis "dot1x authenticated bypass users mac id KPI";
+            description "Monitors dot1x authenticated bypass users mac id and displays information";
+            /*
+             * Monitors the dot1x authentication bypassed users mac id and the
+             * interface through which user tries to login.Notifies via the  
+             * dashboard color (green) the mac of authentication bypassed users 
+             * and the interface name.
+             * 
+             * Use mac-id as key for rule.
+             */						
+            keys mac-id;
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor dot1x {
+                iAgent {
+                    file Dot1xUserAuthBypassTable.yml;
+                    table Dot1xUserAuthBypassTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field interface-name {
+                sensor dot1x {
+                    path interface-name;
+                }
+                type string;
+		description "Interface name";
+            }
+            field mac-id {
+                sensor dot1x {
+                    path static-mac-bypass;
+                }
+                type string;
+		description "mac of the user that can bypass authentication";
+            }
+            field static-mac-bypass-vlan {
+                sensor dot1x {
+                    path static-mac-bypass-vlan;
+                }
+                type string;
+		description "vlan of the bypass mac";
+            }
+            /*
+             * Anomaly detection logic.
+             */	
+            trigger dot1x-authentication-bypassed-users {
+                synopsis "dot1x authentication bypass user KPI";
+                description "Sets health and notifies about authentication bypass user mac and the interface name";			
+                frequency 90s;
+                term Term_1 {
+                    then {
+                        status {
+                            color yellow;
+                            message "dot1x-authentication-bypassed-mac-id:$mac-id on $interface-name";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+							}	
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+               }
+           }			
+        }
+    }
+}
