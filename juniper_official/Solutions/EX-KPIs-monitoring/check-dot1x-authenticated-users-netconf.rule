@@ -1,0 +1,102 @@
+/*
+ * Measures authenticated user count and the interface through which user tries to login.
+ */
+healthbot {
+    topic ethernet.security {
+        description "Monitors the number of authenticated users and the interfaces";
+        synopsis "dot1x authenticated users analyzer";	
+        rule check-dot1x-authenticated-users-netconf {
+            synopsis "dot1x authenticated users count KPI";
+            description "Monitors dot1x authenticated users count and displays information";
+            /*
+             * Monitors the dot1x authenticated users on an interface. Notifies via the
+             * dashboard color (green) the count of authenticated users and the
+             * interface name through which user logs in.
+             * 
+             * Use interface name as key for rule
+             */			
+            keys interface-name;
+            /*
+             * Sensor configuration to get data from network devices.
+             */				
+            sensor dot1x {
+                iAgent {
+                    file Dot1xUserAuthStateTable.yml;
+                    table Dot1xUserAuthStateTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */				
+            field authenticated-user-count {
+                sensor dot1x {
+                    path authenticated-user-count;
+                }
+                type integer;
+        	description "Number of users that have been authenticated";
+            }
+            field interface-name {
+                sensor dot1x {
+                    path interface-name;
+                }
+                type string;
+		description "Interface name";
+            }
+            field interface-role {
+                sensor dot1x {
+                    path role;
+                }
+                type string;
+	        description "The permissions the user has depends on the role he has been assigned";
+            }
+            field number-of-retries {
+                sensor dot1x {
+                    path number-of-retries;
+                }
+                type integer;
+		description "Number if times the user tries to login";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger dot1x-authenticated-user-count {
+                synopsis "dot1x authenticated user KPI";
+                description "Sets health and notifies about authenticated user count and the interface name";			
+                frequency 90s;
+                term dot1x-authenticated-user-count {
+                    then {
+                        status {
+                            color green;
+                            message "dot1x-authenticated-user-count: $authenticated-user-count on $interface-name";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }	
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }		
+        }
+    }
+}

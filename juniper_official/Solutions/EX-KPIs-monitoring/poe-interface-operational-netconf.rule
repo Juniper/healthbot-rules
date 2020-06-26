@@ -1,0 +1,91 @@
+/*
+ * Detects POE Interface Operational state and notifies when anomalies are found.
+ */
+healthbot {
+    topic poe.interface {
+        description "Monitors POE Interface and raises alarm if state is not ON";
+        synopsis "POE Operational State analyzer";	
+        rule check-poe-operational-status-netconf {
+            /*
+             * Monitors the POE Interface State. Notifies via the dashboard colors
+             * when interface is enabled but the operation status is not ON (red).
+             * Otherwise the color is set to green.
+             *
+             * Use interface name as key for rule.
+             */		
+            keys interface-name;
+            synopsis "PoE operational KPI";
+            description "Monitors PoE operational and display anomaly when operational state is OFF";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor poe-operational {
+                iAgent {
+                    file poeInterface.yml;
+                    table poeInterfaceTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field interface-name {
+                sensor poe-operational {
+                    path interface-name;
+                }
+                type string;
+                description "PoE interface name";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger poe-operational-status {
+                synopsis "PoE operational status KPI";
+                description "Sets health based on the PoE operational status when the interface is enabled";			
+                frequency 90s;
+                term is-operational-status-not-up {
+                    when {
+                        matches-with "$interface-enabled" Enabled {
+                            ignore-case;
+                        }
+                        does-not-match-with "$interface-status" ON {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PoE is enabled but operational status is not ON";
+                        }
+                    }
+                }
+                term is-operational-status-up {
+                    then {
+                        status {
+                            color green;
+                            message "PoE is enabled and operational status is ON";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,389 @@
+/*
+ * Detects DHCP local server statistics and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) threshold-ratio-variable, is the threshold ratio that causes the rule to
+ *      report an anomaly.  By default it's 10.If the packet drop ratio is greater
+ *      than or equal to 10 then it will turn red else it will show green.
+ * 
+ *   2) threshold-value-variable, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when the counters for dhcp fields are greater than
+ *      threshold-value-variable for 300s. If it sees any count increase for a
+ *      period of less than 300s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
+ */
+healthbot {
+    topic dhcp.localserver {
+        description "Monitors DHCP statistics i.e. dhcpleaseunknown ,bootrequest etc  and notifies anomalies";
+        synopsis "DHCP local server statistics analyzer";	
+        rule check-dhcp-server-statistics-netconf {
+            synopsis "DHCP local server statistics KPI";
+            description "Monitors DHCP local server statistics and display anomalies";
+            /*
+             * Monitors the dhcp statistics counters. Notifies via the dashboard colors
+             * when the counters increase by {{threshold-value-variable}}
+             * for every collected metric during a 300s time range (red).
+             * The color is set to yellow if we see any increase by 
+             * {{threshold-value-variable}}.Otherwise the color is set to green.
+             * Similarly if the packet drop ratio is greater than {{threshold-ratio-variable}}
+	     * then colour is set to red else it is set to green.
+             *
+             * Function to calculate the difference in percentage of max and min values.
+             */			 
+            function diff_percentage {
+                path diff-percentage.py;
+                method diff_percentage;
+                argument max_count {
+                    mandatory;
+                }
+                argument min_count {
+                    mandatory;
+                }
+            }
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor dhcp-localserver {
+                iAgent {
+                    file dhcp-server-statistics.yml;
+                    table Dhcp_StatisticsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field increment-threshold {
+                constant {
+                    value "{{threshold-value}}";
+                }
+                type integer;
+                description "DHCP drop packets increment threshold";
+            }
+            field packet-dropped-ratio {
+                formula {
+                    user-defined-function {
+                        function-name diff_percentage;
+                        argument max_count "$Total";
+                        argument min_count "$dhcp-service-total";
+                    }
+                }
+                type integer;
+                description "Calculates the packet drop ratio";
+            }
+            field threshold-percent-ratio {
+                constant {
+                    value "{{threshold-ratio}}";
+                }
+                type integer;
+                description "Maximum threshold percent";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger DHCP_boot_request_count {
+                synopsis "DHCP boot request KPI";
+                description "Sets health based on the change in boot request count";
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$bootrequest" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP boot request count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$bootrequest" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP boot request count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP boot request count is not increasing.";
+                        }
+                    }
+                }
+            }
+            trigger DHCP_delayed_count {
+                synopsis "DHCP delayed count KPI";
+                description "Sets health based on the change in delayed count";			
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$delayed" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP delayed count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$delayed" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP delayed count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP delayed count is not increasing.";
+                        }
+                    }
+                }
+            }
+            trigger DHCP_lease_active {
+                synopsis "DHCP lease active KPI";
+                description "Sets health based on the change in lease active count";			
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$dhcpleaseunknown" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP lease active count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$dhcpleaseunknown" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP lease active count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP lease active count is not increasing. ";
+                        }
+                    }
+                }
+            }
+            trigger DHCP_lease_force_renew {
+                synopsis "DHCP lease force renew KPI";
+                description "Sets health based on the change in lease force renew count";			
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$dhcpforcerenew" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP boot request count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$dhcpforcerenew" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP boot request count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP boot request count is not increasing. ";
+                        }
+                    }
+                }
+            }
+            trigger DHCP_lease_unknown {
+                synopsis "DHCP lease unknown KPI";
+                description "Sets health based on the change in lease unknown count";			
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$dhcpleaseunknown" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP lease unknown count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$dhcpleaseunknown" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP lease unknown count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP lease unknown count is not increasing. ";
+                        }
+                    }
+                }
+            }
+            trigger DHCP_request_decline_count {
+                synopsis "DHCP request decline KPI";
+                description "Sets health based on the change in request decline count";			
+                frequency 90s;
+                term is-count-incrementing-aggressively {
+                    when {
+                        increasing-at-least-by-value "$dhcpdecline" {
+                            value "$increment-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCP request decline count is increasing continuously. ";
+                        }
+                    }
+                }
+                term is-count-incrementing {
+                    when {
+                        increasing-at-least-by-value "$dhcpdecline" {
+                            value "$increment-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCP request decline count is increasing. ";
+                        }
+                    }
+                }
+                term is-count-stable {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP request decline count is not increasing. ";
+                        }
+                    }
+                }
+            }
+            trigger DHCP_service_total {
+                synopsis "DHCP packet dropped ratio KPI";
+                description "Sets health based on the change in packet dropped ratio count";			
+                frequency 90s;
+                term is_service_total_drop_ratio_high {
+                    when {
+                        greater-than-or-equal-to "$packet-dropped-ratio" "$threshold-percent-ratio";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Total Packets dropped ratio($packet-dropped-ratio) is more than the specified range.";
+                        }
+                    }
+                }
+                term is_service_total_drop_ratio_normal {
+                    then {
+                        status {
+                            color green;
+                            message "DHCP total Packets dropped ratio($packet-dropped-ratio) is within the specified range.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable threshold-ratio {
+                value 10;
+                description "User provided max threshold";
+                type int;
+            }
+            variable threshold-value {
+                value 1;
+                description "Incremental value for every data point";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }	
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                } 
+           }	
+        }
+    }
+}
