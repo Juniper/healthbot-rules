@@ -1,0 +1,126 @@
+/*
+ * Detects POE Controller Power consumption and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) poe-threshold-variable, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 80. This rule will set a dashboard
+ *      color to red when the controller power utilization is greater than
+ *      poe-threshold-variable.Otherwise color is set to green.
+ * 
+ */
+healthbot {
+    topic poe.controller {
+        description "Monitors POE Controller power consumption and raises alarm if threshold is exceeded";
+        synopsis "POE Controller Power consumption analyzer";	
+        rule check-poe-total-power-netconf {
+            keys controller-number;
+            synopsis "Controller power consumption KPI";
+            description "Monitors PoE controller power consumption and display anomaly where power usage is more than the threshold";
+            /*
+             * Function to calculate the ratio of total vs used percentage 
+             */			
+            function used_percentage {
+                path used-percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
+            }
+            /*
+             * Sensor configuration to get data from network devices.
+             */				
+            sensor poe-controller {
+                iAgent {
+                    file poeController.yml;
+                    table poeTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field controller-number {
+                sensor poe-controller {
+                    path controller-number;
+                }
+                type string;
+                description "Controller index field";
+            }
+            field max-threshold {
+                constant {
+                    value "{{poe-threshold}}";
+                }
+                type integer;
+                description "Maximum threshold value. power-utilization-percent goes above this threshold will be anomaly";
+            }
+            field power-utilization-percent {
+                formula {
+                    user-defined-function {
+                        function-name used_percentage;
+                        argument total "$controller-maxpower";
+                        argument used "$controller-power";
+                    }
+                }
+                type integer;
+                description "Power utilization percent";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger PoE-controller {
+                synopsis "PoE controller power utilization KPI";
+                description "Sets health based on the change in controller power utilization percentage";			
+                frequency 90s;
+                term is-more-than-threshold {
+                    when {
+                        greater-than-or-equal-to "$power-utilization-percent" "$max-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PoE controller-power usage percentage ($power-utilization-percent) is more than the max threshold.";
+                        }
+                    }
+                }
+                term is-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                            message "PoE controller-power usage percentage ($power-utilization-percent) is less than the max threshold.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable poe-threshold {
+                value 80;
+                description "PoE max threshold variable";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }			
+        }
+    }
+}

@@ -1,0 +1,122 @@
+/*
+* Detects the system uptime and notifies when anomalies are found.
+* One input control detection
+*
+* 1) threshold, is the threshold that causes the rule to report
+* an anomaly. By default, it’s 60480000 total time for 7 days.
+* This rule will set a dashboard color to yellow when system
+* uptime is less than the threshold.
+*/
+healthbot {
+    topic system.uptime {
+        description "Rule monitors the uptime of the system";
+        synopsis "System uptime analyzer";
+        rule check-system-uptime-snmp {
+            synopsis "System uptime analyzer";
+            description "Collects the time when the system was last booted.";
+            /*
+             * Monitors the system uptime. Notifies via the dashboard
+             * colors when the system uptime is less than the threshold
+             * then the color is set to yellow. Otherwise the color is set
+             * too green.
+             *
+             * Sensor configuration to get data from network devices.
+             */
+            sensor snmp {
+                synopsis "System Uptime sensor initialization";
+                description "System SNMP sensor to collect data from network device";
+                snmp {
+                    table JUNIPER-MIB::jnxOperatingTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined with variables and constant values.
+             */
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "System uptime minimum threshold";
+            }
+            /*
+             * Field defined using sensor path.
+             */
+            field uptime {
+                sensor snmp {
+                    path jnxOperatingUpTime;
+                }
+                type integer;
+                description "Monitors system uptime";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger system-up {
+                synopsis "System uptime";
+                description "Sets health based on the System uptime";
+                frequency 90s;
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the system uptime ($uptime) is lesser than the
+                 * threshold ($threshold)
+                 */
+                term Term_1 {
+                    when {
+                        less-than "$uptime" "$threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "System has been up for less than 7days.";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "System has been up for more than 7 days";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variable with default value. Default value can be changed
+             * while deploying playbook instance.
+             */
+            variable threshold {
+                value 60480000;
+                description "Total time for 7 days.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

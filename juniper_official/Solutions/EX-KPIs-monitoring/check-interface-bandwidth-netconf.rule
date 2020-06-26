@@ -1,0 +1,349 @@
+/*
+* Monitors interface bandwidth utilization and notifies when
+* anomalies are found.
+* Two input control detection
+*
+* 1) interface-name, is a regular expression that matches the
+* interfaces that you would like to monitor. By default it '.*',
+* which matches all interfaces. Use something like 'ge.*' to
+* match only gigabit ethernet interfaces.
+*
+* 2) threshold, is the threshold that causes the rule to report
+* an anomaly. By default it is 75.00 %. This rule will set a
+* dashboard color to red when io bandwidth utilization percent
+* exceeds threshold value. If dynamic threshold of io bandwidth
+* utilization is equal to 1, the color is set to yellow. Otherwise
+* it is set to green.
+*/
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-interface-bandwidth-netconf {
+            keys name;
+            synopsis "Interface bandwidth utilization analyzer";
+            description "Monitors the interface input and output bandwidth utilization";
+            /*
+            * Monitors interface input and output bandwidth utilization. Notifies via the
+            * dashboard colors when interface io bandwidth utilization exceeds the high
+            * threshold {{$threshold}} it sets the color to red. The color is
+            * set to yellow if dynamic threshold {{$dt-in-bw-util}} or {{$dt-out-bw-util}}
+            * of io bandwidth is equal to 1. Otherwise the color is set to green.
+            *
+            * Use name as key for rule
+            */
+            function bw_util_percent {
+                path bw_util_percent.py;
+                method bw_util_percent;
+                argument mbps {
+                    mandatory;
+                }
+                argument speed {
+                    mandatory;
+                }
+            }
+            function mbps {
+                path mbps_conversion.py;
+                method mbps;
+                argument bps {
+                    mandatory;
+                }
+            }
+            /*
+            * Sensor configuration to get data from network devices.
+            */
+            sensor interface {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables & views to collect data from network device";
+                iAgent {
+                    file IntStatsTable.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field admin-status {
+                sensor interface {
+                    path admin-status;
+                }
+                type string;
+                description "Admin Status of Interfaces to be monitored";
+            }
+            field in-bps {
+                sensor interface {
+                    path input-bps;
+                }
+                type integer;
+            }
+            field in-pps {
+                sensor interface {
+                    path input-pps;
+                }
+                type integer;
+            }
+            field name {
+                sensor interface {
+                    where "admin-status =~ /up/";
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field out-bps {
+                sensor interface {
+                    path output-bps;
+                }
+                type integer;
+            }
+            field out-pps {
+                sensor interface {
+                    path output-pps;
+                }
+                type integer;
+            }
+            field speed {
+                sensor interface {
+                    path speed;
+                }
+                type string;
+            }
+            /*
+            * Field defined with variable and constant value
+            */
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "Interface bandwidth utilization increase threshold";
+            }
+            /*
+            * Fields defined using formulae by user-defined function
+            */
+            field dt-in-bw-util {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$in-pps";
+                    }
+                }
+                type integer;
+            }
+            field dt-out-bw-util {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$out-pps";
+                    }
+                }
+                type integer;
+            }
+            field in-bw-util {
+                formula {
+                    user-defined-function {
+                        function-name bw_util_percent;
+                        argument mbps "$in-mbps";
+                        argument speed "$speed";
+                    }
+                }
+                type integer;
+            }
+            field in-mbps {
+                formula {
+                    user-defined-function {
+                        function-name mbps;
+                        argument bps "$in-bps";
+                    }
+                }
+                type float;
+            }
+            field out-bw-util {
+                formula {
+                    user-defined-function {
+                        function-name bw_util_percent;
+                        argument speed "$speed";
+                        argument mbps "$out-mbps";
+                    }
+                }
+                type integer;
+            }
+            field out-mbps {
+                formula {
+                    user-defined-function {
+                        function-name mbps;
+                        argument bps "$out-bps";
+                    }
+                }
+                type float;
+            }
+            field predicted-in-bw-util {
+                formula {
+                    predict {
+                        algorithm median-prediction;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$in-bw-util";
+                        prediction-offset 1d;
+                    }
+                }
+                type float;
+            }
+            field predicted-out-bw-util {
+                formula {
+                    predict {
+                        algorithm median-prediction;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$out-bw-util";
+                        prediction-offset 1d;
+                    }
+                }
+                type float;
+            }
+            /*
+             * Anomaly detection logic.
+            */
+            trigger in-bw-utilization {
+                synopsis "Interface input bandwidth utilization ";
+                description "Sets health based on the change in input bandwidth utilization";
+                frequency 90s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the input bandwidth utilization ($in-bw-util %) is greater than
+                * the threshold ($threshold %).
+                */
+                term is-input-bandwidth-abnormal {
+                    when {
+                        greater-than-or-equal-to "$in-bw-util" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name input bandwidth utilization ($in-bw-util %) crossed threshold value ($threshold %). Mbps:$in-mbps Bps:$in-bps bps Pps:$in-pps";
+                        }
+                    }
+                }
+                /*
+                * Sets color to yellow and sends out an anomaly notification when
+                * the dynamic threshold ($dt-in-bw-util) of input bandwidth
+                * utilization is equal to 1.
+                */
+                term is-input-bandwidth-above-dt {
+                    when {
+                        equal-to "$dt-in-bw-util" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name input bandwidth utilization ($in-bw-util %) is above the dynamic threshold. Mbps:$in-mbps Bps:$in-bps bps Pps:$in-pps Predicted BW utilization:$predicted-in-bw-util";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term is-input-bandwidth-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$name input bandwidth utilization ($in-bw-util %) is normal. Mbps:$in-mbps Bps:$in-bps bps Pps:$in-pps";
+                        }
+                    }
+                }
+            }
+            trigger out-bw-utilization {
+                synopsis "Interface output bandwidth utilization ";
+                description "Sets health based on the change in output bandwidth utilization";
+                frequency 90s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the output bandwidth utilization ($out-bw-util %) is greater than
+                * the threshold ($threshold %).
+                */
+                term is-output-bandwidth-abnormal {
+                    when {
+                        greater-than-or-equal-to "$out-bw-util" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name output bandwidth utilization($out-bw-util%) crossed threshold value ($threshold %). Mbps:$out-mbps Bps:$out-bps bps Pps:$out-pps";
+                        }
+                    }
+                }
+                /*
+                * Sets color to yellow and sends out an anomaly notification when
+                * the dynamic threshold ($dt-out-bw-util) of output bandwidth
+                * utilization is equal to 1.
+                */
+                term is-output-bandwidth-above-dt {
+                    when {
+                        equal-to "$dt-out-bw-util" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name output bandwidth utilization ($out-bw-util %) is above dynamic threshold. Mbps:$out-mbps Bps:$out-bps bps Pps:$out-pps Predicted BW utilization:$predicted-out-bw-util";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term is-output-bandwidth-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$name output bandwidth utilization ($out-bw-util %) is normal. Mbps:$out-mbps Bps:$out-bps bps Pps:$out-pps";
+                        }
+                    }
+                }
+            }
+            /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable interface-name {
+                value "ge-.*|xe-.*|mge-.*|et-.*";
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            variable threshold {
+                value 75.00;
+                description "Interface bandwidth percent high threshold value in %.";
+                type float;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

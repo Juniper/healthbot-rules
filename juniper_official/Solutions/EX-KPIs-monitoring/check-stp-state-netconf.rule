@@ -1,0 +1,136 @@
+/*
+* Monitors member vlan’s STP state and notifies when anomalies are found
+* one input control detection
+*
+* 1) input-vlan-id, is the vlan-id that is added to the anomaly when in the
+* rule vlan’s STP state doesn’t match with forwarding state. This rule will
+* set a dashboard color to red when the above happens. Otherwise the
+* color is set to green.
+*/
+healthbot {
+    topic vlan.statistics {
+        description "Monitors member vlan’s STP state";
+        synopsis "STP state analyzer";
+        rule check-stp-state-netconf {
+            /*
+             * Monitors member vlan STP state. Notifies via the
+             * dashboard colors when the vlan STP state doesnot
+             * match with forwarding state then it is set to red.
+             * Otherwise it is set to green.
+             *
+             * Use vlan-id and vlan-name as key for rule
+             *
+             * Sensor configuration to get data from network devices.
+             */
+            keys [ vlan-id vlan-name ];
+            synopsis "STP state analyzer";
+            description "Monitors member vlan STP state periodically and notifies in case of anomalies";
+            sensor stp {
+                synopsis "vlan STP state iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file vlan-member-stp-state.yml;
+                    table ExMemberStpStateTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field stp-state {
+                sensor stp {
+                    path stp-state;
+                }
+                type string;
+                description "Member vlan STP state";
+            }
+            field vlan-id {
+                sensor stp {
+                    where "l2iff-interface-vlan-id  =~ /{{input-vlan-id}}/";
+                    where "l2iff-interface-vlan-id =~ /.+/";
+                    path l2iff-interface-vlan-id;
+                }
+                type string;
+                description "Member vlan id";
+            }
+            field vlan-name {
+                sensor stp {
+                    where "l2iff-interface-vlan-name =~ /.+/";
+                    path l2iff-interface-vlan-name;
+                }
+                type string;
+                description "Member vlan name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vlan-stp-state {
+                synopsis "VLAN stp kpi";
+                description "sets health based on VLAN STP state";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the members clan’s STP state ($stp-state) doesn’t match with
+                 * forwarding.
+                 */
+                term is-stp-state-discarding {
+                    when {
+                        does-not-match-with "$stp-state" Forwarding {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Vlan:$vlan-name ID:$vlan-id STP state is $stp-state";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green. When STP state is equal to forwarding.
+                 */
+                term is-stp-state-forwarding {
+                    then {
+                        status {
+                            color green;
+                            message "Vlan:$vlan-name ID:$vlan-id STP state is $stp-state";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable input-vlan-id {
+                value .+;
+                description "Input vlan id or ids to monitor in regex. e.g. 100|102-105|108";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
