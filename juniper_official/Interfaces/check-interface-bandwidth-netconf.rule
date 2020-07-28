@@ -32,20 +32,10 @@ healthbot {
             *
             * Use name as key for rule
             */
-            function bw_util_percent {
-                path bw_util_percent.py;
-                method bw_util_percent;
-                argument mbps {
-                    mandatory;
-                }
+            function speed_conv {
+                path speed-conversion.py;
+                method speed_conv;
                 argument speed {
-                    mandatory;
-                }
-            }
-            function mbps {
-                path mbps_conversion.py;
-                method mbps;
-                argument bps {
                     mandatory;
                 }
             }
@@ -58,31 +48,35 @@ healthbot {
                 iAgent {
                     file IntStatsTable.yml;
                     table IntStatsTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             /*
              * Field defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */
-            field admin-status {
-                sensor interface {
-                    path admin-status;
+            field in-mbps {
+                formula {
+                    eval {
+                        expression "$in-bps / 1000000";
+                    }
                 }
-                type string;
-                description "Admin Status of Interfaces to be monitored";
+                type float;
+                description "Input MBPS";
             }
             field in-bps {
                 sensor interface {
                     path input-bps;
                 }
                 type integer;
-            }
+                description "Input BPS";
+            }            
             field in-pps {
                 sensor interface {
                     path input-pps;
                 }
                 type integer;
+                description "Input PPS";
             }
             field name {
                 sensor interface {
@@ -98,18 +92,121 @@ healthbot {
                     path output-bps;
                 }
                 type integer;
+                description "Output BPS";
+            }
+            field out-mbps {
+                formula {
+                    eval {
+                        expression "$out-bps / 1000000";
+                    }
+                }
+                type float;
+                description "Output MBPS";
             }
             field out-pps {
                 sensor interface {
                     path output-pps;
                 }
                 type integer;
+                description "Output PPS";
+            }
+            field admin-status {
+                sensor interface {
+                    path admin-status;
+                }
+                type string;
+                description "Admin Status of Interfaces to be monitored";
             }
             field speed {
                 sensor interface {
                     path speed;
                 }
                 type string;
+                description "Collected interface speed";
+            }            
+            /*
+             * Field defined using user defined functions
+             */
+            field if-speed {
+                formula {
+                    user-defined-function {
+                        function-name speed_conv;
+                        argument speed "$speed";
+                    }
+                }
+                type integer;
+                description "Interface speed converted from Gbps to Mbps";
+            }
+            field in-bw-util {
+                formula {
+                    eval {
+                        expression "($in-mbps / $if-speed ) * 100";
+                    }
+                }
+                type float;
+                description "Input bandwidth utilization";
+            }         
+            field out-bw-util {
+                formula {
+                    eval {
+                        expression "($out-mbps / $if-speed ) * 100";
+                    }
+                }
+                type float;
+                description "Output bandwidth utilization";
+            }            
+            /*
+             * Field defined using machine learning algorithms
+             */
+            field dt-in-bw-util {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$in-bw-util";
+                    }
+                }
+                type integer;
+                description "ML anomaly detection Input bandwidth utilization field";
+            }
+            field dt-out-bw-util {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$out-bw-util";
+                    }
+                }
+                type integer;
+                description "ML anomaly detection output bandwidth utilization field";
+            }
+            field predicted-in-bw-util {
+                formula {
+                    predict {
+                        algorithm median-prediction;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$in-bw-util";
+                        prediction-offset 1d;
+                    }
+                }
+                type float;
+                description "ML predicted input bandwidth utilization";
+            }
+            field predicted-out-bw-util {
+                formula {
+                    predict {
+                        algorithm median-prediction;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$out-bw-util";
+                        prediction-offset 1d;
+                    }
+                }
+                type float;
+                description "ML predicted output bandwidth utilization";
             }
             /*
             * Field defined with variable and constant value
@@ -118,12 +215,10 @@ healthbot {
                 constant {
                     value "{{threshold}}";
                 }
-                type integer;
+                type float;
                 description "Interface bandwidth utilization increase threshold";
             }
-            /*
-            * Fields defined using formulae by user-defined function
-            */
+
             field dt-in-bw-util {
                 formula {
                     anomaly-detection {
@@ -146,75 +241,13 @@ healthbot {
                 }
                 type integer;
             }
-            field in-bw-util {
-                formula {
-                    user-defined-function {
-                        function-name bw_util_percent;
-                        argument mbps "$in-mbps";
-                        argument speed "$speed";
-                    }
-                }
-                type integer;
-            }
-            field in-mbps {
-                formula {
-                    user-defined-function {
-                        function-name mbps;
-                        argument bps "$in-bps";
-                    }
-                }
-                type float;
-            }
-            field out-bw-util {
-                formula {
-                    user-defined-function {
-                        function-name bw_util_percent;
-                        argument speed "$speed";
-                        argument mbps "$out-mbps";
-                    }
-                }
-                type integer;
-            }
-            field out-mbps {
-                formula {
-                    user-defined-function {
-                        function-name mbps;
-                        argument bps "$out-bps";
-                    }
-                }
-                type float;
-            }
-            field predicted-in-bw-util {
-                formula {
-                    predict {
-                        algorithm median-prediction;
-                        learning-period 1d;
-                        pattern-periodicity 1h;
-                        field-name "$in-bw-util";
-                        prediction-offset 1d;
-                    }
-                }
-                type float;
-            }
-            field predicted-out-bw-util {
-                formula {
-                    predict {
-                        algorithm median-prediction;
-                        learning-period 1d;
-                        pattern-periodicity 1h;
-                        field-name "$out-bw-util";
-                        prediction-offset 1d;
-                    }
-                }
-                type float;
-            }
             /*
              * Anomaly detection logic.
             */
             trigger in-bw-utilization {
                 synopsis "Interface input bandwidth utilization ";
                 description "Sets health based on the change in input bandwidth utilization";
-                frequency 90s;
+                frequency 180s;
                 /*
                 * Sets color to red and sends out an anomaly notification when
                 * the input bandwidth utilization ($in-bw-util %) is greater than
@@ -262,7 +295,7 @@ healthbot {
             trigger out-bw-utilization {
                 synopsis "Interface output bandwidth utilization ";
                 description "Sets health based on the change in output bandwidth utilization";
-                frequency 90s;
+                frequency 180s;
                 /*
                 * Sets color to red and sends out an anomaly notification when
                 * the output bandwidth utilization ($out-bw-util %) is greater than
@@ -324,7 +357,7 @@ healthbot {
             rule-properties {
                 version 1;
                 contributor juniper;
-                supported-healthbot-version 3.0.1;
+                supported-healthbot-version 3.1.0;
                 supported-devices {
                     juniper {
                         operating-system junos {
