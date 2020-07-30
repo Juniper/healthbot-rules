@@ -1,3 +1,18 @@
+/*
+* Monitors interface throughput utilization and notifies when
+* anomalies are found.
+* Two input control detection
+*
+* 1) interface-name-variable, is a regular expression that matches
+* the interfaces that you would like to monitor. By default it '.*',
+* which matches all interfaces. Use something like 'ge.*' to
+* match only gigabit ethernet interfaces.
+*
+* 2) threshold, is the threshold that causes the rule to report
+* an anomaly. By default it is 75.00 %. This rule will set a
+* dashboard color to red when io throughput utilization percent
+* exceeds threshold value. Otherwise it is set to green.
+*/
 healthbot {
     topic interface.throughput {
         description "Rules that monitor interface throughput and react to changes";
@@ -5,7 +20,263 @@ healthbot {
         rule check-interface-throughput-snmp {
             synopsis "Interface throughput threshold crossing";
             description "Monitors interface throughput and generates triggers on customizable threshold crossing";    
-	    	
+	    keys interface-name;
+            /*
+            * Monitors interface input and output throughput utilization. Notifies
+            * via the dashboard colors when interface io throughput utilization
+            * exceeds the threshold {{$threshold}} it sets the color to red.
+            * Otherwise the color is set to green.
+            *
+            * Use name as key for rule
+            */
+            function speed_conv {
+                path speed-conversion.py;
+                method speed_conv;
+                argument speed {
+                    mandatory;
+                }
+            }
+            /*
+            * Sensor configuration to get data from network devices.
+            */
+            sensor input-output-bytes {
+                synopsis "Interface SNMP sensor definition";
+                description "Interfaces SNMP sensor to data from network device";
+                snmp {
+                    table IF-MIB::ifXTable;
+                    frequency 60s;
+                }
+            }
+            field if-speed {
+                formula {
+                    user-defined-function {
+                        function-name speed_conv;
+                        argument speed "$speed";
+                    }
+                }
+                type integer;
+                description "Interface speed converted from Gbps to Mbps";
+            }
+            field in-bw-util {
+                formula {
+                    eval {
+                        expression "($in-mbps / $if-speed ) * 100";
+                    }
+                }
+                type float;
+                description "Input bandwidth utilization";
+            }
+            field in-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$input-bytes";
+                        multiplication-factor 0.000001;
+                    }
+                }
+                type float;
+            }
+            /*
+            * Fields defined using sensor path. Map the longer sensor names
+            * to the shorter field names used in the rules.
+            */
+            field index {
+                sensor input-output-bytes {
+                    path index;
+                }
+                type string;
+                description "This field contains interface index value";
+            }
+            field input-bytes {
+                sensor input-output-bytes {
+                    path ifHCInOctets;
+                }
+                type integer;
+                description "This field contains interface input-bytes value";
+            }
+            field interface-name {
+                sensor input-output-bytes {
+                    where "ifHighSpeed != 0";
+                    where "ifName =~ /{{interface-name-variable}}/";
+                    path ifName;
+                }
+                type string;
+                description "This field contains the name of the interface";
+            }
+            field speed {
+                sensor input-output-bytes {
+                    path ifHighSpeed;
+                }
+                type string;
+                description "Collected interface speed";
+            }
+            field output-bytes {
+                sensor input-output-bytes {
+                    path ifHCOutOctets;
+                }
+                type integer;
+                description "This field contains interface Output-bytes value";
+            }
+            /*
+            * Fields defined using formulae by user-defined function
+            */
+            field out-bw-util {
+                formula {
+                    eval {
+                        expression "($out-mbps / $if-speed ) * 100";
+                    }
+                }
+                type float;
+                description "Output bandwidth utilization";
+            }
+            field out-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$output-bytes";
+                        multiplication-factor 0.000001;
+                    }
+                }
+                type float;
+            }
+            field predicted-in-bw-util {
+                formula {
+                    predict {
+                        algorithm median-prediction;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$in-bw-util";
+                        prediction-offset 1d;
+                    }
+                }
+                type float;
+                description "ML predicted input bandwidth utilization";
+            }
+            field predicted-out-bw-util {
+                formula {
+                    predict {
+                        algorithm median-prediction;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$out-bw-util";
+                        prediction-offset 1d;
+                    }
+                }
+                type float;
+                description "ML predicted output bandwidth utilization";
+            }
+            /*
+            * Fields defined with variables and constant values
+            */
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type float;
+                description "Interface bandwidth utilization increase threshold";
+            }
+            /*
+            * Anomaly detection logic.
+            */
+            trigger in-bw-utilization {
+                synopsis "Interface input traffic kpi";
+                description "Sets health based on input traffic exceed threshold";
+                frequency 180s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the input throughput utilization ($in-bw-util %) is greater than
+                * the threshold ($threshold %).
+                */
+                term is-input-bandwidth-abnormal {
+                    when {
+                        greater-than-or-equal-to "$in-bw-util" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name input throughput utilization ($in-bw-util %) crossed threshold value ($threshold %). Mbps:$in-mbps Bps:$input-bytes bps";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term is-input-bandwidth-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name input throughput utilization ($in-bw-util %) is normal. Mbps:$in-mbps Bps:$input-bytes bps ";
+                        }
+                    }
+                }
+            }
+            trigger out-bw-utilization {
+                synopsis "Interface output traffic kpi";
+                description "Sets health based on output traffic exceed threshold";
+                frequency 180s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the output throughput utilization ($out-bw-util %) is greater
+                * than the threshold ($threshold %).
+                */
+                term is-output-bandwidth-abnormal {
+                    when {
+                        greater-than-or-equal-to "$out-bw-util" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name output throughput utilization($out-bw-util%) crossed threshold value ($threshold %). Mbps:$out-mbps Bps:$output-bytes bps";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term is-output-bandwidth-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name output throughput utilization ($out-bw-util %) is normal. Mbps:$out-mbps Bps:$output-bytes bps";
+                        }
+                    }
+                }
+            }
+            /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable interface-name-variable {
+                value .*;
+                description "Interfaces to be monitored";
+                type string;
+            }
+            variable threshold {
+                value 75.00;
+                description "Interface bandwidth percent high threshold value in %.";
+                type float;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }   	
         }
     }
 }
