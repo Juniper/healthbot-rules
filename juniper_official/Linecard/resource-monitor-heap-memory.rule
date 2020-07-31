@@ -1,0 +1,121 @@
+/*
+ * This rule collects periodically heap memory used for each FPC
+ * and reports whether it is normal (green) or exceeded threshold (red).
+ *
+ * Memory used values and the threshold values are available in o/p of CLI command
+ * "show system resource-monitor summary"
+ *
+ */
+healthbot {
+    topic linecard.fpc.resoure  {
+        rule monitor-heap-memory {
+            /*
+             * FPC slot number is the key for this rule.
+             */
+            keys fpc-slot;
+            synopsis "Heap memory analyser";
+            description "Check heap memory utilization periodically for each FPC and reports whether it is normal or exceeded threshold";
+            /*
+             * iAgent sensor to get information from device.
+             */
+            sensor heap-mem-sensor {
+                iAgent {
+                    file resource-monitor-heap-mem.yml;
+                    table ResoureMonitorHeapMemoryTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined to get information:
+             * used value
+             * used value in percent
+             * configured threshold value
+             * FPC slot number
+             */
+            field fpc-slot {
+                sensor heap-mem-sensor {
+                    path fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field heap-mem-threshold {
+                sensor heap-mem-sensor {
+                    path heap-memory-threshold;
+                }
+                type integer;
+                description "Heap memory threshold value";
+            }
+            field heap-mem-used {
+                sensor heap-mem-sensor {
+                    path used-heap-mem;
+                }
+                type integer;
+                description "Heap memory used";
+            }
+            field heap-mem-used-percent {
+                sensor heap-mem-sensor {
+                    path used-heap-mem-percent;
+                }
+                type integer;
+                description "Heap memory used in percent";
+            }
+            /*
+             * Report following for heap memory:
+             * Red: used value in percent is above threshold
+             * Green: used value in percent is below threshold
+             */
+            trigger report-heap-mem {
+                frequency 90s;
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$heap-mem-used-percent" "$heap-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] Heap memory used: $heap-mem-used ($heap-mem-used-percent%) threshold:$heap-mem-threshold";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        less-than "$heap-mem-used-percent" "$heap-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] Heap memory used: $heap-mem-used ($heap-mem-used-percent%) threshold:$heap-mem-threshold";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX80 MX104 MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                            }
+                            products EX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files resource-monitor-heap-mem.yml;
+                }
+            }
+        }
+    }
+}
