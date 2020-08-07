@@ -1,0 +1,85 @@
+healthbot {
+    topic linecard.fpc.resoure  {
+        rule monitor-round-trip-time {
+            keys fpc-slot;
+            synopsis "RTT analyser";
+            description "Check Round Trip Time periodically for each FPC";
+            sensor rtt-sensor {
+                iAgent {
+                    file resource-monitor-rtt.yml;
+                    table ResoureMonitorRttTable;
+                    frequency 30s;
+                }
+            }
+            field average-rtt-delay {
+                sensor rtt-sensor {
+                    path avg-rtt;
+                }
+                type integer;
+                description "Average round trip time in milli seconds";
+            }
+            field average-rtt-sample {
+                sensor rtt-sensor {
+                    path avg-rtt-sample;
+                }
+                type integer;
+                description "Average sample time in seconds";
+            }
+            field fpc-slot {
+                sensor rtt-sensor {
+                    path fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field invalid-rtt {
+                constant {
+                    value 2147483647;
+                }
+                type integer;
+                description "Invalid average rtt value 0x7FFFFFFF";
+            }
+            field rtt-delay {
+                sensor rtt-sensor {
+                    path rtt;
+                }
+                type integer;
+                description "Round trip time in milli seconds";
+            }
+            field rtt-threshold {
+                sensor rtt-sensor {
+                    path rtt-threshold;
+                }
+                type integer;
+                description "Round trip time threshold value in milliseconds";
+            }
+            trigger report-rtt {
+                frequency 30s;
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$average-rtt-delay" "$rtt-threshold";
+                        not-equal-to "$average-rtt-delay" "$invalid-rtt";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] RTT delay: $rtt-delay avg-delay:$average-rtt-delay ($average-rtt-sample) threshold:$rtt-threshold";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        less-than "$average-rtt-delay" "$rtt-threshold";
+                        not-equal-to "$average-rtt-delay" "$invalid-rtt";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] RTT delay: $rtt-delay avg-delay:$average-rtt-delay ($average-rtt-sample) threshold:$rtt-threshold";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

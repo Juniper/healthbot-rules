@@ -1,0 +1,76 @@
+healthbot {
+    topic linecard.pfe.resource  {
+        rule monitor-filter-counter-memory {
+            keys [ fpc-slot pfe-num ];
+            synopsis "Filter counter memory analyser";
+            description "Collects periodically Filter counter memory utilisation for each PFE instance in all FPCs and reports whether it is normal or exceeded threshold ";
+            sensor filter-counter-mem-sensor {
+                iAgent {
+                    file resource-monitor-filter-counter-mem.yml;
+                    table ResoureMonitorFilterCounterMemoryTable;
+                    frequency 60s;
+                }
+            }
+            field filter-counter-mem-threshold {
+                sensor filter-counter-mem-sensor {
+                    path filter-counter-memory-threshold;
+                }
+                type integer;
+                description "IFL counter memory threshold value";
+            }
+            field filter-counter-mem-used {
+                sensor filter-counter-mem-sensor {
+                    path used-filter-counter;
+                }
+                type integer;
+                description "IFL counter memory used";
+            }
+            field filter-counter-mem-used-percent {
+                sensor filter-counter-mem-sensor {
+                    path used-filter-counter-percent;
+                }
+                type integer;
+                description "IFL counter memory used in percent";
+            }
+            field fpc-slot {
+                sensor filter-counter-mem-sensor {
+                    path ../fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field pfe-num {
+                sensor filter-counter-mem-sensor {
+                    path pfe-num;
+                }
+                type string;
+                description "PFE instance in each FPC slot";
+            }
+            trigger report-filter-counter-mem {
+                frequency 60s;
+                term normal {
+                    when {
+                        less-than "$filter-counter-mem-used-percent" "$filter-counter-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [Filter counter memory] Used: $filter-counter-mem-used($filter-counter-mem-used-percent%) Threshold: $filter-counter-mem-threshold";
+                        }
+                    }
+                }
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$filter-counter-mem-used-percent" "$filter-counter-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [Filter counter memory] Used: $filter-counter-mem-used($filter-counter-mem-used-percent%) Threshold: $filter-counter-mem-threshold";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

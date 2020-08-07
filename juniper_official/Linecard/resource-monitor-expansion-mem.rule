@@ -1,0 +1,76 @@
+healthbot {
+    topic linecard.pfe.resource  {
+        rule monitor-expansion-memory {
+            keys [ fpc-slot pfe-num ];
+            synopsis "Expansion memory analyser";
+            description "Collects periodically Expansion memory utilisation for each PFE instance in all FPCs and reports whether it is normal or exceeded threshold ";
+            sensor expansion-mem-sensor {
+                iAgent {
+                    file resource-monitor-expansion-mem.yml;
+                    table ResoureMonitorExpansionMemoryTable;
+                    frequency 60s;
+                }
+            }
+            field expansion-mem-threshold {
+                sensor expansion-mem-sensor {
+                    path expansion-memory-threshold;
+                }
+                type integer;
+                description "Expansion memory threshold value";
+            }
+            field expansion-mem-used {
+                sensor expansion-mem-sensor {
+                    path used-expansion-memory;
+                }
+                type integer;
+                description "Expansion memory used";
+            }
+            field expansion-mem-used-percent {
+                sensor expansion-mem-sensor {
+                    path used-expansion-memory-percent;
+                }
+                type integer;
+                description "Expansion memory used in percent";
+            }
+            field fpc-slot {
+                sensor expansion-mem-sensor {
+                    path ../fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field pfe-num {
+                sensor expansion-mem-sensor {
+                    path pfe-num;
+                }
+                type string;
+                description "PFE instance in each FPC slot";
+            }
+            trigger report-expansion-mem {
+                frequency 60s;
+                term normal {
+                    when {
+                        less-than "$expansion-mem-used-percent" "$expansion-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [Expansion memory] Used:$expansion-mem-used($expansion-mem-used-percent%) Threshold: $expansion-mem-threshold";
+                        }
+                    }
+                }
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$expansion-mem-used-percent" "$expansion-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [Expansion memory] Used:$expansion-mem-used($expansion-mem-used-percent%) Threshold: $expansion-mem-threshold";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
