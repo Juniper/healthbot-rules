@@ -1,0 +1,144 @@
+healthbot {
+    topic linecard.pfe.resource  {
+        rule monitor-firewall-nh-encap-memory {
+            keys [ fpc-slot pfe-num ];
+            synopsis " Firewall memory, NH memory and Encap memory analyser";
+            description "Collects periodically Firewall memory, NH memory and Encap memory availability for each PFE instance in all FPCs and reports whether it is normal or below watermark";
+            sensor asic-mem-sensor {
+                iAgent {
+                    file resource-monitor-nh-fw-encap-mem.yml;
+                    table ResoureMonitorSummaryPfeAsicMemTable;
+                    frequency 60s;
+                }
+            }
+            field encap-mem-free-percent {
+                sensor asic-mem-sensor {
+                    path free-encap-memory-rsmon-percent;
+                }
+                type integer;
+                description "Free encap memory in percent";
+            }
+            field encap-mem-watermark {
+                sensor asic-mem-sensor {
+                    path free-encap-memory-watermark;
+                }
+                type integer;
+                description "Free encap memory watermark";
+            }
+            field firewall-mem-free-percent {
+                sensor asic-mem-sensor {
+                    path free-filter-memory-rsmon-percent;
+                }
+                type string;
+                description "Free firewall memory in percent";
+            }
+            field firewall-mem-watermark {
+                sensor asic-mem-sensor {
+                    path free-filter-memory-watermark;
+                }
+                type integer;
+                description "Free firewall memory watermark";
+            }
+            field fpc-slot {
+                sensor asic-mem-sensor {
+                    path ../fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field nh-mem-free-percent {
+                sensor asic-mem-sensor {
+                    path free-nh-memory-rsmon-percent;
+                }
+                type integer;
+                description "Free NH memory in percent";
+            }
+            field nh-mem-watermark {
+                sensor asic-mem-sensor {
+                    path free-nh-memory-watermark;
+                }
+                type integer;
+                description "Free NH memory watermark";
+            }
+            field pfe-num {
+                sensor asic-mem-sensor {
+                    path pfe-num;
+                }
+                type string;
+                description "PFE instance in each FPC slot";
+            }
+            trigger report-encap-mem {
+                frequency 60s;
+                term normal {
+                    when {
+                        equal-to "$encap-mem-free-percent" NA;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Encap memory free:$encap-mem-free-percent watermark:$encap-mem-watermark";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Encap memory free:$encap-mem-free-percent watermark:$encap-mem-watermark";
+                        }
+                    }
+                }
+            }
+            trigger report-fw-mem {
+                frequency 60s;
+                term below-watermark {
+                    when {
+                        less-than-or-equal-to "$firewall-mem-free-percent" "$firewall-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Firewall memory free:$firewall-mem-free-percent watermark:$firewall-mem-watermark";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        greater-than "$firewall-mem-free-percent" "$firewall-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Firewall memory free:$firewall-mem-free-percent watermark:$firewall-mem-watermark";
+                        }
+                    }
+                }
+            }
+            trigger report-nh-mem {
+                frequency 60s;
+                term below-watermark {
+                    when {
+                        less-than-or-equal-to "$nh-mem-free-percent" "$nh-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] NH memory free:$nh-mem-free-percent watermark:$nh-mem-watermark";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        greater-than "$nh-mem-free-percent" "$nh-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] NH memory free:$nh-mem-free-percent watermark:$nh-mem-watermark";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,76 @@
+healthbot {
+    topic linecard.pfe.resource  {
+        rule monitor-cos-queues-utilization {
+            keys [ fpc-slot pfe-num ];
+            synopsis "CoS queues analyser";
+            description "Collects periodically CoS queues utilization for each PFE instance in all FPCs and reports whether it is normal or exceeded threshold ";
+            sensor cos-queue-sensor {
+                iAgent {
+                    file resource-monitor-cos-queue.yml;
+                    table ResoureMonitorCosQueueTable;
+                    frequency 60s;
+                }
+            }
+            field cos-queue-threshold {
+                sensor cos-queue-sensor {
+                    path cos-queue-threshold;
+                }
+                type integer;
+                description "CoS queue utilization threshold value";
+            }
+            field cos-queue-used {
+                sensor cos-queue-sensor {
+                    path used-cos-queues;
+                }
+                type integer;
+                description "CoS queue utilization";
+            }
+            field cos-queue-used-percent {
+                sensor cos-queue-sensor {
+                    path used-cos-queues-percentage;
+                }
+                type integer;
+                description "Cos queue utilization in percent";
+            }
+            field fpc-slot {
+                sensor cos-queue-sensor {
+                    path ../fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field pfe-num {
+                sensor cos-queue-sensor {
+                    path pfe-num;
+                }
+                type string;
+                description "PFE instance in each FPC slot";
+            }
+            trigger report-cos-queue {
+                frequency 60s;
+                term normal {
+                    when {
+                        less-than "$cos-queue-used-percent" "$cos-queue-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [CoS Queue] Used:$cos-queue-used($cos-queue-used-percent%) Threshold: $cos-queue-threshold";
+                        }
+                    }
+                }
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$cos-queue-used-percent" "$cos-queue-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [CoS Queue] Used:$cos-queue-used($cos-queue-used-percent%) Threshold: $cos-queue-threshold";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
