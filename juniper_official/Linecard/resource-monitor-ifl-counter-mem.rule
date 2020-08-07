@@ -1,0 +1,76 @@
+healthbot {
+    topic linecard.pfe.resource  {
+        rule monitor-ifl-counter-memory {
+            keys [ fpc-slot pfe-num ];
+            synopsis "IFL counter memory analyser";
+            description "Collects periodically IFL counter memory utilisation for each PFE instance in all FPCs and reports whether it is normal or exceeded threshold ";
+            sensor ifl-counter-mem-sensor {
+                iAgent {
+                    file resource-monitor-ifl-counter-mem.yml;
+                    table ResoureMonitorIflCounterMemoryTable;
+                    frequency 60s;
+                }
+            }
+            field fpc-slot {
+                sensor ifl-counter-mem-sensor {
+                    path ../fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field ifl-counter-mem-threshold {
+                sensor ifl-counter-mem-sensor {
+                    path ifl-counter-memory-threshold;
+                }
+                type integer;
+                description "IFL counter memory threshold value";
+            }
+            field ifl-counter-mem-used {
+                sensor ifl-counter-mem-sensor {
+                    path used-ifl-counter;
+                }
+                type integer;
+                description "IFL counter memory used";
+            }
+            field ifl-counter-mem-used-percent {
+                sensor ifl-counter-mem-sensor {
+                    path used-ifl-counter-percent;
+                }
+                type integer;
+                description "IFL counter memory used in percent";
+            }
+            field pfe-num {
+                sensor ifl-counter-mem-sensor {
+                    path pfe-num;
+                }
+                type string;
+                description "PFE instance in each FPC slot";
+            }
+            trigger report-ifl-counter-mem {
+                frequency 60s;
+                term normal {
+                    when {
+                        less-than "$ifl-counter-mem-used-percent" "$ifl-counter-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [IFL counter memory] Used: $ifl-counter-mem-used($ifl-counter-mem-used-percent%) Threshold: $ifl-counter-mem-threshold";
+                        }
+                    }
+                }
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$ifl-counter-mem-used-percent" "$ifl-counter-mem-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] [IFL counter memory] Used: $ifl-counter-mem-used($ifl-counter-mem-used-percent%) Threshold: $ifl-counter-mem-threshold";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

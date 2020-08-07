@@ -1,0 +1,233 @@
+healthbot {
+    topic linecard.fpc.resoure  {
+        rule monitor-denied-count {
+            keys fpc-slot;
+            synopsis "Denied count analyser";
+            description "Check client session, service session and IFL denied count for each PFC and reports if denied count is zero, non-zero or increasing.";
+            sensor denied-count-sensor {
+                iAgent {
+                    file resource-monitor-denied-count.yml;
+                    table ResoureMonitorDeniedCountTable;
+                    frequency 30s;
+                }
+            }
+            field client-denied-count {
+                sensor denied-count-sensor {
+                    path fpc-client-session-denied-count;
+                }
+                type integer;
+                description "Client session denied count";
+            }
+            field fpc-slot {
+                sensor denied-count-sensor {
+                    path fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field ifl-denied-count {
+                sensor denied-count-sensor {
+                    path fpc-ifl-denied-count;
+                }
+                type integer;
+                description "IFL denied count";
+            }
+            field lb-client-denied-count {
+                sensor denied-count-sensor {
+                    path load-based-client-session-denied-count;
+                }
+                type integer;
+                description "Load based client session denied count";
+            }
+            field lb-service-denied-count {
+                sensor denied-count-sensor {
+                    path load-based-service-session-denied-count;
+                }
+                type integer;
+                description "Load based service session denied count";
+            }
+            field service-denied-count {
+                sensor denied-count-sensor {
+                    path fpc-service-session-denied-count;
+                }
+                type integer;
+                description "Service session denied count";
+            }
+            trigger report-client-denied {
+                frequency 30s;
+                term increasing {
+                    when {
+                        increasing-at-least-by-value "$client-denied-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] Client session denied count increasing ($client-denied-count).";
+                        }
+                    }
+                }
+                term zero {
+                    when {
+                        equal-to "$client-denied-count" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] Client session denied count is 0";
+                        }
+                    }
+                }
+                term non-zero {
+                    then {
+                        status {
+                            color yellow;
+                            message "[FPC:$fpc-slot] Client session denied count is $client-denied-count";
+                        }
+                    }
+                }
+            }
+            trigger report-ifl-denied {
+                frequency 30s;
+                term increasing {
+                    when {
+                        increasing-at-least-by-value "$ifl-denied-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] IFL denied count is increasing ($ifl-denied-count).";
+                        }
+                    }
+                }
+                term zero {
+                    when {
+                        equal-to "$ifl-denied-count" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] IFL denied count is 0.";
+                        }
+                    }
+                }
+                term non-zero {
+                    then {
+                        status {
+                            color yellow;
+                            message "[FPC:$fpc-slot] IFL denied count is $ifl-denied-count.";
+                        }
+                    }
+                }
+            }
+            trigger report-lb-client-denied {
+                frequency 30s;
+                term increasing {
+                    when {
+                        increasing-at-least-by-value "$lb-client-denied-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] Load based client session denied count is increasing ($lb-client-denied-count).";
+                        }
+                    }
+                }
+                term zero {
+                    when {
+                        equal-to "$lb-client-denied-count" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] Load based client session denied count is 0";
+                        }
+                    }
+                }
+                term non-zero {
+                    then {
+                        status {
+                            color yellow;
+                            message "[FPC:$fpc-slot] Load based client session denied count is $lb-client-denied-count";
+                        }
+                    }
+                }
+            }
+            trigger report-lb-service-denied {
+                frequency 30s;
+                term increasing {
+                    when {
+                        increasing-at-least-by-value "$lb-service-denied-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] Load based service session denied count increasing ($lb-service-denied-count).";
+                        }
+                    }
+                }
+                term zero {
+                    when {
+                        equal-to "$lb-service-denied-count" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] Load based service session denied count is 0";
+                        }
+                    }
+                }
+                term non-zero {
+                    then {
+                        status {
+                            color yellow;
+                            message "[FPC:$fpc-slot] Load based service session denied count is $lb-service-denied-count.";
+                        }
+                    }
+                }
+            }
+            trigger report-service-denied {
+                frequency 30s;
+                term increasing {
+                    when {
+                        increasing-at-least-by-value "$service-denied-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot] Service session denied count is increasing ($service-denied-count)";
+                        }
+                    }
+                }
+                term zero {
+                    when {
+                        equal-to "$service-denied-count" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot] Service denied count is 0";
+                        }
+                    }
+                }
+                term non-zero {
+                    then {
+                        status {
+                            color yellow;
+                            message "[FPC:$fpc-slot] Service denied count is $service-denied-count";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
