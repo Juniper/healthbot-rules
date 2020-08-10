@@ -57,27 +57,21 @@ healthbot {
              */
             field in-mbps {
                 formula {
-                    eval {
-                        expression "$in-bps / 1000000";
+                    rate-of-change {
+                        field-name "$input-bytes";
+                        multiplication-factor 0.000001;
                     }
                 }
                 type float;
                 description "Input MBPS";
             }
-            field in-bps {
+            field input-bytes {
                 sensor interface {
-                    path input-bps;
+                    path input-bytes;
                 }
                 type integer;
-                description "Input BPS";
-            }            
-            field in-pps {
-                sensor interface {
-                    path input-pps;
-                }
-                type integer;
-                description "Input PPS";
-            }
+                description "Interface input-bytes value";
+            }       
             field name {
                 sensor interface {
                     where "admin-status =~ /up/";
@@ -87,28 +81,22 @@ healthbot {
                 type string;
                 description "Interfaces to be monitored";
             }
-            field out-bps {
+            field output-bytes {
                 sensor interface {
-                    path output-bps;
+                    path output-bytes;
                 }
                 type integer;
-                description "Output BPS";
+                description "Interface Output-bytes value";
             }
             field out-mbps {
                 formula {
-                    eval {
-                        expression "$out-bps / 1000000";
+                    rate-of-change {
+                        field-name "$output-bytes";
+                        multiplication-factor 0.000001;
                     }
                 }
                 type float;
                 description "Output MBPS";
-            }
-            field out-pps {
-                sensor interface {
-                    path output-pps;
-                }
-                type integer;
-                description "Output PPS";
             }
             field admin-status {
                 sensor interface {
@@ -140,7 +128,7 @@ healthbot {
             field in-bw-util {
                 formula {
                     eval {
-                        expression "($in-mbps / $if-speed ) * 100";
+                        expression "( $in-mbps / $if-speed ) * 100";
                     }
                 }
                 type float;
@@ -149,15 +137,15 @@ healthbot {
             field out-bw-util {
                 formula {
                     eval {
-                        expression "($out-mbps / $if-speed ) * 100";
+                        expression "( $out-mbps / $if-speed ) * 100";
                     }
                 }
                 type float;
                 description "Output bandwidth utilization";
             }            
             /*
-             * Field defined using machine learning algorithms
-             */
+            * Field defined using machine learning algorithms
+            */
             field dt-in-bw-util {
                 formula {
                     anomaly-detection {
@@ -218,31 +206,8 @@ healthbot {
                 type float;
                 description "Interface bandwidth utilization increase threshold";
             }
-
-            field dt-in-bw-util {
-                formula {
-                    anomaly-detection {
-                        algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1h;
-                        field-name "$in-pps";
-                    }
-                }
-                type integer;
-            }
-            field dt-out-bw-util {
-                formula {
-                    anomaly-detection {
-                        algorithm 3sigma;
-                        learning-period 7d;
-                        pattern-periodicity 1h;
-                        field-name "$out-pps";
-                    }
-                }
-                type integer;
-            }
             /*
-             * Anomaly detection logic.
+            * Anomaly detection logic.
             */
             trigger in-bw-utilization {
                 synopsis "Interface input bandwidth utilization ";
@@ -260,7 +225,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$name input bandwidth utilization ($in-bw-util %) crossed threshold value ($threshold %). Mbps:$in-mbps Bps:$in-bps bps Pps:$in-pps";
+                            message "$name input bandwidth utilization ($in-bw-util %) crossed threshold value ($threshold %). Mbps:$in-mbps Input Bytes:$input-bytes bytes";
                         }
                     }
                 }
@@ -276,7 +241,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$name input bandwidth utilization ($in-bw-util %) is above the dynamic threshold. Mbps:$in-mbps Bps:$in-bps bps Pps:$in-pps Predicted BW utilization:$predicted-in-bw-util";
+                            message "$name input bandwidth utilization ($in-bw-util %) is above the dynamic threshold. Mbps:$in-mbps Input Bytes:$input-bytes bytes Predicted BW utilization:$predicted-in-bw-util";
                         }
                     }
                 }
@@ -287,7 +252,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$name input bandwidth utilization ($in-bw-util %) is normal. Mbps:$in-mbps Bps:$in-bps bps Pps:$in-pps";
+                            message "$name input bandwidth utilization ($in-bw-util %) is normal. Mbps:$in-mbps Input Bytes:$input-bytes bytes";
                         }
                     }
                 }
@@ -308,7 +273,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$name output bandwidth utilization($out-bw-util%) crossed threshold value ($threshold %). Mbps:$out-mbps Bps:$out-bps bps Pps:$out-pps";
+                            message "$name output bandwidth utilization($out-bw-util%) crossed threshold value ($threshold %). Mbps:$out-mbps Output Bytes:$output-bytes bytes";
                         }
                     }
                 }
@@ -324,7 +289,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$name output bandwidth utilization ($out-bw-util %) is above dynamic threshold. Mbps:$out-mbps Bps:$out-bps bps Pps:$out-pps Predicted BW utilization:$predicted-out-bw-util";
+                            message "$name output bandwidth utilization ($out-bw-util %) is above dynamic threshold. Mbps:$out-mbps Output Bytes:$output-bytes bytes Predicted BW utilization:$predicted-out-bw-util";
                         }
                     }
                 }
@@ -335,7 +300,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$name output bandwidth utilization ($out-bw-util %) is normal. Mbps:$out-mbps Bps:$out-bps bps Pps:$out-pps";
+                            message "$name output bandwidth utilization ($out-bw-util %) is normal. Mbps:$out-mbps Output Bytes:$output-bytes bytes";
                         }
                     }
                 }
