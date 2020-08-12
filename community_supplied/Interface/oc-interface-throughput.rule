@@ -1,26 +1,14 @@
 /*
 * Detects interface throughput utilization and notifies when
 * anomalies are found.
-* Five input control detection
+* Two input control detection
 *
-* 1) in-stats-name, is the interface input traffic counter name
-* whose input octets you would like to monitor. By default it
-* is 'in-octets'.
-*
-* 2) interface-name, is a regular expression that matches the
+* 1) interface-name, is a regular expression that matches the
 * interfaces that you would like to monitor. By default it is '.*',
 * which matches all interfaces. Use something like 'ge.*' to
 * match only gigabit ethernet interfaces.
 *
-* 3) out-stats-name, is the interface output traffic counter name
-* whose output octets you would like to monitor. By default it
-* is 'out-octets'.
-*
-* 4) speed, is the interface speed state name that is used to
-* calculate the interface throughput utilization. By default it
-* is 'high-speed'.
-*
-* 5) threshold, is the threshold that causes the rule to report
+* 2) threshold, is the threshold that causes the rule to report
 * an anomaly. By default it is 75.00 %. This rule will set a
 * dashboard color to red when io throughput utilization percent
 * exceeds threshold value. If dynamic threshold of io throughput
@@ -153,7 +141,7 @@ healthbot {
             */
             field input-bytes {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{in-stats-name}}";
+                    path "/interfaces/interface/state/counters/in-octets";
                     zero-suppression;
                 }
                 type integer;
@@ -162,7 +150,7 @@ healthbot {
             field interface-name {
                 sensor interfaces {
                     where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
-                    where "/interfaces/interface/state/{{speed}} != 0";
+                    where "/interfaces/interface/state/high-speed != 0";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -170,7 +158,7 @@ healthbot {
             }
             field output-bytes {
                 sensor interfaces {
-                    path "/interfaces/interface/state/counters/{{out-stats-name}}";
+                    path "/interfaces/interface/state/counters/out-octets";
                     zero-suppression;
                 }
                 type integer;
@@ -178,7 +166,7 @@ healthbot {
             }
             field speed {
                 sensor interfaces {
-                    path "/interfaces/interface/state/{{speed}}";
+                    path "/interfaces/interface/state/high-speed";
                     zero-suppression;
                 }
                 type string;
@@ -297,24 +285,9 @@ healthbot {
             * Variables with default values. Default values can be changed
             * while deploying playbook instance.
             */
-            variable in-stats-name {
-                value in-octets;
-                description "Interface input traffic counter name";
-                type string;
-            }
             variable interface-name-variable {
                 value .*;
                 description "Enter interface name in regex i.e. ge-.*";
-                type string;
-            }
-            variable out-stats-name {
-                value out-octets;
-                description "Interface output traffic counter name";
-                type string;
-            }
-            variable speed {
-                value high-speed;
-                description "Interface speed state name";
                 type string;
             }
             variable threshold {
@@ -332,11 +305,19 @@ healthbot {
                             products EX {
                                 releases 17.3R1 {
                                     release-support min-supported-release;
-                                    platform all;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
                                 }
                             }
                             products MX {
-                                releases 15.1R1 {
+                                releases 16.2R1 {
                                     release-support min-supported-release;
                                     platform all;
                                 }
