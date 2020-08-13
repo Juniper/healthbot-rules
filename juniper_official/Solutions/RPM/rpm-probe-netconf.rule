@@ -1,0 +1,187 @@
+/*
+ * Detects RPM probe packet loss and RTT value using Netconf sensor.
+ * One inputs control detection
+ *
+ *   1) rpm-threshold-variable, is the threshold that causes the rule to report
+ *       an anomaly. By default it's 50000. This rule will set a dashboard
+ *       color to red when probe RTT value more than this threshold, otherwise
+ *       color is set to green.
+ */
+healthbot {
+    topic service.protocols {
+        description "Monitors RPM probe probe packet loss, RTT and notify anomalies";
+        synopsis "RPM probe analyzer";
+        rule rpm-probe-netconf {
+            keys [ owner test-name ];
+            synopsis "RPM probe packet loss monitor";
+            description "RPM probe";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor rpm-probe {
+                synopsis "RPM iAgent sensor definition";
+                description "RPM iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file RPMprobe.yml;
+                    table RPMprobeTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field loss-percentage {
+                sensor rpm-probe {
+                    path loss_percentage;
+                }
+                type integer;
+                description "RPM probe loss percentage";
+            }
+            field owner {
+                sensor rpm-probe {
+                    path owner;
+                }
+                type string;
+                description "RPM probe owner";
+            }
+            field probe-rt-delay {
+                sensor rpm-probe {
+                    path probe_rt_ave_delay;
+                }
+                type integer;
+                description "RPM probe rt delay";
+            }
+            field probe-rt-delay-dt {
+                formula {
+                    anomaly-detection {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$probe-rt-delay";
+                    }
+                }
+                type integer;
+            }
+            field test-name {
+                sensor rpm-probe {
+                    path test-name;
+                }
+                type string;
+                description "RPM probe test name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rpm-probe-packet-loss-netconf {
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * RTT packet loss percentage is 1 or above.
+                 */
+                term is-packet-loss-observed {
+                    when {
+                        greater-than-or-equal-to "$loss-percentage" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "RTT packet Loss percentage is $loss-percentage for $owner, $test-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-packet-loss {
+                    then {
+                        status {
+                            color green;
+                            message "RTT packet Loss is not observed for $owner, $test-name";
+                        }
+                    }
+                }
+            }
+            trigger rpm-probe-round-trip-time-netconf {
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * RTT delay is more than the threshold.
+                 */
+                term is-rtt-more-than-threshold {
+                    when {
+                        greater-than "$probe-rt-delay" "$rtt-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Average Round trip time $probe-rt-delay is more than the threshold for $owner, $test-name";
+                        }
+                    }
+                }
+                term rtt-dynamic-threshold-exceeds {
+                    when {
+                        equal-to "$probe-rt-delay-dt" 1 {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Average Round trip time $probe-rt-delay exceeded the dynamic threshold for $owner, $test-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-anomaly {
+                    then {
+                        status {
+                            color green;
+                            message "Average Round trip time $probe-rt-delay is within the limit for $owner, $test-name";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable rpm-threshold-variable {
+                value 50000;
+                description "RPM max threshold variable. More than this value is marked as anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5100 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

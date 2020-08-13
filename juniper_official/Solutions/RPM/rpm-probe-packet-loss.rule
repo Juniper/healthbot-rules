@@ -1,0 +1,120 @@
+/*
+ * Detects RPM probe packet loss using Netconf sensor.
+ *
+ */
+healthbot {
+    topic service.protocols {
+        description "Monitors RPM probe probe packet loss and notify anomalies";
+        synopsis "RPM probe analyzer";
+        rule rpm-probe-packet-loss-openconfig {
+            keys [ owner test-name ];
+            synopsis "RPM probe packet loss monitor";
+            description "Collects RPM packet loss periodically and notifies anomalies";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor rpm-probe {
+                synopsis "RPM open-config sensor definition";
+                description "RPM open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /junos/rpm/probe-results/probe-test-results/probe-test-generic-results/loss-percentage;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field loss-percentage {
+                sensor rpm-probe {
+                    path /junos/rpm/probe-results/probe-test-results/probe-test-generic-results/loss-percentage;
+                }
+                type integer;
+                description "RPM probe loss percentage";
+            }
+            field owner {
+                sensor rpm-probe {
+                    path "/junos/rpm/probe-results/probe-test-results/@owner";
+                }
+                type string;
+                description "RPM probe owner name";
+            }
+            field results-scope {
+                sensor rpm-probe {
+                    where "/junos/rpm/probe-results/probe-test-results/probe-test-generic-results/@results-scope =~ /LAST_TEST/";
+                    path "/junos/rpm/probe-results/probe-test-results/probe-test-generic-results/@results-scope";
+                }
+                type string;
+                description "RPM probe result scope";
+            }
+            field test-name {
+                sensor rpm-probe {
+                    path "/junos/rpm/probe-results/probe-test-results/@test-name";
+                }
+                type string;
+                description "RPM probe test name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rpm-probs-packet-loss {
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * packet loss percentage is 1 or more.
+                 */
+                term is-packet-loss-observed {
+                    when {
+                        greater-than-or-equal-to "$loss-percentage" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "RTT packet Loss percentage is $loss-percentage for $owner, $test-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-packet-loss {
+                    then {
+                        status {
+                            color green;
+                            message "RTT packet Loss not observed for $owner, $test-name";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5100 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
