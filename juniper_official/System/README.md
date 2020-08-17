@@ -5,7 +5,7 @@
 		> Description: "Playbook checks the system health i.e. system cpu, memory, storage and junos processes cpu and memory utilization"
 		> Synopsis: "System key performance indicators"
 		> Playbook file name: system-kpis.playbook
-		> Detals:
+		> Detals:-
 		 Playbook contains multiple rules which checks the health of system and
 		 notifies when anomalies are found.
 		
