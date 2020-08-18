@@ -1,0 +1,161 @@
+/*
+ * Detects RPM twamp RTT value using OpenConfig sensor.
+ * One inputs control detection
+ *
+ *   1) rtt-threshold-variable, is the threshold that causes the rule to report
+ *       an anomaly. By default it's 50000. This rule will set a dashboard
+ *       color to red when probe RTT value more than this threshold, otherwise
+ *       color is set to green.
+ */
+healthbot {
+    topic service.protocols {
+        description "Monitors twamp RTT and notify anomalies";
+        synopsis "RPM probe analyzer";
+        rule rpm-twamp-rtt-openconfig {
+            keys [ owner test-name ];
+            synopsis "RPM twamp RTT monitor";
+            description "Collects RPM twamp RTT periodically and notifies anomalies";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor twamp-rtt {
+                synopsis "RPM open-config sensor definition";
+                description "RPM open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /junos/twamp/client/history-test-results/history-single-test-results/probe-single-results/rtt;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field owner {
+                sensor twamp-rtt {
+                    path "/junos/twamp/client/history-test-results/history-single-test-results/@owner";
+                }
+                type string;
+                description "RPM probe owner name";
+            }
+            field rtt {
+                sensor twamp-rtt {
+                    path /junos/twamp/client/history-test-results/history-single-test-results/probe-single-results/rtt;
+                }
+                type integer;
+                description "RPM probe RTT";
+            }
+            field rtt-dt {
+                formula {
+                    anomaly-detection {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1d,1h;
+                        field-name "$rtt";
+                    }
+                }
+                type integer;
+            }
+            field rtt-threshold {
+                constant {
+                    value "{{rtt-threshold-variable}}";
+                }
+                type integer;
+                description "RPM probe RTT threshold";
+            }
+            field test-name {
+                sensor twamp-rtt {
+                    path "/junos/twamp/client/history-test-results/history-single-test-results/@test-name";
+                }
+                type string;
+                description "RPM probe test name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rpm-twamp-round-trip-time {
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * RTT delay is more than the threshold.
+                 */
+                term is-rtt-more-than-static-threshold {
+                    when {
+                        greater-than "$rtt" "$rtt-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "TWAMP Round trip time $rtt is more than the threshold for $owner, $test-name";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * RTT delay is more than the threshold for 3 minutes.
+                 */
+                term rtt-dynamic-threshold-exceeds {
+                    when {
+                        equal-to "$rtt-dt" 1 {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "TWAMP Round trip time $rtt exceeded the dynamic threshold for $owner, $test-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-anomaly {
+                    then {
+                        status {
+                            color green;
+                            message "TWAMP average Round trip time $rtt is within the limit for $owner, $test-name";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable rtt-threshold-variable {
+                value 50000;
+                description "RPM RTT threshold variable. More than this value is marked as anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products PTX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5100 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
