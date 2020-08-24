@@ -1,0 +1,33 @@
+---
+TCAM5KTable:
+    command: show pfe filter hw summary
+    item: 'Slot (\d)'
+    key: slot
+    view: TCAMView
+
+TCAMView:
+  fields:
+    unit: _TCAMUnitTable
+
+_TCAMUnitTable:
+  title: "Unit"
+  item: 'Unit:(\d):'
+  key: unit
+  view: _TCAMGroupView
+
+_TCAMGroupView:
+  fields:
+    group_details: _TCAMGroupTable
+
+_TCAMGroupTable:
+  title: "> Ingress filter groups"
+  key: Group
+  view: _TCAMFilterView
+
+_TCAMFilterView:
+    regex:
+        Group: '\w+\s+\w+'
+        Group-ID: '\d+'
+        Allocated: '\d+'
+        Used: '\d+'
+        Free: '\d+'

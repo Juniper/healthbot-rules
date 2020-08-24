@@ -1,5 +1,21 @@
+/*
+ * Playbook contains multiple rules which checks the file descriptors and sockets
+ * usage and notifies when anomalies are found.
+ *
+ * 1) Rule "commit-history" monitors the system commits and notifies anomalies.
+ * 2) Rule "check-file-descriptor-usage-netconf" monitors the file descriptor usage
+ *    and notifies anomalies when usage exceeds thresholds.
+ * 3) Rule "check-file-open-netconf" detects the count of number of open files and
+ *    is referenced by file descriptor usage rule.
+ * 4) Rule "check-socket-usage-netconf" monitors the file sockets usage and notifies
+ *    anomalies when usage exceeds thresholds.
+ * 5) Rule "check-sockets-open-netconf" detects the count of number of sockets and
+ *    is referenced by check-socket-usage rule .
+ */
 healthbot {
     playbook system-kpi-community {
-        rules system.commit/commit-history;
+        rules [ system.commit/commit-history system/check-file-descriptor-usage-netconf system/check-file-open-netconf system/check-socket-usage-netconf system/check-sockets-open-netconf ];
+        description "To check system commit, OS file descriptors usage and sockets usage is within threshold.";
+        synopsis "system key performance indicators";
     }
 }
