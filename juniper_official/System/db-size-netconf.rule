@@ -1,0 +1,207 @@
+/*
+* Monitors db usage and notifies when anomalies are found.
+*
+* Two input control detection
+*
+* 1) max-threshold variable,  is the max threshold that causes the rule to report
+* an anomaly. By default it is 70. This rule will set a dashboard color
+* to red when db usage percent exceeds max threshold value.
+* 
+*
+* 2) min-threshold variable, is the threshold that causes the rule to report
+* an anomaly. By default it is 50.00 %. This rule will set a
+* dashboard color to yellow when db usage percent
+* exceeds min threshold value. Otherwise it is set to green.
+* 
+*/
+healthbot {
+    topic system.storage {
+        rule check-db-size-netconf {
+            synopsis "db usage KPI";
+            description "To check for db usage and notify anomalies";
+            function db-usage-percent {
+                description "Function to calculate the db usage";
+                path used-percentage.py;
+                method db_percent;
+                argument size {
+                    mandatory;
+                }
+                argument usage {
+                    mandatory;
+                }
+            }
+            /*
+             * Monitors db usage. Notifies via the dashboard colors when
+             * usage exceeds the maximum threshold {{$max-threshold}} it sets 
+             * the color to red.The color is set to yellow when usage exceeds  
+             * low threshold {{$min-threshold}}.Otherwise the color is set to green.
+             * 
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor db-size {
+                synopsis "DB size sensor";
+                description "get db size using xml rpc";
+                iAgent {
+                    file db-size.yml;
+                    table DBSizeTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field db-percent {
+                formula {
+                    user-defined-function {
+                        function-name db-usage-percent;
+                        argument size "$maxsize";
+                        argument usage "$cursize";
+                    }
+                }
+                type float;
+                description "Percentage of DB usage";
+            }
+            field high-threshold {
+                constant {
+                    value "{{max-threshold}}";
+                }
+                type integer;
+                description "Maximum threshold variable";
+            }
+            field low-thredhold {
+                constant {
+                    value "{{min-threshold}}";
+                }
+                type integer;
+                description "Minimum threshold variable";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger config-db-usage {
+                synopsis "db usage";
+                description "Sets health based on the db usage";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the db usage ($db-percent %) is greater
+                 * than the threshold (high-threshold %).
+                 */
+                term is-db-usage-high {
+                    when {
+                        greater-than-or-equal-to "$db-percent" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Configuration DB size $cursize  exceeds high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green and sends out an anomaly notification when
+                 * the db usage is less than low-threshold ($low-threshold).
+                 *
+                 */
+                term is-db-usage-normal {
+                    when {
+                        less-than-or-equal-to "$db-percent" "$low-thredhold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Configuration DB size $cursize  normal";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to yellow.
+                 */
+                term is-db-usage-medium {
+                    then {
+                        status {
+                            color yellow;
+                            message "Configuration DB size $cursize  exceeds low threshold";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable max-threshold {
+                value 70;
+                description "DB usage high threshold";
+                type int;
+            }
+            variable min-threshold {
+                value 50;
+                description "DB usage low threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
