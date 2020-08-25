@@ -12,7 +12,7 @@ healthbot {
         rule count-lo0-address-ipv6-netconf {
             synopsis "lo0 ipv6 configuration kpi";
             description "Check whether IPV6 address is configured under lo0 interface";
-            rule-frequency 30s;
+            rule-frequency 3m;
             /*
              * Checks if lo0 ipv6 address is present. Notifies via the dashboard 
              * colors when address is present it sets the color to green.
@@ -37,14 +37,14 @@ healthbot {
             trigger loopback-address-configuration {
                 synopsis "ipv6 loopback address";
                 description "Sets health based on if ipv6 loopback address is present";
-                frequency 90s;
+                frequency 3m;
                 /*
                  * Sets color to red when ipv6 address is not present on lo0.
                  */
                 term is-lo0-address-not-configured {
                     when {
                         less-than-or-equal-to "$count-lo0-address" 1 {
-                            time-range 60s;
+                            time-range 3m;
                         }
                     }
                     then {
@@ -68,10 +68,10 @@ healthbot {
             }
             vector list-lo0-addresses {
                 path "/topic[topic-name=interface.statistics]/rule[rule-name=check-lo0-address-ipv6-netconf]/lo0-address";
-                time-range 30s;
+                time-range 3m;
             }
             rule-properties {
-                version 2;
+                version 1;
                 contributor juniper;
                 supported-healthbot-version 3.1.0;
                 supported-devices {
@@ -126,10 +126,6 @@ healthbot {
                                 }
                             }
                         }
-                    }
-                    other-vendor cisco-IOS-XR {
-                        vendor-name cisco;
-                        operating-system IOS-XR;
                     }
                 }
             }

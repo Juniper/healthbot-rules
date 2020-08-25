@@ -17,14 +17,6 @@ healthbot {
              * to red.Otherwise the color is set to green.  
              */
             rule-frequency 60s;
-            function list_total {
-                description "Functon that gives sum of all dropped packets";
-                path list-total.py;
-                method list_total;
-                argument list_drop_vector {
-                    mandatory;
-                }
-            }
             /*
              * Field defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -38,9 +30,9 @@ healthbot {
             }
             field total-dropped-packets {
                 formula {
-                    user-defined-function {
-                        function-name list_total;
-                        argument list_drop_vector "@total-dropped-pkts";
+                    sum {
+                        field-name "@total-dropped-pkts";
+                        time-range 60s;
                     }
                 }
                 type integer;

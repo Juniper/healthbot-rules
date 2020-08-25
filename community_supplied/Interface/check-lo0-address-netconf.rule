@@ -1,77 +1,124 @@
 /*
-* Collects the list of ipv4 addresses in a vector and notifies when anomalies are found.
+* Checks if lo0 ipv4 address is present and notifies when anomalies are found.
 * 
-* One input control detection
+* Two input control detection
 *
-* 1) list-lo0-addresses,  vector is collecting the list of lo0 addresses from 
-*    the rule "check-lo0-address-netconf". This rule will set  dashboard color to green
-*     when any ipv4 address is present.Else it is set to red.
+* 1) actual-ip-address-variable,  ipv4 address present on the lo0.By default
+*    it is  .*. This rule will set  dashboard color to green when any ipv4 address
+*    is present.Else it is set to red.
+*
+* 2) address-family-name, is the address family name, for ipv4 it is set to "inet".
+*    This rule will set  dashboard color to green when any ipv4 address
+*    is present.Else it is set to red.
 */
 healthbot {
     topic interface.statistics {
-        rule count-lo0-address-netconf {
-            synopsis "lo0 configuration kpi";
-            description "Check whether IP address is configured under lo0 interface";
-            rule-frequency 30s;
+        rule check-lo0-address-netconf {
+            keys [ address-family ifl-name lo0-address ];
+            synopsis "lo0 ip address configuration KPI";
+            description "Collects the IP address configured under lo0 interface";
             /*
              * Checks if lo0 ipv4 address is present. Notifies via the dashboard 
              * colors when address is present it sets the color to green.
              * Otherwise the color is set to red.  
              */
             /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor lo0address {
+                iAgent {
+                    file InterfaceLo0Table.yml;
+                    table InterfaceLo0Table;
+                    frequency 3m;
+                }
+            }
+            /*
              * Field defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */
-            field count-lo0-address {
-                formula {
-                    count {
-                        field-name "@list-lo0-addresses";
-                    }
+            field actual-ip-address {
+                constant {
+                    value "{{actual-ip-address-variable}}";
                 }
-                type integer;
-                description "Count the IP address configured in lo0 interface";
+                type string;
+                description "Actual ip address should be present in loopback 0";
+            }
+            field address-family {
+                sensor lo0address {
+                    where "address-family-name =~ /^{{address-family-name}}$/";
+                    path address-family-name;
+                }
+                type string;
+                description "ipv4 address family name.";
+            }
+            field ifl-name {
+                sensor lo0address {
+                    path ../name;
+                }
+                type string;
+                description "loopback logical interfaces,";
+            }
+            field lo0-address {
+                sensor lo0address {
+                    path ifa-local;
+                }
+                type string;
+                description "Configured ip address in lo0";
             }
             /*
              * Anomaly detection logic.
              */
-            trigger loopback-address-configuration {
+            trigger loopback-address-verification {
                 synopsis "ipv4 loopback address";
                 description "Sets health based on if ipv4 loopback address is present";
-                frequency 90s;
-                /*
-                 * Sets color to red when ipv4 address is not present on lo0.
-                 */
-                term is-lo0-address-not-configured {
+                frequency 3m;
+                term is-not-configured-address {
                     when {
-                        less-than-or-equal-to "$count-lo0-address" 1 {
-                            time-range 60s;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Loopback address is not configured";
-                        }
+                        matches-with "$lo0-address" 127.0.0.1;
                     }
                 }
                 /*
-                 * Defaults color to green.
+                 * Sets color to green when ipv4 address is present on lo0.
                  */
-                term is-lo0-address-configured {
+                term is-ip-address-match {
+                    when {
+                        matches-with "$lo0-address" "$actual-ip-address";
+                    }
                     then {
                         status {
                             color green;
-                            message "Loopback address is configured";
+                            message "$lo0-address IP address is configured properly";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red if not present.
+                 */
+                term is-ip-address-mismatch {
+                    then {
+                        status {
+                            color red;
+                            message "Required IP address is not configured";
                         }
                     }
                 }
             }
-            vector list-lo0-addresses {
-                path "/topic[topic-name=interface.statistics]/rule[rule-name=check-lo0-address-netconf]/lo0-address";
-                time-range 30s;
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable actual-ip-address-variable {
+                value .*;
+                description "IP address should be present in the lo0";
+                type string;
+            }
+            variable address-family-name {
+                value inet;
+                description "address family name,for ipv4 address we are matching on inet.";
+                type string;
             }
             rule-properties {
-                version 2;
+                version 1;
                 contributor juniper;
                 supported-healthbot-version 3.1.0;
                 supported-devices {
@@ -126,10 +173,6 @@ healthbot {
                                 }
                             }
                         }
-                    }
-                    other-vendor cisco-IOS-XR {
-                        vendor-name cisco;
-                        operating-system IOS-XR;
                     }
                 }
             }

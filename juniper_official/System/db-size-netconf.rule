@@ -1,37 +1,25 @@
 /*
-* Monitors db usage and notifies when anomalies are found.
+* Monitors Junos DB usage and notifies when anomalies are found.
 *
 * Two input control detection
 *
 * 1) max-threshold variable,  is the max threshold that causes the rule to report
 * an anomaly. By default it is 70. This rule will set a dashboard color
-* to red when db usage percent exceeds max threshold value.
+* to red when Junos DB usage percent exceeds max threshold value.
 * 
-*
 * 2) min-threshold variable, is the threshold that causes the rule to report
 * an anomaly. By default it is 50.00 %. This rule will set a
-* dashboard color to yellow when db usage percent
+* dashboard color to yellow when Junos DB usage percent
 * exceeds min threshold value. Otherwise it is set to green.
 * 
 */
 healthbot {
     topic system.storage {
         rule check-db-size-netconf {
-            synopsis "db usage KPI";
-            description "To check for db usage and notify anomalies";
-            function db-usage-percent {
-                description "Function to calculate the db usage";
-                path used-percentage.py;
-                method db_percent;
-                argument size {
-                    mandatory;
-                }
-                argument usage {
-                    mandatory;
-                }
-            }
+            synopsis "Junos DB usage KPI";
+            description "To check for Junos DB usage and notify anomalies";
             /*
-             * Monitors db usage. Notifies via the dashboard colors when
+             * Monitors Junos DB usage. Notifies via the dashboard colors when
              * usage exceeds the maximum threshold {{$max-threshold}} it sets 
              * the color to red.The color is set to yellow when usage exceeds  
              * low threshold {{$min-threshold}}.Otherwise the color is set to green.
@@ -42,11 +30,11 @@ healthbot {
              */
             sensor db-size {
                 synopsis "DB size sensor";
-                description "get db size using xml rpc";
+                description "get Junos DB size using xml rpc";
                 iAgent {
                     file db-size.yml;
                     table DBSizeTable;
-                    frequency 60s;
+                    frequency 15m;
                 }
             }
             /*
@@ -55,10 +43,8 @@ healthbot {
              */
             field db-percent {
                 formula {
-                    user-defined-function {
-                        function-name db-usage-percent;
-                        argument size "$maxsize";
-                        argument usage "$cursize";
+                    eval {
+                        expression "($cursize / $maxsize) * 100";
                     }
                 }
                 type float;
@@ -82,12 +68,12 @@ healthbot {
              * Anomaly detection logic.
              */
             trigger config-db-usage {
-                synopsis "db usage";
-                description "Sets health based on the db usage";
-                frequency 90s;
+                synopsis "Junos DB usage";
+                description "Sets health based on the Junos DB usage";
+                frequency 20m;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the db usage ($db-percent %) is greater
+                 * the Junos DB usage ($db-percent %) is greater
                  * than the threshold (high-threshold %).
                  */
                 term is-db-usage-high {
@@ -103,7 +89,7 @@ healthbot {
                 }
                 /*
                  * Sets color to green and sends out an anomaly notification when
-                 * the db usage is less than low-threshold ($low-threshold).
+                 * the Junos DB usage is less than low-threshold ($low-threshold).
                  *
                  */
                 term is-db-usage-normal {
