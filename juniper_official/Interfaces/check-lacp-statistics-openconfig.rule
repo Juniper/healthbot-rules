@@ -1,0 +1,359 @@
+/*
+* Monitors lacp link status and notifies when anomalies are found.
+*
+* Four input control detection
+*
+* 1) lacp-threshold,  is the threshold that causes the rule to report
+* an anomaly. By default it is 1. This rule will set a
+* dashboard color to red when lacp tx and rx packets are not increasing by
+* lacp-threshold value during each cycle.
+*
+* 2) detached, is the threshold that causes the rule to report
+* an anomaly. By default it is 50.00 %. This rule will set a
+* dashboard color to yellow when file descriptor usage percent
+* exceeds threshold value in time range of 2 days. Otherwise
+* it is set to green.
+*
+* 3) interface-name, is a regular expression that matches the
+* interfaces that you would like to monitor. By default it '.*',
+* which matches all interfaces. Use something like 'ge.*' to
+* match only gigabit ethernet interfaces.
+*
+* 4) unknown-illegal-threshold,  is the threshold that causes the rule to report
+* an anomaly. By default it is 1. This rule will set a
+* dashboard color to red when illegal or unknown packets are increasing by
+* unknown-illegal-threshold value during range interval of 300s.
+*/
+healthbot {
+    topic protocol.lacp {
+        rule check-lacp-statistics-openconfig {
+            keys interface-name;
+            synopsis "LACP statistics analyzer";
+            description "Checks if LACP Tx and Rx packets are being sent";
+            /*
+             * Monitors lacp links. Notifies via the dashboard colors when
+             * usage exceeds the threshold {{$unknown-illegal-threshold}} for  
+             * illegal-rx or unknown-rx  it sets the color to red. Else it is set 
+             * to green.			
+             * The color is set to green when lacp tx and rx packets are increasing
+             * by threshold value {{$lacp-threshold}} during each cycle.Otherwise
+             * the color is set to red.
+             * The color is set to red when the mux state is {{$detached}}.Otherwise 
+             * the color is set to green.			
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor lacp-sensor {
+                open-config {
+                    sensor-name /lacp/interfaces;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field detached {
+                constant {
+                    value "{{detached}}";
+                }
+                type string;
+                description "Used to match detached STATE";
+            }
+            field if-Illegal-Rx {
+                sensor lacp-sensor {
+                    path /lacp/interfaces/interface/members/member/state/counters/lacp-errors;
+                }
+                type integer;
+                description "Number of invalid packets received.";
+            }
+            field if-Unknown-Rx {
+                sensor lacp-sensor {
+                    path /lacp/interfaces/interface/members/member/state/counters/lacp-unknown-errors;
+                }
+                type integer;
+                description "Number of unrecognized packet errors logged.";
+            }
+            field if-lacp-mux-state {
+                sensor lacp-sensor {
+                    path /lacp/interfaces/interface/members/member/state/mux-state;
+                }
+                type string;
+                description "Checks the mux state of the lacp interface.";
+            }
+            field if-lacp-state {
+                sensor lacp-sensor {
+                    path /lacp/interfaces/interface/members/member/state/activity;
+                }
+                type string;
+                description "Checks if interface state is Active or Passive.";
+            }
+            field interface-name {
+                sensor lacp-sensor {
+                    where "/lacp/interfaces/interface/@name =~ /{{if-name}}/";
+                    path "/lacp/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field lacp-in-pkts {
+                sensor lacp-sensor {
+                    path /lacp/interfaces/interface/members/member/state/counters/lacp-in-pkts;
+                    zero-suppression;
+                }
+                type integer;
+                description "Number of LACP Rx Packets.";
+            }
+            field lacp-out-pkts {
+                sensor lacp-sensor {
+                    path /lacp/interfaces/interface/members/member/state/counters/lacp-out-pkts;
+                    zero-suppression;
+                }
+                type integer;
+                description "Number of LACP Tx Packets.";
+            }
+            field lacp-threshold {
+                constant {
+                    value "{{lacp-threshold}}";
+                }
+                type integer;
+                description "lacp packet threshold";
+            }
+            field unknown-illegal-threshold {
+                constant {
+                    value "{{unknown-illegal-threshold}}";
+                }
+                type integer;
+                description "Unknown and illegal Rx threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger illegal-Rx {
+                synopsis "illegal-Rx packets";
+                description "Sets health based on the illegal-Rx packets received";
+                frequency 90s;
+                /*
+                 * When illegal-Rx packets exceeds the threshold {{$unknown-illegal-threshold}}
+                 * it sets the color to red.  
+                 */
+                term Illegal-Rx {
+                    when {
+                        increasing-at-least-by-value "$if-Illegal-Rx" {
+                            value "$unknown-illegal-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Illegal Rx $if-Illegal-Rx packets are received on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-Illegal-Rx {
+                    then {
+                        status {
+                            color green;
+                            message "Illegal Rx packets are not  received continuosly on $interface-name";
+                        }
+                    }
+                }
+            }
+            trigger lacp-Tx-Rx {
+                synopsis "lacp-Tx-Rx packets";
+                description "Sets health based on the lacp-Tx-Rx packets";
+                frequency 90s;
+                /*
+                 * When lacp-Tx-Rx packets are being sent and received continuosly
+                 * it sets the color to green.  
+                 */
+                term Tx-Rx-Increase {
+                    when {
+                        increasing-at-least-by-value "$lacp-in-pkts" {
+                            value "$lacp-threshold";
+                        }
+                        increasing-at-least-by-value "$lacp-out-pkts" {
+                            value "$lacp-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "LACP packets are being sent and received on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red.
+                 */
+                term No-Tx-Rx-Increase {
+                    then {
+                        status {
+                            color red;
+                            message "LACP packets are not being sent and received on $interface-name";
+                        }
+                    }
+                }
+            }
+            trigger mux-state {
+                synopsis "mux state";
+                description "Sets health based on the mux state";
+                frequency 90s;
+                /*
+                 * When mux state is equal to DETACHED it sets the color to red.
+                 *   
+                 */
+                term mux-sate-discard {
+                    when {
+                        matches-with "$if-lacp-mux-state" "$detached" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "LACP is not working on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-mux-sate-discard {
+                    then {
+                        status {
+                            color green;
+                            message "LACP is working on $interface-name";
+                        }
+                    }
+                }
+            }
+            trigger unknown-Rx {
+                synopsis "unknown-Rx packets";
+                description "Sets health based on the uknown-Rx packets received";
+                frequency 90s;
+                /*
+                 * When unknown-Rx packets exceeds the threshold {{$unknown-illegal-threshold}}
+                 * it sets the color to red.  
+                 */
+                term unknown-Rx {
+                    when {
+                        increasing-at-least-by-value "$if-Unknown-Rx" {
+                            value "$unknown-illegal-threshold";
+                            time-range 300s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$if-Unknown-Rx Unknown Rx packets are received continuosly on $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-unknown-Rx {
+                    then {
+                        status {
+                            color green;
+                            message "Unknown Rx packets are not received continuosly on $interface-name";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable detached {
+                value DETACHED;
+                description "Matches detached state.";
+                type string;
+            }
+            variable if-name {
+                value .*;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            variable lacp-threshold {
+                value 1;
+                description "LACP threshold : Increase between metrics, before we report anomaly.";
+                type int;
+            }
+            variable unknown-illegal-threshold {
+                value 1;
+                description "Unknow and Illegal Rx threshold : Increase between metrics, before we report anomaly.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

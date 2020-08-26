@@ -1,0 +1,110 @@
+/*
+ * Detects interface optical power and notifies when anomalies are found.
+ * One inputs control detection
+ * 
+ *   1) interface-name-variable, is a regular expression that matches the
+ *      interfaces that you would like to monitor.    By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ */
+healthbot {
+    topic linecard.optical {
+        rule check-optics-power-thresholds-openconfig {
+            keys interface-name;
+            synopsis "Interface rx optical power";
+            description "Collects the interface input optical power and notifies in case of anomalies";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /junos/system/linecard/optics/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field rx-power-high {
+                sensor interfaces {
+                    path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Receiver power high alarm threshold";
+            }
+            field rx-power-low {
+                sensor interfaces {
+                    path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
+                }
+                type float;
+                description "Receive low power threshold";
+            }
+            field tx-power-high {
+                sensor interfaces {
+                    path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Transmit power high alarm threshold";
+            }
+            field tx-power-low {
+                sensor interfaces {
+                    path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
+                }
+                type float;
+                description "Transmit low power threshold";
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable interface-name-variable {
+                value .*;
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

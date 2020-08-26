@@ -1,0 +1,115 @@
+/*
+* Collects OSPF SPF Count details and provides to check-spf-ospf-netconf rule
+* 
+*/
+healthbot {
+    topic protocol.ospf {
+        rule ospf-spf-count-netconf {
+            keys [ router-id topology-id ];
+            synopsis "OSPF SPF count KPI";
+            description "Collects data about ospf spf count";
+            /*
+             * Collects OSPF SPF Count details and provides to check-spf-ospf-netconf rule
+             *  
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor spf-count {
+                iAgent {
+                    file ospf-spf-count.yml;
+                    table ospfspfcountTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field ospf-spf-count {
+                sensor spf-count {
+                    path ospf-full-spf-count;
+                }
+                type integer;
+                description "spf count.";
+            }
+            field router-id {
+                sensor spf-count {
+                    path ospf-router-id;
+                }
+                type string;
+                description "OSPF Router ID of the device.";
+            }
+            field topology-id {
+                sensor spf-count {
+                    path ospf-topology-overview/ospf-topology-id;
+                }
+                type string;
+                description "Topology id.";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

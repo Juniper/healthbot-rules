@@ -1,0 +1,191 @@
+/*
+* Monitors  packet drops for source/destination FPC and PFE and notifies when
+* anomalies are found.
+*/
+healthbot {
+    topic linecard.statistics {
+        description "To check for packet drops for source/destination FPC and PFE";
+        synopsis "Packet Drop KPI";
+        rule check-fabric-netconf {
+            keys [ dest-fpc dest-pfe src-fpc src-pfe ];
+            synopsis "Packet Drop KPI";
+            description "To check for packet drops for source/destination FPC and PFE";
+            /*
+             * Monitors packet drops for source/destination FPC and PFE . Notifies 
+             * via the dashboard colors, when drop packet high and drop packet low are 
+             * greater than 0, it sets the color to red.Else color is set to green.
+             *
+             * The fields dest-fpc, dest-pfe, src-fpc, src-pfe are used as keys.
+             * 			 
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor fabric_packet {
+                synopsis "Fabric Packet Drop sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file fabric.yml;
+                    table Fabric-Packet-Drop-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field dest-fpc {
+                sensor fabric_packet {
+                    path dest-fpc;
+                }
+                type string;
+                description "Destination fpc to be monitored";
+            }
+            field dest-pfe {
+                sensor fabric_packet {
+                    path dest-pfe;
+                }
+                type string;
+                description "Destination pfe to be monitored";
+            }
+            field src-fpc {
+                sensor fabric_packet {
+                    path src-fpc;
+                }
+                type string;
+                description "Source fpc to be monitored";
+            }
+            field src-pfe {
+                sensor fabric_packet {
+                    path src-pfe;
+                }
+                type string;
+                description "Source pfe to be monitored";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger check-drop-pkt-high {
+                synopsis "Packet drop high counter moniter KPI";
+                description "Sets health based on the change in Packet drop high counter count";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * drop packets high is greater than 0.
+                 */
+                term packet-drops {
+                    when {
+                        greater-than "$drop-pkts-high" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "drop packets high in  key is $drop-pkts-high";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term No-drop {
+                    then {
+                        status {
+                            color green;
+                            message "No packet drop in key";
+                        }
+                    }
+                }
+            }
+            trigger check-drop-pkt-low {
+                synopsis "Packet drop low counter moniter KPI";
+                description "Sets health based on the change in Packet drop low counter count";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * drop packets low is greater than 0.
+                 */
+                term packet-dropping {
+                    when {
+                        greater-than "$drop-pkts-low" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "drop packets low in  key is $drop-pkts-low";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-drop {
+                    then {
+                        status {
+                            color green;
+                            message "No packet drop in key";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

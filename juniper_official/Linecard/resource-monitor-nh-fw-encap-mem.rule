@@ -1,0 +1,209 @@
+/*
+ * This rule collects periodically free NH memory used, free Firewall memory and
+ * free Encapsulation memory for each PFE instance in all FPCs and reports whether it is
+ * normal (green) or below watermark (red).
+ * 
+ * Memory used values and the watermark values are available in o/p of CLI command
+ * "show system resource-monitor fpc"
+ *
+ * Encapsulation memory is specific to I-chips and not applicable for Trio-based chips.
+ * It is reported as green with value as 'NA' for Trio-based chips.
+ */
+healthbot {
+    topic linecard.pfe.resource  {
+        rule monitor-firewall-nh-encap-memory {
+            /*
+             * FPC slot number and PFE number are the keys for this rule.
+             */
+            keys [ fpc-slot pfe-num ];
+            synopsis " Firewall memory, NH memory and Encap memory analyser";
+            description "Collects periodically Firewall memory, NH memory and Encap memory availability for each PFE instance in all FPCs and reports whether it is normal or below watermark";
+            /*
+             * iAgent sensor to get information from device.
+             */
+            sensor asic-mem-sensor {
+                iAgent {
+                    file resource-monitor-nh-fw-encap-mem.yml;
+                    table ResoureMonitorSummaryPfeAsicMemTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined to get information:
+             * free value in percent
+             * configured watermark value
+             * FPC slot number
+             * PFE number
+             */
+            field encap-mem-free-percent {
+                sensor asic-mem-sensor {
+                    path free-encap-memory-rsmon-percent;
+                }
+                type integer;
+                description "Free encap memory in percent";
+            }
+            field encap-mem-watermark {
+                sensor asic-mem-sensor {
+                    path free-encap-memory-watermark;
+                }
+                type integer;
+                description "Free encap memory watermark";
+            }
+            field firewall-mem-free-percent {
+                sensor asic-mem-sensor {
+                    path free-filter-memory-rsmon-percent;
+                }
+                type string;
+                description "Free firewall memory in percent";
+            }
+            field firewall-mem-watermark {
+                sensor asic-mem-sensor {
+                    path free-filter-memory-watermark;
+                }
+                type integer;
+                description "Free firewall memory watermark";
+            }
+            field fpc-slot {
+                sensor asic-mem-sensor {
+                    path ../fpc-slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field nh-mem-free-percent {
+                sensor asic-mem-sensor {
+                    path free-nh-memory-rsmon-percent;
+                }
+                type integer;
+                description "Free NH memory in percent";
+            }
+            field nh-mem-watermark {
+                sensor asic-mem-sensor {
+                    path free-nh-memory-watermark;
+                }
+                type integer;
+                description "Free NH memory watermark";
+            }
+            field pfe-num {
+                sensor asic-mem-sensor {
+                    path pfe-num;
+                }
+                type string;
+                description "PFE instance in each FPC slot";
+            }
+            /*
+             * Report following for Encap memory:
+             * Red: free value in percent is below watermark
+             * Green: Otherwise
+             */
+            trigger report-encap-mem {
+                frequency 90s;
+                term below-watermark {
+                    when {
+                        less-than-or-equal-to "$encap-mem-free-percent" "$encap-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Encap memory free:$encap-mem-free-percent watermark:$encap-mem-watermark";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Encap memory free:$encap-mem-free-percent watermark:$encap-mem-watermark";
+                        }
+                    }
+                }
+            }
+            /*
+             * Report following for Firewall memory:
+             * Red: free value in percent is below watermark
+             * Green: free value in percent is above watermark
+             */
+            trigger report-fw-mem {
+                frequency 90s;
+                term below-watermark {
+                    when {
+                        less-than-or-equal-to "$firewall-mem-free-percent" "$firewall-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Firewall memory free:$firewall-mem-free-percent watermark:$firewall-mem-watermark";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        greater-than "$firewall-mem-free-percent" "$firewall-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] Firewall memory free:$firewall-mem-free-percent watermark:$firewall-mem-watermark";
+                        }
+                    }
+                }
+            }
+            /*
+             * Report following for NH memory:
+             * Red: free value in percent is below watermark
+             * Green: free value in percent is above watermark
+             */
+            trigger report-nh-mem {
+                frequency 90s;
+                term below-watermark {
+                    when {
+                        less-than-or-equal-to "$nh-mem-free-percent" "$nh-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] NH memory free:$nh-mem-free-percent watermark:$nh-mem-watermark";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        greater-than "$nh-mem-free-percent" "$nh-mem-watermark";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "[FPC:$fpc-slot PFE:$pfe-num] NH memory free:$nh-mem-free-percent watermark:$nh-mem-watermark";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX80 MX104 MX240 MX480 MX960 MX2010 MX2020 ];
+                                }
+                            }
+                            products EX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files resource-monitor-nh-fw-encap-mem.yml;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,213 @@
+/*
+* Monitors file descriptor usage and notifies when
+* anomalies are found.
+* Two input control detection
+*
+* 1) high-threshold-var,  is the threshold that causes the rule to report
+* an anomaly. By default it is 80.00 %. This rule will set a
+* dashboard color to red when file descriptor usage percent
+* exceeds threshold value.
+*
+* 2) low-threshold-var, is the threshold that causes the rule to report
+* an anomaly. By default it is 50.00 %. This rule will set a
+* dashboard color to yellow when file descriptor usage percent
+* exceeds threshold value in time range of 2 days. Otherwise
+* it is set to green.
+*/
+healthbot {
+    topic system {
+        rule check-file-descriptor-usage-netconf {
+            synopsis "OS File Descriptors KPI";
+            description "To monitor the usage of file descriptor";
+            /*
+             * Monitors file descriptor usage. Notifies via the dashboard colors when
+             * usage exceeds the high threshold {{$high-threshold-var}} it sets 
+             * the color to red.The color is set to yellow when usage exceeds  
+             * low threshold {{$low-threshold-var}} in a time range of 2 days.
+             * Otherwise the color is set to green.
+             *
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor filedescriptor {
+                iAgent {
+                    file files-sockets.yml;
+                    table Max_Files_Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field files-used-percentage {
+                formula {
+                    eval {
+                        expression "($files_open / $max_files ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of file usage.";
+            }
+            field files_open {
+                reference {
+                    path "/topic[topic-name='system']/rule[rule-name=check-file-open-netconf]/fileopen";
+                }
+                type integer;
+                description "Number of files open.Referenced from another rule.";
+            }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold-var}}";
+                }
+                type float;
+                description "High threshold value.";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold-var}}";
+                }
+                type float;
+                description "Low threshold value.";
+            }
+            field max_files {
+                sensor filedescriptor {
+                    path maxfiles;
+                }
+                type integer;
+                description "Maximum number of files.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger fileusage {
+                synopsis "file descriptor usage";
+                description "Sets health based on the file descriptor usage";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the file descriptor usage ($files-used-percentage %) is greater
+                 * than the threshold (high-threshold-var %).
+                 */
+                term file-descriptor-usage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$files-used-percentage" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "File descriptor Usage percentage $files-used-percentage exceeds high threshold $high-threshold-var";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the file descriptor usage exceeds low-threshold ($low-threshold-var)
+                 * in a time range of 2 days.
+                 */
+                term file-descriptor-usage-mid {
+                    when {
+                        greater-than-or-equal-to "$files-used-percentage" "$low-threshold" {
+                            time-range 2d;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "File descriptor Usage percentage $files-used-percentage exceeds low threshold $low-threshold-var in 2 days.";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term file-descriptor-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "file descriptor use percentage $files-used-percentage is normal.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable high-threshold-var {
+                value 80.00;
+                description "Threshold high value.";
+                type float;
+            }
+            variable low-threshold-var {
+                value 50.00;
+                description "Threshold low value.";
+                type float;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

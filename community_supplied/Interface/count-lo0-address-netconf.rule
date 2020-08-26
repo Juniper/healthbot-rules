@@ -1,0 +1,134 @@
+/*
+* Collects the list of ipv4 addresses in a vector and notifies when anomalies are found.
+* 
+* One input control detection
+*
+* 1) list-lo0-addresses,  vector is collecting the list of lo0 addresses from 
+*    the rule "check-lo0-address-netconf". This rule will set  dashboard color to green
+*     when any ipv4 address is present.Else it is set to red.
+*/
+healthbot {
+    topic interface.statistics {
+        rule count-lo0-address-netconf {
+            synopsis "lo0 configuration kpi";
+            description "Check whether IP address is configured under lo0 interface";
+            rule-frequency 3m;
+            /*
+             * Checks if lo0 ipv4 address is present. Notifies via the dashboard 
+             * colors when address is present it sets the color to green.
+             * Otherwise the color is set to red.  
+             */
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field count-lo0-address {
+                formula {
+                    count {
+                        field-name "@list-lo0-addresses";
+                    }
+                }
+                type integer;
+                description "Count the IP address configured in lo0 interface";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger loopback-address-configuration {
+                synopsis "ipv4 loopback address";
+                description "Sets health based on if ipv4 loopback address is present";
+                frequency 3m;
+                /*
+                 * Sets color to red when ipv4 address is not present on lo0.
+                 */
+                term is-lo0-address-not-configured {
+                    when {
+                        less-than-or-equal-to "$count-lo0-address" 1 {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Loopback address is not configured";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-lo0-address-configured {
+                    then {
+                        status {
+                            color green;
+                            message "Loopback address is configured";
+                        }
+                    }
+                }
+            }
+            vector list-lo0-addresses {
+                path "/topic[topic-name=interface.statistics]/rule[rule-name=check-lo0-address-netconf]/lo0-address";
+                time-range 3m;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

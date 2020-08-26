@@ -1,0 +1,18 @@
+/*
+ * Playbook contains multiple rules which checks for vrf peer ip in
+ * forwarding table and notifies when anomalies are found.
+ *
+ * 1) Rule "collect-peerip-in-vrf-table-oc" Collects peer addrresses in the vrf tables
+ *     and provides vector data to check-peer rule.
+ * 2) Rule "check-peer" check vrf  peer address is present in the forwarding table
+ *    and notifies when anomalies are found.
+ * 3) Rule "check-forwarding-table-netconf" Check if peer ip is present in forwarding table
+ *    aand provides vector data to check-peer rule.
+ */
+healthbot {
+    playbook bgp-kpi-community {
+        rules [ protocol.bgp/check-forwarding-table-netconf protocol.bgp/check-peer protocol.bgp/collect-peerip-in-vrf-table-oc ];
+        description "To check vrf peer ip usage and notifies when anomaly.";
+        synopsis "VRF peer ip and forwarding table performance indicators";
+    }
+}

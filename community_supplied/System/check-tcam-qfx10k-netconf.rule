@@ -1,0 +1,255 @@
+/*
+* Monitors tcam  usage and notifies when anomalies are found on QFX10K.
+* 
+* Four input control detection
+*
+* 1) high-threshold-var,  is the threshold that causes the rule to report
+* an anomaly. By default it is 80.00 %. This rule will set a
+* dashboard color to red when file descriptor usage percent
+* exceeds threshold value.
+*
+* 2) low-threshold-var, is the threshold that causes the rule to report
+* an anomaly. By default it is 50.00 %. This rule will set a
+* dashboard color to yellow when file descriptor usage percent
+* exceeds threshold value in time range of 2 days. Otherwise
+* it is set to green.
+*
+* 3) chip variable,  is the name of the chip instance number under the slot.
+* 
+* 4) resource variable , refers to terms and filters.
+*
+*/
+healthbot {
+    topic tcam.usage {
+        rule check-tcam-qfx10k-netconf {
+            keys [ chip resource slot ];
+            synopsis "TCAM Usage KPI";
+            description "Check TCAM Usage on QFX10K.";
+            /*
+             * Monitors tcam used percentage for the terms and filters for each  
+             * chip instance.Notifies via the dashboard colors when 
+             * usage exceeds the high threshold {{$high-threshold-var}} it sets 
+             * the color to red.The color is set to yellow when usage exceeds  
+             * low threshold {{$low-threshold-var}} in a time range of 2 days.
+             * Otherwise the color is set to green.
+             *
+             * Use resource, slot and chip instance as keys for rule.
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor tcam {
+                iAgent {
+                    file tcam-qfx10k.yml;
+                    table TCAMTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field capacity {
+                sensor tcam {
+                    path capacity;
+                }
+                type integer;
+                description "Total Capacity.";
+            }
+            field chip {
+                sensor tcam {
+                    where "filter_details =~ /{{chip}}/";
+                    path filter_details;
+                }
+                type string;
+                description "Chip Instance for a slot.";
+            }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold-var}}";
+                }
+                type float;
+                description "High thereshold value.";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold-var}}";
+                }
+                type float;
+                description "Threshold low value.";
+            }
+            field resource {
+                sensor tcam {
+                    where "resource =~ /{{resource}}/";
+                    path resource;
+                }
+                type string;
+                description "Resource details like terms and filters.";
+            }
+            field slot {
+                sensor tcam {
+                    path slot;
+                }
+                type string;
+                description "Slot number.";
+            }
+            field tcam-usage {
+                formula {
+                    eval {
+                        expression "( $used / $capacity ) * 100";
+                    }
+                }
+                type float;
+                description "usage of tcam resources.";
+            }
+            field used {
+                sensor tcam {
+                    path used;
+                    zero-suppression;
+                }
+                type integer;
+                description "Total used.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger tcam-usage {
+                synopsis "tcam ingress and egress filter groups usage percentage";
+                description "Sets health based on the tcam usage";
+                frequency 300s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the tcam usage ($tcam-usage %) is greater
+                 * than the threshold (high-threshold-var %).
+                 */
+                term tcam-usage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$tcam-usage" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "TCAM usage $tcam-usage is higher than high threshold $high-threshold for slot $slot , chip-instance $chip , resource $resource .";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the tcam usage exceeds low-threshold ($low-threshold-var)
+                 * in a time range of 2 days.
+                 */
+                term tcam-usage-mid {
+                    when {
+                        greater-than-or-equal-to "$tcam-usage" "$low-threshold" {
+                            time-range 2d;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "TCAM usage $tcam-usage exceeds low threshold $low-threshold in 2days  for  slot $slot , chip-instance $chip , resource $resource .";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term tcam-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "TCAM usage $tcam-usage is normal  for  slot $slot , chip-instance $chip ,resource $resource .";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable chip {
+                value .*;
+                description "Chip instance of the slot.";
+                type string;
+            }
+            variable high-threshold-var {
+                value 80.00;
+                description "Threshold high value.";
+                type float;
+            }
+            variable low-threshold-var {
+                value 50.00;
+                description "Threshold low value.";
+                type float;
+            }
+            variable resource {
+                value .*;
+                description "resource name.";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

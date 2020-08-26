@@ -1,0 +1,160 @@
+/*
+* Collects and provides count of total dropped packets for each member ae interface to
+* another rule "check-queue-drop".
+*/
+healthbot {
+    topic interface.statistics {
+        rule collect-queue-info-native-gpb {
+            keys [ interface-name queue-number ];
+            synopsis "Packet Drop KPI";
+            description "To check for packet drops for source/destination FPC and PFE";
+            /*
+             * Functon that gives sum of all dropped packets.
+             */
+            function list_total {
+                description "Functon that gives sum of all dropped packets";
+                path list-total.py;
+                method list_total;
+                argument list_drop_vector {
+                    mandatory;
+                }
+            }
+            /*
+             * Collects count of red-drop, rl-drop, tail-drop packets and provides
+             * the sum  to another rule "check-queue-drop". 
+             *
+             * The fields interface-name and queue-number are used as keys.
+             * 			 
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interface-information {
+                native-gpb {
+                    sensor-name jnpr_interface_ext;
+                    port 22000; ## Warning: 'port' is deprecated
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field ae-interface-name {
+                sensor interface-information {
+                    path interface_stats.parent_ae_name;
+                }
+                type string;
+                description "Aggregate interface name";
+            }
+            field interface-name {
+                sensor interface-information {
+                    where "interface_stats.parent_ae_name =~ /.*/";
+                    path interface_stats.if_name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field queue-number {
+                sensor interface-information {
+                    path interface_stats.egress_queue_info.queue_number;
+                }
+                type string;
+                description "Queue number to be monitored";
+            }
+            field red-drop-packets {
+                sensor interface-information {
+                    path interface_stats.egress_queue_info.red_drop_packets;
+                }
+                type integer;
+                description "Packets dropped due to red";
+            }
+            field rl-drop-packets {
+                sensor interface-information {
+                    path interface_stats.egress_queue_info.rl_drop_packets;
+                }
+                type integer;
+                description "r1 dropped packets";
+            }
+            field tail-drop-packets {
+                sensor interface-information {
+                    path interface_stats.egress_queue_info.tail_drop_packets;
+                }
+                type integer;
+                description "Packets dropped due to tail drop";
+            }
+            field total-drop-packets {
+                formula {
+                    user-defined-function {
+                        function-name list_total;
+                        argument list_drop_vector "@total-drop-list";
+                    }
+                }
+                type integer;
+                description "Sum of all types of dropped packets";
+            }
+            vector total-drop-list {
+                path [ "$red-drop-packets" "$rl-drop-packets" "$tail-drop-packets" ];
+                time-range 12s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
