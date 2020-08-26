@@ -1,0 +1,261 @@
+/*
+ * Detects interface flaps and notifies when anomalies are found.
+ * Two inputs control detection
+ *
+ *   1) interface-name-variable, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ *
+ *   2) dec-place, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the flap-increases are greater than
+ *      'flaps-threshold-variable' for 180s. If it sees any flaps increase for a
+ *      period of less than 180s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
+ */
+healthbot {
+    topic linecard.optical {
+        rule check-optics-power-openconfig {
+            keys [ interface-name lane ];
+            synopsis "Interface rx optical power";
+            description "Collects the interface input optical power and notifies in case of anomalies";
+            function rounding {
+                path round_float.py;
+                method round_float;
+                argument dec_place {
+                    mandatory;
+                }
+                argument value {
+                    mandatory;
+                }
+            }
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /junos/system/linecard/optics/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field decimal-place {
+                constant {
+                    value "{{dec-place}}";
+                }
+                type integer;
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field lane {
+                sensor interfaces {
+                    path /interfaces/interface/optics/lanediags/lane/lane_number;
+                }
+                type string;
+                description "Interface lane number";
+            }
+            field rx-db {
+                sensor interfaces {
+                    path /interfaces/interface/optics/lanediags/lane/lane_laser_receiver_power_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Received optical power";
+            }
+            field rx-db-pretty {
+                formula {
+                    user-defined-function {
+                        function-name rounding;
+                        argument value "$rx-db";
+                        argument dec_place "$decimal-place";
+                    }
+                }
+                type float;
+            }
+            field rx-power-high {
+                reference {
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/rx-power-high";
+                    time-range 75s;
+                }
+                type float;
+                description "Receiver power high alarm threshold";
+            }
+            field rx-power-low {
+                reference {
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/rx-power-low";
+                    time-range 75s;
+                }
+                type float;
+                description "Receive low power threshold";
+            }
+            field tx-db {
+                sensor interfaces {
+                    path /interfaces/interface/optics/lanediags/lane/lane_laser_output_power_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Transmit optical power";
+            }
+            field tx-db-pretty {
+                formula {
+                    user-defined-function {
+                        function-name rounding;
+                        argument value "$tx-db";
+                        argument dec_place "$decimal-place";
+                    }
+                }
+                type float;
+            }
+            field tx-power-high {
+                reference {
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/tx-power-high";
+                    time-range 75s;
+                }
+                type float;
+                description "Transmit power high alarm threshold";
+            }
+            field tx-power-low {
+                reference {
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/tx-power-low";
+                    time-range 75s;
+                }
+                type float;
+                description "Transmit low power threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rx-power {
+                synopsis "Interface rx optical power";
+                description "Sets health based on rx optical power";
+                frequency 90s;
+                term is-interface-rx-power-abnormal {
+                    when {
+                        greater-than "$rx-db" "$rx-power-high";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Optical RX power is above high threshold on $interface-name, Rx power is:$rx-db-pretty dbm. Should be less than $rx-power-high";
+                        }
+                    }
+                }
+                term is-interface-rx-power-low {
+                    when {
+                        less-than "$rx-db" "$rx-power-low";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Optical RX power is below low threshold on $interface-name, Rx power is:$rx-db-pretty dbm. Should be greater than $rx-power-low";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-interface-rx-power-issues {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name rx power($rx-db-pretty) is in normal range";
+                        }
+                    }
+                }
+            }
+            trigger tx-power {
+                synopsis "Interface optical tx power";
+                description "Sets health based on the tx optical power";
+                frequency 90s;
+                term is-interface-tx-power-abnormal {
+                    when {
+                        greater-than "$tx-db" "$tx-power-high";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Optical TX power is above high threshold on $interface-name, Tx power is:$tx-db-pretty dbm. Should be less than $tx-power-high";
+                        }
+                    }
+                }
+                term is-interface-tx-power-low {
+                    when {
+                        less-than "$tx-db" "$tx-power-low";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Optical TX power is below low threshold on $interface-name, Tx power is:$tx-db-pretty dbm. Should be greater than $tx-power-low";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term no-interface-tx-power-issues {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name tx power($tx-db-pretty) is in normal range";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable dec-place {
+                value 4;
+                description "Decimal places for routing of dBm values.";
+                type int;
+            }
+            variable interface-name-variable {
+                value .*;
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products PTX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

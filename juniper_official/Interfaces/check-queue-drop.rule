@@ -1,0 +1,149 @@
+/*
+* Checks total packet drops for interface queues and notifies when anomalies are found.
+* Receives vector data from another rule "collect-queue-info-native-gpb".
+* One input control detection
+*
+* 1) ae-name variable,  is the aggregate interface name.Defaults to ae0.
+* 
+*/
+healthbot {
+    topic interface.statistics {
+        rule check-queue-drop {
+            synopsis "Packet Drop for interface queues";
+            description "To check packet drops for interface queues and notify anomalies";
+            /*
+             * Checks total packet drops for interface queues. Notifies via the dashboard
+             * colors, when total dropped packets is greater than 0 it sets the color
+             * to red.Otherwise the color is set to green.  
+             */
+            rule-frequency 60s;
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field bundle-name {
+                constant {
+                    value "{{ae-name}}";
+                }
+                type string;
+                description "Name of the bundle interface";
+            }
+            field total-dropped-packets {
+                formula {
+                    sum {
+                        field-name "@total-dropped-pkts";
+                        time-range 60s;
+                    }
+                }
+                type integer;
+                description "Total packets dropped";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger check-dropped-packets {
+                synopsis "Total Dropped packets";
+                description "Sets health based on Total Dropped packets for each queue";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the total dropped packets $total-dropped-packets" is greater 
+                 * than 0.
+                 */
+                term is-packet-dropped {
+                    when {
+                        greater-than "$total-dropped-packets" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Packets dropped : $total-dropped-packets";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "There is no packet drop";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable ae-name {
+                value ae0;
+                type string;
+            }
+            vector total-dropped-pkts {
+                path "/topic[topic-name='interface.statistics']/rule[rule-name=collect-queue-info-native-gpb]/field[ae-interface-name='{{ae-name}}']/total-drop-packets";
+                time-range 10s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

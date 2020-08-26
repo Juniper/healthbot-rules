@@ -1,0 +1,120 @@
+/*
+* Collect vrf neighbor ip addresses and provides input to another rule "check-peer"
+* 
+* One input control detection
+*
+* 1) neighbors variable, is a regular expression that matches the
+* interfaces that you would like to monitor. By default it '.*',
+* which matches all neighbors. 
+*
+*/
+healthbot {
+    topic protocol.bgp {
+        rule collect-peerip-in-vrf-table-oc {
+            keys neighbor-address;
+            synopsis "Neighbor ip in vrf table.";
+            description "Collects peer addrresses in the vrf tables";
+            /*
+             * Collect vrf neighbor ip addresses and provides input to another
+             * rule "check-peer". 
+             *
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor bgp-sensor {
+                synopsis "BGP open-config sensor definition";
+                description "/protocol/bgp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/neighbors;
+                    frequency 30s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field neighbor-address {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/accepted != 0";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "BGP neighbor addresses to monitor";
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

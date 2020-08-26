@@ -1,0 +1,101 @@
+/*
+* Detects the count of number of open files and is referenced by 
+* file descriptor usage rule.
+*/
+healthbot {
+    topic system {
+        rule check-file-open-netconf {
+            synopsis "OS File Descriptors KPI";
+            description "To check the file descriptors that are open.";
+            /*
+             * Deteccts the count of number of open files and is reference by 
+             * file descriptor usage rule.
+             *
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor fileopen {
+                iAgent {
+                    file files-sockets.yml;
+                    table Open_Files_Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field fileopen {
+                sensor fileopen {
+                    path openfiles;     
+                }
+                type integer;
+                description "Number of files open.";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

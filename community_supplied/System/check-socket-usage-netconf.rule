@@ -1,0 +1,210 @@
+/*
+* Monitors sockets usage and notifies when
+* anomalies are found.
+* Two input control detection
+*
+* 1) high-threshold-var,  is the threshold that causes the rule to report
+* an anomaly. By default it is 80.00 %. This rule will set a
+* dashboard color to red when sockets usage percent
+* exceeds threshold value.
+*
+* 2) low-threshold-var, is the threshold that causes the rule to report
+* an anomaly. By default it is 50.00 %. This rule will set a
+* dashboard color to yellow when sockets usage percent
+* exceeds threshold value in time range of 2 days. Otherwise
+* it is set to green.
+*/
+healthbot {
+    topic system {
+        rule check-socket-usage-netconf {
+            synopsis "Free OS sockets KPI";
+            description "Check the socket usage on the system. ";
+            /*
+             * Monitors sockets usage. Notifies via the dashboard colors when
+             * usage exceeds the high threshold {{$high-threshold-var}} it sets 
+             * the color to red.The color is set to yellow when usage exceeds  
+             * low threshold {{$low-threshold-var}} in a time range of 2 days.
+             * Otherwise the color is set to green.
+             *
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor sockets {
+                iAgent {
+                    file files-sockets.yml;
+                    table Max_Sockets_Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field high-threshold {
+                constant {
+                    value "{{high-threshold-var}}";
+                }
+                type float;
+                description "High threshold value.";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold-var}}";
+                }
+                type float;
+                description "Low threshold value.";
+            }
+            field max_socket {
+                sensor sockets {
+                    path maxsockets;
+                }
+                type integer;
+                description "Maximum number of sockets.";
+            }
+            field sockets-used-percentage {
+                formula {
+                    eval {
+                        expression "($sockets_used / $max_socket ) * 100";
+                    }
+                }
+                type float;
+                description "Sockets used percentage.";
+            }
+            field sockets_used {
+                reference {
+                    path "/topic[topic-name='system']/rule[rule-name=check-sockets-open-netconf]/open_sockets";
+                }
+                type integer;
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger socketusage {
+                synopsis "sockets usage";
+                description "Sets health based on the sockets usage";
+                frequency 90s;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the sockets usage ($sockets-used-percentage %) is greater
+                 * than the threshold (high-threshold-var %).
+                 */
+                term socket-usage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$sockets-used-percentage" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Socket Usage percentage $sockets-used-percentage exceeds high threshold $high-threshold-var";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the sockets usage exceeds low-threshold ($low-threshold-var)
+                 * in a time range of 2 days.
+                 */
+                term socket-usage-mid {
+                    when {
+                        greater-than-or-equal-to "$sockets-used-percentage" "$low-threshold" {
+                            time-range 2d;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Socket Usage percentage $sockets-used-percentage has exceeded low threshold $low-threshold-var in 2 days.";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term socket-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Socket use percentage $sockets-used-percentage  is normal.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable high-threshold-var {
+                value 80.00;
+                type float;
+            }
+            variable low-threshold-var {
+                value 50.00;
+                type float;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform MX150;
+                                }
+                            }
+                            products PTX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5100;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform QFX5120-48Y;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}
