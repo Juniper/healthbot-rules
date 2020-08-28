@@ -1,0 +1,188 @@
+/*
+* Detects interface ethernet pause frame counters and notifies when
+* anomalies are found.
+*
+* One input control detection
+*
+* 1) interface-name, is a regular expression that matches the
+* interfaces that you would like to monitor. By default it's
+* 'ge-.*|xe-.*|mge-.*|et-.*?' which matches all interfaces. Use
+* something like 'ge.*' to match only gigabit ethernet interfaces.
+*/
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-ethernet-pause-frame-counters-netconf {
+            keys name;
+            synopsis "Ethernet pause frame counter analyzer";
+            description "Collects the ethernet pause frame counter periodically and notifies in case of anomalies";
+            /*
+            * Monitors the input and output pause frame counters and
+            * notifies via the dashboard colors when the input or the
+            * output pause frame count increases by at least by 1 in
+            * 5m time range to red. Otherwise it is set to green.
+            *
+            * Use name as key for rule
+            *
+            *
+            * Sensor Configuration to get data from network devices.
+            *
+            */
+            sensor interface {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables & views to collect data from network device";
+                iAgent {
+                    file IntStatsTable.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+            * Fields defined using sensor path. Map the longer sensor names
+            * to the shorter field names used in the rules.
+            */
+            field admin-status {
+                sensor interface {
+                    path admin-status;
+                }
+                type string;
+                description "Admin status";
+            }
+            field input-pause-frames {
+                sensor interface {
+                    path input-mac-pause-frames;
+                }
+                type string;
+                description "Ethernet input pause frame count";
+            }
+            field link-level-type {
+                sensor interface {
+                    path link-level-type;
+                }
+                type string;
+                description "Interface link level";
+            }
+            field name {
+                sensor interface {
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interface to be monitored";
+            }
+            field output-pause-frames {
+                sensor interface {
+                    path output-mac-pause-frames;
+                }
+                type string;
+                description "Ethernet output pause frame count";
+            }
+            /*
+            * Anomaly detection logic.
+            */
+            trigger input-pause-frame-counter {
+                synopsis "Input pause frame counter";
+                description "Sets health based on the input pause frame count";
+                frequency 90s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the ethernet input pause frame count ($input-pause-frames) is
+                * increased at least by 1 in the 5m time range.
+                */
+                term input-pause-frames-are-detected {
+                    when {
+                        increasing-at-least-by-value "$input-pause-frames" {
+                            value 1;
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name has $input-pause-frames pause frames detected";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term input-pause-frames-not-found {
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name has $input-pause-frames pause frames detected";
+                        }
+                    }
+                }
+            }
+            trigger output-pause-frame-counter {
+                synopsis "Output pause frame counter";
+                description "Sets health based on the output pause frame count";
+                frequency 90s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the ethernet output pause frame count ($output-pause-frames)
+                * is increased at least by 1 in the 5m time range.
+                */
+                term output-pause-frames-are-detected {
+                    when {
+                        increasing-at-least-by-value "$output-pause-frames" {
+                            value 1;
+                            time-range 5m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name has $output-pause-frames pause frames detected";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term output-pause-frames-not-found {
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name has $output-pause-frames pause frames detected";
+                        }
+                    }
+                }
+            }
+            /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable interface-name {
+                value "ge-.*|xe-.*|mge-.*|et-.*";
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
