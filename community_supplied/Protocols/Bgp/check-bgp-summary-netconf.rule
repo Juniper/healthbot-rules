@@ -1,0 +1,174 @@
+/*
+* Monitors the BGP neighbor summary
+* One input control detection
+*
+* 1) peer-address-var, is a regular expression that matches the
+* neighbor address that you would like to monitor. By default it's
+* '.*',which matches all neighbor addresses.
+*/
+healthbot {
+    topic protocol.bgp {
+        description "Rules relevant to metrics and KPI of the control plane";
+        synopsis "BGP neighbor analyzer";
+        rule check-bgp-summary-netconf {
+            keys peer-address;
+            synopsis "BGP neighbor analyzer";
+            description "Monitors the BGP neighbor summary";
+            /*
+            * Monitors the BGP neighbor summary. Notifies via the dashboard
+            * colors when neighbor check {{neighbor-check}} is equal to 1 and
+            * neighbor state {{peer-state}} is equal to Established is set to
+            * green. Color is set to yellow when the neighbor state {{peer-state}}
+            * is not equal to Established. Otherwise the color is set to red.
+            *
+            * Use peer-address as key for rule
+            */
+            function neighbor-check {
+                path BGPneighbor.py;
+                method neighbor;
+                argument neighbor_list {
+                    mandatory;
+                }
+                argument peer_state {
+                    mandatory;
+                }
+            }
+            /*
+            * Sensor configuration to get data from network devices.
+            */
+            sensor bgp-sensor {
+                synopsis "BGP configuration iAgent sensor definition";
+                description "Netconf rpc get-bgp-summary-information to collect data from network device";
+                iAgent {
+                    file BgpSummary.yml;
+                    table BgpSummaryTable;
+                    frequency 60s;
+                }
+            }
+            /*
+            * Fields defined using formulae by user-defined function
+            */
+            field neighbor-check {
+                formula {
+                    user-defined-function {
+                        function-name neighbor-check;
+                        argument neighbor_list "@neighbor";
+                        argument peer_state "$peer-address";
+                    }
+                }
+                type integer;
+            }
+            /*
+            * Field defined using sensor path. Map the longer sensor names
+            * to the shorter field names used in the rules.
+            */
+            field peer-address {
+                sensor bgp-sensor {
+                    where "peer-address =~ /^{{peer-address-var}}$/";
+                    path peer-address;
+                }
+                type string;
+                description "Neighbor address";
+            }
+            field peer-state {
+                sensor bgp-sensor {
+                    path peer-state;
+                }
+                type string;
+                description "Neighbor state";
+            }
+            /*
+            * Anomaly detection logic.
+            */
+            trigger bgp-neighbor {
+                synopsis "BGP neighbors";
+                description "Sets health based on the change in BGP neighbor and neighbor state";
+                frequency 90s;
+                /*
+                * Sets color to green and sends out an anomaly notification when
+                * neighbor check ($neighbor-check) is equal to 1 and neighbor
+                * state is equal to Established.
+                */
+                term neighbor-is-configured {
+                    when {
+                        equal-to "$neighbor-check" 1;
+                        matches-with "$peer-state" Established;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor address ($peer-address) is configured. Neighbor state is Established.";
+                        }
+                    }
+                }
+                /*
+                * Sets color to yellow and sends out an anomaly notification when
+                * neighbor check ($neighbor-check) is equal to 1 and neighbor
+                * state is not equal to Established.
+                */
+                term neighbor-is-configured-and-state-is-not-equal-to-established {
+                    when {
+                        equal-to "$neighbor-check" 1;
+                        does-not-match-with "$peer-state" Established;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Neighbor address ($peer-address) is configured. Neighbor state ($peer-state) is not Established.";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to red.
+                */
+                term neighbor-is-not-configured {
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor address ($peer-address) is not configured.";
+                        }
+                    }
+                }
+            }
+            /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable peer-address-var {
+                value .*;
+                description "Enter neighbor address name in regex i.e. .*";
+                type string;
+            }
+            /*
+            * Vector with the path of the field which is referenced from a different rule
+            */
+            vector neighbor {
+                path "/topic[topic-name=protocol.bgp]/rule[rule-name=check-bgp-config-netconf]/neighbor";
+                time-range 60s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
