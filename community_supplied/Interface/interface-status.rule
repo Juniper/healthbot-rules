@@ -1,37 +1,35 @@
 /*
  * Monitors interface link state and notifies when anomalies are found.
- * One input control detection
- * 
+ * Two input control detection
+ *
  *   1) interface-name-variable, is a regular expression that matches the
  *      interfaces that you would like to monitor.  By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
  *
+ *   2) description, is matches the interface description that you would
+ *      like to monitor.  By default it's  '.*', which matches all interfaces.
+ *
  */
 healthbot {
     topic interface.statistics {
-        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
-        synopsis "Interface statistics analyzer";
-        rule check-interface-status {
+        rule check-interface-status-description {
+            keys interface-name;
             synopsis "Tnterface state analyzer";
             description "Collects interface link oper state periodically and notifies when neighbor sate is down";
             /*
              * Monitors the interface link oper state. Notifies via the
              * dashboard colors when the *all* link oper state {{link-state}}
              * is down (red). Otherwise the color is set to green.
-             * 
+             *
              * Use interface name as key for rule.
-             */
-            keys interface-name;
-            /*
-             * Sensor configuration to get data from network devices.
              */
             sensor interfaces {
                 synopsis "Interface open-config sensor definition";
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/interface/state;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             /*
@@ -44,6 +42,14 @@ healthbot {
                 }
                 type string;
                 description "Interface admin status";
+            }
+            field description {
+                sensor interfaces {
+                    where "/interfaces/interface/state/description =~ /{{description}}/";
+                    path /interfaces/interface/state/description;
+                }
+                type string;
+                description "Interface description to be monitored";
             }
             field interface-name {
                 sensor interfaces {
@@ -66,19 +72,19 @@ healthbot {
             trigger link-state {
                 synopsis "link state kpi";
                 description "Sets health based on link state";
+                frequency 90s;
                 /*
                  * Skips evaluation for admin down state interfaces
                  */
-                frequency 60s;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" DOWN;
                     }
                 }
                 /*
-                 * Sets color to red and sends out anomaly notification when 
+                 * Sets color to red and sends out anomaly notification when
                  * the interface oper state ($link-state) is down.
-                 */                    
+                 */
                 term is-link-down {
                     when {
                         matches-with "$admin-state" UP;
@@ -93,7 +99,7 @@ healthbot {
                 }
                 /*
                  * Defaults color to green.
-                 */                
+                 */
                 term link-up {
                     then {
                         status {
@@ -107,22 +113,41 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
+            variable description {
+                value .*;
+                description "Interface with description to monitor";
+                type string;
+            }
             variable interface-name-variable {
-                value ".*";
+                value .*;
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
             rule-properties {
-                version 2;
+                version 1;
                 contributor juniper;
-                supported-healthbot-version 1.0.1;
+                supported-healthbot-version 3.1.0;
                 supported-devices {
                     juniper {
                         operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX9200;
+                                }
+                                releases 18.3R1 {
+                                    release-support min-supported-release;
+                                    platform EX4650;
+                                }
+                                releases 18.4R1 {
+                                    release-support min-supported-release;
+                                    platform EX4600;
+                                }
+                            }
                             products MX {
                                 releases 16.1R1 {
                                     release-support min-supported-release;
-                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
                                 }
                                 releases 17.3R1 {
                                     release-support min-supported-release;
@@ -132,7 +157,7 @@ healthbot {
                             products PTX {
                                 releases 17.2R1 {
                                     release-support min-supported-release;
-                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                    platform [ PTX1000 PTX10000 PTX5000 ];
                                 }
                             }
                             products QFX {
@@ -149,25 +174,7 @@ healthbot {
                                     platform QFX5120-48Y;
                                 }
                             }
-                            products EX {
-                                releases 17.3R1 {
-                                    release-support min-supported-release;
-                                    platform EX9200;
-                                }
-                                releases 18.3R1 {
-                                    release-support min-supported-release;
-                                    platform EX4650;
-                                }
-                                releases 18.4R1 {
-                                    release-support min-supported-release;
-                                    platform EX4600;
-                                }
-                            }
                         }
-                    }
-                    other-vendor cisco-IOS-XR {
-                        vendor-name cisco;
-                        operating-system IOS-XR;
                     }
                 }
             }
