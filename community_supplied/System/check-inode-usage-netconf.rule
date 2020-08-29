@@ -1,0 +1,205 @@
+/*
+* Monitors the inode usage on the system and notifies
+* when anomalies are found
+* Three input control detection
+*
+* 1) filename-var, is a regular expression that matches the filenames
+* that you would like to monitor. By default it's ".*", which matches
+* all filenames.
+*
+* 2) high-threshold-var, is the threshold that causes the rule to report
+* an anomaly. By default high threshold value is set to 80.00 %. This rule
+* will set a dashboard color to red when inode usage percent exceeds the
+* high threshold value.
+*
+* 3) low-threshold-var, is the threshold that causes the rule to report
+* an anomaly. By default low threshold value is set to 50.00 %. This rule
+* will set a dashboard color to yellow when inode usage percent exceeds the
+* low threshold value. Otherwise it is set to green.
+*/
+healthbot {
+    topic system.storage {
+        description "Rules relevant to metrics and KPI of the system and notifies in case of anomalies";
+        synopsis "Rules relevant to metrics and KPI of the system";
+        rule check-inode-usage {
+            keys filename;
+            synopsis "Routing Engine inode usage analyzer";
+            description "Collects the total inodes,inodes used and used percentage and notifies in case of anomalies when used percent is above the threshold value";
+            /*
+            * Monitors Routing Engine inode usage percent. Notifies via the
+            * dashboard colors when the used percent exceeds the high threshold
+            * then it is set to red. The dashboard color is set to yellow when
+            * the used percent exceeds the low threshold. Otherwise it is set
+            * to green.
+            *
+            * Use filename as key for rule
+            */
+            /*
+            * Sensor configuration to get data from network devices.
+            */
+            sensor system-inode-usage {
+                synopsis "System processes memory iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file SystemiNodeVolumeTable.yml;
+                    table SystemiNodeVolumeTable;
+                    frequency 60s;
+                }
+            }
+            /*
+            * Fields defined with variables and constant values
+            */
+            field high-threshold {
+                constant {
+                    value "{{high-threshold-var}}";
+                }
+                type float;
+                description "System inode usage increases high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold-var}}";
+                }
+                type float;
+                description "System inode usage increases low threshold";
+            }
+            /*
+            * Field defined using sensor path. Map the longer sensor names
+            * to the shorter field names used in the rules.
+            */
+            field filename {
+                sensor system-inode-usage {
+                    where "filesystem =~ /{{filename-var}}/";
+                    path filesystem;
+                }
+                type string;
+            }
+            field total {
+                sensor system-inode-usage {
+                    path 512-blocks;
+                }
+                type integer;
+                description "Total number of inodes";
+            }
+            field used {
+                sensor system-inode-usage {
+                    path used;
+                }
+                type integer;
+                description "Number of inodes used";
+            }
+            field mount {
+                sensor system-inode-usage {
+                    path mounted-on;
+                }
+                type string;
+            }
+            /*
+            * Fields defined using formulae by user-defined function
+            */
+            field used-percent {
+                formula {
+                    eval {
+                        expression "( $used / $total ) * 100";
+                    }
+               }
+               type float;
+            }
+            /*
+            * Anomaly detection logic.
+            */
+            trigger inode-usage {
+                synopsis "System prcoesses memory utilization kpi";
+                description "Sets health based on system processes memory utilization";
+                frequency 90s;
+                /*
+                * Sets color to red and sends out an anomaly notification when
+                * the inode usage percent ($used-percent) is greater than the high
+                * threshold ($high-threshold)
+                */
+                term is-inode-usage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used-percent" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$filename inode used ($used-percent %) is above high threshold($high-threshold)";
+                        }
+                    }
+                }
+                /*
+                * Sets color to yellow and sends out an anomaly notification when
+                * the inode usage percent ($used-percent) is greater than the low
+                * threshold ($low-threshold)
+                */
+                term is-inode-usage-middle {
+                    when {
+                        greater-than-or-equal-to "$used-percent" "$low-threshold" {
+                            time-range 2d;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$filename inode usage($used-percent %) is in middle range(>=$low-threshold, <=$high-threshold)";
+                        }
+                    }
+                }
+                /*
+                * Defaults color to green.
+                */
+                term is-inode-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$filename inode usage($used-percent %) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable filename-var {
+                value .*;
+                description "Enter filename name in regex i.e. .*";
+                type string;
+            }
+            variable high-threshold-var {
+                value 80.00;
+                description "iNode usage high threshold value";
+                type float;
+            }
+            variable low-threshold-var {
+                value 50.00;
+                description "iNode usage low threshold value";
+                type float;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
