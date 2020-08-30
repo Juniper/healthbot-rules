@@ -1,21 +1,21 @@
 /*
- * Detects RPM probe packet loss using OpenConfig sensor.
+ * Detects TWAMP probe packet loss using OpenConfig sensor.
  *
  */
 healthbot {
-    topic service.protocols {
-        description "Monitors RPM probe probe packet loss and notify anomalies";
-        synopsis "RPM probe analyzer";
+    topic protocol.twamp {
+        description "Monitors TWAMP probe packet loss and notify anomalies";
+        synopsis "TWAMP probe analyzer";
         rule rpm-twamp-packet-loss-openconfig {
             keys [ owner test-name ];
             synopsis "RPM probe packet loss monitor";
-            description "Collects RPM packet loss periodically and notifies anomalies";
+            description "Collects TWAMP packet loss periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
              */
             sensor twamp-sensor {
-                synopsis "RPM open-config sensor definition";
-                description "RPM open-config sensor to collect telemetry data from network device";
+                synopsis "TWAMP open-config sensor definition";
+                description "TWAMP open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /junos/twamp/client/probe-test-results/probe-test-generic-results/loss-percentage;
                     frequency 60s;
@@ -30,14 +30,14 @@ healthbot {
                     path /junos/twamp/client/probe-test-results/probe-test-generic-results/loss-percentage;
                 }
                 type integer;
-                description "RPM probe loss percentage";
+                description "TWAMP probe loss percentage";
             }
             field owner {
                 sensor twamp-sensor {
                     path "/junos/twamp/client/probe-test-results/@owner";
                 }
                 type string;
-                description "RPM probe owner name";
+                description "TWAMP probe owner name";
             }
             field results-scope {
                 sensor twamp-sensor {
@@ -45,14 +45,14 @@ healthbot {
                     path "/junos/twamp/client/probe-test-results/probe-test-generic-results/@results-scope";
                 }
                 type string;
-                description "RPM probe results scope";
+                description "TWAMP probe results scope";
             }
             field test-name {
                 sensor twamp-sensor {
                     path "/junos/twamp/client/probe-test-results/@test-name";
                 }
                 type string;
-                description "RPM probe test name";
+                description "TWAMP probe test name";
             }
             /*
              * Anomaly detection logic.
@@ -81,7 +81,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "TWAMP packet Loss not observed for $owner, $test-name";
+                            message "TWAMP packet Loss percentage is $loss-percentage for $owner, $test-name";
                         }
                     }
                 }
