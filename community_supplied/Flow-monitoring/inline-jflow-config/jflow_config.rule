@@ -1,0 +1,2579 @@
+## Last changed: 2020-08-17 05:41:18 UTC
+healthbot {
+replace:
+    topic jflow.config {
+        rule check-fpc {
+            keys [ fpc_number sample_instance_name target ];
+            synopsis "Checks if the sampling instance and table sizes are configured for the fpc";
+            description "Checks if the sampling instance and table sizes are configured for the fpc";
+            function check_fpc_binding {
+                description "Checks if the correct sampling instance is binded to the fpc";
+                path jflow_fpc_binding_check.py;
+                method check_fpc;
+                argument cfg_inst_name {
+                    mandatory;
+                }
+                argument fpc_num {
+                    mandatory;
+                }
+                argument target {
+                    mandatory;
+                }
+                argument vty_inst_name {
+                    mandatory;
+                }
+            }
+            sensor check-fpc {
+                iAgent {
+                    file jflow_fpc_binding.yml;
+                    table fpc-check;
+                    frequency 60s;
+                    target " ";
+                }
+            }
+            field check-binding {
+                formula {
+                    user-defined-function {
+                        function-name check_fpc_binding;
+                        argument target "$target";
+                        argument fpc_num "$fpc_number";
+                        argument cfg_inst_name "$inst_name";
+                        argument vty_inst_name "$sample_instance_name";
+                    }
+                }
+                type string;
+            }
+            field fpc_number {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$sample_instance_name']/fpc_number";
+                }
+                type string;
+            }
+            field inst_name {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$sample_instance_name']/sample_inst_name";
+                }
+                type string;
+            }
+            field sample_instance_name {
+                sensor check-fpc {
+                    path sample_instance_name;
+                }
+                type string;
+            }
+            field target {
+                sensor check-fpc {
+                    path target;
+                }
+                type string;
+            }
+            trigger sampleing-instance-check {
+                frequency 60s;
+                term valid-binding {
+                    when {
+                        user-defined-function check_fpc_binding {
+                            argument target "$target";
+                            argument fpc_num "$fpc_number";
+                            argument cfg_inst_name "$inst_name";
+                            argument vty_inst_name "$sample_instance_name";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The sampling instance ($sample_instance_name) is binded to  $target.";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): Invalid sampling instance $sample_instance_name binded to the fpc $target. the sampling instance binded should be $inst_name.";
+                        }
+                    }
+                }
+            }
+        }
+        rule config {
+            keys inst_name;
+            sensor config {
+                iAgent {
+                    file inst_entry_configure.yml;
+                    table fwdConfig;
+                    frequency 60s;
+                }
+            }
+            field family_inet {
+                sensor config {
+                    path family_inet;
+                }
+                type string;
+            }
+            field family_inet6 {
+                sensor config {
+                    path family_inet6;
+                }
+                type string;
+            }
+            field family_mpls {
+                sensor config {
+                    path family_mpls;
+                }
+                type string;
+            }
+            field flow_server_mpls {
+                sensor config {
+                    path flow_server_mpls;
+                }
+                type string;
+            }
+            field flow_server_port_mpls {
+                sensor config {
+                    path flow_server_port_mpls;
+                }
+                type string;
+            }
+            field flow_server_port_v4 {
+                sensor config {
+                    path flow_server_port_v4;
+                }
+                type string;
+            }
+            field flow_server_port_v6 {
+                sensor config {
+                    path flow_server_port_v6;
+                }
+                type string;
+            }
+            field flow_server_v4 {
+                sensor config {
+                    path flow_server_v4;
+                }
+                type string;
+            }
+            field flow_server_v6 {
+                sensor config {
+                    path flow_server_v6;
+                }
+                type string;
+            }
+            field inst_name {
+                sensor config {
+                    path inst_name;
+                }
+                type string;
+            }
+            field jflow_source_addr_mpls {
+                sensor config {
+                    path jflow_source_addr_mpls;
+                }
+                type string;
+            }
+            field jflow_source_addr_v4 {
+                sensor config {
+                    path jflow_source_addr_v4;
+                }
+                type string;
+            }
+            field jflow_source_addr_v6 {
+                sensor config {
+                    path jflow_source_addr_v6;
+                }
+            }
+        }
+        rule counternh-decode {
+            keys [ counterNH instance target ];
+            description "Verify if the counter NH is correctly configured for jflow for the respective protocol family";
+            sensor CounterNHDecode {
+                iAgent {
+                    file jflow_counternh_decode.yml;
+                    table decodeCounterNH;
+                    frequency 60s;
+                }
+            }
+            field caddr {
+                sensor CounterNHDecode {
+                    path caddr;
+                }
+                type string;
+            }
+            field counterNH {
+                sensor CounterNHDecode {
+                    path NH;
+                }
+                type string;
+            }
+            field instance {
+                sensor CounterNHDecode {
+                    path instance;
+                }
+                type string;
+            }
+            field nxt_hop {
+                sensor CounterNHDecode {
+                    path nxt_hop;
+                    data-if-missing {
+                        value NULL;
+                    }
+                }
+                type string;
+            }
+            field proto {
+                sensor CounterNHDecode {
+                    path proto;
+                }
+                type string;
+            }
+            field protocol_sib {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=sib]/field[proto='$protocol']/proto";
+                }
+                type string;
+            }
+            field target {
+                sensor CounterNHDecode {
+                    path target;
+                }
+                type string;
+            }
+            trigger invalid-counterNH {
+                frequency 60s;
+                term invalid {
+                    when {
+                        matches-with "$invalid" Unknown;
+                        exists "$counterNH";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$proto): Invalid Counter NH for Protocol $proto";
+                        }
+                    }
+                }
+            }
+            trigger valid-counterNH {
+                frequency 60s;
+                term ipv4 {
+                    when {
+                        matches-with "$proto" 0;
+                        exists "$caddr";
+                        exists "$counterNH";
+                        exists "$nxt_hop";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv4): SIB table Counter NH is valid for IPv4.";
+                        }
+                    }
+                }
+                term ipv6 {
+                    when {
+                        matches-with "$proto" 1;
+                        exists "$caddr";
+                        exists "$counterNH";
+                        exists "$nxt_hop";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv6): SIB table Counter NH is valid for IPv6.";
+                        }
+                    }
+                }
+                term mpls {
+                    when {
+                        matches-with "$proto" 3;
+                        exists "$caddr";
+                        exists "$counterNH";
+                        exists "$nxt_hop";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:MPLS): SIB table Counter NH is valid for MPLS.";
+                        }
+                    }
+                }
+            }
+        }
+        rule flownh-decode {
+            keys [ flowNH instance proto target ];
+            description "Verify if the flow NH is correctly configured for jflow for the respective protocol family";
+            sensor decodeFlowNH {
+                iAgent {
+                    file jflow_flow_decode.yml;
+                    table decodeFlowNH;
+                    frequency 60s;
+                }
+            }
+            field flowNH {
+                sensor decodeFlowNH {
+                    path flowNH;
+                }
+                type string;
+            }
+            field instance {
+                sensor decodeFlowNH {
+                    path instance;
+                }
+                type string;
+            }
+            field proto {
+                sensor decodeFlowNH {
+                    path proto;
+                }
+                type string;
+            }
+            field protocol_sib {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=sib]/field[proto='$proto']/proto";
+                }
+                type string;
+            }
+            field target {
+                sensor decodeFlowNH {
+                    path target;
+                }
+                type string;
+            }
+            trigger invalid-flowNH {
+                frequency 60s;
+                term invalid {
+                    when {
+                        matches-with "$invalid" Unknown;
+                        exists "$flowNH";
+                        exists "$invalid";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$proto):Invalid flow NH configured for protocol family $proto";
+                        }
+                    }
+                }
+            }
+            trigger valid-flowNH {
+                frequency 60s;
+                term ipv4 {
+                    when {
+                        matches-with "$proto" 0;
+                        matches-with "$flownh" JFlow;
+                        exists "$flowNH";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv4): The flowNH configured for protocol IPv4 is valid";
+                        }
+                    }
+                }
+                term ipv6 {
+                    when {
+                        matches-with "$proto" 1;
+                        matches-with "$flownh" JFlow;
+                        exists "$flowNH";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv6): The flowNH configured for protocol IPv6 is valid";
+                        }
+                    }
+                }
+                term mpls {
+                    when {
+                        matches-with "$proto" 3;
+                        matches-with "$flownh" JFlow;
+                        exists "$flowNH";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:MPLS): The flowNH configured for protocol MPLS is valid";
+                        }
+                    }
+                }
+            }
+        }
+        rule master-rec {
+            keys [ instance target ];
+            synopsis "Verifies base pointers for data structures and jflow specific flags";
+            description "Displays the master record entry details for jflow  per fpc per pfe instance.";
+            sensor master {
+                iAgent {
+                    file jflow_master_rec.yml;
+                    table MasterRec;
+                    frequency 60s;
+                }
+            }
+            field extended_flow_memory {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/extended_flow_mem";
+                }
+                type string;
+            }
+            field instance {
+                sensor master {
+                    path instance;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field target {
+                sensor master {
+                    path target;
+                }
+                type string;
+            }
+            trigger master-rec-boot-time {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$boot_time" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): boot time is $boot_time";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): boot time cannot be 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-coll-tbl-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$coll_tbl_base" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The collector table base is $coll_tbl_base";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): the collector table base is $coll_tbl_base";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-current-time {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$current_time" 0x000000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): the current time is $current_time";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): the current time cannot be 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-extn-tbl-id {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$extn_tbl_id" 0x0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): extension table id is $extn_tbl_id";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): extension table id is 0x0. (disabled)";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-flow-act-timeout {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$flow_act_timeout" 0x0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow active timeout is $flow_act_timeout (enabled)";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): the flow active timeout  flag is 0x0. (disabled)";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-inst-tbl-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$inst_tbl_base" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The instance table base is $inst_tbl_base";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The instance table base is $inst_tbl_base";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-jflow-record-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$jflow_record_base" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): Jflow record base is $jflow_record_base";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): Jflow record base is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-route-record-ktree-ptr-mpls {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$route_record_ktree_ptr_mpls" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The MPLS RT route record ktree pointer is $route_record_ktree_ptr_mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The MPLS RT route record ktree pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rt-record-ktree-ptr-v4 {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rt_record_ktree_ptr_v4" 0x00000000 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The ipv4 RT record ktree pointer is $rt_record_ktree_ptr_v4";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The ipv4 RT record ktree pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rt-record-ktree-ptr-v6 {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rt_record_ktree_ptr_v6" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The ipv6 RT record ktree pointer is $rt_record_ktree_ptr_v6";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The ipv6 RT record ktree pointer is $rt_record_ktree_ptr_v6";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rtt-ktree-desc-v4-ptr {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rtt_ktree_desc_v4_ptr" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): RTT ktree desc v4 pointer is $rtt_ktree_desc_v4_ptr";
+                        }
+                    }
+                }
+                term ivalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): RTT ktree desc v4 pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rtt-ktree-desc-v6-ptr {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rtt_ktree_desc_v6_ptr" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): RTT ktree desc v6 pointer is $rtt_ktree_desc_v6_ptr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color red;
+                            message "($target): RTT ktree desc v6 pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-sideband-flow-tbl-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        matches-with "$extended_flow_memory" use-extended-flow-memory;
+                        does-not-match-with "$sideband_flow_tbl_bsae" 0x00000000 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): sideband_flow_tbl_bsae: $sideband_flow_tbl_bsae";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        matches-with "$extended_flow_memory" use-extended-flow-memory;
+                        matches-with "$sideband_flow_tbl_bsae" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The sideband flow table base is 0x00000000";
+                        }
+                    }
+                }
+                term valid_ext {
+                    when {
+                        matches-with " $sideband_flow_tbl_bsae" 0x00000000;
+                        does-not-match-with "$extended_flow_memory" use-extended-flow-memory;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The sideband flow table size is zero as extended table is not used.";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-tod-nanosec {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$tod_nanosec" 0x0000000000000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The TOD in nano sec is $tod_nanosec";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The TOD in nano sec is 0";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-tod-wallclock {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$tod_wallclock" 0x0000000000000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): TOD Wallclock is $tod_wallclock";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): TOD Wallclock is 0x0000000000000000";
+                        }
+                    }
+                }
+            }
+        }
+        rule online-fpc {
+            synopsis "Executes the udf to fetch the online fpc's and update the target value of the senor tables";
+            description "updates the sensor tables with target values";
+            sensor online-fpc {
+                iAgent {
+                    file jflow_online_fpc.yml;
+                    table UpdateTable;
+                    frequency 30s;
+                }
+            }
+        }
+        rule sib {
+            keys [ instance proto s_inst_name target ];
+            description "fetch the entries configured in the SIB";
+            sensor sib {
+                iAgent {
+                    file jflow_sib_table.yml;
+                    table SIBTable;
+                    frequency 60s;
+                }
+            }
+            field flowNH {
+                sensor sib {
+                    path FlowNH;
+                }
+                type string;
+            }
+            field inet {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name='$s_inst_name']/family_inet";
+                }
+                type string;
+            }
+            field inet6 {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name='$s_inst_name']/family_inet6";
+                }
+                type string;
+            }
+            field inst_name {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name=$s_inst_name]/name";
+                }
+                type string;
+            }
+            field instance {
+                sensor sib {
+                    path instance;
+                }
+                type string;
+            }
+            field ipv4_proto {
+                sensor sib {
+                    path ipv4_proto;
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field ipv6_proto {
+                sensor sib {
+                    path ipv6_proto;
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field mpls {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name='$s_inst_name']/family_mpls";
+                }
+                type string;
+            }
+            field mpls_proto {
+                sensor sib {
+                    path mpls_proto;
+                }
+                type string;
+            }
+            field proto {
+                sensor sib {
+                    path proto;
+                }
+                type string;
+            }
+            field s_inst_name {
+                sensor sib {
+                    path s_inst_name;
+                }
+                type string;
+            }
+            field target {
+                sensor sib {
+                    path target;
+                }
+                type string;
+            }
+            trigger SIB-inet-family {
+                frequency 100s;
+                term valid_v4 {
+                    when {
+                        equal-to "$proto" 0;
+                        matches-with "$inet" inet;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target: $s_inst_name:IPv4): protocol family $inet is configured on fpc $ipv4_proto $inet $inet6 $mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        equal-to "$proto" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target: $s_inst_name:IPv4): Protocol Family IPv4 should not be configured on the fpc proto $proto $inet $inet6 $mpls";
+                        }
+                    }
+                }
+            }
+            trigger SIB-inet6-family {
+                frequency 100s;
+                term valid {
+                    when {
+                        equal-to "$proto" 1;
+                        matches-with "$inet6" inet6;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target: $s_inst_name:IPv6): Protocol family $inet6 is configured on the fpc.";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        equal-to "$proto" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target: $s_inst_name:IPv6): Protocol Family IPv6 should not be configured on the fpc.";
+                        }
+                    }
+                }
+            }
+            trigger SIB-mpls-family {
+                frequency 100s;
+                term valid {
+                    when {
+                        equal-to "$proto" 3;
+                        matches-with "$mpls" mpls;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:MPLS):Protocol family $mpls is configured on the fpc $inet $inet6 $mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        equal-to "$proto" 3;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target: $s_inst_name:MPLS): Protocol Family MPLS should not be configured on the fpc";
+                        }
+                    }
+                }
+            }
+        }
+        rule timeouts {
+            keys [ counterNH flowNH index instance s_inst_name target template_name ];
+            synopsis "Compares the timeout values configured in th RE with the ones configured on the linecard";
+            description "Verifies the active and inactive timeout values iconfigured for the protocol family";
+            function verify_template {
+                path jflow_verify_config.py;
+                method verify_template_version;
+                argument config_temp_type {
+                    mandatory;
+                }
+                argument index {
+                    mandatory;
+                }
+                argument vty_temp_type {
+                    mandatory;
+                }
+                argument vty_version {
+                    mandatory;
+                }
+            }
+            sensor timeouts {
+                iAgent {
+                    file jflow_instance_entry.yml;
+                    table SampleInstanceEntry;
+                    frequency 45s;
+                }
+            }
+            field active_timeout_ipfix {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_act_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field active_timeout_v9 {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_act_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field cfg_ipfix_mpls_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_mpls_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_mpls_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_mpls_v4_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_mpls_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_mpls_v6_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_ipv4_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_ipv6_template";
+                }
+                type string;
+            }
+            field cfg_v9_mpls_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_mpls_template";
+                }
+                type string;
+            }
+            field cfg_v9_mpls_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_mpls_v4_template";
+                }
+                type string;
+            }
+            field cfg_v9_mpls_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_mpls_v6_template";
+                }
+                type string;
+            }
+            field cfg_v9_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_ipv4_template";
+                }
+                type string;
+            }
+            field cfg_v9_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_ipv6_template";
+                }
+                type string;
+            }
+            field counterNH {
+                sensor timeouts {
+                    path counterNH;
+                }
+                type string;
+            }
+            field export_version {
+                sensor timeouts {
+                    path export_version;
+                }
+                type string;
+            }
+            field flowNH {
+                sensor timeouts {
+                    path flowNH;
+                }
+                type string;
+            }
+            field inactive_timeout_ipfix {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_inact_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field inactive_timeout_v9 {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_inact_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field index {
+                sensor timeouts {
+                    path index;
+                }
+                type string;
+            }
+            field instance {
+                sensor timeouts {
+                    path instance;
+                }
+                type string;
+            }
+            field invalid_entry {
+                sensor timeouts {
+                    path invalid_entry;
+                    data-if-missing {
+                        value valid;
+                    }
+                }
+                type string;
+            }
+            field s_inst_name {
+                sensor timeouts {
+                    path s_inst_name;
+                }
+                type string;
+            }
+            field target {
+                sensor timeouts {
+                    path target;
+                }
+                type string;
+            }
+            field template_name {
+                sensor timeouts {
+                    path template_name;
+                }
+                type string;
+            }
+            field vty_active_timeout {
+                sensor timeouts {
+                    path act_timeout;
+                }
+                type integer;
+            }
+            field vty_inactive_timeout {
+                sensor timeouts {
+                    path inactive_timeout;
+                }
+                type integer;
+            }
+            trigger active_timeout {
+                frequency 45s;
+                term default-v9 {
+                    when {
+                        equal-to "$active_timeout_v9" 0;
+                        equal-to "$vty_active_timeout" 60;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout value is set to default as $vty_active_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term default-ipfix {
+                    when {
+                        equal-to "$active_timeout_ipfix" 0;
+                        equal-to "$vty_active_timeout" 60;
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout value is set to default as $vty_active_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term valid_v9 {
+                    when {
+                        equal-to "$active_timeout_v9" "$vty_active_timeout";
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout configured f is $vty_active_timeout or $export_version and protocol family $temp_type. $invalid_entry";
+                        }
+                    }
+                }
+                term valid-ipfix {
+                    when {
+                        equal-to "$active_timeout_ipfix" "$vty_active_timeout";
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout configured f is $vty_active_timeout or $export_version and protocol family $temp_type.";
+                        }
+                    }
+                }
+                term invalid-entry {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The instance entry is Invalid and timeout should not be configured for protocol family $temp_type. ";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type):  The active timeout $vty_active_timeout configured for the version $export_version and family $temp_type is incorrect.";
+                        }
+                    }
+                }
+            }
+            trigger inactive_timeout {
+                frequency 45s;
+                term default-ipfix {
+                    when {
+                        equal-to "$inactive_timeout_ipfix" 0;
+                        equal-to "$vty_inactive_timeout" 60;
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout value is set to default as $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term default-v9 {
+                    when {
+                        equal-to "$inactive_timeout_v9" 0;
+                        equal-to "$vty_inactive_timeout" 60;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout value is set to default as $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term valid-ipfix {
+                    when {
+                        equal-to "$inactive_timeout_ipfix" "$vty_inactive_timeout";
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The in active timeout value is set to $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term valid-v9 {
+                    when {
+                        equal-to "$inactive_timeout_v9" "$vty_inactive_timeout";
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout value is set to $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term invalid-entry {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The instance entry is invalid and timeout should not be configured for protocol family $temp_type";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout $vty_inactive_timeout configured for $export_version and protocol family $temp_type is wrong. ";
+                        }
+                    }
+                }
+            }
+            trigger template-type {
+                frequency 45s;
+                term proto-not-cfg {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The protocol $temp_type is not configured for $export_version";
+                        }
+                    }
+                }
+                term valid-ipv4-v9 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-ipv4-ipfix {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-v6-v9 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type v9_v6;
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-v6-ipfix {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_v6_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v9 {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_mpls_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-ipfix {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_mpls_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v4-v9 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_mpls_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v4-ipfix {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_mpls_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v6-v9 {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_mpls_v6_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v6-ipfix {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_mpls_v6_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are Wrong";
+                        }
+                    }
+                }
+            }
+        }
+        rule update-nh-args {
+            synopsis "These values are used to check if Nh are configured correctly in the SIB";
+            description "Updates the flowNh and counterNH values obtained from the SIb in the respective sensor tales";
+            sensor UpdateArgs {
+                iAgent {
+                    file jflow_update_nh_args.yml;
+                    table UpdateSample;
+                    frequency 60s;
+                }
+            }
+            rule-properties {
+                helper-files other {
+                    list-of-files sample_decode.yml;
+                }
+            }
+        }
+        rule update-sib-args {
+            description "Update the arguments and target values required by the SIB table by running the udf function";
+            sensor update-inst-table {
+                iAgent {
+                    file jflow_update_sib_args.yml;
+                    table UpdateSIBYaml;
+                    frequency 30s;
+                }
+            }
+        }
+        rule update-stat-args {
+            description "Updates the senor table with the protocol family name for which the stats are to be fetched by running the udf";
+            sensor UpdateStatArg {
+                iAgent {
+                    file jflow_update_stats_args.yml;
+                    table UpdateInline;
+                    frequency 60s;
+                }
+            }
+        }
+        rule update_inst_entry {
+            description "Update the arguments and target value required to fetch the instance entry details by running the udf ";
+            sensor update-inst-entry {
+                iAgent {
+                    file jflow_update_inst_entry_args.yml;
+                    table UpdateInstEntry;
+                    frequency 45s;
+                }
+            }
+        }
+        rule update_pfe {
+            description "fetches the online fpc and the number of pfe instances running on each pfe and updates the sensor tables by running the udf.";
+            sensor update_pfe {
+                iAgent {
+                    file jflow_pfe_update.yml;
+                    table updatePFE;
+                    frequency 60s;
+                }
+            }
+        }
+        rule verify-inst-entry {
+            keys [ counterNH flowNH index instance s_inst_name target template_name ];
+            synopsis "The deatils such as collector IP's, collector ports, source address, flow table sizes, number of collectors configured for each protocol family is verified.";
+            description "Verifies if the instance entry details are correctly configured in accordance to the RE configs ";
+            function verify_collector_ip {
+                path jflow_verify_config.py;
+                method verify_collector_ip;
+                argument cfg_coll {
+                    mandatory;
+                }
+                argument vty_coll1 {
+                    mandatory;
+                }
+                argument vty_coll2 {
+                    mandatory;
+                }
+                argument vty_coll3 {
+                    mandatory;
+                }
+                argument vty_coll4 {
+                    mandatory;
+                }
+                argument vty_no_of_coll {
+                    mandatory;
+                }
+            }
+            function verify_collector_port {
+                path jflow_verify_config.py;
+                method verify_collector_port;
+                argument cfg_port {
+                    mandatory;
+                }
+                argument vty_cport1 {
+                    mandatory;
+                }
+                argument vty_cport2 {
+                    mandatory;
+                }
+                argument vty_cport3 {
+                    mandatory;
+                }
+                argument vty_cport4 {
+                    mandatory;
+                }
+                argument vty_no_of_coll {
+                    mandatory;
+                }
+            }
+            function verify_jflow_src_addr {
+                path jflow_verify_config.py;
+                method verify_jflow_src_addr;
+                argument cfg_src_ip {
+                    mandatory;
+                }
+                argument vty_no_of_coll {
+                    mandatory;
+                }
+                argument vty_src1 {
+                    mandatory;
+                }
+                argument vty_src2 {
+                    mandatory;
+                }
+                argument vty_src3 {
+                    mandatory;
+                }
+                argument vty_src4 {
+                    mandatory;
+                }
+            }
+            function verify_no_of_collector {
+                path jflow_verify_config.py;
+                method verify_no_of_collector;
+                argument cfg_collector {
+                    mandatory;
+                }
+                argument vty_no_of_collector {
+                    mandatory;
+                }
+            }
+            function verify_tbl_size {
+                path jflow_verify_config.py;
+                method verify_tbl_size;
+                argument config_flow_tbl_size {
+                    mandatory;
+                }
+                argument fpc_num {
+                    mandatory;
+                }
+                argument target {
+                    mandatory;
+                }
+                argument vty_flow_tbl_size {
+                    mandatory;
+                }
+            }
+            sensor verify-inst-entry {
+                iAgent {
+                    file jflow_instance_entry.yml;
+                    table SampleInstanceEntry;
+                    frequency 45s;
+                }
+            }
+            field c1_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c1_coll_ip_addr;
+                }
+                type string;
+            }
+            field c2_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c2_coll_ip_addr;
+                }
+                type string;
+            }
+            field c3_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c3_coll_ip_addr;
+                }
+                type string;
+            }
+            field c4_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c4_coll_ip_addr;
+                }
+                type string;
+            }
+            field cfg_inst_name {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/sample_inst_name";
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field counterNH {
+                sensor verify-inst-entry {
+                    path counterNH;
+                    data-if-missing {
+                        value invalid;
+                    }
+                }
+                type string;
+            }
+            field flowNH {
+                sensor verify-inst-entry {
+                    path flowNH;
+                    data-if-missing {
+                        value invalid;
+                    }
+                }
+                type string;
+            }
+            field fpc_num {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/fpc_number";
+                }
+                type string;
+            }
+            field index {
+                sensor verify-inst-entry {
+                    path index;
+                    data-if-missing {
+                        value -1;
+                    }
+                }
+                type string;
+            }
+            field instance {
+                sensor verify-inst-entry {
+                    path instance;
+                }
+                type string;
+            }
+            field instance_name {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/inst_name";
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field invalid_entry {
+                sensor verify-inst-entry {
+                    path invalid_entry;
+                    data-if-missing {
+                        value valid;
+                    }
+                }
+                type string;
+            }
+            field ipv4_coll {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_v4";
+                }
+                type string;
+            }
+            field ipv4_coll_port {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_port_v4";
+                }
+                type string;
+            }
+            field ipv4_jflow_src_addr {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/jflow_source_addr_v4";
+                }
+                type string;
+            }
+            field ipv4_table_len {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/flow_tbl_size_ipv4";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field ipv6_coll {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_v6";
+                }
+                type string;
+            }
+            field ipv6_coll_port {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_port_v6";
+                }
+                type string;
+            }
+            field ipv6_jflow_src_addr {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/jflow_source_addr_v6";
+                }
+                type string;
+            }
+            field ipv6_table_len {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/flow_tbl_size_ipv6";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field mpls_coll {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_mpls";
+                }
+                type string;
+            }
+            field mpls_coll_port {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_port_mpls";
+                }
+                type string;
+            }
+            field mpls_jflow_src_addr {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/jflow_source_addr_mpls";
+                }
+                type string;
+            }
+            field mpls_table_len {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/flow_tbl_size_mpls";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field s_inst_name {
+                sensor verify-inst-entry {
+                    path s_inst_name;
+                }
+                type string;
+            }
+            field target {
+                sensor verify-inst-entry {
+                    path target;
+                }
+                type string;
+            }
+            field template_name {
+                sensor verify-inst-entry {
+                    path template_name;
+                }
+                type string;
+            }
+            trigger collector-ip {
+                frequency 45s;
+                term valid_v4 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$ipv4_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for IPv4 are correct. Configured collectors are: $ipv4_coll";
+                        }
+                    }
+                }
+                term valid_v6 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$ipv6_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configured for IPv6 are correct. Configured collectors are: $ipv6_coll.";
+                        }
+                    }
+                }
+                term valid_mpls {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$mpls_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for MPLS are correct. Configured collectors are: $mpls_coll";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$mpls_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for MPLS-ipv4 are correct. Configured collectors are: $mpls_coll";
+                        }
+                    }
+                }
+                term valid_mpls_ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$mpls_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for MPLS-IPv6 are correct. Configured collectors are: $mpls_coll";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations are invalid for $temp_type .";
+                        }
+                    }
+                }
+            }
+            trigger collector-port {
+                frequency 45s;
+                term valid-v4-port {
+                    when {
+                        equal-to "$index" 0;
+                        user-defined-function verify_collector_port {
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument cfg_port "$ipv4_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for IPv4 are correct. collector ports $ipv4_coll_port";
+                        }
+                    }
+                }
+                term valid_v6-port {
+                    when {
+                        equal-to "$index" 1;
+                        user-defined-function verify_collector_port {
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument cfg_port "$ipv6_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for IPv6 are correct. collector ports $ipv6_coll_port";
+                        }
+                    }
+                }
+                term valid_mpls-port {
+                    when {
+                        equal-to "$index" 3;
+                        user-defined-function verify_collector_port {
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument cfg_port "$mpls_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for MPLS are correct. collector ports $mpls_coll_port";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4-port {
+                    when {
+                        equal-to "$index" 4;
+                        user-defined-function verify_collector_port {
+                            argument cfg_port "$mpls_coll_port";
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for MPLS-IPv4 are correct. collector ports $mpls_coll_port";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4_port {
+                    when {
+                        equal-to "$index" 5;
+                        user-defined-function verify_collector_port {
+                            argument cfg_port "$mpls_coll_port";
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for MPLS-IPv6 are correct. collector ports $mpls_coll_port";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configurations are wrong for family $temp_type.";
+                        }
+                    }
+                }
+            }
+            trigger counterNH {
+                frequency 45s;
+                term invalid-entry {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The family configurations are invalid.";
+                        }
+                    }
+                }
+                term invalid-ipv4 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$counterNH" invalid-ipv4;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-ipv6 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$counterNH" invalid-ipv6;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$counterNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v4 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$counterNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v6 {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$counterNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term valid {
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+            }
+            trigger family-not-configured {
+                frequency 45s;
+                term invalid {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Protocol family $temp_type is not configured on the $target.";
+                        }
+                    }
+                }
+            }
+            trigger flow-table-size {
+                frequency 45s;
+                term valid-v4 {
+                    when {
+                        equal-to "$index" 0;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$ipv4_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for IPv4 : $flow_tbl_size";
+                        }
+                    }
+                }
+                term valid-v6 {
+                    when {
+                        equal-to "$index" 1;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$ipv6_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for IPv6 : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term valid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$mpls_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for MPLS : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term valid-mpls-ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$mpls_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for MPLS-IPv4 : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term valid-mpls-ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$mpls_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for MPLS-IPv6 : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size is wrong for protocol family $temp_type . $flow_tbl_size";
+                        }
+                    }
+                }
+            }
+            trigger flowNH {
+                frequency 45s;
+                term invalid {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The family configurations are invalid.";
+                        }
+                    }
+                }
+                term invalid-ipv4 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$flowNH" invalid-ipv4;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-ipv6 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$flowNH" invalid-ipv6;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$flowNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v4 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$flowNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type):Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v6 {
+                    when {
+                        equal-to index 5;
+                        matches-with "$flowNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term valid {
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+            }
+            trigger jflow-src-ip {
+                frequency 45s;
+                term valid_v4 {
+                    when {
+                        equal-to "$index" 0;
+                        user-defined-function verify_jflow_src_addr {
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                            argument cfg_src_ip "$ipv4_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for IPv4 is $ipv4_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_v6 {
+                    when {
+                        equal-to "$index" 1;
+                        user-defined-function verify_jflow_src_addr {
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                            argument cfg_src_ip "$ipv6_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for IPv6 is $ipv6_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_mpls {
+                    when {
+                        equal-to "$index" 3;
+                        user-defined-function verify_jflow_src_addr {
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                            argument cfg_src_ip "$mpls_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for MPLS  is $mpls_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        user-defined-function verify_jflow_src_addr {
+                            argument cfg_src_ip "$mpls_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for MPLS-IPv4  is $mpls_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_mpls_ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        user-defined-function verify_jflow_src_addr {
+                            argument cfg_src_ip "$mpls_jflow_src_addr";
+                            argument vty_no_of_coll "$vty_no_of_collector";
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for MPLS-IPv6  is $mpls_jflow_src_addr";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid source jflow ip address configured for family $temp_type";
+                        }
+                    }
+                }
+            }
+            trigger no-of-collector {
+                frequency 45s;
+                term valid-v4 {
+                    when {
+                        equal-to "$index" 0;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$ipv4_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured  for IPv4 are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-v6 {
+                    when {
+                        equal-to "$index" 1;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$ipv6_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for IPv6 are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$mpls_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for MPLS are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-mpls-ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$mpls_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for MPLS-IPv4 are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-mpls-ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$mpls_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for MPLS-IPv6 are $no_of_collector";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid number of collectors: $no_of_collector configured for family $temp_type ";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
