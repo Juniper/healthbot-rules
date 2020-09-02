@@ -12,6 +12,7 @@ healthbot {
         description "Rule monitors the uptime of the system";
         synopsis "System uptime analyzer";
         rule check-system-uptime-snmp {
+            keys description;
             synopsis "System uptime analyzer";
             description "Collects the time when the system was last booted.";
             /*
@@ -19,6 +20,8 @@ healthbot {
              * colors when the system uptime is less than the threshold
              * then the color is set to yellow. Otherwise the color is set
              * too green.
+             *
+             * Description field is used as key.
              *
              * Sensor configuration to get data from network devices.
              */
@@ -33,6 +36,14 @@ healthbot {
             /*
              * Field defined with variables and constant values.
              */
+            field description {
+                sensor snmp {
+                    where "jnxOperatingDescr =~ /{{comp-name}}/";
+                    path jnxOperatingDescr;
+                }
+                type string;
+                description "system uptime routing engine information";
+            }
             field threshold {
                 constant {
                     value "{{threshold}}";
@@ -89,6 +100,11 @@ healthbot {
              * Variable with default value. Default value can be changed
              * while deploying playbook instance.
              */
+            variable comp-name {
+                value ".*Routing Engine.*";
+                description "Collects all routing engines";
+                type string;
+            }
             variable threshold {
                 value 60480000;
                 description "Total time for 7 days.";
