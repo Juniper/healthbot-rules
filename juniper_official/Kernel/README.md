@@ -1,6 +1,11 @@
-# HealthBot Kernel KPI rules and playbooks
+# HealthBot EVPN KPI rules and playbooks
 
-## Kernel playbooks
+## EVPN VXLAN playbooks
+### Playbook name: kernel-tcp-ip-playbook 
+		> Description: "This playbook encapsulates rules related to kernel tcp ip parameters"
+		> Synopsis: "Kernel tcp ip parameters"
+		> Playbook file name: kernel-tcp-ip-playbook.playbook
+		> Detals:
 ### Playbook name: krt-statistics-kpis 
 
 
@@ -162,77 +167,9 @@
 		> Synopsis: "Junos-Kernel infra parameters"
 		> Playbook file name: kernel-infra-playbook.playbook
 		> Detals:
-### Playbook name: kernel-tcp-ip-playbook 
-		> Description: "This playbook encapsulates rules related to kernel tcp ip parameters"
-		> Synopsis: "Kernel tcp ip parameters"
-		> Playbook file name: kernel-tcp-ip-playbook.playbook
-		> Detals:
 
-## Kernel rules
+## EVPN VXLAN rules
 
-### Rule name: detect-routing-socket-errors-iagent 
-		> Description: "Detect errors in rtsock, veto and mproc layers"
-		> Synopsis: "Detect Routing Socket errors in the system"
-		> Rule file name: detect-routing-socket-errors-iagent.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 1.0.1
-		> Detals:
-		 This rule checks for the total number of routing socket errors at any given time in the system.
-		 Routing socket errors includes errors returned from rtsock, veto and mproc layers.
-		 It monitors the total number of routing socket errors and raises an alarm if there are too many of
-		 these detected for significant duration of time.
-		 This rule checks if the error has benn increased by 100 from its previous value in ALL the samples
-		 for the last 70 or 130 seconds and raises the alarm accordingly.
-### Rule name: check-too-many-dead-ifstates-iagent 
-
-
-		> Rule file name: check-too-many-dead-ifstates-iagent.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule checks for the number of dead ifstates at any given time in
-		 the system. A dead Ifstate gets garbage collected once all the consumers
-		 see the corresponding delete message. If these dead ifstates continue to
-		 pile up, this indicates a garbage collection problem and can eat up
-		 significant resources such as memory and indices.
-		 This rule monitors the number of dead Ifstates and raises an alarm if there
-		 are too many of these (> 50% of alive ifstates) detected for significant
-		 duration of time (1 hour).
-### Rule name: check-pfeman-conn-drops 
-
-
-		> Rule file name: check-pfeman-conn-drops.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 Peer infra module is responsible for replicating FIB states to the line cards
-		 and also to process incoming IPCs from them. Each line card has a connection
-		 with Master Routing Engine Junos Kernel.
-		 This rule monitors and ungraceful connection drops in these pfeman connections.
 ### Rule name: check-stuck-ifstate-clients-iagent 
 
 
@@ -252,36 +189,6 @@
 		 Though rare, but when any Ifstate client (application/FPC peer) gets stuck,
 		 it can result in resource accumulation and eventually can lead to traffic loss.
 		 It checks if the "slow peers" alarm has been raised on the device.
-### Rule name: check-stuck-ifstate-clients 
-
-
-		> Rule file name: check-stuck-ifstate-clients.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule checks if there are any stuck ifstate clients present in the system.
-		 A stuck Ifstate client can cause resource release issues and eventually lead to
-		 Kernel to veto incoming routing socket messages from applications, which further
-		 can result in traffic loss. Though very rare, if this happens, it is a serious
-		 condition and should be mitigated asap by restarting the client. See readme
-		 in healthbot rules folder for details.
-### Rule name: check-krt-state 
-
-
-		> Rule file name: krtasync.rule
-
-
-
-
-		> Detals:
 ### Rule name: check-krt-tx-bulk-msg-fail 
 		> Description: "Collect KRT bulking statistics and notifies when message fail count increases"
 		> Synopsis: "KRT bulking statistics analyzer"
@@ -293,113 +200,6 @@
 
 		> Supported healthbot version: 2.0.1
 		> Detals:
-### Rule name: check-iri-conn-keepalive-dropped 
-		> Description: "This rule detects any intra-chassis connection drops because of keep alive expiry"
-		> Synopsis: "Detect IRI connection drops because of Keepalive"
-		> Rule file name: check-iri-conn-keepalive-dropped.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule detects any intra-chassis connection (part of Internal Routing
-		 Instance) drops because of keep alive expiry.
-### Rule name: check-client-limit-reached 
-
-
-		> Rule file name: check-client-limit-reached.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule checks if any application has opened more than the allowed number
-		 of Ifstate based routing sockets.
-### Rule name: check-dead-ifstate-client 
-
-
-		> Rule file name: check-dead-ifstate-client.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule checks if there are any dead ifstate clients not cleaned up in the
-		 system for the last 20 minutes.
-		 By default, it checks if all the samples collected every 1 minute are
-		 non-zero for contiguous 20 minutes.
-### Rule name: check-delayed-unrefs-anomaly-iagent 
-
-
-		> Rule file name: check-delayed-unrefs-anomaly-iagent.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule checks if there are any delayed unrefs and if they are greater than
-		 a particular threshold (sysctl net.rt_nh_max_delayed_unrefs).
-		 Transient spikes in delayed unref count is expected in certain catastrophic or
-		 major events and is not a cause for worry. But, if this situation persists for
-		 significant amount of time (say in minutes), then it can result in traffic loss.
-### Rule name: check-krt-ack-timeouts 
-		> Description: "This rule collects kernel route and next-hop acknowledgement statistics  periodically and notifies anomaly in case of timeout"
-		> Synopsis: "Kernel route and next-hop acknowledgements statistics analyzer "
-		> Rule file name: check-krt-ack-timeouts.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 2.0.1
-		> Detals:
-### Rule name: check-too-many-dead-ifstates 
-
-
-		> Rule file name: check-too-many-dead-ifstates.rule
-
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-
-			> Supported platforms: [ EX9200 EX9251 EX9253 ];
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
-			> Supported platforms: PTX-Series-All;
-
-		> Supported healthbot version: 2.1.0
-		> Detals:
-		 This rule checks for the number of dead ifstates at any given time in
-		 the system. A dead Ifstate gets garbage collected once all the consumers
-		 see the corresponding delete message. If these dead ifstates continue to
-		 pile up, this indicates a garbage collection problem and can eat up
-		 significant resources such as memory and indices.
-		 This rule monitors the number of dead Ifstates and raises an alarm if there
-		 are too many of these (> 50% of alive ifstates) detected for significant
-		 duration of time (1 hour).
 ### Rule name: check-spurious-ppt-wkups 
 
 
@@ -464,3 +264,203 @@
 		
 		 This rule checks if the error has been increased by 100 from its previous value in ALL the samples
 		 for the last 70 or 130 seconds and raises the alarm accordingly.
+### Rule name: detect-routing-socket-errors-iagent 
+		> Description: "Detect errors in rtsock, veto and mproc layers"
+		> Synopsis: "Detect Routing Socket errors in the system"
+		> Rule file name: detect-routing-socket-errors-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 This rule checks for the total number of routing socket errors at any given time in the system.
+		 Routing socket errors includes errors returned from rtsock, veto and mproc layers.
+		 It monitors the total number of routing socket errors and raises an alarm if there are too many of
+		 these detected for significant duration of time.
+		 This rule checks if the error has benn increased by 100 from its previous value in ALL the samples
+		 for the last 70 or 130 seconds and raises the alarm accordingly.
+### Rule name: check-krt-ack-timeouts 
+		> Description: "This rule collects kernel route and next-hop acknowledgement statistics  periodically and notifies anomaly in case of timeout"
+		> Synopsis: "Kernel route and next-hop acknowledgements statistics analyzer "
+		> Rule file name: check-krt-ack-timeouts.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 2.0.1
+		> Detals:
+### Rule name: check-too-many-dead-ifstates-iagent 
+
+
+		> Rule file name: check-too-many-dead-ifstates-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks for the number of dead ifstates at any given time in
+		 the system. A dead Ifstate gets garbage collected once all the consumers
+		 see the corresponding delete message. If these dead ifstates continue to
+		 pile up, this indicates a garbage collection problem and can eat up
+		 significant resources such as memory and indices.
+		 This rule monitors the number of dead Ifstates and raises an alarm if there
+		 are too many of these (> 50% of alive ifstates) detected for significant
+		 duration of time (1 hour).
+### Rule name: check-delayed-unrefs-anomaly-iagent 
+
+
+		> Rule file name: check-delayed-unrefs-anomaly-iagent.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any delayed unrefs and if they are greater than
+		 a particular threshold (sysctl net.rt_nh_max_delayed_unrefs).
+		 Transient spikes in delayed unref count is expected in certain catastrophic or
+		 major events and is not a cause for worry. But, if this situation persists for
+		 significant amount of time (say in minutes), then it can result in traffic loss.
+### Rule name: check-too-many-dead-ifstates 
+
+
+		> Rule file name: check-too-many-dead-ifstates.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks for the number of dead ifstates at any given time in
+		 the system. A dead Ifstate gets garbage collected once all the consumers
+		 see the corresponding delete message. If these dead ifstates continue to
+		 pile up, this indicates a garbage collection problem and can eat up
+		 significant resources such as memory and indices.
+		 This rule monitors the number of dead Ifstates and raises an alarm if there
+		 are too many of these (> 50% of alive ifstates) detected for significant
+		 duration of time (1 hour).
+### Rule name: check-iri-conn-keepalive-dropped 
+		> Description: "This rule detects any intra-chassis connection drops because of keep alive expiry"
+		> Synopsis: "Detect IRI connection drops because of Keepalive"
+		> Rule file name: check-iri-conn-keepalive-dropped.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule detects any intra-chassis connection (part of Internal Routing
+		 Instance) drops because of keep alive expiry.
+### Rule name: check-client-limit-reached 
+
+
+		> Rule file name: check-client-limit-reached.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if any application has opened more than the allowed number
+		 of Ifstate based routing sockets.
+### Rule name: check-pfeman-conn-drops 
+
+
+		> Rule file name: check-pfeman-conn-drops.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 Peer infra module is responsible for replicating FIB states to the line cards
+		 and also to process incoming IPCs from them. Each line card has a connection
+		 with Master Routing Engine Junos Kernel.
+		 This rule monitors and ungraceful connection drops in these pfeman connections.
+### Rule name: check-krt-state 
+
+
+		> Rule file name: krtasync.rule
+
+
+
+
+		> Detals:
+### Rule name: check-dead-ifstate-client 
+
+
+		> Rule file name: check-dead-ifstate-client.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any dead ifstate clients not cleaned up in the
+		 system for the last 20 minutes.
+		 By default, it checks if all the samples collected every 1 minute are
+		 non-zero for contiguous 20 minutes.
+### Rule name: check-stuck-ifstate-clients 
+
+
+		> Rule file name: check-stuck-ifstate-clients.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+
+			> Supported platforms: [ EX9200 EX9251 EX9253 ];
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 VMX ];
+			> Supported platforms: PTX-Series-All;
+
+		> Supported healthbot version: 2.1.0
+		> Detals:
+		 This rule checks if there are any stuck ifstate clients present in the system.
+		 A stuck Ifstate client can cause resource release issues and eventually lead to
+		 Kernel to veto incoming routing socket messages from applications, which further
+		 can result in traffic loss. Though very rare, if this happens, it is a serious
+		 condition and should be mitigated asap by restarting the client. See readme
+		 in healthbot rules folder for details.

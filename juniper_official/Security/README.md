@@ -1,6 +1,6 @@
-# HealthBot Security KPI rules and playbooks
+# HealthBot EVPN KPI rules and playbooks
 
-## Security playbooks
+## EVPN VXLAN playbooks
 ### Playbook name: security-kpis-playbook 
 		> Description: "This playbook monitors variexec, secure boot and dev keys periodically and notifies anomalies" 
 		> Synopsis: "Junos security checker"
@@ -14,27 +14,21 @@
 		
 		 3) Rule heck-secureboot-status, checks that secure boot is running and enforced
 
-## Security rules
+## EVPN VXLAN rules
 
-### Rule name: get-dev-key-status 
-		> Description: "Determines if development keys have been revoked"
-		> Synopsis: "State of development keys"
-		> Rule file name: get-dev-key-state.rule
+### Rule name: check-idp-memory-counter-netconf 
+		> Description: "Check idp memory counters of SRX cluster"
+		> Synopsis: "IDP memory counters analyzer"
+		> Rule file name: check-idp-memory-counter-netconf.rule
 
-		> Supported products: MX 
-		> Supported products: NFX 
-		> Supported products: PTX 
-		> Supported products: QFX 
 		> Supported products: SRX 
 
-
-		> Supported healthbot version: 1.0.1
+			> Supported platforms: All-standalone-and-cluster-models;
+		> Helper files: [ SecurityIDPCountersMemory.yml SecurityIDPCountersMemoryHA.yml SecurityIDPCountersMemorySA.yml ];
+		> Supported healthbot version: 2.1.1
 		> Detals:
-		 This rule checks if development keys have been left on the system.
-		
-		 If development keys were present, this rule will report the results
-		 of the attempted revocation as Successful or a Failure.
-		 This rule relies on a file present in 19.3R1 and further.
+		 Monitors idp memory counters and notifies anomalies when error count
+		 increases.
 ### Rule name: check-flow-session-summary-netconf 
 		> Description: "Monitors and notify flow session details"
 		> Synopsis: "Flow session summary statistics analyzer"
@@ -56,20 +50,83 @@
 		      to report an anomaly. By default, it's 80000000. This rule will set a
 		      dashboard color to red when active sessions for a PIC slot is greater
 		      than this value.
-### Rule name: check-veriexec-status 
+### Rule name: check-alarm-status-netconf 
+		> Description: "Collects system alarm details periodically and notifies anomalies when alarms found in SRX cluster"
+		> Synopsis: "System alarm analyzer"
+		> Rule file name: check-alarm-status-netconf.rule
 
-		> Synopsis: "Checks for the veriexec status via OC sensor"
-		> Rule file name: check-veriexec-status.rule
+		> Supported products: SRX 
 
-
-
-
+			> Supported platforms: All-standalone-and-cluster-models;
+		> Helper files: [ SystemAlarmStatus.yml SystemAlarmStatusHA.yml SystemAlarmStatusSA.yml ];
+		> Supported healthbot version: 2.1.1
 		> Detals:
-		 This rule detects the status of veriexec in the system and detects the
-		 anomalies based on if veriexec is loaded and enforced or not.
-		 IMPORTANT: If telemetry is being done in plain text, veriexec state will
-		 be visible over the network and can be a security risk. Hence prefer the
-		 iagent rule below, unless the telemetry channel is secured.
+		 Detects system security alarms and notifies
+		 One input control detection.
+		
+		 1) "input-alarm-description" is used to filter the based on the alarm
+		    description
+### Rule name: get-dev-key-status 
+		> Description: "Determines if development keys have been revoked"
+		> Synopsis: "State of development keys"
+		> Rule file name: get-dev-key-state.rule
+
+		> Supported products: MX 
+		> Supported products: NFX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: SRX 
+
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 This rule checks if development keys have been left on the system.
+		
+		 If development keys were present, this rule will report the results
+		 of the attempted revocation as Successful or a Failure.
+		 This rule relies on a file present in 19.3R1 and further.
+### Rule name: check-idp-memory-utilization-netconf 
+		> Description: "Used for to check the memory utilization of IDP data plane"
+		> Synopsis: "IDP data plane memory utilization"
+		> Rule file name: check-idp-memory-utilization-netconf.rule
+
+		> Supported products: SRX 
+
+			> Supported platforms: All-standalone-and-cluster-models;
+		> Helper files: [ SecurityIdpMemoryUsage.yml SecurityIdpMemoryUsageHighendSA.yml SecurityIdpMemoryUsageMidrangeSA.yml SecurityIdpMemoryUsageHighendHA.yml SecurityIdpMemoryUsageMidrangeHA.yml ];
+		> Supported healthbot version: 2.1.1
+		> Detals:
+		 Monitors IDP memory and notifies anomalies when memory utilization exceeds
+		 threshold.
+		 Two input control detection.
+		
+		  1) "max-threshold" variable, is the threshold that causes the rule to report
+		  an anomaly.By default it's 80. This rule will set a dashboard color to red
+		  when *all* the idp-data plane memory utilisation are greater than
+		  'max-threshold'.
+		   2) "min-threshold" variable, is the threshold that causes the rule to report
+		   an anomaly.By default it's 60.This rule will set a dashboard color to
+		   yellow when *all* the idp-data plane memory utilisation are greater than
+		   'min-threshold'.If it is less than min-threshold it is set to green.
+		
+### Rule name: check-spu-performance-srx-cluster-netconf 
+		> Description: "Collects SPU performance for each PIC and notifies in case of stats are above threshold"
+		> Synopsis: "FPC SPU performance analyzer"
+		> Rule file name: srx-cluster-performance-spu-netconf.rule
+
+		> Supported products: SRX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 Detects linecards SPU utilization percentage in SRX cluster device and notifies when
+		 anomalies are found.
+		
+		   1) "spu-cpu-threshold" is the threshold that causes the rule to report
+		      an anomaly. By default, it's 80% of CPU utilization. This rule will set
+		      a dashboard color to red when SPU utilization exceed high threshold
+		
 ### Rule name: check-cpu-memory-utilization-netconf 
 		> Description: "SPU cpu and memory utilization of SRX cluster"
 		> Synopsis: "SPU cpu and memory analyzer"
@@ -94,24 +151,6 @@
 		   when *all* the memory or cpu utilisation are greater than
 		   'min-threshold'.If it is less than min-threshold it is set to green.
 		
-### Rule name: check-spu-performance-netconf 
-		> Description: "Collects SPU performance for each PIC and notifies in case of stats are above threshold"
-		> Synopsis: "FPC SPU performance analyzer"
-		> Rule file name: srx-performance-spu-netconf.rule
-
-		> Supported products: SRX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 1.0.1
-		> Detals:
-		 Detects linecards SPU utilization percentage and notifies when
-		 anomalies are found.
-		
-		   1) "spu-cpu-threshold" is the threshold that causes the rule to report
-		      an anomaly. By default, it's 80% of CPU utilization. This rule will set
-		      a dashboard color to red when SPU utilization exceed high threshold
-		
 ### Rule name: check-appid-asc-cache-status-netconf 
 		> Description: "To check the status of application system cache on SRX cluster"
 		> Synopsis: "Check for application system cache status"
@@ -124,53 +163,6 @@
 		> Supported healthbot version: 2.1.1
 		> Detals:
 		 Monitors application system cache and notifies anomalies
-		
-### Rule name: check-idp-memory-counter-netconf 
-		> Description: "Check idp memory counters of SRX cluster"
-		> Synopsis: "IDP memory counters analyzer"
-		> Rule file name: check-idp-memory-counter-netconf.rule
-
-		> Supported products: SRX 
-
-			> Supported platforms: All-standalone-and-cluster-models;
-		> Helper files: [ SecurityIDPCountersMemory.yml SecurityIDPCountersMemoryHA.yml SecurityIDPCountersMemorySA.yml ];
-		> Supported healthbot version: 2.1.1
-		> Detals:
-		 Monitors idp memory counters and notifies anomalies when error count
-		 increases.
-### Rule name: check-alarm-status-netconf 
-		> Description: "Collects system alarm details periodically and notifies anomalies when alarms found in SRX cluster"
-		> Synopsis: "System alarm analyzer"
-		> Rule file name: check-alarm-status-netconf.rule
-
-		> Supported products: SRX 
-
-			> Supported platforms: All-standalone-and-cluster-models;
-		> Helper files: [ SystemAlarmStatus.yml SystemAlarmStatusHA.yml SystemAlarmStatusSA.yml ];
-		> Supported healthbot version: 2.1.1
-		> Detals:
-		 Detects system security alarms and notifies
-		 One input control detection.
-		
-		 1) "input-alarm-description" is used to filter the based on the alarm
-		    description
-### Rule name: check-spu-performance-srx-cluster-netconf 
-		> Description: "Collects SPU performance for each PIC and notifies in case of stats are above threshold"
-		> Synopsis: "FPC SPU performance analyzer"
-		> Rule file name: srx-cluster-performance-spu-netconf.rule
-
-		> Supported products: SRX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 1.0.1
-		> Detals:
-		 Detects linecards SPU utilization percentage in SRX cluster device and notifies when
-		 anomalies are found.
-		
-		   1) "spu-cpu-threshold" is the threshold that causes the rule to report
-		      an anomaly. By default, it's 80% of CPU utilization. This rule will set
-		      a dashboard color to red when SPU utilization exceed high threshold
 		
 ### Rule name: check-secureboot-status 
 		> Description: "Checks that secure boot is running and enforced"
@@ -200,30 +192,20 @@
 		 If this rule is run on a device that is incapable of secure boot,
 		 the result will be "secureboot status is unknonw" and the rule should be
 		 removed.
-### Rule name: check-idp-memory-utilization-netconf 
-		> Description: "Used for to check the memory utilization of IDP data plane"
-		> Synopsis: "IDP data plane memory utilization"
-		> Rule file name: check-idp-memory-utilization-netconf.rule
+### Rule name: check-veriexec-status 
 
-		> Supported products: SRX 
+		> Synopsis: "Checks for the veriexec status via OC sensor"
+		> Rule file name: check-veriexec-status.rule
 
-			> Supported platforms: All-standalone-and-cluster-models;
-		> Helper files: [ SecurityIdpMemoryUsage.yml SecurityIdpMemoryUsageHighendSA.yml SecurityIdpMemoryUsageMidrangeSA.yml SecurityIdpMemoryUsageHighendHA.yml SecurityIdpMemoryUsageMidrangeHA.yml ];
-		> Supported healthbot version: 2.1.1
+
+
+
 		> Detals:
-		 Monitors IDP memory and notifies anomalies when memory utilization exceeds
-		 threshold.
-		 Two input control detection.
-		
-		  1) "max-threshold" variable, is the threshold that causes the rule to report
-		  an anomaly.By default it's 80. This rule will set a dashboard color to red
-		  when *all* the idp-data plane memory utilisation are greater than
-		  'max-threshold'.
-		   2) "min-threshold" variable, is the threshold that causes the rule to report
-		   an anomaly.By default it's 60.This rule will set a dashboard color to
-		   yellow when *all* the idp-data plane memory utilisation are greater than
-		   'min-threshold'.If it is less than min-threshold it is set to green.
-		
+		 This rule detects the status of veriexec in the system and detects the
+		 anomalies based on if veriexec is loaded and enforced or not.
+		 IMPORTANT: If telemetry is being done in plain text, veriexec state will
+		 be visible over the network and can be a security risk. Hence prefer the
+		 iagent rule below, unless the telemetry channel is secured.
 ### Rule name: check-veriexec-status-iagent 
 
 
@@ -236,3 +218,21 @@
 		 This rule detects the status of veriexec in the system and detects the
 		 anomalies based on if veriexec is loaded and enforced or not.
 		 It's recommended to have always veriexec enabled and loaded.
+### Rule name: check-spu-performance-netconf 
+		> Description: "Collects SPU performance for each PIC and notifies in case of stats are above threshold"
+		> Synopsis: "FPC SPU performance analyzer"
+		> Rule file name: srx-performance-spu-netconf.rule
+
+		> Supported products: SRX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 Detects linecards SPU utilization percentage and notifies when
+		 anomalies are found.
+		
+		   1) "spu-cpu-threshold" is the threshold that causes the rule to report
+		      an anomaly. By default, it's 80% of CPU utilization. This rule will set
+		      a dashboard color to red when SPU utilization exceed high threshold
+		
