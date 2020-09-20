@@ -1,0 +1,100 @@
+healthbot {
+    topic chassis.statistics {
+        rule check-nexus-temperature {
+            keys [ module sensor ];
+            synopsis "Chassis environment analyzer";
+            description "Monitors the chassis temperatures of chassis";
+            sensor environment {
+                iAgent {
+                    file CiscoNexusEnvironmentTemperatureTable.yml;
+                    table CiscoNexusEnvironmentTemperatureTable;
+                    frequency 60s;
+                }
+            }
+            field major-threshold {
+                sensor environment {
+                    path major-threshold;
+                }
+                type integer;
+                description "Temperature high threshold";
+            }
+            field minor-threshold {
+                sensor environment {
+                    path minor-threshold;
+                }
+                type integer;
+                description "Temperature low threshold";
+            }
+            field module {
+                sensor environment {
+                    path MODULE;
+                }
+                type string;
+                description "Temperature module name";
+            }
+            field sensor {
+                sensor environment {
+                    path SENSOR;
+                }
+                type string;
+                description "Temperature satus";
+            }
+            field status {
+                sensor environment {
+                    path status;
+                }
+                type string;
+                description "Temperature status";
+            }
+            field temperature {
+                sensor environment {
+                    path temperature;
+                }
+                type integer;
+                description "Chassis temperature";
+            }
+            trigger chassis-temperature {
+                frequency 60s;
+                term is-above-major-threshold {
+                    when {
+                        greater-than-or-equal-to "$temperature" "$major-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Chassis temperature($temperature) is above major threshold and status is $status";
+                        }
+                    }
+                }
+                term is-above-minor-threshold {
+                    when {
+                        greater-than-or-equal-to "$temperature" "$minor-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis temperature($temperature) is above minor threshold and status is $status";
+                        }
+                    }
+                }
+                term temperature-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Chassis temperature($temperature) is normal and status is $status";
+                        }
+                    }
+                }               
+            }
+            rule-properties {
+                    supported-devices {
+                        other-vendor cisco {
+                            vendor-name cisco;
+                            operating-system nexus;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,117 @@
+healthbot {
+    topic linux.docker.statistics {
+        rule check-docker-cpu-mem {
+            keys [ container_id container_name ];
+            sensor docker {
+                iAgent {
+                    file DockerStatsTable.yml;
+                    table DockerStatsTable;
+                    frequency 5m;
+                }
+            }
+            field container_id {
+                sensor docker {
+                    path container_id;
+                }
+                type string;
+            }
+            field container_name {
+                sensor docker {
+                    path container_name;
+                }
+                type string;
+            }
+            field cpu_percent {
+                sensor docker {
+                    path cpu_percent;
+                }
+                type float;
+            }
+            field mem-thershold {
+                constant {
+                    value "{{mem-thershold}}";
+                }
+                type float;
+            }
+            field mem_limit {
+                sensor docker {
+                    path mem_limit;
+                }
+                type string;
+            }
+            field mem_percent {
+                sensor docker {
+                    path mem_percent;
+                }
+                type float;
+            }
+            field mem_usage {
+                sensor docker {
+                    path mem_usage;
+                }
+                type string;
+            }
+            trigger docker-cpu-stats {
+                frequency 5m;
+                term is-cpu-util-increasing {
+                    when {
+                        greater-than-or-equal-to "$cpu_percent" 75 {
+                            time-range 15m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$container_name CPU utilization is $cpu_percent";
+                        }
+                    }
+                }
+                term cpu-util-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$container_name CPU utilization is $cpu_percent";
+                        }
+                    }
+                }
+            }
+            trigger docker-mem-stats {
+                frequency 5m;
+                term Term_1 {
+                    when {
+                        min-rate-of-increase "$mem_percent" { ## Warning: 'min-rate-of-increase' is deprecated
+                            rate "$mem-thershold";
+                            time-range 15m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$container_name MEMORY utilization is $mem_percent; $mem_limit; $mem_usage";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "$container_name MEMORY utilization is $mem_percent; $mem_limit; $mem_usage";
+                        }
+                    }
+                }
+            }
+            variable mem-thershold {
+                value 0.1;
+                type float;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }
+        }
+    }
+}
