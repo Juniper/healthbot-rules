@@ -1,0 +1,222 @@
+/*
+* Monitors interface link status and also detects interface errors and 
+* notifies when anomalies are found.
+* 
+* Two input control detection
+*
+* 1) input-interface, is a regular expression that matches the
+*  interfaces that you would like to monitor. By default it '.*',
+*  which matches all interfaces. Use something like 'ge.*' to
+*  match only gigabit ethernet interfaces.
+*
+* 2) error-threshold, is the threshold that causes the rule to report
+*  an anomaly.  By default it's 1. This rule will set a dashboard
+*  color to red when *all* the error increases are greater than
+*  'errors-threshold' for 9m. If it sees any errors increase for a
+*  period of less than 9m, it'll turn the color to yellow,
+*  otherwise color is set to green.
+*/
+healthbot {
+    topic interface.statistics {
+        rule check-nexus-interface-stats {
+            keys interface-name;
+            synopsis "Interface statistics analyzer";
+            description "Monitors and notify interface statistics i.e. link state, input errors and  output errors";
+            sensor interface {
+                iAgent {
+                    file NexusInterfaceTable.yml;
+                    table NexusInterfaceTable;
+                    frequency 3m;
+                }
+            }
+            field admin-status {
+                sensor interface {
+                    path admin-status;
+                }
+                type string;
+                description "Interface admin status";
+            }
+            field error-threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "Interface error threshold";
+            }
+            field in-errors {
+                sensor interface {
+                    path in-errors;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface input errors";
+            }
+            field in-packets {
+                sensor interface {
+                    path in-packets;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface input packets";
+            }
+            field interface-name {
+                sensor interface {
+                    where "admin-status =~ /up/";
+                    where "interface-name =~ /{{input-interface}}/";
+                    path interface-name;
+                }
+                type string;
+                description "Interface name";
+            }
+            field link-status {
+                sensor interface {
+                    path link-status;
+                }
+                type string;
+                description "Interface link status";
+            }
+            field out-errors {
+                sensor interface {
+                    path out-errors;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface output errors";
+            }
+            field out-packets {
+                sensor interface {
+                    path out-packets;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Interface output packets";
+            }
+            trigger in-errors {
+                frequency 1o;
+                term is-error-count-increasing {
+                    when {
+                        increasing-at-least-by-value "$in-errors" {
+                            value "$error-threshold";
+                            time-range 3o;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "In-error count $in-errors continuously increasing on $interface-name";
+                        }
+                    }
+                }
+                term is-error-count-intermittent {
+                    when {
+                        increasing-at-least-by-value "$in-errors" {
+                            value "$error-threshold";
+                            time-range 3m;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "In-error count $in-errors is intermittent on $interface-name";
+                        }
+                    }
+                }
+                term no-errors {
+                    then {
+                        status {
+                            color green;
+                            message "In-error count $in-errors is normal on $interface-name";
+                        }
+                    }
+                }
+            }
+            trigger interface-status {
+                frequency 1o;
+                term is-interface-up {
+                    when {
+                        matches-with "$link-status" up;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name link status is $link-status";
+                        }
+                    }
+                }
+                term interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name link status is $link-status";
+                        }
+                    }
+                }
+            }
+            trigger out-errors {
+                frequency 1o;
+                term is-error-count-increasing {
+                    when {
+                        increasing-at-least-by-value "$out-errors" {
+                            value "$error-threshold";
+                            time-range 3o;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Out-error count $out-errors continuously increasing on $interface-name";
+                        }
+                    }
+                }
+                term is-error-count-intermittent {
+                    when {
+                        increasing-at-least-by-value "$out-errors" {
+                            value "$error-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Out-error count $out-errors is intermittent on $interface-name";
+                        }
+                    }
+                }
+                term no-errors {
+                    then {
+                        status {
+                            color green;
+                            message "Out-error count $out-errors is normal on $interface-name";
+                        }
+                    }
+                }
+            }
+            variable error-threshold {
+                value 1;
+                description "Static error threshold value for input and output errors";
+                type int;
+            }
+            variable input-interface {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            rule-properties {
+                    supported-devices {
+                        other-vendor cisco {
+                            vendor-name cisco;
+                            operating-system nexus;
+                    }
+                }
+            }
+        }
+    }
+}

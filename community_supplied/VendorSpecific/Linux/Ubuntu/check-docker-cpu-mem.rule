@@ -1,5 +1,14 @@
+/*
+ * Monitors docker container's CPU and memory and notifies when anomalies are 
+ * found.
+ * One input control detection
+ * 
+ *   1) Threshold, is the threshold value for CPU and memory utilization takes  
+ *   as input and pass to the rule to report an anomaly. By default value is 80
+ *
+ */
 healthbot {
-    topic linux.docker.statistics {
+    topic linux.stastics {
         rule check-docker-cpu-mem {
             keys [ container_id container_name ];
             sensor docker {
@@ -20,6 +29,13 @@ healthbot {
                     path container_name;
                 }
                 type string;
+            }
+            field cpu-threshold {
+                constant {
+                    value "{{cpu-threshold}}";
+                }
+                type float;
+                description "Docker CPU static threshold";
             }
             field cpu_percent {
                 sensor docker {
@@ -52,11 +68,11 @@ healthbot {
                 type string;
             }
             trigger docker-cpu-stats {
-                frequency 5m;
+                frequency 1o;
                 term is-cpu-util-increasing {
                     when {
-                        greater-than-or-equal-to "$cpu_percent" 75 {
-                            time-range 15m;
+                        greater-than-or-equal-to "$cpu_percent" "$cpu-threshold" {
+                            time-range 3o;
                         }
                     }
                     then {
@@ -76,12 +92,12 @@ healthbot {
                 }
             }
             trigger docker-mem-stats {
-                frequency 5m;
-                term Term_1 {
+                frequency 1o;
+                term is-mem-util-increasing-continously {
                     when {
                         min-rate-of-increase "$mem_percent" { ## Warning: 'min-rate-of-increase' is deprecated
                             rate "$mem-thershold";
-                            time-range 15m;
+                            time-range 3o;
                         }
                     }
                     then {
@@ -91,7 +107,7 @@ healthbot {
                         }
                     }
                 }
-                term Term_2 {
+                term mem-util-normal {
                     then {
                         status {
                             color green;
@@ -100,8 +116,14 @@ healthbot {
                     }
                 }
             }
+            variable cpu-threshold {
+                value 80.00;
+                description "Static threshold value in percentage for cpu utilisation";
+                type float;
+            }
             variable mem-thershold {
                 value 0.1;
+                description "Static incremental memory utilisation threshold";
                 type float;
             }
             rule-properties {

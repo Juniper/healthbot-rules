@@ -1,3 +1,6 @@
+/*
+ * Monitors chassis fan health status and notifies when anomalies are found.
+ */
 healthbot {
     topic chassis.statistics {
         rule check-nexus-fan {
@@ -8,7 +11,7 @@ healthbot {
                 iAgent {
                     file CiscoNexusEnvironmentFanTable.yml;
                     table CiscoNexusEnvironmentFanTable;
-                    frequency 60s;
+                    frequency 3m;
                 }
             }
             field fan-name {
@@ -26,7 +29,7 @@ healthbot {
                 description "Fan running status";
             }
             trigger fan-status {
-                frequency 60s;
+                frequency 1o;
                 term is-fan-ok {
                     when {
                         matches-with "$fan-status" Ok;

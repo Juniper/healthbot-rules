@@ -1,3 +1,7 @@
+/*
+ * Detects chassis temperature threshold breaches and notifies when anomalies
+ * are found.
+ */
 healthbot {
     topic chassis.statistics {
         rule check-nexus-temperature {
@@ -8,7 +12,7 @@ healthbot {
                 iAgent {
                     file CiscoNexusEnvironmentTemperatureTable.yml;
                     table CiscoNexusEnvironmentTemperatureTable;
-                    frequency 60s;
+                    frequency 3m;
                 }
             }
             field major-threshold {
@@ -54,7 +58,7 @@ healthbot {
                 description "Chassis temperature";
             }
             trigger chassis-temperature {
-                frequency 60s;
+                frequency 1o;
                 term is-above-major-threshold {
                     when {
                         greater-than-or-equal-to "$temperature" "$major-threshold";
@@ -84,7 +88,7 @@ healthbot {
                             message "Chassis temperature($temperature) is normal and status is $status";
                         }
                     }
-                }               
+                }
             }
             rule-properties {
                     supported-devices {
