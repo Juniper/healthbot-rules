@@ -85,9 +85,9 @@ healthbot {
                 type float;
                 description "Used percentage of that queue.";
             }
-            field queue_depth_dynamic_threshold {
+            field queue_depth_anomaly_detection {
                 formula {
-                    dynamic-threshold { ## Warning: 'dynamic-threshold' is deprecated
+                    anomaly-detection {
                         algorithm 3sigma;
                         learning-period 7d;
                         pattern-periodicity 1h;
@@ -95,7 +95,7 @@ healthbot {
                     }
                 }
                 type integer;
-                description "Dynamic threshold...";
+                description "anomaly-detection...";
             }
             field queue_number {
                 sensor queuedepth {
@@ -132,12 +132,12 @@ healthbot {
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification when
-                 * the queue depth dynamic threshold is abnormal.
+                 * the queue depth anomaly detection is abnormal.
                  * 
                  */
                 term abnormal_dt {
                     when {
-                        equal-to "$queue_depth_dynamic_threshold" 1;
+                        equal-to "$queue_depth_anomaly_detection" 1;
                     }
                     then {
                         status {
