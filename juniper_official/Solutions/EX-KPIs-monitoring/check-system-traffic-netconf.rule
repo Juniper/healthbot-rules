@@ -6,7 +6,7 @@
 * an anomaly. By default input and ouput traffic difference threshold is set
 * as 15. This rule will set a dashboard color to red when the traffic difference
 * exceeds threshold for a period of 5 minutes, sets the color to yellow when
-* traffic-diff-dynamic-threshold is equal to 1 for a period of 5 minutes.
+* traffic-diff-anomaly-detection is equal to 1 for a period of 5 minutes.
 * Otherwise color is set to green.
 */
 healthbot {
@@ -20,7 +20,7 @@ healthbot {
              * Monitors system traffic statistics. Notifies via the dashboard
              * colors when the traffic difference exceeds {{traffic-diff-threshold}}
              * for a 5m time range (red). The color is set to yellow if
-             * “$traffic-diff-dynamic-threshold” is equal to 1 for a 5m
+             * “$traffic-diff-anomaly-detection” is equal to 1 for a 5m
              * time range. Otherwise the color is set to green.
              */
             function traffic_diff {
@@ -87,9 +87,9 @@ healthbot {
             /*
              * Fields defined using formulae by user-defined function
              */
-            field traffic-diff-dynamic-threshold {
+            field traffic-diff-anomaly-detection {
                 formula {
-                    dynamic-threshold { ## Warning: 'dynamic-threshold' is deprecated
+                    anomaly-detection {
                         algorithm k-means;
                         learning-period 7d;
                         pattern-periodicity 1h;
@@ -136,12 +136,12 @@ healthbot {
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification when
-                 * dynamic threshold ($traffic-diff-dynamic-threshold) is equal to 1
+                 * dynamic threshold ($traffic-diff-anomaly-detection) is equal to 1
                  * in a 5 minute period.
                  */
                 term traffic-mismatch-dynamic {
                     when {
-                        equal-to "$traffic-diff-dynamic-threshold" 1 {
+                        equal-to "$traffic-diff-anomaly-detection" 1 {
                             time-range 5m;
                         }
                     }
