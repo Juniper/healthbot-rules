@@ -15,6 +15,48 @@ healthbot {
                     frequency 60s;
                 }
             }
+            field adj-down {
+                sensor ithrottle-id {
+                    path AdjDown;
+                }
+                type integer;
+            }
+            field adj-up {
+                sensor ithrottle-id {
+                    path AdjUp;
+                }
+                type integer;
+            }
+            field check {
+                sensor ithrottle-id {
+                    path Checks;
+                }
+                type integer;
+            }
+            field disable {
+                sensor ithrottle-id {
+                    path Disables;
+                }
+                type integer;
+            }
+            field enable {
+                sensor ithrottle-id {
+                    path Enables;
+                }
+                type integer;
+            }
+            field start {
+                sensor ithrottle-id {
+                    path Starts;
+                }
+                type integer;
+            }
+            field stop {
+                sensor ithrottle-id {
+                    path Stops;
+                }
+                type integer;
+            }
             field ithrottle-higher-rate-threshold {
                 constant {
                     value "{{fpc-ithrottle-higher-rate}}";
@@ -33,15 +75,15 @@ healthbot {
                 frequency 60s;
                 term is-adjacency-down-increasing {
                     when {
-                        min-rate-of-increase "$AdjDown" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-higher-rate-threshold";
+                        increasing-at-least-by-value "$adj-down" {
+                            value "$ithrottle-higher-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Adjaceny down ($AdjDown) increasing rapidly";
+                            message "Adjacency down ($adj-down) increasing rapidly";
                         }
                     }
                 }
@@ -59,15 +101,15 @@ healthbot {
                 frequency 60s;
                 term is-adjacency-up-increasing {
                     when {
-                        min-rate-of-increase "$AdjUp" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-higher-rate-threshold";
+                        increasing-at-least-by-value "$adj-up" {
+                            value "$ithrottle-higher-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Adjaceny up ($AdjUp) increasing rapidly";
+                            message "Adjacency up ($adj-up) increasing rapidly";
                         }
                     }
                 }
@@ -85,15 +127,15 @@ healthbot {
                 frequency 60s;
                 term are-checks-increasing {
                     when {
-                        min-rate-of-increase "$Checks" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-lower-rate-threshold";
+                        increasing-at-least-by-value "$check" {
+                            value "$ithrottle-lower-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Checks ($Checks) increasing";
+                            message "Checks ($check) increasing";
                         }
                     }
                 }
@@ -111,15 +153,15 @@ healthbot {
                 frequency 60s;
                 term are-disables-increasing {
                     when {
-                        min-rate-of-increase "$Disables" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-higher-rate-threshold";
+                        increasing-at-least-by-value "$disable" {
+                            value "$ithrottle-higher-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Disables ($Disables) increasing rapidly";
+                            message "Disables ($disable) increasing rapidly";
                         }
                     }
                 }
@@ -137,15 +179,15 @@ healthbot {
                 frequency 60s;
                 term are-enables-increasing {
                     when {
-                        min-rate-of-increase "$Enables" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-higher-rate-threshold";
+                        increasing-at-least-by-value "$enable" {
+                            value "$ithrottle-higher-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Enables ($Enables) increasing rapidly";
+                            message "Enables ($enable) increasing rapidly";
                         }
                     }
                 }
@@ -163,15 +205,15 @@ healthbot {
                 frequency 60s;
                 term are-starts-increasing {
                     when {
-                        min-rate-of-increase "$Starts" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-lower-rate-threshold";
+                        increasing-at-least-by-value "$start" {
+                            value "$ithrottle-lower-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Starts ($Starts) increasing";
+                            message "Starts ($start) increasing";
                         }
                     }
                 }
@@ -189,15 +231,15 @@ healthbot {
                 frequency 60s;
                 term are-stops-increasing {
                     when {
-                        min-rate-of-increase "$Stops" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$ithrottle-lower-rate-threshold";
+                        increasing-at-least-by-value "$stop" {
+                            value "$ithrottle-lower-rate-threshold";
                             time-range 300s;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Stops ($Stops) increasing";
+                            message "Stops ($stop) increasing";
                         }
                     }
                 }
