@@ -1,0 +1,125 @@
+/*
+ * Detects system storage utilization threshold breaches and notifies when
+ * anomalies are found.
+ */
+healthbot {
+    topic system.storage {
+        rule check-paloalto-storage {
+            keys [ file_system mounted ];
+            synopsis "system storage usage analyzer";
+            description "Collects filesystem storage usage periodically and notifies anomalies when used space exceed threshold";
+            sensor storage {
+                iAgent {
+                    file PaloaltoSysytemDiskspace.yml;
+                    table PaloaltoSysytemDiskspaceTable;
+                    frequency 60s;
+                }
+            }
+            field available {
+                sensor storage {
+                    path available;
+                }
+                type string;
+                description "Available disk space";
+            }
+            field file_system {
+                sensor storage {
+                    path file_system;
+                }
+                type string;
+                description "File system name";
+            }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold}}";
+                }
+                type integer;
+                description "Storage high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold}}";
+                }
+                type integer;
+                description "Storage low threshold";
+            }
+            field mounted {
+                sensor storage {
+                    where "mounted =~ /{{mount-path}}/";
+                    path mounted;
+                }
+                type string;
+                description "Mount path name";
+            }
+            field size {
+                sensor storage {
+                    path size;
+                }
+                type string;
+                description "Storage size";
+            }
+            field used {
+                sensor storage {
+                    path used;
+                }
+                type string;
+                description "Storage used value";
+            }
+            field used_percent {
+                sensor storage {
+                    path used_percent;
+                }
+                type integer;
+                description "Storage used percentage";
+            }
+            trigger file-system-storage-utilization {
+                frequency 1o;
+                term is-system-storage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used_percent" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Mount path \"$mounted\" utilization($used_percent% and $used) is above high threshold";
+                        }
+                    }
+                }
+                term system-storage-normal {
+                    when {
+                        less-than "$used_percent" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Mount path \"$mounted\" utilization($used_percent% and $used) is normal";
+                        }
+                    }
+                }
+                term is-system-storage-middle-range {
+                    then {
+                        status {
+                            color yellow;
+                            message "Mount path \"$mounted\" utilization($used_percent% and $used) is above low threshold";
+                        }
+                    }
+                }
+            }
+            variable high-threshold {
+                value 80;
+                description "Filesystem storage high threshold: exceed used % threshold, before we report anomaly";
+                type int;
+            }
+            variable low-threshold {
+                value 50;
+                description "Filesystem storage low threshold: exceed used % threshold, before we report anomaly";
+                type int;
+            }
+            variable mount-path {
+                value .*;
+                description "Input mount path to be monitored in regex. e.g /dev incase specific paths to be monitored. Default monitors all mount path's storage.";
+                type string;
+            }
+        }
+    }
+}
