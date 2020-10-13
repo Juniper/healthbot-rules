@@ -1,0 +1,314 @@
+/*
+ * Detects Panos processes (daemons) CPU and memory utilization threshold breaches and
+ * notifies when anomalies are found.
+ * Three inputs control detection
+ * 
+ *   1) process-name-input, is a regular expression that matches the daemons that you
+ *      would like to monitor. By default it's '.*', which matches all daemons.
+ *      Use something like 'rpd|dfwd|dcd' to match only rotuing, firewall and
+ *      interface daemons.
+ * 
+ *   2) process-high-threshold, is the threshold that causes the rule to 
+ *      report an anomaly. By default it's 80% of daemon CPU and Memory utilization. This
+ *      rule will set a dashboard color to red when daemon CPU and Memory utilization
+ *      exceed high threshold 'process-high-threshold' for period of
+ *      3 minutes.
+ * 
+ *   3) process-low-threshold, is the threshold that causes the rule to 
+ *      report an anomaly. By default it's 50% of daemon CPU and Memory utilization. This
+ *      rule will set a dashboard color to yellow when daemon CPU and Memory utilization
+ *      exceed low threshold 'process-low-threshold' for period of
+ *      3 minutes. Otherwise color is set to green.
+ */
+healthbot {
+    topic system.processes {
+        description "Monitors system statistics i.e. CPU, memory, storage, processes & queues and notifies anomalies";
+        synopsis "System statistics analyzer";
+        rule check-paloalto-processes-cpu-memory {
+            description "Collects system process's cpu utilization periodically and notifies anomalies when daemon CPU usage exceed threshold";
+            synopsis "System processes cpu analyzer";
+            /*
+             * Monitors *all* the daemons CPU utilization. Notifies via the
+             * dashboard colors when the daemon CPU utilization exceed by
+             * {{process-cpu-high-threshold}} for every collected metric during
+             * a 3 minute time range (red). The color is set to yellow if we
+             * see daemon CPU utilization exceed {{process-cpu-low-threshold}}
+             * for every collected metric during a 3 min time range. Otherwise 
+             * the color is set to green.
+             * 
+             * Use daemon name and pid as key for rule.
+             */
+            keys [ daemon pid ];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor systemprocexttable {
+                synopsis "System processes CPU iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file PaloaltoSysytemResource.yml;
+                    table PaloaltoSysytemResourceTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field cpu-util {
+                sensor systemprocexttable {
+                    path cpu;
+                }
+                type float;
+                description "Daemon CPU utilization";
+            }
+            field memory-util {
+                sensor systemprocexttable {
+                    path mem;
+                }
+                type float;
+                description "Daemon memory utilization";
+            }
+            field daemon {
+                sensor systemprocexttable {
+                    path cmd;
+                }
+                type string;
+                description "Daemon to be monitored";
+            }
+            field pid {
+                sensor systemprocexttable {
+                    path pid;
+                }
+                type string;
+                description "PID to be monitored";
+            }
+            field process-name {
+                constant {
+                    value "{{process-name-input}}";
+                }
+                type string;
+                description "Selected daemon to be monitored";
+            }
+            /*
+             * Fields defined with variables and constant values.
+             */
+            field max-threshold {
+                constant {
+                    value "{{process-high-threshold}}";
+                }
+                type integer;
+                description "Daemon cpu and memory high threshold";
+            }
+            field min-threshold {
+                constant {
+                    value "{{process-low-threshold}}";
+                }
+                type integer;
+                description "Daemon cpu and memory low threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger processes-cpu-utilization {
+                synopsis "System prcoesses cpu utilization kpi";
+                description "Sets health based on system processes cpu utilization";
+                frequency 60s;
+                /*
+                 * Skips evaluation for unmonitored daemons
+                 */
+                term is-processes-not-found {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when any of the daemon CPU utilization ($cpu-util)
+                 * exceed high threshold ($max-threshold) for all points in a
+                 * 3 minute period.
+                 */
+                term is-cpu-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-util" "$max-threshold" {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon:$pid cpu utilization:($cpu-util), crossed high threshold($max-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when any of the daemon CPU utilization ($cpu-util)
+                 * exceed low threshold ($min-threshold) ffor all points in a
+                 * 3 minute period.
+                 */  
+                term is-cpu-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$cpu-util" "$min-threshold" {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon:$pid cpu utilization:($cpu-util), is in middle range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 
+                term is-cpu-utilization-normal  {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon:$pid cpu utilization:($cpu-util), is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger processes-memory-utilization {
+                synopsis "System prcoesses memory utilization kpi";
+                description "Sets health based on system processes memory utilization";
+                frequency 60s;
+                /*
+                 * Skips evaluation for unmonitored daemons
+                 */
+                term is-processes-not-found {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when any of the daemon memory utilization ($memory-util)
+                 * exceed high threshold ($max-threshold) for all points in a
+                 * 3 minute period.
+                 */
+                term is-memory-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$memory-util" "$max-threshold" {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon:$pid memory utilization:($memory-util), crossed high threshold($max-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when any of the daemon memory utilization ($memory-util)
+                 * exceed low threshold ($min-threshold) ffor all points in a
+                 * 3 minute period.
+                 */  
+                term is-memory-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$memory-util" "$min-threshold" {
+                            time-range 3m;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon:$pid memory utilization:($memory-util), is in middle range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 
+                term is-memory-utilization-normal  {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon:$pid memory utilization:($memory-util), is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable process-high-threshold {
+                value 80;
+                description "Daemon cpu and memory high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable process-low-threshold {
+                value 50;
+                description "Daemon cpu and memory low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable process-name-input {
+                value .*;
+                description "Demon name to monitor, regular regular expression, eg 'rpd|dfwd|dcd'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files system-proc-ext.yml;
+                }
+            }
+        }
+    }
+}
