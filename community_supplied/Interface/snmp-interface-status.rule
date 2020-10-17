@@ -114,14 +114,14 @@ iceberg {
                 type string;
                 description "Interface admin status";
             }
-			field flap-count {
+	    field flap-count {
                 reference {
                     path "/topic[topic-name='interface.statistics']/rule[rule-name=snmp-check-interface-flaps]/field[index='$index']/flaps";
                 }
                 type integer;
-				description "Interface flap count";
+		description "Interface flap count";
             }
-			field flaps-threshold {
+	    field flaps-threshold {
                 constant {
                     value "{{flaps-threshold-variable}}";
                 }
@@ -156,7 +156,7 @@ iceberg {
                 type integer;
                 description "Interface statistics counter (in-octets) value";
             }
-			field index {
+	    field index {
                 sensor interfaces {
                     path ifIndex;
                 }
@@ -165,7 +165,7 @@ iceberg {
             }
             field interface-name {
                 sensor interfaces {
-				    where "ifDescr =~ /{{interface-name-variable}}/"; 
+		    where "ifDescr =~ /{{interface-name-variable}}/"; 
                     path ifDescr;
                 }
                 type string;
@@ -220,16 +220,12 @@ iceberg {
                 type integer;
                 description "Interface statistics counter (out-octets) value";
             }
-			/*
+	    /*
             * Anomaly detection logic for link-flaps.
             */
-			trigger flap-count {
-                frequency 300s;
-				/*
-                * Sets color to red and sends out an anomaly notification when
-                * the interface carrier-transition ($flaps-count) count increases for
-                * all points in a 60 seconds period.
-                *//*
+	    trigger flap-count {
+                frequency 1o;
+                /*
                 * Sets color to red and sends out an anomaly notification when
                 * the interface carrier-transition ($flaps-count) count increases for
                 * all points in a 60 seconds period.
@@ -238,7 +234,7 @@ iceberg {
                     when {
                         increasing-at-least-by-value "$flap-count" {
                             value "$flaps-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }
                     then {
@@ -281,19 +277,19 @@ iceberg {
             * Anomaly detection logic to findout in-errors.
             */
             trigger in-errors {
-        	    synopsis "Interface in-errors kpi";
+        	synopsis "Interface in-errors kpi";
                 description "Sets health based on the change in in-errors count";
                 /*
                 * Sets color to red and sends out an anomaly notification when
                 * interface in errors ($in-errors-count) count increases for 
                 * all points in 600 seconds period.
                 */
-                frequency 300s;
+                frequency 1o;
                 term is-interface-in-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$in-errors-count" {
                             value "$in-errors-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }
                     then {
@@ -344,12 +340,12 @@ iceberg {
                 * abovehigh threshold (in-octets-high-threshold) for all  
                 * points in a 600 seconds period.
                 */                
-                frequency 300s;
+                frequency 1o;
                 term is-interface-in-traffic-abnormal {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
                             value "$high-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }
                     then {
@@ -369,7 +365,7 @@ iceberg {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
                             value "$low-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }
                     then {
@@ -400,7 +396,7 @@ iceberg {
         		/*
                 * Skips evaluation for admin down state interfaces
                 */
-                frequency 300s;
+                frequency 1o;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" 2;
@@ -439,19 +435,19 @@ iceberg {
             * Anomaly detection logic for out-errors.
             */
             trigger out-errors {                    
-     		    synopsis "Interface out-errors kpi";
+     		synopsis "Interface out-errors kpi";
                 description "Sets health based on the change in out-errors count";
                 /*
                 * Sets color to red and sends out an anomaly notification when
                 * the interface out errors ($out-errors-count) count increases
                 * for all points in 600 seconds period.
                 */
-                frequency 300s;
+                frequency 1o;
                 term is-interface-out-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$out-errors-count" {
                             value "$out-errors-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }
                     then {
@@ -494,7 +490,7 @@ iceberg {
             * Anomaly detection logic for out-traffic.
             */
             trigger out-traffic {
-     		    synopsis "Interface output traffic kpi";
+     		synopsis "Interface output traffic kpi";
                 description "Sets health based on output traffic exceed threshold";
      			/*
                 * Sets color to red and sends out an anomaly notification when
@@ -502,12 +498,12 @@ iceberg {
                 * above high threshold (out-octets-high-threshold) for all
                 * points in 600 seconds period.
                 */         
-                frequency 300s;
+                frequency 1o;
                 term is-interface-stats-abnormal {
                     when {
                         increasing-at-least-by-value "$out-octets-high-threshold" {
                             value "$out-octets-high-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }
                     then {
@@ -523,11 +519,11 @@ iceberg {
                 * is above low threshold (out-octets-low-threshold) for all
                 * points in 600 seconds period.
                 */       			
-     		    term is-interface-stats-median {
+     		term is-interface-stats-median {
                     when {
                         increasing-at-least-by-value "$out-octets-stats-value" {
                             value "$out-octets-low-threshold";
-                            time-range 600s;
+                            time-range 2o;
                         }
                     }                               
                     then {
@@ -558,7 +554,7 @@ iceberg {
                 description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
                 type int;
             }
-			variable in-errors-stats-name {
+	    variable in-errors-stats-name {
                 value ifInErrors;
                 description "Error stats counter name in-errors which is cumulative of in-frame-errors, in-resource-errors, in-giants, in-drops, in-discards and mtu-erros";
                 type string;
