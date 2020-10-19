@@ -4,7 +4,7 @@
  */
 healthbot {
     topic system.storage {
-        rule check-paloalto-storage {
+        rule check-paloalto-storage-netconf {
             keys [ file_system mounted ];
             synopsis "system storage usage analyzer";
             description "Collects filesystem storage usage periodically and notifies anomalies when used space exceed threshold";
@@ -119,6 +119,17 @@ healthbot {
                 value .*;
                 description "Input mount path to be monitored in regex. e.g /dev incase specific paths to be monitored. Default monitors all mount path's storage.";
                 type string;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor Paloalto-PanOS {
+                        vendor-name Paloalto;
+                        operating-system PanOS;
+                    }
+                }
+                helper-files other {
+                    list-of-files [ paloalto_panos_show_system_disk-space.textfsm PaloaltoSysytemDiskspace.yml];
+                }
             }
         }
     }
