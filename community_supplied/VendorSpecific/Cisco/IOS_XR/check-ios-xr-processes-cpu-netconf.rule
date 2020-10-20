@@ -1,0 +1,129 @@
+/*
+ * Detects cisco IOS-XR processes(daemons) CPU utilization threshold breaches
+ * and notifies when anomalies are found.
+ */
+healthbot {
+    topic system.processes {
+        rule check-ios-xr-processes-cpu-netconf {
+            keys [ pid process-name ];
+            synopsis "System processes cpu analyzer";
+            description "Collects system process's cpu utilization periodically and notifies anomalies when daemon CPU usage exceed threshold";
+            sensor proc {
+                iAgent {
+                    file XRCpuProcessesTable.yml;
+                    table XRCpuProcessesTable;
+                    frequency 60s;
+                }
+            }
+            field cpu-1-min {
+                sensor proc {
+                    path cpu_1_min;
+                }
+                type float;
+                description "Daemon CPU 1minute utilization";
+            }
+            field cpu-15-min {
+                sensor proc {
+                    path cpu_15_min;
+                }
+                type float;
+                description "Daemon CPU 15 minute utilization";
+            }
+            field cpu-5-min {
+                sensor proc {
+                    path cpu_5_min;
+                }
+                type float;
+                description "Daemon CPU 5minute utilization";
+            }
+            field dt-cpu-15-min {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 1w;
+                        pattern-periodicity 1d;
+                        field-name "$cpu-15-min";
+                    }
+                }
+                type float;
+                description "Dynamic threshold of Daemon CPU 15minute utilization";
+            }
+            field pid {
+                sensor proc {
+                    path PID;
+                }
+                type string;
+                description "PIDs to be monitored";
+            }
+            field process-name {
+                sensor proc {
+                    where "Process =~ /{{input-process}}/";
+                    path Process;
+                }
+                type string;
+                description "Selected daemon to be monitored";
+            }
+            field threshold {
+                constant {
+                    value "((threshold))";
+                }
+                type float;
+                description "Daemon cpu threshold";
+            }
+            trigger check-process-cpu {
+                frequency 1offset;
+                term is-cpu-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-15-min" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PID:$pid, process:$process-name CPU utilization($cpu-5-min) is above static threshold($threshold)";
+                        }
+                    }
+                }
+                term is-cpu-above-dt {
+                    when {
+                        equal-to "$dt-cpu-15-min" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "PID:$pid, process:$process-name  CPU utilization($cpu-5-min) is above dynamic threshold";
+                        }
+                    }
+                }
+                term cpu-normal {
+                    then {
+                        status {
+                            color green;
+                            message "PID:$pid, process:$process-name CPU utilization($cpu-5-min) is normal";
+                        }
+                    }
+                }
+            }
+            variable input-process {
+                value .*;
+                description "Demon name to monitor, regular regular expression";
+                type string;
+            }
+            variable threshold {
+                value 80.00;
+                description "Daemon cpu threshold: Utilization increase between metrics, before we report anomaly";
+                type float;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-system IOS-XR;
+                    }
+                }
+                helper-files other {
+                    list-of-files [ XRCpuProcessesTable.yml cisco_xr_show_processes_cpu.textfsm ];
+                }
+            }
+        }
+    }
+}
