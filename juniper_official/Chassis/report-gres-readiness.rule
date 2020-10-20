@@ -52,7 +52,7 @@ healthbot {
             trigger report-gres-readiness {
                 synopsis "report GRES readiness of a network device";
                 description "Report problems related to GRES readiness";
-                frequency 10m;
+                frequency 1offset;
                 term not-dual-re-term {
                     when {
                         equal-to "$ore-present" 0;
@@ -91,7 +91,7 @@ healthbot {
                         does-not-match-with "$slave-kernel-ready" GRES_READY;
                         increasing-at-least-by-value "$slave-connect-time" {
                             value 1;
-                            time-range 60m;
+                            time-range 6offset;
                             any;
                         }
                     }
@@ -105,7 +105,7 @@ healthbot {
                 term slave-connected-term {
                     when {
                         equal-to "$slave-connect-time" 0 {
-                            time-range 30m;
+                            time-range 3offset;
                             all;
                         }
                     }
@@ -120,7 +120,7 @@ healthbot {
                     when {
                         does-not-match-with "$slave-kernel-ready" GRES_READY;
                         not-equal-to "$slave-connect-time" 0 {
-                            time-range 60m;
+                            time-range 6offset;
                             all;
                         }
                     }
