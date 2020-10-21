@@ -18,7 +18,7 @@
 */
 healthbot {
     topic interface.statistics {
-        rule check-nexus-interface-stats {
+        rule check-nexus-interface-stats-netconf {
             keys interface-name;
             synopsis "Interface statistics analyzer";
             description "Monitors and notify interface statistics i.e. link state, input errors and  output errors";
@@ -100,12 +100,12 @@ healthbot {
                 description "Interface output packets";
             }
             trigger in-errors {
-                frequency 1o;
+                frequency 1offset;
                 term is-error-count-increasing {
                     when {
                         increasing-at-least-by-value "$in-errors" {
                             value "$error-threshold";
-                            time-range 3o;
+                            time-range 3offset;
                         }
                     }
                     then {
@@ -119,7 +119,7 @@ healthbot {
                     when {
                         increasing-at-least-by-value "$in-errors" {
                             value "$error-threshold";
-                            time-range 3m;
+                            time-range 3offset;
                             any;
                         }
                     }
@@ -140,7 +140,7 @@ healthbot {
                 }
             }
             trigger interface-status {
-                frequency 1o;
+                frequency 1offset;
                 term is-interface-up {
                     when {
                         matches-with "$link-status" up;
@@ -215,6 +215,9 @@ healthbot {
                             vendor-name cisco;
                             operating-system nexus;
                     }
+                }
+                helper-files other {
+                    list-of-files CiscoNexusInterfaceTable.yml;
                 }
             }
         }
