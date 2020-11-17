@@ -224,7 +224,7 @@ iceberg {
             * Anomaly detection logic for link-flaps.
             */
 			trigger flap-count {
-                frequency 300s;
+                frequency 1offset;
 				/*
                 * Sets color to red and sends out an anomaly notification when
                 * the interface carrier-transition ($flaps-count) count increases for
@@ -238,7 +238,7 @@ iceberg {
                     when {
                         increasing-at-least-by-value "$flap-count" {
                             value "$flaps-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -288,12 +288,12 @@ iceberg {
                 * interface in errors ($in-errors-count) count increases for 
                 * all points in 600 seconds period.
                 */
-                frequency 300s;
+                frequency 1offset;
                 term is-interface-in-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$in-errors-count" {
                             value "$in-errors-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -344,12 +344,12 @@ iceberg {
                 * abovehigh threshold (in-octets-high-threshold) for all  
                 * points in a 600 seconds period.
                 */                
-                frequency 300s;
+                frequency 1offset;
                 term is-interface-in-traffic-abnormal {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
                             value "$high-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -369,7 +369,7 @@ iceberg {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
                             value "$low-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -400,7 +400,7 @@ iceberg {
         		/*
                 * Skips evaluation for admin down state interfaces
                 */
-                frequency 300s;
+                frequency 1offset;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" 2;
@@ -446,12 +446,12 @@ iceberg {
                 * the interface out errors ($out-errors-count) count increases
                 * for all points in 600 seconds period.
                 */
-                frequency 300s;
+                frequency 1offset;
                 term is-interface-out-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$out-errors-count" {
                             value "$out-errors-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -502,12 +502,12 @@ iceberg {
                 * above high threshold (out-octets-high-threshold) for all
                 * points in 600 seconds period.
                 */         
-                frequency 300s;
+                frequency 1offset;
                 term is-interface-stats-abnormal {
                     when {
                         increasing-at-least-by-value "$out-octets-high-threshold" {
                             value "$out-octets-high-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }
                     then {
@@ -527,7 +527,7 @@ iceberg {
                     when {
                         increasing-at-least-by-value "$out-octets-stats-value" {
                             value "$out-octets-low-threshold";
-                            time-range 600s;
+                            time-range 2offset;
                         }
                     }                               
                     then {
@@ -558,7 +558,7 @@ iceberg {
                 description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
                 type int;
             }
-			variable in-errors-stats-name {
+	    variable in-errors-stats-name {
                 value ifInErrors;
                 description "Error stats counter name in-errors which is cumulative of in-frame-errors, in-resource-errors, in-giants, in-drops, in-discards and mtu-erros";
                 type string;
