@@ -37,14 +37,14 @@ healthbot {
             trigger loopback-address-configuration {
                 synopsis "ipv4 loopback address";
                 description "Sets health based on if ipv4 loopback address is present";
-                frequency 3m;
+                frequency 1offset;
                 /*
                  * Sets color to red when ipv4 address is not present on lo0.
                  */
                 term is-lo0-address-not-configured {
                     when {
                         less-than-or-equal-to "$count-lo0-address" 1 {
-                            time-range 3m;
+                            time-range 1offset;
                         }
                     }
                     then {
@@ -68,7 +68,7 @@ healthbot {
             }
             vector list-lo0-addresses {
                 path "/topic[topic-name=interface.statistics]/rule[rule-name=check-lo0-address-netconf]/lo0-address";
-                time-range 3m;
+                time-range 1offset;
             }
             rule-properties {
                 version 1;
