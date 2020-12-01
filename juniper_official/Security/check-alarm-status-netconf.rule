@@ -111,5 +111,35 @@ healthbot {
                 }
             }
         }
+        rule check-no-alarms {
+            synopsis "Chassis alarms detector";
+            description "Refers rule system.alarm/check-alarm-status-netconf and shows system as healthy if no active alarms";
+            rule-frequency 65s;
+            field alarm-description {
+                reference {
+                    path "/topic[topic-name=system.alarm]/rule[rule-name=check-alarm-status-netconf ]/alarm-description";
+                    data-if-missing {
+                        value No-active-alarms;
+                    }
+                    time-range 65s;
+                }
+                type string;
+                description "Chassis or System alarm description";
+            }
+            trigger chassis-alarms {
+                frequency 65s;
+                term no-active-alarms {
+                    when {
+                        matches-with "$alarm-description" No-active-alarms;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No active alarms";
+                        }
+                    }
+                }
+            }
+        }
     }
 }
