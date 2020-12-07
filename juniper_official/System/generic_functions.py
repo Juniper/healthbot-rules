@@ -27,7 +27,7 @@ def get_version(**kwargs):
 # Get the version of RE0 of the device if present
 def get_version_RE0(**kwargs):
     device_details = get_device_info(**kwargs)
-   with connect_to_device(**device_details) as dev:
+    with connect_to_device(**device_details) as dev:
         return dev.facts['version_RE0']
  
  
