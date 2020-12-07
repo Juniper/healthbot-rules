@@ -1,0 +1,141 @@
+/*
+ * Receives vxlan add vni syslog events from node and configures vxlan vni in
+ * rest of the nodes in network.
+ *
+ */
+healthbot {
+    topic solution.vni-provisioning {
+        rule vni-provisioning-netconf {
+            /*
+             * Monitors vxlan and vni syslog events from node and configures
+             * vxlan vni in rest of the nodes in the network
+             *
+             * Use event-id event-time as key for rule.
+             */
+            keys [ event-id event-time ];
+            synopsis "Vxlan vni provisioner";
+            description "This rule receives newlyadded vxlan vni syslog notification  event and provisions the vxlan vni in rest of the nodes";
+            function add_config {
+                description "Vxlan VNI configuration add function";
+                path split_vni.py;
+                method get_vlan_vni;
+                argument message {
+                    mandatory;
+                }
+            }
+            function get_vni {
+                description "Function to get newly added VNI";
+                path split_vni.py;
+                method get_vni;
+                argument message {
+                    mandatory;
+                }
+            }
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor vni {
+                open-config {
+                    sensor-name /junos/events;
+                    frequency 0s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field event-id {
+                sensor vni {
+                    path "/junos/events/event/@id";
+                }
+                type string;
+                description "Syslog event ID";
+            }
+            field event-message {
+                sensor vni {
+                    where "/junos/events/event/message =~ /set vlans v\d+ vxlan vni \d+/";
+                    path /junos/events/event/message;
+                    data-if-missing {
+                        value no-data;
+                    }
+                }
+                type string;
+                description "Syslog event message";
+            }
+            field event-time {
+                sensor vni {
+                    path /junos/events/event/timestamp/microseconds;
+                }
+                type string;
+                description "Syslog event timestamp";
+            }
+            field vni {
+                formula {
+                    user-defined-function {
+                        function-name get_vni;
+                        argument message "$event-message";
+                    }
+                }
+                type string;
+                description "Newly added VNI";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vni-provision {
+                frequency 90s;
+                term is-new-vni-added {
+                    when {
+                        exists "$event-message";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Found new vni($vni) in this device and added configuration in the rest of nodes";
+                        }
+                        user-defined-action add_config {
+                            argument message "$event-message";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "No new vni provisions";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products MX {
+                                releases 17.3R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                            products QFX {
+                                releases 17.2R1 {
+                                    release-support min-supported-release;
+                                    platform all;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
