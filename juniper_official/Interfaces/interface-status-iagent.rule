@@ -29,7 +29,16 @@ healthbot {
             trigger link-state {
                 synopsis "link state kpi";
                 description "Sets health based on link state";
-                frequency 1.5offset;
+                frequency 2offset;
+                term is-link-admin-down {
+                    when {
+                        matches-with "$admin_status" DOWN;
+                    }
+                }
+                /*
+                 * Sets color to red and sends out anomaly notification when
+                 * the interface oper state ($oper_status) is down.
+                 */
                 term is-link-down {
                     when {
                         matches-with "$oper_status" down {
