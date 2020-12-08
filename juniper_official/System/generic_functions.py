@@ -354,7 +354,7 @@ def reboot_other_routing_engine(**kwargs):
  
 # Helper Functions
 def get_device_info(**kwargs):
-    response = requests.get('http://config-server:9000/api/v1/device/%s/' % kwargs['device_id'], verify=False)
+    response = requests.get('http://config-server:9000/api/v2/device/%s/' % kwargs['device_id'], verify=False)
     if response.status_code != 200:
         return False
     device_info = response.json()
@@ -366,12 +366,12 @@ def get_device_info(**kwargs):
  
  
 def get_device_info_healthbot(**kwargs):
-    response = requests.get('http://config-server:9000/api/v1/device/%s/facts' % kwargs['device_id'], verify=False)
+    response = requests.get('http://config-server:9000/api/v2/device/%s/facts' % kwargs['device_id'], verify=False)
     if response.status_code != 200:
-        response = requests.get('http://config-server:9000/api/v1/device/%s/facts?update=true' % kwargs['device_id'], verify=False)
+        response = requests.get('http://config-server:9000/api/v2/device/%s/facts?update=true' % kwargs['device_id'], verify=False)
     device_info = response.json()
     if len(device_info['facts']) == 0:
-        response = requests.get('http://config-server:9000/api/v1/device/%s/facts?update=true' % kwargs['device_id'], verify=False)
+        response = requests.get('http://config-server:9000/api/v2/device/%s/facts?update=true' % kwargs['device_id'], verify=False)
         device_info=response.json()
     return device_info
  
