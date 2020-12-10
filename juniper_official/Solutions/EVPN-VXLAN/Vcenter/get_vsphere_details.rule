@@ -1,0 +1,91 @@
+/*
+ * Collects ESXi hosts information i.e. VM names, VM IPs, VM mac-addresses, 
+ * datacenter names and cluster names from vmware vsphere vcenter.
+ */
+ healthbot {
+    topic vcenter.evpn {
+        rule get-vsphere-details {
+            keys name;
+            synopsis "Vcenter VMs data collector";
+            description "Collects datacenter VMs information from Vmware Vcenter Vsphere  ";
+            function split_fqdn {
+                description "Function to strip the FQDN from ESXi host name";
+                path split_fqdn.py;
+                method split_fqdn;
+                argument host {
+                    mandatory;
+                }
+            }
+            sensor vsphere {
+                iAgent {
+                    file vsphere_hb.yml;
+                    table vSphereTable;
+                    frequency 120s;
+                }
+            }
+            field cluster {
+                sensor vsphere {
+                    path cluster;
+                }
+                type string;
+                description "ESXi cluster name";
+            }
+            field datacenter {
+                sensor vsphere {
+                    path datacenter;
+                }
+                type string;
+                description "Datacenter name";
+            }
+            field host {
+                sensor vsphere {
+                    path host;
+                }
+                type string;
+                description "ESXi host name";
+            }
+            field host-name {
+                formula {
+                    user-defined-function {
+                        function-name split_fqdn;
+                        argument host "$host";
+                    }
+                }
+                type string;
+                description "Stripped ESXi host name";
+            }
+            field ip {
+                sensor vsphere {
+                    path ip;
+                }
+                type string;
+                description "Vmware VM's IP";
+            }
+            field mac {
+                sensor vsphere {
+                    path mac;
+                }
+                type string;
+                description "Vmware VM's mac address";
+            }
+            field name {
+                sensor vsphere {
+                    path name;
+                }
+                type string;
+                description "Vmware VM name";
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor vmware {
+                        vendor-name vsphere;
+                        operating-system vcenter;
+                    }
+                }
+                helper-files other {
+                    list-of-files [ split_fqdn.py vsphere_hb.py vsphere_hb.yml ];
+                }
+            }
+        }
+    }
+}
