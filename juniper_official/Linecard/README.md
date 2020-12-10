@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Linecard KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Linecard playbooks
 ### Playbook name: FPC-PFE-resource-monitoring-playbook 
 		> Description: "Monitoring linecard resources - Heap memory, RTT delay, IFL denied count, Client session denied count, Service session denied count, IFL counter memory, Filter counter memory, Expansion memory, CoS queue utilizations, NH memory free, Firewall memory free and Encap memory free."
 		> Synopsis: "Monitor FPC and PFE resources"
@@ -40,7 +40,7 @@
 		 5) Rule "check-fabric-netconf", detects the fabric discoards and notifies
 		    anomalies when drop count is high.
 
-## EVPN VXLAN rules
+## Linecard rules
 
 ### Rule name: check-center-chip-lookup-in 
 		> Description: "Monitors center chip lookup in interrupts counters"

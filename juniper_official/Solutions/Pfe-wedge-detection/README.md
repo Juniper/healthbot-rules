@@ -40,90 +40,6 @@
 
 ## Pfe-wedge-detection rules
 
-### Rule name: check-pfe-misc-events 
-		> Description: "Using this rule the Misc pfe events will be monitored"
-		> Synopsis: "Misc pfe events monitor"
-		> Rule file name: pfe-misc-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors PFE MISC syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-alarms 
-		> Description: "Using this rule the pfe alarms will be monitored"
-		> Synopsis: "PFE alarms monitor"
-		> Rule file name: pfe-alarms-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors PFE Alarms syslog messages as per the GROK patterns defined by the user.
-### Rule name: check-pfe-xmchip-events 
-		> Description: "Using this rule the xmchip events will be monitored"
-		> Synopsis: "xmchip events monitor"
-		> Rule file name: xmchip-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors XMCHIP syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-eachip-events 
-		> Description: "Using this rule the eachip events will be monitored"
-		> Synopsis: "eachip events monitor"
-		> Rule file name: eachip-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors eachip syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-qsfp-events 
-		> Description: "Using this rule the qsfp events will be monitored"
-		> Synopsis: "qsfp events monitor"
-		> Rule file name: qsfp-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors QSFP syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-luchip-events 
-		> Description: "Using this rule the luchip events will be monitored"
-		> Synopsis: "luchip events monitor"
-		> Rule file name: luchip-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors luchip syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-snmp-events 
-		> Description: "Using this rule the snmp events will be monitored"
-		> Synopsis: "snmp events monitor"
-		> Rule file name: pfe-snmp-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors PFE SNMP syslog events as per the GROK patterns defined by the user.
 ### Rule name: check-pfe-rpd-events 
 		> Description: "Using this rule the rpd events will be monitored"
 		> Synopsis: "rpd events monitor"
@@ -136,18 +52,6 @@
 		> Supported healthbot version: 3.0.0
 		> Detals:
 		 Monitors PFE RPD syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-wedge-events 
-		> Description: "Using this rule the PFE Wedge events will be monitored"
-		> Synopsis: "PFE Wedge events monitor"
-		> Rule file name: wedge-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors PFE WEDGE syslog events as per the GROK patterns defined by the user.
 ### Rule name: check-pfe-manual-jmb-events 
 		> Description: "Using this rule the jmb events will be monitored"
 		> Synopsis: "jmb events monitor"
@@ -160,6 +64,114 @@
 		> Supported healthbot version: 3.0.0
 		> Detals:
 		 Monitors JMB syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-misc-events 
+		> Description: "Using this rule the Misc pfe events will be monitored"
+		> Synopsis: "Misc pfe events monitor"
+		> Rule file name: pfe-misc-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors PFE MISC syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-snmp-events 
+		> Description: "Using this rule the snmp events will be monitored"
+		> Synopsis: "snmp events monitor"
+		> Rule file name: pfe-snmp-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors PFE SNMP syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-chassisd-events 
+		> Description: "Using this rule the Chassisd events will be monitored"
+		> Synopsis: "Chassisd events monitor"
+		> Rule file name: chassisd-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors chassisd syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-luchip-events 
+		> Description: "Using this rule the luchip events will be monitored"
+		> Synopsis: "luchip events monitor"
+		> Rule file name: luchip-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors luchip syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-qsfp-events 
+		> Description: "Using this rule the qsfp events will be monitored"
+		> Synopsis: "qsfp events monitor"
+		> Rule file name: qsfp-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors QSFP syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-eachip-events 
+		> Description: "Using this rule the eachip events will be monitored"
+		> Synopsis: "eachip events monitor"
+		> Rule file name: eachip-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors eachip syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-mqchip-events 
+		> Description: "Using this rule the mqchip events will be monitored"
+		> Synopsis: "mqchip events monitor"
+		> Rule file name: mqchip-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors mqchip syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-wedge-events 
+		> Description: "Using this rule the PFE Wedge events will be monitored"
+		> Synopsis: "PFE Wedge events monitor"
+		> Rule file name: wedge-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors PFE WEDGE syslog events as per the GROK patterns defined by the user.
+### Rule name: check-pfe-xmchip-events 
+		> Description: "Using this rule the xmchip events will be monitored"
+		> Synopsis: "xmchip events monitor"
+		> Rule file name: xmchip-events-syslog.rule
+
+		> Supported products: MX 
+
+			> Supported platforms: All;
+
+		> Supported healthbot version: 3.0.0
+		> Detals:
+		 Monitors XMCHIP syslog events as per the GROK patterns defined by the user.
 ### Rule name: check-pfe-lueachip-events 
 		> Description: "Using this rule the lueachip events will be monitored"
 		> Synopsis: "lueachip events monitor"
@@ -184,10 +196,10 @@
 		> Supported healthbot version: 3.0.0
 		> Detals:
 		 Monitors FPC syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-mqchip-events 
-		> Description: "Using this rule the mqchip events will be monitored"
-		> Synopsis: "mqchip events monitor"
-		> Rule file name: mqchip-events-syslog.rule
+### Rule name: check-pfe-alarms 
+		> Description: "Using this rule the pfe alarms will be monitored"
+		> Synopsis: "PFE alarms monitor"
+		> Rule file name: pfe-alarms-syslog.rule
 
 		> Supported products: MX 
 
@@ -195,16 +207,4 @@
 
 		> Supported healthbot version: 3.0.0
 		> Detals:
-		 Monitors mqchip syslog events as per the GROK patterns defined by the user.
-### Rule name: check-pfe-chassisd-events 
-		> Description: "Using this rule the Chassisd events will be monitored"
-		> Synopsis: "Chassisd events monitor"
-		> Rule file name: chassisd-events-syslog.rule
-
-		> Supported products: MX 
-
-			> Supported platforms: All;
-
-		> Supported healthbot version: 3.0.0
-		> Detals:
-		 Monitors chassisd syslog events as per the GROK patterns defined by the user.
+		 Monitors PFE Alarms syslog messages as per the GROK patterns defined by the user.

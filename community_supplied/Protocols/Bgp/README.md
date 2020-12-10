@@ -1,15 +1,15 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Bgp KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Bgp playbooks
 ### Playbook name: snmp-bgp-playbook 
 
 
 		> Playbook file name: snmp-bgp.playbook
 		> Detals:
-### Playbook name: bgp-kpi-community 
+### Playbook name: bgp-additional-kpis 
 		> Description: "To check vrf peer ip usage and notifies when anomaly."
 		> Synopsis: "VRF peer ip and forwarding table performance indicators"
-		> Playbook file name: bgp-kpi.playbook
+		> Playbook file name: bgp-additional-kpis.playbook
 		> Detals:
 		 Playbook contains multiple rules which checks for vrf peer ip in
 		 forwarding table and notifies when anomalies are found.
@@ -19,8 +19,12 @@
 		    and notifies when anomalies are found.
 		 3) Rule "check-forwarding-table-netconf" Check if peer ip is present in forwarding table
 		    aand provides vector data to check-peer rule.
+		 4) Rule "check-bgp-config-netconf" monitors the BGP neighbor configurations.
+		 5) Rule "check-bgp-summary-netconf.rule" monitors the BGP neighbor summary and notifies
+		 6) Rule "check-ecmp-active-paths-netconf.rule" monitors the health of ECMP active path
+		    count in control plane and notifies when anomalies are found.
 
-## EVPN VXLAN rules
+## Bgp rules
 
 ### Rule name: check-forwarding-table-netconf 
 		> Description: "Check if peer ip is present in forwarding table."
@@ -42,6 +46,32 @@
 			> Supported platforms: [ QFX10000 QFX5200 ];
 			> Supported platforms: QFX5100;
 			> Supported platforms: QFX5120-48Y;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
+### Rule name: check-ecmp-active-paths-netconf 
+		> Description: "Collects the ECMP active path count periodically and notifies in case of anomalies"
+		> Synopsis: "ECMP active path analyzer"
+		> Rule file name: check-ecmp-active-paths-netconf.rule
+
+		> Supported products: MX 
+		> Supported products: EX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
+### Rule name: check-bgp-summary-netconf 
+		> Description: "Monitors the BGP neighbor summary"
+		> Synopsis: "BGP neighbor analyzer"
+		> Rule file name: check-bgp-summary-netconf.rule
+
+		> Supported products: MX 
+		> Supported products: EX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
 
 		> Supported healthbot version: 3.1.0
 		> Detals:
@@ -145,3 +175,16 @@
 		      addresses which are in 172.16.0.0/16 network range.
 		   2) flap-count-threshold, is the threshold that causes the rule to
 		      report an anomaly.  By default value is 80
+### Rule name: check-bgp-config-netconf 
+		> Description: "Monitors the BGP neighbor configurations"
+		> Synopsis: "BGP neighbor analyzer"
+		> Rule file name: check-bgp-config-netconf.rule
+
+		> Supported products: MX 
+		> Supported products: EX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:

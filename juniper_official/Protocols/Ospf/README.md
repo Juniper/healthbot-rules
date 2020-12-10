@@ -1,8 +1,8 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Ospf KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Ospf playbooks
 
-## EVPN VXLAN rules
+## Ospf rules
 
 ### Rule name: check-ospf-forwarding-table 
 		> Description: "Checks if the route destination and next hop are correct"

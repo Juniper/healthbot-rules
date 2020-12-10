@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Bgp KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Bgp playbooks
 ### Playbook name: bgp-session-stats-playbook 
 		> Description: "Playbook checks the BGP neighbor sessions health and notify anomaly when statistics are unusual"
 		> Synopsis: "BGP neighbor sessions key performance indicators"
@@ -17,7 +17,7 @@
 		 4) Rule "check-bgp-advertised-routes" detects the advertised route count
 		    threshold breaches and notify anomalies.
 
-## EVPN VXLAN rules
+## Bgp rules
 
 ### Rule name: check-bgp-neighbor-flap-iagent 
 		> Description: "Collects BGP neighbor flap count periodically and notifies anomaly"

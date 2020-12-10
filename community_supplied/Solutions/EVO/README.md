@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot EVO KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## EVO playbooks
 ### Playbook name: evo-route-summary-playbook 
 		> Description: "Playbook checks each table's and protocol's route count and notifies anomaly when route count is above or below dynamic threshold"
 		> Synopsis: "Route table and protocol routes key performance indicators"
@@ -71,7 +71,7 @@
 		> Playbook file name: evo-system-kpis.playbook
 		> Detals:
 
-## EVPN VXLAN rules
+## EVO rules
 
 ### Rule name: evo-check-fpc-temperature 
 

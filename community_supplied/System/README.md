@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot System KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## System playbooks
 ### Playbook name: system-additional-kpis 
 		> Description: "To check system commit, OS file descriptors usage and sockets usage is within threshold."
 		> Synopsis: "system key performance indicators"
@@ -17,6 +17,8 @@
 		 4) Rule "check-sockets-open-netconf" detects the count of number of sockets and
 		    is referenced by check-socket-usage rule .
 		 5) Rule "commit-history" monitors the system commits and notifies anomalies.
+		 6) Rule "check-inode-usage-netconf" monitors the system inode usage and notifies
+		    anomalies when usage exceeds thresholds.
 ### Playbook name: snmp-system-playbook 
 
 
@@ -34,7 +36,7 @@
 		 2) Rule "check-tcam-qfx10k-netconf" monitors the TCAM Usage on QFX10K.
 		    and notifies anomalies when it exceeds thresholds.
 
-## EVPN VXLAN rules
+## System rules
 
 ### Rule name: check-socket-usage-netconf 
 		> Description: "Check the socket usage on the system. "
@@ -148,6 +150,19 @@
 			> Supported platforms: [ QFX10000 QFX5200 ];
 			> Supported platforms: QFX5100;
 			> Supported platforms: QFX5120-48Y;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
+### Rule name: check-inode-usage 
+		> Description: "Collects the total inodes,inodes used and used percentage and notifies in case of anomalies when used percent is above the threshold value"
+		> Synopsis: "Routing Engine inode usage analyzer"
+		> Rule file name: check-inode-usage-netconf.rule
+
+		> Supported products: MX 
+		> Supported products: EX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
 
 		> Supported healthbot version: 3.1.0
 		> Detals:

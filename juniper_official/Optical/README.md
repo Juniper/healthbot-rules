@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Optical KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Optical playbooks
 ### Playbook name: interface-optical-kpis 
 		> Description: "Playbook to check interface health regarding FEC errors and optical alarm conditions"
 		> Synopsis: "Optical interface key performance indicators"
@@ -25,7 +25,7 @@
 		 3) Rule "check-optical-temperature-netconf" monitors the optical temperature
 		    and notifies anomalies when it exceeds thresholds.
 
-## EVPN VXLAN rules
+## Optical rules
 
 ### Rule name: check-optics-power-thresholds-openconfig 
 		> Description: "Collects the interface input optical power and notifies in case of anomalies"

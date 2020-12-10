@@ -12,3 +12,4 @@ Rules are defined with default variable values, which can be changed while deplo
 
 Apply the device specific playbooks to device-group under the playbooks section using healthbot GUI.
 Apply the network specific playbooks to network-group under the playbooks section using healthbot GUI.
+

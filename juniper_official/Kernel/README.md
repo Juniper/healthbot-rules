@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Kernel KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Kernel playbooks
 ### Playbook name: kernel-tcp-ip-playbook 
 		> Description: "This playbook encapsulates rules related to kernel tcp ip parameters"
 		> Synopsis: "Kernel tcp ip parameters"
@@ -168,7 +168,7 @@
 		> Playbook file name: kernel-infra-playbook.playbook
 		> Detals:
 
-## EVPN VXLAN rules
+## Kernel rules
 
 ### Rule name: check-stuck-ifstate-clients-iagent 
 
