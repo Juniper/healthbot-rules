@@ -15,7 +15,7 @@
 		 interface using LLDP and map with vcenter ESXi host name, VM name, VM
 		 mac-address and shows path in dashboard
 
-## EVPN VXLAN rules
+## Vcenter rules
 
 ### Rule name: get-vsphere-details 
 		> Description: "Collects datacenter VMs information from Vmware Vcenter Vsphere  "
