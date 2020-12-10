@@ -18,6 +18,35 @@
 
 ## Lldp rules
 
+### Rule name: get-lldp-state 
+		> Description: "Collects lldp session state periodically"
+		> Synopsis: "LLDP neighbor state collector"
+		> Rule file name: lldp-session-state.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+
+			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
+			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5110;
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
+			> Supported platforms: EX4600;
+
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 Detects LLDP (session) state changes and notifies when anomalies are found.
+		 One input control detection
+		
+		   1) if-name, is a regular expression that matches the
+		      interfaces that you would like to monitor.  By default it's
+		      '.*', which matches all interfaces. Use something like 'ge.*' to
+		      match only gigabit ethernet interfaces.
 ### Rule name: check-lldp-session-statistics 
 		> Description: "Collects LLDP session statistics(frame& TLV discards, frame-in&out errors and unknown TLVs) periodically and notify anomaly when breaches threshold"
 		> Synopsis: "LLDP session statistics analyzer"
@@ -70,32 +99,3 @@
 		      an anomaly. By default it's 1. This rule will set a dashboard color to
 		      red when unknown TLV count is greater than 'unknown-tlvs-threshold'
 		      for 3 minutes period, otherwise color is set to green.
-### Rule name: get-lldp-state 
-		> Description: "Collects lldp session state periodically"
-		> Synopsis: "LLDP neighbor state collector"
-		> Rule file name: lldp-session-state.rule
-
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
-		> Supported products: EX 
-
-			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
-			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
-			> Supported platforms: [ QFX10000 QFX5200 ];
-			> Supported platforms: QFX5110;
-			> Supported platforms: QFX5100;
-			> Supported platforms: QFX5120-48Y;
-			> Supported platforms: EX9200;
-			> Supported platforms: EX4650;
-			> Supported platforms: EX4600;
-
-		> Supported healthbot version: 1.0.1
-		> Detals:
-		 Detects LLDP (session) state changes and notifies when anomalies are found.
-		 One input control detection
-		
-		   1) if-name, is a regular expression that matches the
-		      interfaces that you would like to monitor.  By default it's
-		      '.*', which matches all interfaces. Use something like 'ge.*' to
-		      match only gigabit ethernet interfaces.

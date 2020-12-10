@@ -29,7 +29,7 @@ healthbot {
              * 
              * Use filesystem mounted path name as key for rule.
              */
-            keys mounted-on;
+            keys [ filesystem-name mounted-on ];
             /*
              * Sensor configuration to get data from network devices
              */
@@ -72,6 +72,14 @@ healthbot {
                     path available-blocks;
                 }
                 type integer;
+            }
+            field filesystem-name {
+                sensor storagetable {
+                    where "filesystem-name != /devfs/";
+                    where "filesystem-name != /procfs/";
+                    path filesystem-name;
+                }
+                type string;
             }
             /*
              * Fields defined with variables and constant values

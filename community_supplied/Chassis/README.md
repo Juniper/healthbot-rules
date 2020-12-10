@@ -1,13 +1,13 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Chassis KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Chassis playbooks
 ### Playbook name: netconf-chassis-playbook 
 
 
 		> Playbook file name: netconf-chassis.playbook
 		> Detals:
 
-## EVPN VXLAN rules
+## Chassis rules
 
 ### Rule name: check-netconf-chassis-component-temperature 
 		> Description: "Collects temperature details from chassis components and notify anomalies based on threshold values "

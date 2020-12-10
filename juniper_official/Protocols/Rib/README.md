@@ -17,29 +17,6 @@
 
 ## Rib rules
 
-### Rule name: check-ascertain-routes 
-		> Description: "Collects total-route-count of each routing table and sets dynamic thresholds and notify anomaly when route count is abnormal"
-		> Synopsis: "Routing table statistics analyzer"
-		> Rule file name: route-tables-summary.rule
-
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
-		> Supported products: EX 
-		> Supported products: ACX 
-		> Supported products: SRX 
-
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-		> Helper files: route-summary.yml;
-		> Supported healthbot version: 1.0.1
-		> Detals:
-		 Dynamically sets the route count threshold for each route table and notify
-		 anomaly when route count is aberrant.
 ### Rule name: check-protocol-route-count 
 		> Description: "Collects total-route-count of each protocol and sets dynamic thresholds and notify anomaly when route count is abnormal"
 		> Synopsis: "Protocols routes statistics analyzer"
@@ -63,3 +40,26 @@
 		> Detals:
 		 Dynamically sets the route count threshold for each protocol of each route
 		 table and notify anomaly when route count is aberrant.
+### Rule name: check-ascertain-routes 
+		> Description: "Collects total-route-count of each routing table and sets dynamic thresholds and notify anomaly when route count is abnormal"
+		> Synopsis: "Routing table statistics analyzer"
+		> Rule file name: route-tables-summary.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+		> Supported products: ACX 
+		> Supported products: SRX 
+
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+		> Helper files: route-summary.yml;
+		> Supported healthbot version: 1.0.1
+		> Detals:
+		 Dynamically sets the route count threshold for each route table and notify
+		 anomaly when route count is aberrant.

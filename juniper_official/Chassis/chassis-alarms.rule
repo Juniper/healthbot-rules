@@ -83,6 +83,86 @@
                             color green;
                             message "No chassis alarms detected";
                         }
+                    }                  
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 11.4R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products ACX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files Chassis-Alarms.yml;
+                }
+            }
+        }
+        rule check-no-alarms {
+            synopsis "Chassis alarms detector";
+            description "Refers rule chassis.alarms/check-chassis-alarms and shows system as healthy if no active alarms";
+            rule-frequency 65s;
+            field alarm-description {
+                reference {
+                    path "/topic[topic-name=chassis.alarms]/rule[rule-name=check-chassis-alarms]/alarm-description";
+                    data-if-missing {
+                        value No-active-alarms;
+                    }
+                    time-range 65s;
+                }
+                type string;
+                description "Chassis or System alarm description";
+            }
+            trigger chassis-alarms {
+                frequency 65s;
+                term no-active-alarms {
+                    when {
+                        matches-with "$alarm-description" No-active-alarms;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No active alarms";
+                        }
                     }
                 }
             }

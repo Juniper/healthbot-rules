@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Chassis KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Chassis playbooks
 ### Playbook name: chassis-kpis-playbook 
 		> Description: "Playbook monitor the chassis health i.e. chassis, RE, RE CPU and linecards temperatures, power and fan health"
 		> Synopsis: "Chassis key performance indicators"
@@ -33,7 +33,7 @@
 		 Detects mismatched chassis network-services setting, will advise corrective action if detected
 		 Rule netsvc-rule, calls netsvc.py to determine the state and advise action if required
 
-## EVPN VXLAN rules
+## Chassis rules
 
 ### Rule name: check-re-cpu-temperature 
 		> Description: "Collects RE CPU temperature periodically and notifies anomaly when temperature exceed threshold"

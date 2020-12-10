@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Security KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Security playbooks
 ### Playbook name: security-kpis-playbook 
 		> Description: "This playbook monitors variexec, secure boot and dev keys periodically and notifies anomalies" 
 		> Synopsis: "Junos security checker"
@@ -14,7 +14,7 @@
 		
 		 3) Rule heck-secureboot-status, checks that secure boot is running and enforced
 
-## EVPN VXLAN rules
+## Security rules
 
 ### Rule name: check-idp-memory-counter-netconf 
 		> Description: "Check idp memory counters of SRX cluster"

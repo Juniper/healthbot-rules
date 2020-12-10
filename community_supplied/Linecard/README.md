@@ -1,13 +1,13 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Linecard KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Linecard playbooks
 ### Playbook name: netconf-fpc-playbook 
 
 
 		> Playbook file name: netconf-fpc.playbook
 		> Detals:
 
-## EVPN VXLAN rules
+## Linecard rules
 
 ### Rule name: check-netconf-fpc-cpu-memory-stats 
 		> Description: "Collects CPU, Memory Heap& Buffer Utilization details from FPC slot and notify anomalies based on threshold values "

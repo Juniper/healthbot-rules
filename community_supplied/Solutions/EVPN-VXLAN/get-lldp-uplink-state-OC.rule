@@ -1,0 +1,63 @@
+healthbot {
+    topic protocol.lldp {
+        rule get-lldp-uplink-state {
+            keys interface-name;
+            synopsis "LLDP neighbor state collector";
+            description "Collects lldp session state periodically";
+            sensor lldp-sensor {
+                synopsis "LLDP open-config sensor definition";
+                description "/lldp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /lldp/interfaces/interface;
+                    frequency 1h;
+                }
+            }
+            field capabilites {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/name;
+                }
+                type string;
+                description "neighbour capabilities";
+            }
+            field interface-name {
+                sensor lldp-sensor {
+                    where "/lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/name =~ /{{capabilities-variable}}/";
+                    path "/lldp/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            variable capabilities-variable {
+                value ROUTER;
+                description "capabilities of neighbour";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 19.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 19.2R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
