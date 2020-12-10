@@ -13,9 +13,34 @@
 		 2) Rule "check-isis-statistics" detects the ISIS session statistics (lsp,
 		    csnp, esh, iih, ish, psnp and unknown drops) and notify anomalies when
 		    drop count exceeds threshold.
+		 3) Rule "check-spf-isis-netconf" Check SPF run time and count  for ISIS and
+		    notifies when anomalies are found.
 
 ## Isis rules
 
+### Rule name: check-spf-isis-netconf 
+		> Description: "Check SPF run time and count  for isis"
+		> Synopsis: "SPF KPI"
+		> Rule file name: check-spf-isis-netconf.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+
+			> Supported platforms: EX9200;
+			> Supported platforms: EX4650;
+			> Supported platforms: EX4600;
+			> Supported platforms: all;
+			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 ];
+			> Supported platforms: MX150;
+			> Supported platforms: [ PTX1000 PTX10000 PTX5000 ];
+			> Supported platforms: [ QFX10000 QFX5200 ];
+			> Supported platforms: QFX5100;
+			> Supported platforms: QFX5120-48Y;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
 ### Rule name: check-isis-adjacencies 
 		> Description: "Collects ISIS adjacency state periodically and notify anomaly when state is down"
 		> Synopsis: "ISIS session state analyzer"

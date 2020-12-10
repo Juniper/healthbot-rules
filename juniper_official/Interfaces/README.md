@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Interfaces KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Interfaces playbooks
 ### Playbook name: interface-throughput-kpi 
 		> Description: "Playbook to check interface bandwidth utilization"
 		> Synopsis: "Interface bandwidth key performance indicators"
@@ -41,7 +41,7 @@
 		 9) Rule check-ifl-out-traffic, monitors the logical interface out traffic
 		 10) Rule check-queue-depth-netconf, monitors the interface queue depth
 
-## EVPN VXLAN rules
+## Interfaces rules
 
 ### Rule name: check-in-traffic 
 		> Description: "Collects input traffic (in-octets) periodically and notifies in case of traffic is above threshold"
@@ -568,7 +568,7 @@
 		> Helper files: lacp-statistcs.yml;
 		> Supported healthbot version: 3.0.0
 		> Detals:
-		 Collects lacp statistics periodically and notifies anomalies when lacp
+		 Collects lacp statistics periodically and notifies anomalies when the lacp
 		 distribution status is false.
 		 One input controls detection
 		

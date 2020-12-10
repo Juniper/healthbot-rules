@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Interface KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Interface playbooks
 ### Playbook name: snmp-interface-playbook 
 
 
@@ -24,8 +24,20 @@
 		    notifies anomalies.
 		 5) Rule "check-ipv6-local-address-netconf" checks for ipv6 link local address on
 		    interfaces and notifies anomalies.
+### Playbook name: interface-additional-kpis-playbook 
+		> Description: "Playbook to check interface health w.r.t. mtu, ethernet pause frames"
+		> Synopsis: "Interface key performance indicators"
+		> Playbook file name: interface-additional-kpis.playbook
+		> Detals:
+		 Playbook contains multiple rules which monitor interfaces and notifies when
+		 anomalies are found.
+		
+		 1) Rule check-ethernet-pause-frame-counters-netconf, detects interface ethernet
+		    pause frame counters and notifies when anomalies are found.
+		 2) Rule check-if-mtu-netconf, Detects interface MTU values and notifies when
+		    anomalies are found.
 
-## EVPN VXLAN rules
+## Interface rules
 
 ### Rule name: count-lo0-address-netconf 
 		> Description: "Check whether IP address is configured under lo0 interface"
@@ -47,6 +59,19 @@
 			> Supported platforms: [ QFX10000 QFX5200 ];
 			> Supported platforms: QFX5100;
 			> Supported platforms: QFX5120-48Y;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
+### Rule name: check-ethernet-pause-frame-counters-netconf 
+		> Description: "Collects the ethernet pause frame counter periodically and notifies in case of anomalies"
+		> Synopsis: "Ethernet pause frame counter analyzer"
+		> Rule file name: check-ethernet-pause-frame-counters-netconf.rule
+
+		> Supported products: MX 
+		> Supported products: EX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
 
 		> Supported healthbot version: 3.1.0
 		> Detals:
@@ -113,6 +138,19 @@
 
 		> Supported products: EX 
 		> Supported products: MX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
+### Rule name: check-if-mtu-netconf 
+		> Description: "Collects the interface MTU values periodically and notifies in case of anomalies"
+		> Synopsis: "Interface MTU analyzer"
+		> Rule file name: check-if-mtu-netconf.rule
+
+		> Supported products: MX 
+		> Supported products: EX 
 
 			> Supported platforms: all;
 			> Supported platforms: all;

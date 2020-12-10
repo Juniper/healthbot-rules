@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot Flow-monitoring KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## Flow-monitoring playbooks
 ### Playbook name: traffic-flow-monitoring-ipv6-ipfix 
 		> Description: "Playbook monitors IPv6 ipfix flows and notifies anomalies when flow traffic rate exceeds threshold value"
 		> Synopsis: "Netflow ipfix ipv6 flow analyzer"
@@ -53,7 +53,7 @@
 		    nfv10(ipfix) flows and notifies anomaly when each flow's traffic rate is
 		    above threshold
 
-## EVPN VXLAN rules
+## Flow-monitoring rules
 
 ### Rule name: monitor-nfv9-ipv6-flows-traffic 
 		> Description: "Monitors netflow version9 IPv6 flows and notifies anomaly when each flow's traffic rate is above threshold"

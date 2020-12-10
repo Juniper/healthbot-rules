@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot mpls KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## mpls playbooks
 ### Playbook name: mpls-kpi-community 
 		> Description: "To check if VRF interfaces and notifies when anomaly."
 		> Synopsis: "VRF interface performance indicators"
@@ -11,7 +11,7 @@
 		 1) Rule "check-vrf-interfaces-netconf" Check count of Interfaces per VRF
 		    and notifies when anomalies are found.
 
-## EVPN VXLAN rules
+## mpls rules
 
 ### Rule name: check-vrf-interfaces-netconf 
 		> Description: "Check count of Iface per VRF"

@@ -16,27 +16,6 @@
 
 ## Mpls-blackhole-detection rules
 
-### Rule name: check-rsvp 
-		> Description: "Collects RSVP statistics and analyzes"
-		> Synopsis: "RSVP statistics analyzer"
-		> Rule file name: rsvp-status.rule
-
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
-		> Supported products: EX 
-		> Supported products: ACX 
-		> Supported products: SRX 
-
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-		> Helper files: rsvpsession.yml;
-		> Supported healthbot version: 1.0.1
-		> Detals:
 ### Rule name: check-drop-packets 
 		> Description: "Collects jnh exception traces from line cards and analyzes"
 		> Synopsis: "Jnh exception traces analyzer"
@@ -56,5 +35,26 @@
 			> Supported platforms: All;
 			> Supported platforms: All;
 		> Helper files: [ jnhexceptionpkt.yml mplslabel.py ];
+		> Supported healthbot version: 1.0.1
+		> Detals:
+### Rule name: check-rsvp 
+		> Description: "Collects RSVP statistics and analyzes"
+		> Synopsis: "RSVP statistics analyzer"
+		> Rule file name: rsvp-status.rule
+
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+		> Supported products: EX 
+		> Supported products: ACX 
+		> Supported products: SRX 
+
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+			> Supported platforms: All;
+		> Helper files: rsvpsession.yml;
 		> Supported healthbot version: 1.0.1
 		> Detals:

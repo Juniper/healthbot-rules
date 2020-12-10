@@ -1,6 +1,6 @@
-# HealthBot EVPN KPI rules and playbooks
+# HealthBot System KPI rules and playbooks
 
-## EVPN VXLAN playbooks
+## System playbooks
 ### Playbook name: vmhost-kpis-playbook 
 		> Description: "Playbook checks the vmhost system health i.e. system cpu, memory, storage and junos processes cpu and memory utilization"
 		> Synopsis: "VMHost system key performance indicators"
@@ -44,7 +44,7 @@
 		 7) Rule check-db-size-netconf, detects the system db size and notifies
 		    anomalies when the db usage is greater than thresholds
 
-## EVPN VXLAN rules
+## System rules
 
 ### Rule name: fpc-memory 
 		> Description: "Monitors FPC memory usage percentage and notifies anomalies"
