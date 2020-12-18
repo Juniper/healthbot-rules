@@ -1,0 +1,186 @@
+/*
+ * Collects vm host information from EVPN nodes and maps with vcenter ESXi host 
+ * by querying database of rule vcenter.evpn/get-vcenter-details and displays entire
+ * path in dashboard.
+ *
+ * Four input controls detection
+ * 
+ *   1) db-server-ip, user need to enter HB DB server ip while deploying 
+ *      playbook.
+ *   2) db-port, user need to enter HB DB server udp port while deploying
+ *      playbook.
+ *   3) vcenter-device-group, user need to enter vcenter device group name 
+ *      i.e. where playbook "get-vsphere-details" deployed.
+ *   4) vcenter-device, user need to enter vcenter device name which should
+ *      be part of device group.
+ *
+ */
+ healthbot {
+    topic vcenter.evpn {
+        rule check-vcenter-host-mac-mapping {
+            keys [ lldp-local-interface lldp-remote-system-name vm_name ];
+            synopsis "VM path finder in EVPN";
+            description "Collects datacenter VMs information from vcenter and LLDP information from routers then maps \"ESXi-VM-IP-MAC-Leaf Node-Egress Interface\" path by referring rule vmware/get-vcenter-details";
+            /*
+             * Functions defined to get vcenter information.
+             */
+             function get_vm_name {
+                path get_vcenter_details.py;
+                method get_vm_name;
+                argument db_port {
+                    mandatory;
+                }
+                argument db_server_ip {
+                    mandatory;
+                }
+                argument if_name {
+                    mandatory;
+                }
+                argument remote_host_name {
+                    mandatory;
+                }
+                argument vcenter_device {
+                    mandatory;
+                }
+                argument vcenter_device_group {
+                    mandatory;
+                }
+            }
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor lldp {
+                iAgent {
+                    file LldpNbrStatsTable.yml;
+                    table LldpNbrStatsTable;
+                    frequency 5m;
+                }
+            }
+            /*
+             * Fields defined using variables.
+             */
+            field db-port {
+                constant {
+                    value "{{db-port}}";
+                }
+                type string;
+                description "Time series database port number";
+            }
+            field db-server-ip {
+                constant {
+                    value "{{db-server-ip}}";
+                }
+                type string;
+                description "Time series database IP address";
+            }
+            field vcenter-device {
+                constant {
+                    value "{{vcenter-device}}";
+                }
+                type string;
+            }
+            field vcenter-device-group {
+                constant {
+                    value "{{vcenter-device-group}}";
+                }
+                type string;
+            }
+            /*
+             * Fields defined using sensor paths.
+             */
+            field lldp-local-interface {
+                sensor lldp {
+                    path lldp-local-interface;
+                }
+                type string;
+                description "LLDP local interface name";
+            }
+            field lldp-remote-system-name {
+                sensor lldp {
+                    path lldp-remote-system-name;
+                }
+                type string;
+                description "ESXi host name in LLDP info";
+            }
+            /*
+             * Fields defined using functions.
+             */
+            field vm_name {
+                formula {
+                    user-defined-function {
+                        function-name get_vm_name;
+                        argument db_port "$db-port";
+                        argument db_server_ip "$db-server-ip";
+                        argument if_name "$lldp-local-interface";
+                        argument remote_host_name "$lldp-remote-system-name";
+                        argument vcenter_device_group "$vcenter-device-group";
+                        argument vcenter_device "$vcenter-device";
+                    }
+                }
+                type string;
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger vsphere-host-mac-mapping {
+                frequency 5m;
+                term vcenter-host-mapping {
+                    when {
+                        does-not-match-with "$vm_mac" None;
+                        exists "$vm_mac";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "ESXi_Host:$host_name, VM_name:$vm_name, VM_MAC_address:$vm_mac, VM_IP:$vm_ip, Cluster_name:$cluster_name, DataCenter_name:$dc_name, Interface_name:$if_name";
+                        }
+                    }
+                }
+            }
+            variable db-port {
+                value "";
+                description "Enter DB server port number e.g. 30086 for HB K8 server";
+                type string;
+            }
+            variable db-server-ip {
+                value "";
+                description "Enter HB server IP. e.g. 10.87.74.102";
+                type string;
+            }
+            variable vcenter-device {
+                value "";
+                description "Enter vsphere device e.g. tme_vsphere";
+                type string;
+            }
+            variable vcenter-device-group {
+                value "";
+                description "Enter vsphere device group name e.g. vcenter";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                    other-vendor vmware {
+                        vendor-name vsphere;
+                        operating-system vcenter;
+                    }
+                }
+                helper-files other {
+                    list-of-files [ get_vcenter_details.py LldpNbrStatsTable.yml ];
+                }
+            }
+        }
+    }
+}
