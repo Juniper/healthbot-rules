@@ -1,0 +1,24 @@
+/*
+ * Playbook contains a rule which uses sflow to sample traffic and notifies
+ * anomalies when sflow traffic rate exceeds threshold value.
+ * 
+ * 1) Rule check-interface-in-out-traffic-snmp, Collects input and output traffic 
+ *    stats periodically and notifies in case traffic is above threshold.
+ * 2) Rule check-mac-traffic, Check traffic based on mac addresses
+ *    and notifies anomaly when traffic rate is above threshold.
+ * 3) Rule check-tcp-traffic-tagged, Check traffic based on TCP port
+ *    and notifies anomaly when tagged traffic rate is above threshold.
+ * 4) Rule check-tcp-traffic-untagged, Check traffic based on TCP port
+ *    and notifies anomaly when untagged traffic rate is above threshold.
+ * 5) Rule check-udp-traffic-tagged, Check traffic based on UDP port
+ *    and notifies anomaly when tagged traffic rate is above threshold.
+ * 6) Rule check-udp-traffic-untagged, Check traffic based on UDP port
+ *    and notifies anomaly when untagged traffic rate is above threshold.
+ */
+healthbot {
+    playbook Sflow-Ingest-Playbook {
+        rules [ interface.statistics/check-interface-in-out-traffic-snmp sflow/check-mac-traffic sflow/check-tcp-traffic-tagged sflow/check-tcp-traffic-untagged sflow/check-udp-traffic-tagged sflow/check-udp-traffic-untagged ];
+        description "The playbook has some Sflow rules to identify the traffic based on source/destination mac-addresses and TCP/UDP ports.";
+        synopsis "Sflow analyzer";		
+    }
+} 
