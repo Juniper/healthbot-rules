@@ -1,0 +1,216 @@
+/*
+ * Monitors traffic by sampling using sflow ingest and notifies anomaly when 
+ * traffic rate from source mac addresses is above threshold.
+ * Variable inputs controls detection
+ * 
+ *   1) high-threshold variable, is the threshold that causes the rule 
+ *      to report an anomaly. By default it's 800mBps (in Bytes). This rule will set a
+ *      dashboard color to red when traffic rate is greater than  
+ *      'highthreshold', otherwise color is set to green.
+ *
+ *
+ *   2) low-threshold variable, is the threshold that causes the rule 
+ *      to report an anomaly. By default it's 500mBps (in Bytes). This rule will set a
+ *      dashboard color to yellow when traffic rate is greater than  
+ *      'lowthreshold', otherwise color is set to green.
+ */
+healthbot {
+    topic sflow {
+        rule check-mac-traffic {
+            /*
+             * Monitors the traffic from various mac-addresses. Notifies via 
+             * the dashboardcolors when traffic rate increase by {{highThreshold}}
+             * for every collected metric then color is set to red else when
+             * traffic rate increase by {{lowThreshold}}  for every collected metric
+             * then color is set to yellow.Otherwise the color is set to green.
+             * 
+             * Use agentid, destination Mac and sourceMac as keys.
+             * 
+             */
+            keys [ agentid destinationMac sourceMac ];
+            description "Check traffic based on mac addresses";
+            field-aggregation-time-range 60s;
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor sflow-mac {
+                sflow {
+                    sensor-name /sflow-v5/flow-sample/raw-packet-header/ethernet;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field agentid {
+                sensor sflow-mac {
+                    path sFlowAgentAddress;
+                }
+                type string;
+                description "Identifies the device that is sending the data to be monitored by HB";
+            }
+            field destinationMac {
+                sensor sflow-mac {
+                    path recordDestinationMac;
+                }
+                type string;
+                description "Destination mac-address of the sampled packet";
+            }
+            field frame-length-mean {
+                formula {
+                    mean {
+                        field-name "$frameLength";
+                        time-range 60s;
+                    }
+                }
+                type integer;
+                description "mean of the frame length";
+            }
+            field frameLength {
+                sensor sflow-mac {
+                    path frameLength;
+                }
+                type integer;
+                description "Length of the sampled packet in bytes";
+            }
+            field highThreshold {
+                constant {
+                    value "{{highthreshold}}";
+                }
+                type integer;
+                description "High threshold variable";
+            }
+            field inputInterfaceIndex {
+                sensor sflow-mac {
+                    path sampleInputInterfaceValue;
+                }
+                type integer;
+                description "Index of the input interface, used to derive the input interface name";
+            }
+            field inputInterfaceName {
+                reference {
+                    path "/topic[topic-name='interface.statistics']/rule[rule-name=check-interface-in-out-traffic-snmp]/field[index='$inputInterfaceIndex']/interface-name";
+                }
+                type string;
+                description "Input interface name";
+            }
+            field lowThreshold {
+                constant {
+                    value "{{lowthreshold}}";
+                }
+                type integer;
+                description "Low threshold variable";
+            }
+            field outInterfaceName {
+                reference {
+                    path "/topic[topic-name='interface.statistics']/rule[rule-name=check-interface-in-out-traffic-snmp]/field[index='$outputInterfaceIndex']/interface-name";
+                }
+                type string;
+                description "Output interface name";
+            }
+            field outputInterfaceIndex {
+                sensor sflow-mac {
+                    path sampleOutputInterfaceValue;
+                }
+                type integer;
+                description "Index of the output interface, used to derive the output interface name";
+            }
+            field samplingRate {
+                sensor sflow-mac {
+                    path sampleSamplingRate;
+                }
+                type integer;
+                description "The rate at which packet is sampled";
+            }
+            field sourceMac {
+                sensor sflow-mac {
+                    path recordSourceMac;
+                }
+                type string;
+                description "Source mac-address of the sampled packet";
+            }
+            field totalBytes {
+                formula {
+                    eval {
+                        expression "$frame-length-mean * $samplingRate";
+                    }
+                }
+                type integer;
+                description "Product of the mean  frame size and sampling-rate.Gives the total traffic in bytes";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger traffic {
+                frequency 60s;
+                term greaterthanhighthreshold {
+                    when {
+                        greater-than-or-equal-to "$totalBytes" "$highThreshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "On the Device $agentid , traffic of  $totalBytes Bytes for source address \"$sourceMac\" and destination address \"$destinationMac\" is above high threshold $highThreshold";
+                        }
+                    }
+                }
+                term greaterthanlowthreshold {
+                    when {
+                        greater-than-or-equal-to "$totalBytes" "$lowThreshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "On the Device $agentid , traffic of $totalBytes Bytes for source address \"$sourceMac\" and destination address \"$destinationMac\" is above low threshold $lowThreshold";
+                        }
+                    }
+                }
+                term normaltraffic {
+                    then {
+                        status {
+                            color green;
+                            message "On the Device $agentid , traffic of $totalBytes Bytes for source address \"$sourceMac\" and destination address \"$destinationMac\"is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable highthreshold {
+                value 100000000;
+                description "High threshold for a Gig interface.Since total traffic is calculated in bytes, the interface speed of 800Mbps/8 is taken";
+                type int;
+            }
+            variable lowthreshold {
+                value 62500000;
+                description "Low threshold for a Gig interface.Since total traffic is calculated in bytes, the interface speed of 500Mbps/8 is taken";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products QFX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
