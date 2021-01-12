@@ -1,6 +1,6 @@
 # HealthBot Sflow KPI rules and playbooks
 
-## Sflow playbooks
+## Sflow playbooks:
 ### Playbook name: Sflow-TCP-Port-Playbook 
 		> Description: "The playbook has some Sflow rules to identify the traffic based on their TCP ports."
 		> Synopsis: "Sflow analyzer"
