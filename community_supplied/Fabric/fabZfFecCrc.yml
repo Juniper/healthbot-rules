@@ -1,0 +1,22 @@
+---
+ZfFecCrcTable:
+    command: show chassis ccl statistics summary {{ asic }}
+    args:
+        asic: Null
+    key: link-name
+    view: ZfFecCrcView
+ZfFecCrcView:
+    eval:
+        fec_uncor: int(str({{fec_uncor}}), 16)
+        crc: int(str({{crc}}), 16)
+        filter: 1 if ({{fec_uncor}} > 0 or {{crc}} > 0) else 0
+    regex:
+        link-name: 'SIB\d_ZF_\d-chan-rx\d+-sc\d'
+        p-link: \d
+        SID: \d+
+        crc: \w+
+        fec_cor: \w+
+        fec_uncor: \w+
+        cor_bit_cntr: \w+
+        cor_t_max: \w+
+        State: \w+
