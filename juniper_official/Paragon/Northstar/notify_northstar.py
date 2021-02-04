@@ -3,7 +3,6 @@ import requests
 import json
 import datetime
 import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #NorthStar URLs
 node_get_url = 'http://ns-web.northstar:3301/NorthStar/API/v2/tenant/1/topology/1/nodes?q=$.[?(@.hostName %26%26 (@.hostName == "{hostname}"))]'
