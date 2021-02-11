@@ -1,0 +1,246 @@
+/*
+* Monitors global related distributed denial of service statistics and notifies
+* when anomalies are found.
+* One input control detection
+*
+* 1) ddos-threshold,  is the threshold that causes the rule to report
+* an anomaly. By default it is 1. This rule will set a dashboard color to red
+* when packet violation count increases by atleast a value of 1.
+* If anomaly is detected then dashboard color is set to yellow else the color
+* is set to green.
+*/
+healthbot {
+    topic security.ddos {
+        rule check-global-ddos-statistics {
+            description "Monitors global related distributed denial of service statistics";
+            /*
+             * Monitors global related distributed denial of service statistics. 
+             * Notifies via the dashboard colors when count exceeds the ddos threshold it sets 
+             * the color to red.The color is set to yellow when anomaly is detected.  
+             * Otherwise the color is set to green.
+             *
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor ddos {
+                iAgent {
+                    file DDOSprotection.yml;
+                    table DDOSprotectionTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field currently-violated-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm holt-winters;
+                        learning-period 4hours;
+                        seasonality 1hours;
+                        field-name "$currently-violated-packet-types";
+                    }
+                }
+                type integer;
+                description "Anomaly of currently violated packets.";
+            }
+            field currently-violated-packet-types {
+                sensor ddos {
+                    path Currently-violated-packet-type;
+                }
+                type integer;
+                description "Shows count of currently violated packet types.";
+            }
+            field drop-count-threshold {
+                constant {
+                    value "{{ddos-threshold}}";
+                }
+                type integer;
+                description "Threshold value.";
+            }
+            field packet-types-have-seen-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm holt-winters;
+                        learning-period 4hours;
+                        seasonality 1hours;
+                        field-name "$packet-types-have-seen-violations";
+                    }
+                }
+                type integer;
+                description "Anomaly of packet-types-have-seen violations.";
+            }
+            field packet-types-have-seen-violations {
+                sensor ddos {
+                    path Packet-types-have-seen-violations;
+                }
+                type integer;
+                description "Shows count of packet types have seen violations.";
+            }
+            field total-violation-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm holt-winters;
+                        learning-period 4hours;
+                        seasonality 1hours;
+                        field-name "$total-violation-counts";
+                    }
+                }
+                type integer;
+                description "Anomaly of total-violation count.";
+            }
+            field total-violation-counts {
+                sensor ddos {
+                    path Total-violation-counts;
+                }
+                type integer;
+                description "Shows count of total violations.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger currently-violated {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        increasing-at-least-by-value "$currently-violated-packet-types" {
+                            value "$drop-count-threshold";
+                            time-range 5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS currently violated packet types ($currently-violated-packet-types) increasing.";
+                        }
+                    }
+                }
+                term anomaly {
+                    when {
+                        equal-to "$currently-violated-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly detected for DDOS currently violated packet types.";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "DDOS currently violated packet types is normal.";
+                        }
+                    }
+                }
+            }
+            trigger have-seen-violations {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        increasing-at-least-by-value "$packet-types-have-seen-violations" {
+                            value "$drop-count-threshold";
+                            time-range 5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS packet-types-have-seen-violations ($packet-types-have-seen-violations) increasing.";
+                        }
+                    }
+                }
+                term anomaly {
+                    when {
+                        equal-to "$packet-types-have-seen-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly detected for DDOS packet-types-have-seen-violations.";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "DDOS packet-types-have-seen-violations are normal.";
+                        }
+                    }
+                }
+            }
+            trigger total-violation-counts {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        increasing-at-least-by-value "$total-violation-counts" {
+                            value "$drop-count-threshold";
+                            time-range 5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DDOS total-violation-counts ($total-violation-counts) increasing.";
+                        }
+                    }
+                }
+                term anomaly {
+                    when {
+                        equal-to "$total-violation-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly detected in DDOS total-violation-counts.";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "DDOS total-violation-counts is normal.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable ddos-threshold {
+                value 1;
+                description "The threshold variable is configured as 1.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                            products QFX {
+                                releases 16.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ QFX10000 QFX5200 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
