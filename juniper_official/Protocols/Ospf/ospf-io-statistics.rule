@@ -18,7 +18,7 @@ healthbot {
             trigger protocol-ospf-io-statistics-information-ospf-error-count {
                 synopsis "ospf io statistics kpi";
                 description "Sets health based on ospf io errors";
-                frequency 1offset;
+                frequency 1.5offset;
 		term no-ospf-error-reported {
                     when {
                         matches-with "$ospf-error" no-error;
@@ -30,7 +30,12 @@ healthbot {
                         }
                     }
                 }
-                term is-ospf-error-reported {
+                term is-ospf-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$ospf-error" {
+                            value 1;
+                        }
+                    }
                     then {
                         status {
                             color red;
@@ -38,16 +43,25 @@ healthbot {
                         }
                     }
                 }
+                term is-ospf-error-reported {
+                    then {
+                        status {
+                            color green;
+                            message "RPD OSPF IO is not reporting errors";
+                        }
+                    }
+                }
             }
             trigger protocol-ospf-io-statistics-information-packet-read {
                 synopsis "ospf io statistics kpi";
                 description "Sets health based on ospf io packet read errors";
-                frequency 1offset;
+                frequency 1.5offset;
                 term is-ospf-io-packet-read-increasing {
                     when {
                         increasing-at-least-by-value "$packets-read" {
                             value 1;
                             time-range 5offset;
+                            any;
                         }
                     }
                     then {
