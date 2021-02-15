@@ -1,0 +1,562 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule timeouts {
+            keys [ counterNH flowNH index instance s_inst_name target template_name ];
+            synopsis "Compares the timeout values configured in th RE with the ones configured on the linecard";
+            description "Verifies the active and inactive timeout values iconfigured for the protocol family";
+            function verify_template {
+                path jflow_verify_config.py;
+                method verify_template_version;
+                argument config_temp_type {
+                    mandatory;
+                }
+                argument index {
+                    mandatory;
+                }
+                argument vty_temp_type {
+                    mandatory;
+                }
+                argument vty_version {
+                    mandatory;
+                }
+            }
+            sensor timeouts {
+                iAgent {
+                    file jflow_instance_entry.yml;
+                    table SampleInstanceEntry;
+                    frequency 45s;
+                }
+            }
+            field active_timeout_ipfix {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_act_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field active_timeout_v9 {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_act_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field cfg_ipfix_mpls_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_mpls_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_mpls_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_mpls_v4_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_mpls_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_mpls_v6_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_ipv4_template";
+                }
+                type string;
+            }
+            field cfg_ipfix_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_ipv6_template";
+                }
+                type string;
+            }
+            field cfg_v9_mpls_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_mpls_template";
+                }
+                type string;
+            }
+            field cfg_v9_mpls_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_mpls_v4_template";
+                }
+                type string;
+            }
+            field cfg_v9_mpls_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_mpls_v6_template";
+                }
+                type string;
+            }
+            field cfg_v9_v4_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_ipv4_template";
+                }
+                type string;
+            }
+            field cfg_v9_v6_temp {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_ipv6_template";
+                }
+                type string;
+            }
+            field counterNH {
+                sensor timeouts {
+                    path counterNH;
+                }
+                type string;
+            }
+            field export_version {
+                sensor timeouts {
+                    path export_version;
+                }
+                type string;
+            }
+            field flowNH {
+                sensor timeouts {
+                    path flowNH;
+                }
+                type string;
+            }
+            field inactive_timeout_ipfix {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-ipfix]/field[ipfix_temp_name='$template_name']/ipfix_inact_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field inactive_timeout_v9 {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=flow-mon-v9]/field[v9_temp_name='$template_name']/v9_inact_timeout";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+            }
+            field index {
+                sensor timeouts {
+                    path index;
+                }
+                type string;
+            }
+            field instance {
+                sensor timeouts {
+                    path instance;
+                }
+                type string;
+            }
+            field invalid_entry {
+                sensor timeouts {
+                    path invalid_entry;
+                    data-if-missing {
+                        value valid;
+                    }
+                }
+                type string;
+            }
+            field s_inst_name {
+                sensor timeouts {
+                    path s_inst_name;
+                }
+                type string;
+            }
+            field target {
+                sensor timeouts {
+                    path target;
+                }
+                type string;
+            }
+            field template_name {
+                sensor timeouts {
+                    path template_name;
+                }
+                type string;
+            }
+            field vty_active_timeout {
+                sensor timeouts {
+                    path act_timeout;
+                }
+                type integer;
+            }
+            field vty_inactive_timeout {
+                sensor timeouts {
+                    path inactive_timeout;
+                }
+                type integer;
+            }
+            trigger active_timeout {
+                frequency 45s;
+                term default-v9 {
+                    when {
+                        equal-to "$active_timeout_v9" 0;
+                        equal-to "$vty_active_timeout" 60;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout value is set to default as $vty_active_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term default-ipfix {
+                    when {
+                        equal-to "$active_timeout_ipfix" 0;
+                        equal-to "$vty_active_timeout" 60;
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout value is set to default as $vty_active_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term valid_v9 {
+                    when {
+                        equal-to "$active_timeout_v9" "$vty_active_timeout";
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout configured f is $vty_active_timeout or $export_version and protocol family $temp_type. $invalid_entry";
+                        }
+                    }
+                }
+                term valid-ipfix {
+                    when {
+                        equal-to "$active_timeout_ipfix" "$vty_active_timeout";
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The active timeout configured f is $vty_active_timeout or $export_version and protocol family $temp_type.";
+                        }
+                    }
+                }
+                term invalid-entry {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The instance entry is Invalid and timeout should not be configured for protocol family $temp_type. ";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type):  The active timeout $vty_active_timeout configured for the version $export_version and family $temp_type is incorrect.";
+                        }
+                    }
+                }
+            }
+            trigger inactive_timeout {
+                frequency 45s;
+                term default-ipfix {
+                    when {
+                        equal-to "$inactive_timeout_ipfix" 0;
+                        equal-to "$vty_inactive_timeout" 60;
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout value is set to default as $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term default-v9 {
+                    when {
+                        equal-to "$inactive_timeout_v9" 0;
+                        equal-to "$vty_inactive_timeout" 60;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout value is set to default as $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term valid-ipfix {
+                    when {
+                        equal-to "$inactive_timeout_ipfix" "$vty_inactive_timeout";
+                        matches-with "$export_version" "(IP-FIX)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The in active timeout value is set to $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term valid-v9 {
+                    when {
+                        equal-to "$inactive_timeout_v9" "$vty_inactive_timeout";
+                        matches-with "$export_version" "(Jflow-V9)";
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout value is set to $vty_inactive_timeout for $export_version and protocol family $temp_type";
+                        }
+                    }
+                }
+                term invalid-entry {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The instance entry is invalid and timeout should not be configured for protocol family $temp_type";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The inactive timeout $vty_inactive_timeout configured for $export_version and protocol family $temp_type is wrong. ";
+                        }
+                    }
+                }
+            }
+            trigger template-type {
+                frequency 45s;
+                term proto-not-cfg {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The protocol $temp_type is not configured for $export_version";
+                        }
+                    }
+                }
+                term valid-ipv4-v9 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-ipv4-ipfix {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-v6-v9 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type v9_v6;
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-v6-ipfix {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_v6_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v9 {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_mpls_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-ipfix {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_mpls_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v4-v9 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_mpls_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v4-ipfix {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_mpls_v4_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v6-v9 {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$export_version" "(Jflow-V9)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_v9_mpls_v6_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term valid-mpls-v6-ipfix {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$export_version" "(IP-FIX)";
+                        user-defined-function verify_template {
+                            argument config_temp_type "$cfg_ipfix_mpls_v6_temp";
+                            argument index "$index";
+                            argument vty_temp_type "$temp_type";
+                            argument vty_version "$export_version";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are correct";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The template configurations for $export_version and protocol family $temp_type are Wrong";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

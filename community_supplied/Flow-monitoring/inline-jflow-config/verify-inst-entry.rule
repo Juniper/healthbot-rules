@@ -1,0 +1,1010 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule verify-inst-entry {
+            keys [ counterNH flowNH index instance s_inst_name target template_name ];
+            synopsis "The deatils such as collector IP's, collector ports, source address, flow table sizes, number of collectors configured for each protocol family is verified.";
+            description "Verifies if the instance entry details are correctly configured in accordance to the RE configs ";
+            function verify_collector_ip {
+                path jflow_verify_config.py;
+                method verify_collector_ip;
+                argument cfg_coll {
+                    mandatory;
+                }
+                argument vty_coll1 {
+                    mandatory;
+                }
+                argument vty_coll2 {
+                    mandatory;
+                }
+                argument vty_coll3 {
+                    mandatory;
+                }
+                argument vty_coll4 {
+                    mandatory;
+                }
+                argument vty_no_of_coll {
+                    mandatory;
+                }
+            }
+            function verify_collector_port {
+                path jflow_verify_config.py;
+                method verify_collector_port;
+                argument cfg_port {
+                    mandatory;
+                }
+                argument vty_cport1 {
+                    mandatory;
+                }
+                argument vty_cport2 {
+                    mandatory;
+                }
+                argument vty_cport3 {
+                    mandatory;
+                }
+                argument vty_cport4 {
+                    mandatory;
+                }
+                argument vty_no_of_coll {
+                    mandatory;
+                }
+            }
+            function verify_jflow_src_addr {
+                path jflow_verify_config.py;
+                method verify_jflow_src_addr;
+                argument cfg_src_ip {
+                    mandatory;
+                }
+                argument vty_no_of_coll {
+                    mandatory;
+                }
+                argument vty_src1 {
+                    mandatory;
+                }
+                argument vty_src2 {
+                    mandatory;
+                }
+                argument vty_src3 {
+                    mandatory;
+                }
+                argument vty_src4 {
+                    mandatory;
+                }
+            }
+            function verify_no_of_collector {
+                path jflow_verify_config.py;
+                method verify_no_of_collector;
+                argument cfg_collector {
+                    mandatory;
+                }
+                argument vty_no_of_collector {
+                    mandatory;
+                }
+            }
+            function verify_tbl_size {
+                path jflow_verify_config.py;
+                method verify_tbl_size;
+                argument config_flow_tbl_size {
+                    mandatory;
+                }
+                argument fpc_num {
+                    mandatory;
+                }
+                argument target {
+                    mandatory;
+                }
+                argument vty_flow_tbl_size {
+                    mandatory;
+                }
+            }
+            sensor verify-inst-entry {
+                iAgent {
+                    file jflow_instance_entry.yml;
+                    table SampleInstanceEntry;
+                    frequency 45s;
+                }
+            }
+            field c1_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c1_coll_ip_addr;
+                }
+                type string;
+            }
+            field c2_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c2_coll_ip_addr;
+                }
+                type string;
+            }
+            field c3_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c3_coll_ip_addr;
+                }
+                type string;
+            }
+            field c4_coll_ip_addr {
+                sensor verify-inst-entry {
+                    path c4_coll_ip_addr;
+                }
+                type string;
+            }
+            field cfg_inst_name {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/sample_inst_name";
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field counterNH {
+                sensor verify-inst-entry {
+                    path counterNH;
+                    data-if-missing {
+                        value invalid;
+                    }
+                }
+                type string;
+            }
+            field flowNH {
+                sensor verify-inst-entry {
+                    path flowNH;
+                    data-if-missing {
+                        value invalid;
+                    }
+                }
+                type string;
+            }
+            field fpc_num {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/fpc_number";
+                }
+                type string;
+            }
+            field index {
+                sensor verify-inst-entry {
+                    path index;
+                    data-if-missing {
+                        value -1;
+                    }
+                }
+                type string;
+            }
+            field instance {
+                sensor verify-inst-entry {
+                    path instance;
+                }
+                type string;
+            }
+            field instance_name {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/inst_name";
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field invalid_entry {
+                sensor verify-inst-entry {
+                    path invalid_entry;
+                    data-if-missing {
+                        value valid;
+                    }
+                }
+                type string;
+            }
+            field ipv4_coll {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_v4";
+                }
+                type string;
+            }
+            field ipv4_coll_port {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_port_v4";
+                }
+                type string;
+            }
+            field ipv4_jflow_src_addr {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/jflow_source_addr_v4";
+                }
+                type string;
+            }
+            field ipv4_table_len {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/flow_tbl_size_ipv4";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field ipv6_coll {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_v6";
+                }
+                type string;
+            }
+            field ipv6_coll_port {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_port_v6";
+                }
+                type string;
+            }
+            field ipv6_jflow_src_addr {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/jflow_source_addr_v6";
+                }
+                type string;
+            }
+            field ipv6_table_len {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/flow_tbl_size_ipv6";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field mpls_coll {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_mpls";
+                }
+                type string;
+            }
+            field mpls_coll_port {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/flow_server_port_mpls";
+                }
+                type string;
+            }
+            field mpls_jflow_src_addr {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=config]/field[inst_name='$s_inst_name']/jflow_source_addr_mpls";
+                }
+                type string;
+            }
+            field mpls_table_len {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$s_inst_name']/flow_tbl_size_mpls";
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field s_inst_name {
+                sensor verify-inst-entry {
+                    path s_inst_name;
+                }
+                type string;
+            }
+            field target {
+                sensor verify-inst-entry {
+                    path target;
+                }
+                type string;
+            }
+            field template_name {
+                sensor verify-inst-entry {
+                    path template_name;
+                }
+                type string;
+            }
+            trigger collector-ip {
+                frequency 45s;
+                term valid_v4 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$ipv4_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for IPv4 are correct. Configured collectors are: $ipv4_coll";
+                        }
+                    }
+                }
+                term valid_v6 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$ipv6_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configured for IPv6 are correct. Configured collectors are: $ipv6_coll.";
+                        }
+                    }
+                }
+                term valid_mpls {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$mpls_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for MPLS are correct. Configured collectors are: $mpls_coll";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$mpls_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for MPLS-ipv4 are correct. Configured collectors are: $mpls_coll";
+                        }
+                    }
+                }
+                term valid_mpls_ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$invalid_entry" valid;
+                        user-defined-function verify_collector_ip {
+                            argument cfg_coll "$mpls_coll";
+                            argument vty_coll1 "$c1_coll_ip_addr";
+                            argument vty_coll2 "$c2_coll_ip_addr";
+                            argument vty_coll3 "$c3_coll_ip_addr";
+                            argument vty_coll4 "$c4_coll_ip_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations for MPLS-IPv6 are correct. Configured collectors are: $mpls_coll";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The collector configurations are invalid for $temp_type .";
+                        }
+                    }
+                }
+            }
+            trigger collector-port {
+                frequency 45s;
+                term valid-v4-port {
+                    when {
+                        equal-to "$index" 0;
+                        user-defined-function verify_collector_port {
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument cfg_port "$ipv4_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for IPv4 are correct. collector ports $ipv4_coll_port";
+                        }
+                    }
+                }
+                term valid_v6-port {
+                    when {
+                        equal-to "$index" 1;
+                        user-defined-function verify_collector_port {
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument cfg_port "$ipv6_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for IPv6 are correct. collector ports $ipv6_coll_port";
+                        }
+                    }
+                }
+                term valid_mpls-port {
+                    when {
+                        equal-to "$index" 3;
+                        user-defined-function verify_collector_port {
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument cfg_port "$mpls_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for MPLS are correct. collector ports $mpls_coll_port";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4-port {
+                    when {
+                        equal-to "$index" 4;
+                        user-defined-function verify_collector_port {
+                            argument cfg_port "$mpls_coll_port";
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for MPLS-IPv4 are correct. collector ports $mpls_coll_port";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4_port {
+                    when {
+                        equal-to "$index" 5;
+                        user-defined-function verify_collector_port {
+                            argument cfg_port "$mpls_coll_port";
+                            argument vty_cport1 "$c1_coll_port";
+                            argument vty_cport2 "$c2_coll_port";
+                            argument vty_cport3 "$c3_coll_port";
+                            argument vty_cport4 "$c4_coll_port";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configured for MPLS-IPv6 are correct. collector ports $mpls_coll_port";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The collector ports configurations are wrong for family $temp_type.";
+                        }
+                    }
+                }
+            }
+            trigger counterNH {
+                frequency 45s;
+                term invalid-entry {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The family configurations are invalid.";
+                        }
+                    }
+                }
+                term invalid-ipv4 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$counterNH" invalid-ipv4;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-ipv6 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$counterNH" invalid-ipv6;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$counterNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v4 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$counterNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v6 {
+                    when {
+                        equal-to "$index" 5;
+                        matches-with "$counterNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Invalid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+                term valid {
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid counter next hop for family $temp_type";
+                        }
+                    }
+                }
+            }
+            trigger family-not-configured {
+                frequency 45s;
+                term invalid {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Protocol family $temp_type is not configured on the $target.";
+                        }
+                    }
+                }
+            }
+            trigger flow-table-size {
+                frequency 45s;
+                term valid-v4 {
+                    when {
+                        equal-to "$index" 0;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$ipv4_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for IPv4 : $flow_tbl_size";
+                        }
+                    }
+                }
+                term valid-v6 {
+                    when {
+                        equal-to "$index" 1;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$ipv6_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for IPv6 : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term valid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$mpls_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for MPLS : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term valid-mpls-ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$mpls_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for MPLS-IPv4 : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term valid-mpls-ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                        user-defined-function verify_tbl_size {
+                            argument config_flow_tbl_size "$mpls_table_len";
+                            argument fpc_num "$fpc_num";
+                            argument target "$target";
+                            argument vty_flow_tbl_size "$flow_tbl_size";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size for MPLS-IPv6 : $flow_tbl_size  is correct. ";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The configured flow table size is wrong for protocol family $temp_type . $flow_tbl_size";
+                        }
+                    }
+                }
+            }
+            trigger flowNH {
+                frequency 45s;
+                term invalid {
+                    when {
+                        matches-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): The family configurations are invalid.";
+                        }
+                    }
+                }
+                term invalid-ipv4 {
+                    when {
+                        equal-to "$index" 0;
+                        matches-with "$flowNH" invalid-ipv4;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-ipv6 {
+                    when {
+                        equal-to "$index" 1;
+                        matches-with "$flowNH" invalid-ipv6;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        matches-with "$flowNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v4 {
+                    when {
+                        equal-to "$index" 4;
+                        matches-with "$flowNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type):Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term invalid-mpls-v6 {
+                    when {
+                        equal-to index 5;
+                        matches-with "$flowNH" invalid-mpls;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+                term valid {
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid flow next hop for family $temp_type";
+                        }
+                    }
+                }
+            }
+            trigger jflow-src-ip {
+                frequency 45s;
+                term valid_v4 {
+                    when {
+                        equal-to "$index" 0;
+                        user-defined-function verify_jflow_src_addr {
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                            argument cfg_src_ip "$ipv4_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for IPv4 is $ipv4_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_v6 {
+                    when {
+                        equal-to "$index" 1;
+                        user-defined-function verify_jflow_src_addr {
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                            argument cfg_src_ip "$ipv6_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for IPv6 is $ipv6_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_mpls {
+                    when {
+                        equal-to "$index" 3;
+                        user-defined-function verify_jflow_src_addr {
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                            argument cfg_src_ip "$mpls_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for MPLS  is $mpls_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_mpls_ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        user-defined-function verify_jflow_src_addr {
+                            argument cfg_src_ip "$mpls_jflow_src_addr";
+                            argument vty_no_of_coll "$no_of_collector";
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for MPLS-IPv4  is $mpls_jflow_src_addr";
+                        }
+                    }
+                }
+                term valid_mpls_ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        user-defined-function verify_jflow_src_addr {
+                            argument cfg_src_ip "$mpls_jflow_src_addr";
+                            argument vty_no_of_coll "$vty_no_of_collector";
+                            argument vty_src1 "$c1_src_ip_addr";
+                            argument vty_src2 "$c2_src_ip_addr";
+                            argument vty_src3 "$c3_src_ip_addr";
+                            argument vty_src4 "$c4_src_ip_addr";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): Valid Source address configured for MPLS-IPv6  is $mpls_jflow_src_addr";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid source jflow ip address configured for family $temp_type";
+                        }
+                    }
+                }
+            }
+            trigger no-of-collector {
+                frequency 45s;
+                term valid-v4 {
+                    when {
+                        equal-to "$index" 0;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$ipv4_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured  for IPv4 are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-v6 {
+                    when {
+                        equal-to "$index" 1;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$ipv6_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for IPv6 are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-mpls {
+                    when {
+                        equal-to "$index" 3;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$mpls_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for MPLS are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-mpls-ipv4 {
+                    when {
+                        equal-to "$index" 4;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$mpls_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for MPLS-IPv4 are $no_of_collector";
+                        }
+                    }
+                }
+                term valid-mpls-ipv6 {
+                    when {
+                        equal-to "$index" 5;
+                        user-defined-function verify_no_of_collector {
+                            argument cfg_collector "$mpls_coll";
+                            argument vty_no_of_collector "$no_of_collector";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:$temp_type): The number of collectors configured for MPLS-IPv6 are $no_of_collector";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        does-not-match-with "$index" -1;
+                        does-not-match-with "$cfg_inst_name" None;
+                        does-not-match-with "$invalid_entry" "Invalid Instance Entry";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$s_inst_name:$temp_type): Invalid number of collectors: $no_of_collector configured for family $temp_type ";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
