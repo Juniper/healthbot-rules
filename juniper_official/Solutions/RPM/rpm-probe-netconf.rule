@@ -1,8 +1,8 @@
 /*
  * Detects RPM probe packet loss and RTT value using Netconf sensor.
- * One inputs control detection
+ * One inputs control detection:
  *
- *   1) rpm-threshold-variable, is the threshold that causes the rule to report
+ *   1) rtt-threshold-variable, is the threshold that causes the rule to report
  *       an anomaly. By default it's 50000. This rule will set a dashboard
  *       color to red when probe RTT value more than this threshold, otherwise
  *       color is set to green.
@@ -69,6 +69,12 @@ healthbot {
                 }
                 type string;
                 description "RPM probe test name";
+            }
+            field rtt-threshold {
+                constant {
+                    value "{{rtt-threshold-variable}}";
+                }
+                type integer;
             }
             /*
              * Anomaly detection logic.
@@ -148,7 +154,7 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable rpm-threshold-variable {
+            variable rtt-threshold-variable {
                 value 50000;
                 description "RPM RTT threshold variable in microseconds. More than this value is marked as anomaly";
                 type int;
