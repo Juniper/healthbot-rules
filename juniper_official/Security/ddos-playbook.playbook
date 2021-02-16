@@ -1,0 +1,19 @@
+/*
+ * Playbook contains ddos rules which checks if ipv4/ipv6 addresses are 
+ * present on lo0,checks for ipv6 link local address, queue depth and lacp packets
+ * and notifies when anomalies are found.
+ *
+ * 1) Rule "check-global-ddos-statistics" checks for ddos protection different
+ *    types of global packet violations.
+ * 2) Rule "check-protcol-ddos-statistics" checks for ddos protection system packets  
+ *    dropped at the protcol level.
+ * 3) Rule "check-protcol-ddos-system-statistics" checks for ddos protection packets 
+ *    dropped for routing engine and line card.
+ */
+healthbot {
+    playbook ddos-playbook {
+        rules [ security.ddos/check-global-ddos-statistics security.ddos/check-protcol-ddos-statistics security.ddos/check-protcol-ddos-system-statistics ];
+        description "To check if  ddos protection packets dropped are increasing for global packet violations,routing engine and linecard";
+        synopsis "ddos protection";
+    }
+}
