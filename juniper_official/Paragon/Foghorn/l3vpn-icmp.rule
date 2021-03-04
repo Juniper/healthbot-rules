@@ -1,0 +1,123 @@
+/*
+ * Collects ICMP probe status between PE and CE for a given routing-instance;
+ */
+healthbot {
+    topic protocol.icmp {
+        description "Collect routing instance and interfaces stats and notify anomalies";
+        synopsis "L3VPN session state analyzer";
+        rule check-icmp-statistics-with-source {
+            keys host;
+            sensor icmp {
+                synopsis "iAgent sensor definition";
+                description "Ping rpc to collect data from network device";
+                iAgent {
+                    file icmp-statistics-with-source.yml;
+                    table pingWithSourceTable;
+                    frequency 60s;
+                    args count {
+                        arg-value "{{count-var}}";
+                    }
+                    args host {
+                        arg-value "{{host-var}}";
+                    }
+                    args routing-instance {
+                        arg-value "{{rt-instance}}";
+                    }
+                    args source {
+                        arg-value "{{source-var}}";
+                    }
+                }
+            }
+            field host {
+                sensor icmp {
+                    path host;
+                }
+                type string;
+                description "Destination address/Host address in ICMP probe";
+            }
+            field packet-loss-percent {
+                sensor icmp {
+                    path packet-loss;
+                }
+                type integer;
+                description "ICMP probe packet loss percentage"
+            }
+            trigger packet-loss {
+                synopsis "ICMP packet loss KPI";
+                description "Sets health based on the packet loss";
+                frequency 1offset;
+                term is-device-not-reachable {
+                    when {
+                        equal-to "$packet-loss-percent" 100 {
+                            time-range 2offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Host $host not reachable";
+                        }
+                    }
+                }
+                term is-device-up {
+                    when {
+                        greater-than "$packet-loss-percent" 0 {
+                            time-range 2offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Host $host reachable and  $packet-loss-percent % packet loss";
+                        }
+                    }
+                }
+                term no-packet-loss {
+                    then {
+                        status {
+                            color green;
+                            message "Host $host reachable and  $packet-loss-percent % packet loss";
+                        }
+                    }
+                }
+            }
+            variable count-var {
+                value 1;
+                description "Input ICMP probe count";
+                type sensor-argument;
+            }
+            variable host-var {
+                description "Input Destination host";
+                type sensor-argument;
+            }
+            variable rt-instance {
+                description "Routing instance on which ICMP probe is sent";
+                type sensor-argument;
+            }
+            variable source-var {
+                description "Source address to use in ICMP probe";
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files icmp-statistics-with-source.yml;
+                }
+            }
+        }
+    }
+}
