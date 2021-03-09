@@ -1,0 +1,198 @@
+healthbot {
+    topic service.cgnat {
+        description "Rules relevant to metrics and KPI of the CGNAT";
+        synopsis "CGNAT utilization kpi";
+        rule check-cgnat {
+            synopsis "CGNAT utilization analyzer";
+            description "Monitors the CGNAT utilization";
+            keys [ interface-name internal-ip pool-name service-set-name ];
+            sensor cgnat {
+                synopsis "CGNAT utilization iAgent sensor definition";
+                description "Netconf rpc get-service-nat-mapping-brief to collect data from network device";
+                iAgent {
+                    file service-nat.yml;
+                    table CGNATTable;
+                    frequency 1800s;
+                }
+            }
+            field external-ip {
+                sensor cgnat {
+                    path external-ip;
+                }
+                type string;
+                description external-ip;
+            }
+            field interface-name {
+                sensor cgnat {
+                    path interface-name;
+                }
+                type string;
+                description interface-name;
+            }
+            field internal-ip {
+                sensor cgnat {
+                    path internal-ip;
+                }
+                type string;
+                description internal-ip;
+            }
+            field pool-name {
+                sensor cgnat {
+                    path pool-name;
+                }
+                type string;
+                description pool-name;
+            }
+            field ports-used {
+                sensor cgnat {
+                    path ports-used;
+                }
+                type integer;
+                description ports-used;
+            }
+            field service-set-name {
+                sensor cgnat {
+                    path service-set-name;
+                }
+                type string;
+                description service-set-name;
+            }
+            field session-count {
+                sensor cgnat {
+                    path session-count;
+                }
+                type integer;
+                description session-count;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files service-nat.yml;
+                }
+            }
+        }
+        rule check-nat-mapping {
+            synopsis "CGNAT mapping statistics";
+            description "Monitors the CGNAT utilization";
+            rule-frequency 1805s;
+            function multirow {
+                path cgnat_multirow.py;
+                method get_ifl_stats;
+            }
+            field avg_external_ip {
+                formula {
+                    user-defined-function {
+                        function-name multirow;
+                    }
+                }
+                type float;
+                description "Function returs average no of external IPs";
+            }
+            field avg_session_count {
+                formula {
+                    user-defined-function {
+                        function-name multirow;
+                    }
+                }
+                type integer;
+                description "Function returs average session count";
+            }
+            field max_external_ip {
+                formula {
+                    user-defined-function {
+                        function-name multirow;
+                    }
+                }
+                type integer;
+                description "Function returs maximum no of external IPs";
+            }
+            field max_session_count {
+                formula {
+                    user-defined-function {
+                        function-name multirow;
+                    }
+                }
+                type integer;
+                description "Function returs maximum no of session count";
+            }
+            field total_external_ip {
+                formula {
+                    user-defined-function {
+                        function-name multirow;
+                    }
+                }
+                type integer;
+                description "Function returs total no of external IPs";
+            }
+            field total_internal_ip {
+                formula {
+                    user-defined-function {
+                        function-name multirow;
+                    }
+                }
+                type integer;
+                description "Function returs total no of internal IPs";
+            }
+            trigger Internal-External-ip-mapping {
+                synopsis "CGNAT internal and external ip mapping kpi";
+                description "Displays the internal and external mapping counts";
+                frequency 1805s;
+                term Term_1 {
+                    then {
+                        status {
+                            color green;
+                            message "Total Internal IP: $total_internal_ip, Total External IP: $total_external_ip, Average Int to Ext Mapping: $avg_external_ip, Max Externl IP Mapping: $max_external_ip";
+                        }
+                    }
+                }
+            }
+            trigger session-count {
+                synopsis "CGNAT session count kpi";
+                description "Displays the counts";
+                frequency 1805s;
+                term Term_1 {
+                    then {
+                        status {
+                            color green;
+                            message "Total External IP: $total_external_ip, Max Session Count: $max_session_count, Average Session count: $avg_session_count";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files cgnat_multirow.py;
+                }
+            }
+        }
+    }
+}

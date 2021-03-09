@@ -1,0 +1,88 @@
+healthbot {
+    topic service.cgnat {
+        description "Rules relevant to CGNAT port block statistics";
+        synopsis "CGNAT port block stats kpi";
+        rule check-port-block-stats {
+            synopsis "CGNAT port block analyzer";
+            description "Monitors CGNAT port block";
+            keys [ interface-name service-set-name ];
+            sensor pba {
+                synopsis "CGNAT port block iAgent sensor definition";
+                description "Netconf rpc get-service-nat-pool-information to collect data from network device";
+                iAgent {
+                    file port-block.yml;
+                    table POOLTable;
+                    frequency 300s;
+                }
+            }
+            field interface-name {
+                sensor pba {
+                    path interface-name;
+                }
+                type string;
+                description interface-name;
+            }
+            field pb-inuse {
+                sensor pba {
+                    path port-blocks-in-use;
+                }
+                type string;
+                description pb-inuse;
+            }
+            field pba-error {
+                sensor pba {
+                    path port-block-allocation-errors;
+                }
+                type string;
+                description pba-error;
+            }
+            field pool-name {
+                sensor pba {
+                    path pool-name;
+                }
+                type string;
+                description pool-name;
+            }
+            field service-set-name {
+                sensor pba {
+                    path service-set-name;
+                }
+                type string;
+                description service-set-name;
+            }
+            trigger port-blocks {
+                synopsis "Port blocks kpi";
+                description "Displays the CGNAT port blocks statistics";
+                frequency 360s;
+                term port-block-stats {
+                    then {
+                        status {
+                            color green;
+                            message "interface name: $interface-name  servicesetname: $service-set-name poolname: $pool-name pbaerror: $pba-error pb-inuse: $pb-inuse";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files port-block.yml;
+                }
+            }
+        }
+    }
+}
