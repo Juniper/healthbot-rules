@@ -1,0 +1,57 @@
+/*
+ * Collects L3VPN OSPF protocol status between PE and CE
+ */
+healthbot {
+    topic protocol.ospf {
+        description "Collect routing instance OSPF session state";
+        synopsis "L3VPN OSPF session state analyzer";
+        rule get-l3vpn-ospf-neighbor-information {
+            keys [ interface-name neighbor-address ospf-instance-name ];
+            synopsis "OSPF session state analyzer";
+            description "Monitors the OPSF neighbor states for all routing instances";
+            sensor protocol-ospf-neighbor-information {
+                synopsis "OSPF iAgent sensor definition";
+                description "Netconfig rpc get-ospf-neighbor-information iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file l3vpn-ospf-neighbor-vrf.yml;
+                    table L3vpnOspfNeighborTable;
+                    frequency 60s;
+                }
+            }
+            field neighbor-address {
+                sensor protocol-ospf-neighbor-information {
+                    path neighbor-address;
+                }
+                type string;
+                description "Neighbor address to monitor";
+            }
+            field ospf-neighbor-state {
+                sensor protocol-ospf-neighbor-information {
+                    path ospf-neighbor-state;
+                }
+                type string;
+                description "OSPF session state for a given neighbor";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files l3vpn-ospf-neighbor-vrf.yml;
+                }
+            }
+        }
+    }
+}

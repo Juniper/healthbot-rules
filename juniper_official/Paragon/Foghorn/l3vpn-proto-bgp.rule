@@ -1,0 +1,160 @@
+/*
+ * Refers L3VPN BGP protocol status between PE and CE, PE interface details
+ * and notifies anomalies when either BGP session or PE interface is down.
+ */
+healthbot {
+    topic protocol.l3vpn {
+        description "Refer routing instance BGP session state and PE interfaces state and notify anomalies";
+        synopsis "L3VPN BGP session state analyzer";
+        rule check-l3vpn-bgp-state {
+            synopsis "L3VPN session state detector";
+            description "Refer L3VPN peer state and PE interface state from rule protocol.bgp/get-l3vpn-bgp-routing-instance-details & protocol.l3vpn/get-interface-details and notify anomalies when flap count increases";
+            rule-frequency 75s;
+            network-rule;
+            field instance-ifl-no {
+                constant {
+                    value "{{pe-ifl-number}}";
+                }
+                type integer;
+                description "Routing instance IFL number";
+            }
+            field instance-interface-name {
+                constant {
+                    value "{{pe-interface-name}}";
+                }
+                type string;
+                description "Routing instance interface name";
+            }
+            field instance-interface-status {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.l3vpn']/rule[rule-name=get-interface-details]/field[sub-interface-index='{{pe-ifl-number}}' and interface-name='{{pe-interface-name}}']/link-state";
+                }
+                type string;
+                description "Routing instance interface status";
+            }
+            field neighbor-session {
+                constant {
+                    value "{{customer-neighbor-address}}";
+                }
+                type string;
+                description "Protocol neighbor address";
+            }
+            /*
+             * Fields defined by collecting values from other rule. Maps the
+             * longer references to the shorter field names used in this rule.
+             */
+            field pe-router-name {
+                constant {
+                    value "{{pe-device-name}}";
+                }
+                type string;
+                description "PE router name to monitor";
+            }
+            field vpn-name {
+                constant {
+                    value "{{customer-vpn-name}}";
+                }
+                type string;
+                description "VRF name";
+            }
+            field vpn-state {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.bgp']/rule[rule-name=get-l3vpn-bgp-routing-instance-details]/field[neighbor-address='{{customer-neighbor-address}}']/session-state";
+                }
+                type string;
+                description "VRF peer state";
+            }
+            trigger l3vpn-pe-interface-state {
+                frequency 1offset;
+                term is-pe-interface-up {
+                    when {
+                        matches-with "$instance-interface-status" UP;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is UP";
+                        }
+                    }
+                }
+                term is-pe-interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is $instance-interface-status";
+                        }
+                    }
+                }
+            }
+            trigger l3vpn-state {
+                synopsis "L3VPN session status KPI";
+                description "Sets health based on state change in L3VPN peer, CE interface and PE interface state.";
+                frequency 1offset;
+                term is-vpn-session-up {
+                    when {
+                        matches-with "$vpn-state" ESTABLISHED;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is UP";
+                        }
+                    }
+                }
+                term is-vpn-session-down {
+                    then {
+                        status {
+                            color red;
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is $vpn-state";
+                        }
+                    }
+                }
+            }
+            variable customer-neighbor-address {
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            /*
+             * Variables with default values. Default values can be
+             * changed while deploying playbook instance.
+             */
+            variable customer-vpn-name {
+                description "VRF name to monitor, regular expression, e.g. 'customer*'";
+                type string;
+            }
+            variable pe-device-group {
+                description "Router group to monitor, regular expression, e.g. 'edge.*'";
+                type device-group;
+            }
+            variable pe-device-name {
+                description "Router name to monitor, regular expression, e.g. 'edge-router.*'";
+                type device;
+            }
+            variable pe-ifl-number {
+                description "PE IFL to monitor, regular expression, e.g. '1-10'";
+                type int;
+            }
+            variable pe-interface-name {
+                description "PE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
