@@ -1,0 +1,35 @@
+---
+CPUThreadTable:
+  command: 'request pfe execute target {{ tgt }} tnp-name {{ tnp_name }} command "{{ cmd }}" timeout 0'
+  args:
+     tgt: "tnp"
+     tnp_name: Null
+     cmd: "show i386 cpu"
+  key:
+  view : CPUThreadView
+
+CPUThreadView:
+  fields:
+    cpu_thread_info: _CPUThreadColumnsTable
+    tnp_name: _CPUThreadRegexTable
+
+_CPUThreadColumnsTable:
+  title: "Table for the output columns section"
+  key: CPU
+  view: _CPUThreadViewColumns
+
+_CPUThreadViewColumns:
+  columns:
+    CPU: CPU
+    Util: Util
+    WUtil: WUtil
+    Status: Status
+    SchedCounter: SchedCounter
+
+_CPUThreadRegexTable:
+  title: "Table for the output regex section"
+  view: _CPUThreadRegexView
+
+_CPUThreadRegexView:
+  regex: 
+    fpc_pic: 'fpc\d.pic\d'
