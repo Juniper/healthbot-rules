@@ -1,6 +1,26 @@
 /*
  * Monitors CFM average and max delay in Cisco devices to configured destination 
  * and notifies anomalies when average and max delay is above static thresholds.
+ * 
+ * Sample configuration from Cisco asr9k
+ * interface GigabitEthernet0/0/1/19 description Connected to lab-mx104-01 ge-0/3/9
+ * interface GigabitEthernet0/0/1/19 ipv4 address 10.3.19.2 255.255.255.252
+ * interface GigabitEthernet0/0/1/19 load-interval 30
+ * interface GigabitEthernet0/0/1/19 ethernet cfm mep domain PCORE service PCORE mep-id 101 
+ * interface GigabitEthernet0/0/1/19 ethernet cfm mep domain PCORE service PCORE mep-id 101 sla operation profile iw-test target mep-id 100
+ * ethernet cfm domain PCORE level 0
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps continuity-check interval 100ms
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps continuity-check archive hold-time 5
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps log continuity-check errors
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps log continuity-check mep changes
+ * ethernet sla profile iw-test type cfm-delay-measurement
+ * ethernet sla profile iw-test type cfm-delay-measurement probe send burst every 1 minutes packet count 5 interval 1 seconds
+ * ethernet sla profile iw-test type cfm-delay-measurement schedule every 5 minutes first at 22:55 for 60 seconds
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay aggregate bins 10 width 100
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay buckets size 5 probes
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay buckets archive 10
  */
 healthbot {
     topic protocol.cfm {
