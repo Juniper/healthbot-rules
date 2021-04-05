@@ -1,0 +1,81 @@
+healthbot {
+    topic platform.hbm {
+        rule hbm {
+            keys identifier;
+            synopsis "HBM error Detection and Recovery";
+            description "HBM error Detection and Recovery";
+            sensor hbm-sensor {
+                iAgent {
+                    file hbm.yml;
+                    table EvoStorageTable;
+                    frequency 30s;
+                }
+            }
+            field identifier {
+                sensor hbm-sensor {
+                    path identifier;
+                }
+                type string;
+            }
+            trigger trigger-default {
+                frequency 30s;
+                term hbm-minor-error {
+                    when {
+                        matches-with "$identifier" .*hbm.* {
+                            ignore-case;
+                        }
+                        matches-with "$level" .*minor.* {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Minor HBM Error. Can lead to a potential traffic loss.";
+                        }
+                    }
+                }
+                term hbm-major-error {
+                    when {
+                        matches-with "$identifier" .*hbm.* {
+                            ignore-case;
+                        }
+                        matches-with "$level" .*major.* {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Major HBM Error.";
+                        }
+                    }
+                }
+                term hmm-fatal-error {
+                    when {
+                        matches-with "$identifier" .*hbm.* {
+                            ignore-case;
+                        }
+                        matches-with "$level" .*fatal.* {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Fatal HBM Error.";
+                        }
+                    }
+                }
+                term generic-error {
+                    then {
+                        status {
+                            color green;
+                            message "$identifier";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
