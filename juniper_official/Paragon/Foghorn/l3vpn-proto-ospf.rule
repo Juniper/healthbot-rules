@@ -8,7 +8,7 @@ healthbot {
         synopsis "L3VPN OSPF session state analyzer";
         rule check-l3vpn-ospf-state {
             synopsis "L3VPN session state detector";
-            description "Refer L3VPN peer state, PE interface states from rule protocol.ospf/get-l3vpn-ospf-neighbor-information & protocol.l3vpn/get-interface-details and notify anomalies when flap count increases";
+            description "Refer L3VPN peer state, PE interface state from rule protocol.ospf/get-l3vpn-ospf-neighbor-information & protocol.l3vpn/get-interface-details and notify anomalies when flap count increases";
             rule-frequency 75s;
             network-rule;
             field instance-ifl-no {
@@ -34,7 +34,7 @@ healthbot {
             }
             field neighbor-session {
                 constant {
-                    value "{{neighbor-address}}";
+                    value "{{customer-neighbor-address}}";
                 }
                 type string;
                 description "Protocol neighbor address";
@@ -55,7 +55,7 @@ healthbot {
             }
             field vpn-state {
                 reference {
-                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.ospf']/rule[rule-name=get-l3vpn-ospf-neighbor-information]/field[neighbor-address='{{neighbor-address}}']/ospf-neighbor-state";
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.ospf']/rule[rule-name=get-l3vpn-ospf-neighbor-information]/field[neighbor-address='{{customer-neighbor-address}}']/ospf-neighbor-state";
                     data-if-missing {
                         value DOWN;
                     }
@@ -88,7 +88,7 @@ healthbot {
             }
             trigger l3vpn-state {
                 synopsis "L3VPN session status KPI";
-                description "Sets health based on state change in L3VPN peer, CE interface and PE interface state.";
+                description "Sets health based on state change in L3VPN peer and PE interface state.";
                 frequency 1offset;
                 term is-vpn-session-up {
                     when {
@@ -110,12 +110,12 @@ healthbot {
                     }
                 }
             }
-            variable customer-vpn-name {
-                description "VRF name to monitor, regular expression, e.g. 'customer*'";
+            variable customer-neighbor-address {
+                description "OSPF neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
                 type string;
             }
-            variable neighbor-address {
-                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+            variable customer-vpn-name {
+                description "VRF name to monitor, regular expression, e.g. 'customer*'";
                 type string;
             }
             variable pe-device-group {
