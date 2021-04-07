@@ -354,7 +354,7 @@ def reboot_other_routing_engine(**kwargs):
  
 # Helper Functions
 def get_device_info(**kwargs):
-    response = requests.get('http://config-server:9000/api/v2/device/%s/' % kwargs['device_id'], verify=False)
+    response = requests.get('http://config-server:9000/api/v2/config/device/%s/' % kwargs['device_id'], verify=False)
     if response.status_code != 200:
         return False
     device_info = response.json()
