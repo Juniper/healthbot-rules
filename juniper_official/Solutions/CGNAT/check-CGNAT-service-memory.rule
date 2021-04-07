@@ -1,0 +1,74 @@
+healthbot {
+    topic service.cgnat {
+        description "Rules relevant to CGNAT memory utilization";
+        synopsis "CGNAT memory utilization kpi";
+        rule check-service-memory {
+            synopsis "CGNAT memory utilization analyzer";
+            description "Monitors the CGNAT service memory utilization";
+            keys [ interface-name service-set-name ];
+            sensor memory {
+                synopsis "CGNAT memory utilization iAgent sensor definition";
+                description "Netconf rpc get-service-set-memory-statistics to collect data from network device";
+                iAgent {
+                    file memory.yml;
+                    table MEMORYTable;
+                    frequency 60s;
+                }
+            }
+            field bytes-used {
+                sensor memory {
+                    path bytes-used;
+                }
+                type string;
+                description bytes-used;
+            }
+            field interface-name {
+                sensor memory {
+                    path interface-name;
+                }
+                type string;
+                description interface-name;
+            }
+            field service-set-name {
+                sensor memory {
+                    path service-set-name;
+                }
+                type string;
+                description service-set-name;
+            }
+            trigger memory {
+                synopsis "CGNAT memory kpi";
+                description "Monitors CGNAT service memory utilization";
+                frequency 1.5offset;
+                term Term_1 {
+                    then {
+                        status {
+                            color green;
+                            message "interface name: $interface-name service set:  $service-set-name bytes used: $bytes-used";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files memory.yml;
+                }
+            }
+        }
+    }
+}

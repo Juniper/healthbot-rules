@@ -1,0 +1,211 @@
+/*
+ * Monitors CFM average and max delay to configured destination and notifies anomalies
+ * when average and max delay is above static thresholds.
+ * Two inputs control detection:
+ *
+ *   1) maximum-delay-avg-threshold, is the threshold that causes the rule to report an
+ *      anomaly. By default it is 100000 micro seconds. This rule will set a
+ *      dashboard color to red when CFM average delay time is greater than static
+ *      threshold 'maximum-delay-avg-threshold-value'.
+ *   2) maximum-delay-max-threshold, is the threshold that causes the rule to report an
+ *      anomaly. By default it is 1000000 micro seconds. This rule will set a
+ *      dashboard color to red when CFM max delay time is greater than static
+ *      threshold 'maximum-delay-max-threshold-value'.
+ *
+ * Minimum sample configuration required in Junos MX configuration
+ * set interfaces ge-0/3/9 description "Connect to lab-asr9k10-02 gi0/0/1/19"
+ * set interfaces ge-0/3/9 unit 0 family inet address 10.3.19.1/30
+ * set protocols oam ethernet connectivity-fault-management performance-monitoring enhanced-sla-iterator
+ * set protocols oam ethernet connectivity-fault-management performance-monitoring measurement-interval 5
+ * set protocols oam ethernet connectivity-fault-management performance-monitoring sla-iterator-profiles PCORE measurement-type two-way-delay
+ * set protocols oam ethernet connectivity-fault-management performance-monitoring sla-iterator-profiles PCORE measurement-interval 5
+ * set protocols oam ethernet connectivity-fault-management maintenance-domain PCORE level 0
+ * set protocols oam ethernet connectivity-fault-management maintenance-domain PCORE maintenance-association PCORE continuity-check interval 100ms
+ * set protocols oam ethernet connectivity-fault-management maintenance-domain PCORE maintenance-association PCORE mep 100 interface ge-0/3/9
+ * set protocols oam ethernet connectivity-fault-management maintenance-domain PCORE maintenance-association PCORE mep 100 remote-mep 101 sla-iterator-profile PCORE
+ */
+healthbot {
+    topic protocol.cfm {
+        description "Monitors CFM average, max delay and notify anomalies";
+        synopsis "CFM delay analyzer";
+        rule check-cfm-delay-statistics-netconf {
+            /*
+             * Monitors CFM average and max delay to configured destination.
+             * Notifies via the dashboard colors when average and max delay
+             *is above threshold  to red. Otherwise the color is set to green.
+             *
+             * Use association-name domain-name iterator-name as key for rule.
+             */
+            keys [ association-name domain-name iterator-name ];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor cfm_iAgent {
+                iAgent {
+                    file cfm.yml;
+                    table CfmTable;
+                    frequency 60s;
+                }
+            }
+            field association-name {
+                sensor cfm_iAgent {
+                    path cfm-maintenance-association-name;
+                }
+                type string;
+                description "CFM maintenance association name";
+            }
+            field delay-avg {
+                sensor cfm_iAgent {
+                    path cfm-pm-twoway-frame-delay-avg;
+                }
+                type integer;
+                description "CFM pm twoway frame delay avg";
+            }
+            field delay-max {
+                sensor cfm_iAgent {
+                    path cfm-pm-twoway-frame-delay-max;
+                }
+                type integer;
+                description "CFM pm twoway frame delay max";
+            }
+            field domain-name {
+                sensor cfm_iAgent {
+                    path cfm-maintenance-domain-name;
+                }
+                type string;
+                description "CFM maintenance domain name";
+            }
+            field iterator-name {
+                sensor cfm_iAgent {
+                    path ../cfm-iter-summary/cfm-iterator-name;
+                }
+                type string;
+                description "CFM iteratorname";
+            }
+            field local-mep-identifier {
+                sensor cfm_iAgent {
+                    path cfm-local-mep-identifier;
+                }
+                type integer;
+                description "CFM local mep identifier";
+            }
+            field maximum-delay-avg-threshold-value {
+                constant {
+                    value "{{maximum-delay-avg-threshold}}";
+                }
+                type integer;
+                description "CFM maximum delay average threshold value";
+            }
+            field maximum-delay-max-threshold-value {
+                constant {
+                    value "{{maximum-delay-max-threshold}}";
+                }
+                type integer;
+                description "CFM minimum delay average threshold value";
+            }
+            field mep-mac-address {
+                sensor cfm_iAgent {
+                    path cfm-remote-mep-mac-address;
+                }
+                type integer;
+                description "CFM remote mep mac address";
+            }
+            field remote-mep-identifier {
+                sensor cfm_iAgent {
+                    path cfm-remote-mep-identifier;
+                }
+                type integer;
+                description "CFM remote mep identifier";
+            }
+            trigger check-cfm-avg-delay {
+                synopsis "CFM average delay KPI";
+                description "Sets health based on CFM average delay";
+                frequency 1offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * average delay is more than the threshold limit
+                 */
+                term is-avg-delay-more-than-threshold {
+                    when {
+                        greater-than "$delay-avg" "$maximum-delay-avg-threshold-value";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CFM average delay $delay-avg is more than the threshold for association-name: $association-name, domain-name: $domain-name, local-mep-identifier: $local-mep-identifier, remote-mep-identifier: $remote-mep-identifier, iterator-name: $iterator-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-avg-delay-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                            message "CFM average delay $delay-avg is with in the threshold for association-name: $association-name, domain-name: $domain-name, local-mep-identifier: $local-mep-identifier, remote-mep-identifier: $remote-mep-identifier, iterator-name: $iterator-name";
+                        }
+                    }
+                }
+            }
+            trigger check-cfm-max-delay {
+                synopsis "CFM max delay KPI";
+                description "Sets health based on CFM max delay";
+                frequency 1offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * max delay is more than the threshold limit
+                 */
+                term is-max-delay-more-than-threshold {
+                    when {
+                        greater-than "$delay-max" "$maximum-delay-max-threshold-value";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CFM maximum delay $delay-max is more than the threshold for association-name: $association-name, domain-name: $domain-name, local-mep-identifier: $local-mep-identifier, remote-mep-identifier: $remote-mep-identifier, iterator-name: $iterator-name";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-max-delay-less-than-threshold {
+                    then {
+                        status {
+                            color green;
+                            message "CFM maximum delay $delay-max is within the threshold for association-name: $association-name, domain-name: $domain-name, local-mep-identifier: $local-mep-identifier, remote-mep-identifier: $remote-mep-identifier, iterator-name: $iterator-name";
+                        }
+                    }
+                }
+            }
+            variable maximum-delay-avg-threshold {
+                value 100000;
+                description "Maximum delay avg threshold value";
+                type int;
+            }
+            variable maximum-delay-max-threshold {
+                value 1000000;
+                description "Maximum delay max threshold value";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 18.1R1 {
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

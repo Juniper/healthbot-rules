@@ -22,7 +22,7 @@
 		 6) Rule check-vmhost-storage-iagent, detects the vmhost storage usage of
 		     **all** mounts threshold breaches and notifies anomalies.
 ### Playbook name: system-kpis-playbook 
-		> Description: "Playbook checks the system health i.e. system cpu, memory, storage and junos processes cpu and memory utilization"
+		> Description: "Playbook checks the system health i.e. system cpu, memory, storage, junos processes cpu, memory utilization and commit history "
 		> Synopsis: "System key performance indicators"
 		> Playbook file name: system-kpis.playbook
 		> Detals:
@@ -43,6 +43,8 @@
 		    mounts threshold breaches and notifies anomalies.
 		 7) Rule check-db-size-netconf, detects the system db size and notifies
 		    anomalies when the db usage is greater than thresholds
+		 8) Rule commit-history, detects the configuration commit and notifies
+		    anomalies when any commit happens within the specified time
 
 ## System rules
 
@@ -623,6 +625,35 @@
 		> Helper files: system-queues.yml;
 		> Supported healthbot version: 1.0.1
 		> Detals:
+### Rule name: commit-history 
+		> Description: "Pulls the commit history and displays it."
+		> Synopsis: "commit history detector"
+		> Rule file name: commit-history.rule
+
+		> Supported products: EX 
+		> Supported products: MX 
+		> Supported products: PTX 
+		> Supported products: QFX 
+
+			> Supported platforms: all;
+			> Supported platforms: all;
+			> Supported platforms: all;
+			> Supported platforms: all;
+
+		> Supported healthbot version: 3.1.0
+		> Detals:
+		 Monitors commit history and notifies when anomalies are found.
+		 Three inputs control detection
+		   1) l1-commit-threshold, lowest threshold in minutes notifies the commit.
+		       By default it monitors the commit in the last 5 minutes. If there is
+		       any commits in the last 5 minutes, it'll turn the color to yellow.
+		   2) l2-commit-threshold, lowest threshold in minutes notifies the commit.
+		       By default it monitors the commit in the last 30 minutes. If there is
+		       any commits in the last 30 minutes, it'll turn the color to yellow.
+		   3) l3-commit-threshold, lowest threshold in minutes notifies the commit.
+		       By default it monitors the commit in the last 60 minutes. If there is
+		       any commits in the last 60 minutes, it'll turn the color to yellow.
+		       if it's not matching above, it'll turn to green.
 ### Rule name: check-vmhost-status-iagent 
 		> Description: "Collects VMhost  status periodically and notifies anomalies "
 		> Synopsis: "VMhost status analyzer"

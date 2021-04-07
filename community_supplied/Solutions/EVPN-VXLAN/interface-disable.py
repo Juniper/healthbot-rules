@@ -4,7 +4,7 @@ from jnpr.junos import Device
 from jnpr.junos.utils.config import Config
 
 def interface_deactivate(iface,**kwargs):
-  r = requests.get('http://config-server:9000/api/v2/device/%s/' % kwargs['device_id'], verify=False)
+  r = requests.get('http://config-server:9000/api/v2/config/device/%s/' % kwargs['device_id'], verify=False)
   device_info = r.json()
   hostname = device_info['host']
   userid = device_info['authentication']['password']['username']

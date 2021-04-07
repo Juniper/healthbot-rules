@@ -1,0 +1,213 @@
+/*
+ * Monitors CFM average and max delay in Cisco devices to configured destination 
+ * and notifies anomalies when average and max delay is above static thresholds.
+ * 
+ * Sample configuration from Cisco asr9k
+ * interface GigabitEthernet0/0/1/19 description Connected to lab-mx104-01 ge-0/3/9
+ * interface GigabitEthernet0/0/1/19 ipv4 address 10.3.19.2 255.255.255.252
+ * interface GigabitEthernet0/0/1/19 load-interval 30
+ * interface GigabitEthernet0/0/1/19 ethernet cfm mep domain PCORE service PCORE mep-id 101 
+ * interface GigabitEthernet0/0/1/19 ethernet cfm mep domain PCORE service PCORE mep-id 101 sla operation profile iw-test target mep-id 100
+ * ethernet cfm domain PCORE level 0
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps continuity-check interval 100ms
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps continuity-check archive hold-time 5
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps log continuity-check errors
+ * ethernet cfm domain PCORE level 0 service PCORE down-meps log continuity-check mep changes
+ * ethernet sla profile iw-test type cfm-delay-measurement
+ * ethernet sla profile iw-test type cfm-delay-measurement probe send burst every 1 minutes packet count 5 interval 1 seconds
+ * ethernet sla profile iw-test type cfm-delay-measurement schedule every 5 minutes first at 22:55 for 60 seconds
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay aggregate bins 10 width 100
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay buckets size 5 probes
+ * ethernet sla profile iw-test type cfm-delay-measurement statistics measure round-trip-delay buckets archive 10
+ */
+healthbot {
+    topic protocol.cfm {
+        rule check-cisco-matable-snmp {
+            sensor snmp_matable {
+                snmp {
+                    table IEEE8021-CFM-MIB::dot1agCfmMaNetTable;
+                    frequency 60s;
+                }
+            }
+            field host {
+                sensor snmp_matable {
+                    path host;
+                }
+            }
+            field index {
+                sensor snmp_matable {
+                    path index;
+                }
+            }
+            field maint_assoc {
+                sensor snmp_matable {
+                    path dot1agCfmMaNetName;
+                }
+            }
+        }
+        rule check-cisco-mdtable-snmp {
+            keys host;
+            sensor snmp_mdtable {
+                snmp {
+                    table IEEE8021-CFM-MIB::dot1agCfmMdTable;
+                    frequency 60s;
+                }
+            }
+            field host {
+                sensor snmp_mdtable {
+                    path host;
+                }
+            }
+            field index {
+                sensor snmp_mdtable {
+                    path index;
+                }
+            }
+            field maint_domain {
+                sensor snmp_mdtable {
+                    path dot1agCfmMdName;
+                }
+            }
+        }
+        rule check-cisco-mep-snmp {
+            keys [ cfm_local_mac ifIndex ];
+            sensor snmp_mep {
+                snmp {
+                    table IEEE8021-CFM-MIB::dot1agCfmMepTable;
+                    frequency 60s;
+                }
+            }
+            field cfm_local_mac {
+                sensor snmp_mep {
+                    path dot1agCfmMepMacAddress;
+                }
+                type string;
+            }
+            field host {
+                sensor snmp_mep {
+                    path host;
+                }
+            }
+            field ifIndex {
+                sensor snmp_mep {
+                    path dot1agCfmMepIfIndex;
+                }
+            }
+            field index {
+                sensor snmp_mep {
+                    path index;
+                }
+            }
+        }
+        rule check-cisco-mepdb-snmp {
+            keys cfm_remote_mac;
+            sensor snmp_mepdb {
+                snmp {
+                    table IEEE8021-CFM-MIB::dot1agCfmMepDbTable;
+                    frequency 60s;
+                }
+            }
+            field cfm_local_mac {
+                reference {
+                    path "/topic[topic-name='protocol.cfm']/rule[rule-name=check-cisco-mep-snmp]/field[host='$host']/cfm_local_mac";
+                    time-range 120s;
+                }
+            }
+            field cfm_mep_state {
+                sensor snmp_mepdb {
+                    path dot1agCfmMepDbRMepState;
+                }
+            }
+            field cfm_rdi {
+                sensor snmp_mepdb {
+                    path dot1agCfmMepDbRdi;
+                }
+            }
+            field cfm_remote_mac {
+                sensor snmp_mepdb {
+                    path dot1agCfmMepDbMacAddress;
+                }
+                type string;
+            }
+            field host {
+                sensor snmp_mepdb {
+                    path host;
+                }
+            }
+            field ifDescr {
+                reference {
+                    path "/topic[topic-name='protocol.cfm']/rule[rule-name=check-cisco-iftable-snmp]/field[ifIndex='$ifIndex']/ifDescr";
+                    time-range 120s;
+                }
+            }
+            field ifIndex {
+                reference {
+                    path "/topic[topic-name='protocol.cfm']/rule[rule-name=check-cisco-mep-snmp]/field[host='$host']/ifIndex";
+                    time-range 120s;
+                }
+            }
+            field index {
+                sensor snmp_mepdb {
+                    path index;
+                }
+            }
+            field maint_assoc {
+                reference {
+                    path "/topic[topic-name='protocol.cfm']/rule[rule-name=check-cisco-matable-snmp]/field[host='$host']/maint_assoc";
+                    time-range 120s;
+                }
+            }
+            field maint_domain {
+                reference {
+                    path "/topic[topic-name='protocol.cfm']/rule[rule-name=check-cisco-mdtable-snmp]/field[host='$host']/maint_domain";
+                    time-range 120s;
+                }
+            }
+            trigger cfm_data {
+                term green {
+                    when {
+                        equal-to "$cfm_mep_state" 4;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "CFM is Up on interface $ifDescr; MD: $maint_domain; MA: $maint_assoc; Remote MAC: $cfm_remote_mac; Local MAC:$cfm_local_mac";
+                        }
+                    }
+                }
+                term red {
+                    when {
+                        equal-to "$cfm_mep_state" 3;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CFM is Down on interface $ifDescr; MD: $maint_domain; MA: $maint_assoc; Remote MAC: $cfm_remote_mac; Local MAC: $cfm_local_mac";
+                        }
+                    }
+                }
+            }
+        }
+        rule check-cisco-iftable-snmp {
+            keys ifIndex;
+            sensor snmp_iftable {
+                snmp {
+                    table IF-MIB::ifTable;
+                    frequency 60s;
+                }
+            }
+            field ifDescr {
+                sensor snmp_iftable {
+                    path ifDescr;
+                }
+            }
+            field ifIndex {
+                sensor snmp_iftable {
+                    path ifIndex;
+                }
+            }
+        }
+    }
+}
