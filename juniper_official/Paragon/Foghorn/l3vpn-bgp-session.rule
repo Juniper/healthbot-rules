@@ -1,0 +1,72 @@
+/*
+ * Collects L3VPN BGP protocol status between PE and CE;
+ */
+healthbot {
+    topic protocol.bgp {
+        description "Collect routing instance BGP session state";
+        synopsis "L3VPN BGP session state analyzer";
+        rule get-l3vpn-bgp-routing-instance-details {
+            keys [ instance-name neighbor-address ];
+            synopsis "Routing details collector.";
+            description "Collects routing instance bgp peer status periodically";
+            sensor vpn-sensor {
+                synopsis "Routing instance sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance;
+                    frequency 60s;
+                }
+            }
+            field instance-name {
+                sensor vpn-sensor {
+                    where "/network-instances/network-instance/@name =~ /{{instance}}/";
+                    path "/network-instances/network-instance/@name";
+                }
+                type string;
+                description "Routing Instance to be monitored";
+            }
+            field neighbor-address {
+                sensor vpn-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "Routing instance neighbor to be monitored";
+            }
+            field session-state {
+                sensor vpn-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "Routing instance neighbor state";
+            }
+            variable instance {
+                value .*;
+                description "Routing instance to be monitored, regular expression, eg 'VPN*'";
+                type string;
+            }
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

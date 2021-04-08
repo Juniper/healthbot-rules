@@ -73,7 +73,7 @@ def get_vlan_vni(message, **kwargs):
                 cu.load(config, format='set')
                 if cu.commit_check():
                     res = cu.commit()
-                    print("Added config")
+                    print("Added  config")
                 else:
                     print("commit check failed")
                     return False

@@ -1,0 +1,24 @@
+/*
+ * Collects ICMP probe statistics in L3VPN network and PE interface state
+ * and notifies anomalies when ICMP probe b/w PE and CE results in packet
+ * loss or PE interface is down.
+ *
+ * Rule protocol.l3vpn/get-interface-details, collects interface state.
+ * Rule protocol.icmp/check-icmp-statistics-with-source, collects ICMP probe 
+ * packet loss details for a given routing instance and source address
+ *
+ * Network rule check-l3vpn-static-state, Analyzes the routing instance, PE
+ * interface status and notifies anomalies when any of the state is down.
+ */
+healthbot {
+    playbook get-l3vpn-static-info {
+        rules [ protocol.l3vpn/get-interface-details protocol.icmp/check-icmp-statistics-with-source ];
+        description "Playbook collects interface and routing instance details periodically";
+        synopsis "Interface and routing instance ICMP probe info collector";
+    }
+    playbook get-l3vpn-static-view {
+        rules protocol.l3vpn/check-l3vpn-static-state;
+        description "Playbook checks health of L3VPN session, PE interface status and notify anomaly when either ICMP probe packet loss or PE interface state is down";
+        synopsis "L3VPN network health analyzer";
+    }
+}
