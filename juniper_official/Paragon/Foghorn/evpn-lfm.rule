@@ -1,0 +1,93 @@
+/*
+ * Collects LFM state for a PE interface that connects to a CE
+ */
+healthbot {
+    topic foghorn.evpn {
+        description "Collect LFM interface state";
+        synopsis "EVPN LFM discovery state analyzer";
+        rule get-lfm-information {
+            keys  [ lfm-interface-name ];
+            synopsis "LFM discovery state analyzer";
+            description "Monitors the discovery state for a PE interface which is connected to CE";
+            sensor link-fault-management-information {
+                synopsis "EVPN LFM iAgent sensor definition";
+                description "Netconfig rpc get-evpn-lfm-information iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file evpn-lfm.yml;
+                    table EvpnLFMTable;
+                    frequency 60s;
+                }
+            }
+            field lfm-discovery-state {
+                sensor link-fault-management-information {
+                    path lfmd-discovery-state;
+                }
+                type string;
+                description "Discovery state for a given interface";
+            }
+            field lfm-interface-name {
+                sensor link-fault-management-information {
+                    path lfmd-interface-name;
+                }
+                type string;
+                description "interface for which LFM info is collected";
+            }
+            field pe-interface-name {
+                constant {
+                    value "{{interface-name}}"
+                }
+                type string;
+                description "PE Interface to monitor";
+            }
+            trigger lfm-interface-discovery-state {
+                synopsis "LFM discovery status KPI";
+                description "Sets health based on LFM discovery state between PE and CE";
+                frequency 1.5offset;
+                term is-lfm-remote-discovery-status {
+                    when {
+                        matches-with "$lfm-discovery-state" "Send Any";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Remote side $lfm-interface-name is $lfm-discovery-state";
+                        }
+                    }
+                }
+                term lfm-discovery-state-remote-unstable {
+                    then {
+                        status {
+                            color red;
+                            message "LFM on $lfm-interface-name is in Discovery State $lfm-discovery-state";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value .*
+                description "PE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 20.1R1 {
+                                    release-support min-supported-release;
+                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files evpn-lfm.yml;
+                }
+            }
+        }
+    }
+}
