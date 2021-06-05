@@ -3,15 +3,11 @@
  * by querying database of rule vcenter.evpn/get-vcenter-details and displays entire
  * path in dashboard.
  *
- * Four input controls detection
+ * Two input controls detection
  * 
- *   1) db-server-ip, user need to enter HB DB server ip while deploying 
- *      playbook.
- *   2) db-port, user need to enter HB DB server udp port while deploying
- *      playbook.
- *   3) vcenter-device-group, user need to enter vcenter device group name 
+ *   1) vcenter-device-group, user need to enter vcenter device group name 
  *      i.e. where playbook "get-vsphere-details" deployed.
- *   4) vcenter-device, user need to enter vcenter device name which should
+ *   2) vcenter-device, user need to enter vcenter device name which should
  *      be part of device group.
  *
  */
@@ -27,12 +23,6 @@
              function get_vm_name {
                 path get_vcenter_details.py;
                 method get_vm_name;
-                argument db_port {
-                    mandatory;
-                }
-                argument db_server_ip {
-                    mandatory;
-                }
                 argument if_name {
                     mandatory;
                 }
@@ -59,20 +49,6 @@
             /*
              * Fields defined using variables.
              */
-            field db-port {
-                constant {
-                    value "{{db-port}}";
-                }
-                type string;
-                description "Time series database port number";
-            }
-            field db-server-ip {
-                constant {
-                    value "{{db-server-ip}}";
-                }
-                type string;
-                description "Time series database IP address";
-            }
             field vcenter-device {
                 constant {
                     value "{{vcenter-device}}";
@@ -109,8 +85,6 @@
                 formula {
                     user-defined-function {
                         function-name get_vm_name;
-                        argument db_port "$db-port";
-                        argument db_server_ip "$db-server-ip";
                         argument if_name "$lldp-local-interface";
                         argument remote_host_name "$lldp-remote-system-name";
                         argument vcenter_device_group "$vcenter-device-group";
@@ -136,16 +110,6 @@
                         }
                     }
                 }
-            }
-            variable db-port {
-                value "";
-                description "Enter DB server port number 30086 for K8 based HB and port 8086 for docker based HB";
-                type string;
-            }
-            variable db-server-ip {
-                value "";
-                description "Enter HB server IP. e.g. 10.87.74.102";
-                type string;
             }
             variable vcenter-device {
                 value "";
