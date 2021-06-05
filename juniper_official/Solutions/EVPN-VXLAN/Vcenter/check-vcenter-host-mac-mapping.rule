@@ -3,14 +3,34 @@
  * by querying database of rule vcenter.evpn/get-vcenter-details and displays entire
  * path in dashboard.
  *
- * Two input controls detection
- * 
- *   1) vcenter-device-group, user need to enter vcenter device group name 
- *      i.e. where playbook "get-vsphere-details" deployed.
- *   2) vcenter-device, user need to enter vcenter device name which should
- *      be part of device group.
+ * This rule to work, users need to create tagging profile and apply to device group.
+ * Tagging profile will create fields "vcenter-device" and "vcenter-device-group".
  *
- */
+ * Below is a sample tagging profile
+ * data-enrichment {
+ *    tagging-profile <tagging-profile-name> {
+ *        policy <tagging-policy-name> {
+ *            rules vcenter.evpn/check-vcenter-host-mac-mapping;
+ *            term <term-name> {
+ *                then {
+ *                    add-field vcenter-device {
+ *                        value <vcenter device name which is part of vcenter-device-group>;
+ *				#example  value vcenter-in-bangalore
+ *                        type string;
+ *                        in-memory false;
+ *                    }
+ *                    add-field vcenter-device-group {
+ *                        value <vcenter-device-group where playbook "get-vcenter-details" deployed>;
+ *				#example  value tme-vcenter-group
+ *                        type string;
+ *                        in-memory false;
+ *                    }
+ *                }
+ *            }
+ *        }
+ *    }
+ * }
+ **/
  healthbot {
     topic vcenter.evpn {
         rule check-vcenter-host-mac-mapping {
@@ -47,21 +67,6 @@
                 }
             }
             /*
-             * Fields defined using variables.
-             */
-            field vcenter-device {
-                constant {
-                    value "{{vcenter-device}}";
-                }
-                type string;
-            }
-            field vcenter-device-group {
-                constant {
-                    value "{{vcenter-device-group}}";
-                }
-                type string;
-            }
-            /*
              * Fields defined using sensor paths.
              */
             field lldp-local-interface {
@@ -80,6 +85,9 @@
             }
             /*
              * Fields defined using functions.
+             *
+             * Fields "vcenter-device" and "vcenter-device-group" is dynamically created
+             * by tagging profile
              */
             field vm_name {
                 formula {
@@ -110,16 +118,6 @@
                         }
                     }
                 }
-            }
-            variable vcenter-device {
-                value "";
-                description "Enter vsphere device e.g. tme_vsphere";
-                type string;
-            }
-            variable vcenter-device-group {
-                value "";
-                description "Enter vsphere device group name e.g. vcenter";
-                type string;
             }
             rule-properties {
                 version 1;
