@@ -86,7 +86,7 @@ healthbot {
             }
             field rx-power-high {
                 reference {
-                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/rx-power-high";
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds']/field[interface-name='$interface-name']/rx-power-high";
                     time-range 75s;
                 }
                 type float;
@@ -94,7 +94,7 @@ healthbot {
             }
             field rx-power-low {
                 reference {
-                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/rx-power-low";
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds']/field[interface-name='$interface-name']/rx-power-low";
                     time-range 75s;
                 }
                 type float;
@@ -120,7 +120,7 @@ healthbot {
             }
             field tx-power-high {
                 reference {
-                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/tx-power-high";
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds']/field[interface-name='$interface-name']/tx-power-high";
                     time-range 75s;
                 }
                 type float;
@@ -128,11 +128,23 @@ healthbot {
             }
             field tx-power-low {
                 reference {
-                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds-openconfig']/field[interface-name='$interface-name']/tx-power-low";
+                    path "/topic[topic-name='linecard.optical']/rule[rule-name='check-optics-power-thresholds']/field[interface-name='$interface-name']/tx-power-low";
                     time-range 75s;
                 }
                 type float;
                 description "Transmit low power threshold";
+            }
+            field unsupported-val1 {
+                constant {
+                    value "{{unsupported_val1}}";
+                }
+                type integer;
+            }
+            field unsupported-val2 {
+                constant {
+                    value "{{unsupported_val2}}";
+                }
+                type integer;
             }
             /*
              * Anomaly detection logic.
@@ -140,7 +152,29 @@ healthbot {
             trigger rx-power {
                 synopsis "Interface rx optical power";
                 description "Sets health based on rx optical power";
-                frequency 1.5offset;
+                frequency 90s;
+                term rx-unsupported1 {
+                    when {
+                        equal-to "$rx-db" "$unsupported-val1";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Optical RX power measurement is unsupported on this optic";
+                        }
+                    }
+                }
+                term rx-unsupported2 {
+                    when {
+                        equal-to "$rx-db" "$unsupported-val2";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Optical RX power measurement is unsupported on this optic";
+                        }
+                    }
+                }
                 term is-interface-rx-power-abnormal {
                     when {
                         greater-than "$rx-db" "$rx-power-high";
@@ -178,7 +212,29 @@ healthbot {
             trigger tx-power {
                 synopsis "Interface optical tx power";
                 description "Sets health based on the tx optical power";
-                frequency 1.5offset;
+                frequency 90s;
+                term tx-unsupported1 {
+                    when {
+                        equal-to "$tx-db" "$unsupported-val1";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Optical TX power measurement is unsupported on this optic";
+                        }
+                    }
+                }
+                term tx-unsupported2 {
+                    when {
+                        equal-to "$tx-db" "$unsupported-val2";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Optical TX power measurement is unsupported on this optic";
+                        }
+                    }
+                }
                 term is-interface-tx-power-abnormal {
                     when {
                         greater-than "$tx-db" "$tx-power-high";
@@ -227,10 +283,20 @@ healthbot {
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
+            variable unsupported_val1 {
+                value -100000;
+                description "unsupported tx/rx value";
+                type int;
+            }
+            variable unsupported_val2 {
+                value 0;
+                description "unsupported tx/rx value";
+                type int;
+            }
             rule-properties {
-                version 1;
+                version 2;
                 contributor juniper;
-                supported-healthbot-version 3.1.0;
+                supported-healthbot-version 4.0.0;
                 supported-devices {
                     juniper {
                         operating-system junos {
