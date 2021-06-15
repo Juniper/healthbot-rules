@@ -88,12 +88,28 @@ healthbot {
                 /*
                  * Skips evaluation for admin down interfaces
                  */
-		frequency 2offset;
+		        frequency 2offset;
                 term is-link-admin-down {
                     when {
                         matches-with "$admin-state" DOWN;
                     }
                 }
+                /*
+                 * Sets color to green when link is stable.
+                 */
+                term is-link-stable {
+                    when {
+                        increasing-at-most-by-value "$flaps" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name is stable";
+                        }
+                    }
+                }                
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the interface carrier-transition ($flaps) count increases for
@@ -127,17 +143,6 @@ healthbot {
                         status {
                             color yellow;
                             message "$interface-name flaps($flaps) are intermittent";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */
-                term is-link-stable {
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name is stable";
                         }
                     }
                 }
