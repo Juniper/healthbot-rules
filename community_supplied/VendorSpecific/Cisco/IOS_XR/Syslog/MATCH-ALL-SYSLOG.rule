@@ -1,0 +1,46 @@
+healthbot {
+    /* Collects all the syslogs received from the device and notifies when anomalies are found */
+    topic syslog {
+        description "Collects all the syslogs received from the device and notifies when a syslog matches the user defined value ";
+        rule get-all-data {
+            sensor syslog-sensor {
+                syslog {
+                    pattern-set ALL-DATA-PS;
+                }
+            }
+            field syslog-message {
+                sensor syslog-sensor {
+                    path syslog_message;
+                }
+            }
+            field syslog-to-match-field {
+                constant {
+                    value "{{syslog-to-match}}";
+                }
+                type string;
+            }
+            trigger match-syslog {
+                term syslog-received {
+                    when {
+                        matches-with "$syslog-message" "$syslog-to-match-field" {
+                            time-range 1h;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Received syslog message $syslog-message";
+                        }
+                    }
+                }
+            }
+            variable syslog-to-match {
+                value .*;
+                type string;
+            }
+        }
+    }
+    playbook get-syslogs {
+        rules syslog/get-all-data;
+    }                                   
+}

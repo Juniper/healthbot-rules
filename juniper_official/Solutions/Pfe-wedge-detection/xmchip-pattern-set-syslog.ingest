@@ -4,7 +4,7 @@ healthbot {
             pattern XMCHIP_EVENT001 {
                 event-id XMCHIP_EVENT001;
                 filter "fpc%{NUMBER:fpc_number}.*XMCHIP.*Scheduler: Protect: Parity error for tick table single port SRAM ";
-                description "The \"Scheduler: Protect: Parity error for tick table single port SRAM\" message reports a transient hardware memory error.";
+                description "The  \"Scheduler: Protect: Parity error for tick table single port SRAM\" message reports a transient hardware memory error.";
                 constant syslog-trigger-color {
                     value red;
                 }
@@ -967,8 +967,31 @@ healthbot {
                 }
                 key-fields fpc_number;
             }
+            pattern XMCHIP_EVENT034 {
+                event-id XMCHIP_EVENT034;
+                filter "fpc%{NUMBER:fpc_number}.*XMCHIP.*HOSTIF.*Protect*Parity error for SRAM in bank";
+                description "This syslog occurs due to SRAM memory parity error";
+                constant syslog-trigger-color {
+                    value red;
+                }
+                constant syslog-trigger-message {
+                    value "Restart the MPC and monitor the errors.";
+                }
+                constant reoccur {
+                    value TRUE;
+                }
+                constant high-threshold {
+                    value 1;
+                    type integer;
+                }
+                constant low-threshold {
+                    value 0;
+                    type integer;
+                }
+                key-fields fpc_number;
+            }
             pattern-set XMCHIP {
-                pattern-names [ XMCHIP_EVENT001 XMCHIP_EVENT002 XMCHIP_EVENT003 XMCHIP_EVENT004a XMCHIP_EVENT004b XMCHIP_EVENT005 XMCHIP_EVENT006 XMCHIP_EVENT007a XMCHIP_EVENT007b XMCHIP_EVENT007c XMCHIP_EVENT008 XMCHIP_EVENT009 XMCHIP_EVENT010a XMCHIP_EVENT010b XMCHIP_EVENT011 XMCHIP_EVENT012 XMCHIP_EVENT013 XMCHIP_EVENT014 XMCHIP_EVENT015 XMCHIP_EVENT016 XMCHIP_EVENT017 XMCHIP_EVENT018 XMCHIP_EVENT019 XMCHIP_EVENT020 XMCHIP_EVENT021 XMCHIP_EVENT022a XMCHIP_EVENT022b XMCHIP_EVENT023 XMCHIP_EVENT024a XMCHIP_EVENT024b XMCHIP_EVENT024c XMCHIP_EVENT025 XMCHIP_EVENT026a XMCHIP_EVENT026b XMCHIP_EVENT027a XMCHIP_EVENT027b XMCHIP_EVENT028 XMCHIP_EVENT029 XMCHIP_EVENT030 XMCHIP_EVENT031 XMCHIP_EVENT032 XMCHIP_EVENT033 ];
+                pattern-names [ XMCHIP_EVENT001 XMCHIP_EVENT002 XMCHIP_EVENT003 XMCHIP_EVENT004a XMCHIP_EVENT004b XMCHIP_EVENT005 XMCHIP_EVENT006 XMCHIP_EVENT007a XMCHIP_EVENT007b XMCHIP_EVENT007c XMCHIP_EVENT008 XMCHIP_EVENT009 XMCHIP_EVENT010a XMCHIP_EVENT010b XMCHIP_EVENT011 XMCHIP_EVENT012 XMCHIP_EVENT013 XMCHIP_EVENT014 XMCHIP_EVENT015 XMCHIP_EVENT016 XMCHIP_EVENT017 XMCHIP_EVENT018 XMCHIP_EVENT019 XMCHIP_EVENT020 XMCHIP_EVENT021 XMCHIP_EVENT022a XMCHIP_EVENT022b XMCHIP_EVENT023 XMCHIP_EVENT024a XMCHIP_EVENT024b XMCHIP_EVENT024c XMCHIP_EVENT025 XMCHIP_EVENT026a XMCHIP_EVENT026b XMCHIP_EVENT027a XMCHIP_EVENT027b XMCHIP_EVENT028 XMCHIP_EVENT029 XMCHIP_EVENT030 XMCHIP_EVENT031 XMCHIP_EVENT032 XMCHIP_EVENT033 XMCHIP_EVENT034];
             }
         }
     }                                   
