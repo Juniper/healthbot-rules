@@ -27,7 +27,7 @@
 healthbot {
     topic protocol.lacp {
         rule check-lacp-statistics-openconfig {
-            keys interface-name;
+            keys [ interface-name member-interface-name ];
             synopsis "LACP statistics analyzer";
             description "Checks if LACP Tx and Rx packets are being sent";
             /*
@@ -120,6 +120,14 @@ healthbot {
                 type integer;
                 description "lacp packet threshold";
             }
+            field member-interface-name {
+                sensor lacp-sensor {
+                    where "/lacp/interfaces/interface/members/member/@interface =~ /{{ifd-name}}/";
+                    path "/lacp/interfaces/interface/members/member/@interface";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }			
             field unknown-illegal-threshold {
                 constant {
                     value "{{unknown-illegal-threshold}}";
@@ -281,6 +289,11 @@ healthbot {
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
                 type string;
             }
+            variable ifd-name {
+                value .*;
+                description "Matched any member interface name.";
+                type string;
+            }			
             variable lacp-threshold {
                 value 1;
                 description "LACP threshold : Increase between metrics, before we report anomaly.";
