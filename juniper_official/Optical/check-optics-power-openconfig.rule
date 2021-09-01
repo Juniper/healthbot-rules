@@ -134,18 +134,6 @@ healthbot {
                 type float;
                 description "Transmit low power threshold";
             }
-            field unsupported-val1 {
-                constant {
-                    value "{{unsupported_val1}}";
-                }
-                type integer;
-            }
-            field unsupported-val2 {
-                constant {
-                    value "{{unsupported_val2}}";
-                }
-                type integer;
-            }
             /*
              * Anomaly detection logic.
              */
@@ -153,28 +141,6 @@ healthbot {
                 synopsis "Interface rx optical power";
                 description "Sets health based on rx optical power";
                 frequency 1.5offset;
-                term rx-unsupported1 {
-                    when {
-                        equal-to "$rx-db" "$unsupported-val1";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Optical RX power measurement is unsupported on this optic";
-                        }
-                    }
-                }
-                term rx-unsupported2 {
-                    when {
-                        equal-to "$rx-db" "$unsupported-val2";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Optical RX power measurement is unsupported on this optic";
-                        }
-                    }
-                }
                 term is-interface-rx-power-abnormal {
                     when {
                         greater-than "$rx-db" "$rx-power-high";
@@ -213,28 +179,6 @@ healthbot {
                 synopsis "Interface optical tx power";
                 description "Sets health based on the tx optical power";
                 frequency 1.5offset;
-                term tx-unsupported1 {
-                    when {
-                        equal-to "$tx-db" "$unsupported-val1";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Optical TX power measurement is unsupported on this optic";
-                        }
-                    }
-                }
-                term tx-unsupported2 {
-                    when {
-                        equal-to "$tx-db" "$unsupported-val2";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Optical TX power measurement is unsupported on this optic";
-                        }
-                    }
-                }
                 term is-interface-tx-power-abnormal {
                     when {
                         greater-than "$tx-db" "$tx-power-high";
@@ -283,41 +227,69 @@ healthbot {
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
-            variable unsupported_val1 {
-                value -100000;
-                description "unsupported tx/rx value";
-                type int;
-            }
-            variable unsupported_val2 {
-                value 0;
-                description "unsupported tx/rx value";
-                type int;
-            }
             rule-properties {
-                version 2;
+                version 1;
                 contributor juniper;
-                supported-healthbot-version 4.0.0;
+                supported-healthbot-version 3.1.0;
                 supported-devices {
                     juniper {
                         operating-system junos {
                             products MX {
-                                releases 18.1R1 {
-                                    release-support min-supported-release;
-                                    platform [ MX2010 MX2020 MX240 MX480 MX960 ];
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
                             }
                             products PTX {
-                                releases 18.1R1 {
-                                    release-support min-supported-release;
-                                    platform [ PTX1000 PTX10000 PTX5000 ];
+                                platforms PTX5000 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
+                                platforms PTX1000 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
                             }
                             products QFX {
-                                releases 18.1R1 {
-                                    release-support min-supported-release;
-                                    platform [ QFX10000 QFX5200 ];
+                                platforms QFX10000 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
-                            }
+                                platforms QFX5200 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }						
                         }
                     }
                 }

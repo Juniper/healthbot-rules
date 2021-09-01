@@ -9,7 +9,7 @@
  */
 healthbot {
     topic linux.stastics {
-        rule check-docker-cpu-mem-ssh {
+        rule check-docker-cpu-mem {
             keys [ container_id container_name ];
             sensor docker {
                 iAgent {
@@ -95,8 +95,8 @@ healthbot {
                 frequency 1offset;
                 term is-mem-util-increasing-continously {
                     when {
-                        min-rate-of-increase "$mem_percent" { ## Warning: 'min-rate-of-increase' is deprecated
-                            rate "$mem-thershold";
+                        increasing-at-least-by-value "$mem_percent" {
+                            value "$mem-thershold";
                             time-range 3offset;
                         }
                     }
@@ -132,9 +132,6 @@ healthbot {
                         vendor-name ubuntu;
                         operating-system ubuntu;
                     }
-                }
-                helper-files other {
-                    list-of-files [ linux_docker_stats_--no-stream.textfsm DockerStatsTable.yml];
                 }
             }
         }
