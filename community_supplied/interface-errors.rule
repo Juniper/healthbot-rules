@@ -1,0 +1,656 @@
+iceberg {
+    topic snmp.iferrors {
+        rule iferrors-statistics {
+            keys [ ifJnxIndex index ];
+            sensor ifJnxTable {
+                snmp {
+                    table .1.3.6.1.4.1.2636.3.3.1;
+                    frequency 300s;
+                }
+            }
+            field ifDescr {
+                reference {
+                    path "/topic[topic-name=snmp.interfaces]/rule[rule-name=interfaces-status]/field[ifIndex='$index']/ifDescr";
+                }
+                type string;
+            }
+            field ifJnxBucketDrops {
+                sensor ifJnxTable {
+                    path ifJnxBucketDrops;
+                }
+                type integer;
+            }
+            field ifJnxCarrierTrans {
+                sensor ifJnxTable {
+                    path ifJnxCarrierTrans;
+                }
+                type integer;
+            }
+            field ifJnxCollisions {
+                sensor ifJnxTable {
+                    path ifJnxCollisions;
+                }
+                type integer;
+            }
+            field ifJnxInDiscards {
+                sensor ifJnxTable {
+                    path ifJnxInDiscards;
+                }
+                type integer;
+            }
+            field ifJnxInErrors {
+                sensor ifJnxTable {
+                    path ifJnxInErrors;
+                }
+                type integer;
+            }
+            field ifJnxInFifoErrors {
+                sensor ifJnxTable {
+                    path ifJnxInFifoErrors;
+                }
+                type integer;
+            }
+            field ifJnxInFrameErrors {
+                sensor ifJnxTable {
+                    path ifJnxInFrameErrors;
+                }
+                type integer;
+            }
+            field ifJnxInGiants {
+                sensor ifJnxTable {
+                    path ifJnxInGiants;
+                }
+                type integer;
+            }
+            field ifJnxInHslCrcErrors {
+                sensor ifJnxTable {
+                    path ifJnxInHslCrcErrors;
+                }
+                type integer;
+            }
+            field ifJnxInHslFifoOverFlows {
+                sensor ifJnxTable {
+                    path ifJnxInHslFifoOverFlows;
+                }
+                type integer;
+            }
+            field ifJnxInInvalidVCs {
+                sensor ifJnxTable {
+                    path ifJnxInInvalidVCs;
+                }
+                type integer;
+            }
+            field ifJnxInL2ChanErrors {
+                sensor ifJnxTable {
+                    path ifJnxInL2ChanErrors;
+                }
+                type integer;
+            }
+            field ifJnxInL2MismatchTimeout {
+                sensor ifJnxTable {
+                    path ifJnxInL2MismatchTimeouts;
+                }
+                type integer;
+            }
+            field ifJnxInL3Incompletes {
+                sensor ifJnxTable {
+                    path ifJnxInL3Incompletes;
+                }
+                type integer;
+            }
+            field ifJnxInQDrops {
+                sensor ifJnxTable {
+                    path ifJnxInQDrops;
+                }
+                type integer;
+            }
+            field ifJnxInRunts {
+                sensor ifJnxTable {
+                    path ifJnxInRunts;
+                }
+                type integer;
+            }
+            field ifJnxOutAgedErrors {
+                sensor ifJnxTable {
+                    path ifJnxOutAgedErrors;
+                }
+                type integer;
+            }
+            field ifJnxOutErrors {
+                sensor ifJnxTable {
+                    path ifJnxOutErrors;
+                }
+                type integer;
+            }
+            field ifJnxOutFifoErrors {
+                sensor ifJnxTable {
+                    path ifJnxOutFifoErrors;
+                }
+                type integer;
+            }
+            field ifJnxOutHslCrcErrors {
+                sensor ifJnxTable {
+                    path ifJnxOutHslCrcErrors;
+                }
+                type integer;
+            }
+            field ifJnxOutHslFifoUnderFlow {
+                sensor ifJnxTable {
+                    path ifJnxOutHslFifoUnderFlows;
+                }
+                type integer;
+            }
+            field ifJnxOutQDrops {
+                sensor ifJnxTable {
+                    path ifJnxOutQDrops;
+                }
+                type integer;
+            }
+            field ifJnxSramErrors {
+                sensor ifJnxTable {
+                    path ifJnxSramErrors;
+                }
+                type integer;
+            }
+            field index {
+                sensor ifJnxTable {
+                    path index;
+                }
+                type string;
+            }
+            trigger ifJnxCarrierTrans {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxCarrierTrans" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxCarrierTrans carrier signal transitions on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxCarrierTrans" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxCarrierTrans carrier signal transitions on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxCollisions {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxCollisions" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxCollisions collisions detected on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxCollisions" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxCollisions collisions detected on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInDiscards {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInDiscards" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInGiants policed discards on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInDiscards" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInGiants policed discards on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInErrors input errors detected on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInErrors input errors detected on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInFifoErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInFifoErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInFifoErrors IN FIFO errors on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInFifoErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInFifoErrors IN FIFO errors on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInFrameErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInFrameErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInFrameErrors input framing errors detected on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInFrameErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInFrameErrors input framing errors detected on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInGiants {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInGiants" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInGiants giant input frames on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInGiants" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInGiants giant input frames on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInL2ChanErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInL2ChanErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInL2ChanErrors L2 channel errors on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInL2ChanErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInL2ChanErrors L2 channel errors on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInL2MismatchTimeou {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInL2MismatchTimeout" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInL2MismatchTimeouts L2 mismatch timeouts on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInL2MismatchTimeout" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInL2MismatchTimeouts L2 mismatch timeouts on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInL3Incompletes {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInL3Incompletes" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInL3Incompletes L3 incompletes on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInL3Incompletes" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInL3Incompletes L3 incompletes on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInQDrops {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInQDrops" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInQDrops packets dropped by the input queue on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInQDrops" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInQDrops packets dropped by the input queue on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxInRunts {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxInRunts" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxInRunts runt input frames on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxInRunts" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxInRunts runt input frames on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxOutAgedErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxOutAgedErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxOutAgedErrors aged packets on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxOutAgedErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxOutAgedErrors aged packets on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxOutErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxOutErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxOutErrors output errors detected on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxOutErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxOutErrors output errors detected on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxOutFifoErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxOutFifoErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxOutFifoErrors OUT FIFO errors on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxOutFifoErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxOutFifoErrors OUT FIFO errors on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxOutHslCrcErrors {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxOutHslCrcErrors" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxOutHslCrcErrors HS link CRC errors on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxOutHslCrcErrors" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxOutHslCrcErrors HS link CRC errors on $ifDescr";
+                        }
+                    }
+                }
+            }
+            trigger ifJnxOutQDrops {
+                frequency 300s;
+                term Term_1 {
+                    when {
+                        increasing-at-most-by-value "$ifJnxOutQDrops" {
+                            value 4;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifJnxOutQDrops packets dropped by the output queue on $ifDescr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        increasing-at-least-by-value "$ifJnxOutQDrops" {
+                            value 5;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifJnxOutQDrops packets dropped by the output queue on $ifDescr";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

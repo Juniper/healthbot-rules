@@ -1,0 +1,88 @@
+iceberg {
+    topic snmp.interfaces {
+        rule interfaces-status {
+            keys ifIndex;
+            sensor iftable {
+                snmp {
+                    table .1.3.6.1.2.1.2.2;
+                    frequency 300s;
+                }
+            }
+            field ifAdminStatus {
+                sensor iftable {
+                    path ifAdminStatus;
+                }
+                type integer;
+                description ifAdminStatus;
+            }
+            field ifDescr {
+                sensor iftable {
+                    path ifDescr;
+                }
+                type string;
+                description ifDescr;
+            }
+            field ifInUcastPkts {
+                sensor iftable {
+                    path ifInUcastPkts;
+                }
+                type integer;
+                description ifInUcastPkts;
+            }
+            field ifIndex {
+                sensor iftable {
+                    path ifIndex;
+                }
+                type string;
+                description ifIndex;
+            }
+            field ifOperStatus {
+                sensor iftable {
+                    path ifOperStatus;
+                }
+                type integer;
+                description ifOperStatus;
+            }
+            trigger check-interface-status {
+                frequency 300s;
+                term up_up {
+                    when {
+                        equal-to "$ifOperStatus" 1;
+                        equal-to "$ifAdminStatus" 1;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$ifDescr OperStatus and AdminStatus are up";
+                        }
+                    }
+                }
+                term up_down {
+                    when {
+                        equal-to "$ifAdminStatus" 1;
+                        not-equal-to "$ifOperStatus" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$ifDescr OperStatus is up and AdminStatus is down";
+                        }
+                    }
+                }
+                term down_down {
+                    when {
+                        equal-to "$ifAdminStatus" 2;
+                        not-equal-to "$ifOperStatus" 1;
+                        not-equal-to "$ifAdminStatus" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$ifDescr OperStatus and AdminStatus are down";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

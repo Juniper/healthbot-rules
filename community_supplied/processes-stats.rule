@@ -1,0 +1,65 @@
+iceberg {
+    topic snmp.processes {
+        rule processes-stats {
+            keys index;
+            sensor sysApplElmtRunTable {
+                snmp {
+                    table .1.3.6.1.2.1.54.1.2.3;
+                    frequency 60s;
+                }
+            }
+            field index {
+                sensor sysApplElmtRunTable {
+                    path index;
+                }
+                type string;
+            }
+            field sysApplElmtRunCPU {
+                sensor sysApplElmtRunTable {
+                    path sysApplElmtRunCPU;
+                }
+                type integer;
+            }
+            field sysApplElmtRunMemory {
+                sensor sysApplElmtRunTable {
+                    path sysApplElmtRunMemory;
+                }
+                type integer;
+            }
+            field sysApplElmtRunName {
+                sensor sysApplElmtRunTable {
+                    path sysApplElmtRunName;
+                }
+                type string;
+            }
+            trigger cpu {
+                frequency 60s;
+                term Term_1 {
+                    when {
+                        exists "$index";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "CPU usage of $sysApplElmtRunName is $sysApplElmtRunCPU";
+                        }
+                    }
+                }
+            }
+            trigger memory {
+                frequency 60s;
+                term Term_1 {
+                    when {
+                        exists "$index";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Memory usage of $sysApplElmtRunName is $sysApplElmtRunMemory";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
