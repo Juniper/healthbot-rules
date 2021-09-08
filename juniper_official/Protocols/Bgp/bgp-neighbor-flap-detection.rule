@@ -64,7 +64,6 @@ healthbot {
             field neighbor-address {
                 sensor bgp-sensor {
                     where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
-                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/last-established =~ /.+/";
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
                 }
                 type string;
@@ -87,22 +86,6 @@ healthbot {
                 synopsis "BGP neighbor session flaps KPI";
                 description "Sets health based on increase in bgp neighbor session flaps";
                 frequency 1offset;
-                /*
-                 * Set color to green when neighbor is stable.
-                 */
-                term is-session-stable {
-                    when {
-                        increasing-at-most-by-value "$established-transitions" {
-                            value 1;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Neighbor session stable, last-established:$last-established";
-                        }
-                    }
-                }               
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the BGP neighbor session transition
@@ -140,6 +123,17 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-session-stable {
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor session stable, last-established:$last-established";
+                        }
+                    }
+                }
             }
             /*
              * Variables with default values. Default values can be changed
@@ -162,55 +156,99 @@ healthbot {
                 supported-devices {
                     juniper {
                         operating-system junos {
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                                platforms EX4650 {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms EX4600 {
+                                    releases 18.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
                             products MX {
-                                releases 17.2R1 {
-                                    release-support min-supported-release;
-                                    platform [ MX240 MX480 MX960 MX2010 MX2020 ];
+                                platforms MX240 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
                             }
                             products PTX {
-                                releases 17.2R1 {
-                                    release-support min-supported-release;
-                                    platform [ PTX5000 PTX1000 PTX10000 ];
+                                platforms PTX5000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
+                                platforms PTX1000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
                             }
                             products QFX {
-                                releases 17.2R1 {
-                                    release-support min-supported-release;
-                                    platform [ QFX10000 QFX5200 ];
+                                platforms QFX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
-                                releases 17.3R1 {
-                                    release-support min-supported-release;
-                                    platform QFX5110;
+                                platforms QFX5200 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
                                 }
-                                releases 18.1R1 {
-                                    release-support min-supported-release;
-                                    platform QFX5100;
-                                }
-                                releases 18.3R1 {
-                                    release-support min-supported-release;
-                                    platform QFX5120-48Y;
-                                }
-                            }
-                            products EX {
-                                releases 17.3R1 {
-                                    release-support min-supported-release;
-                                    platform EX9200;
-                                }
-                                releases 18.3R1 {
-                                    release-support min-supported-release;
-                                    platform EX4650;
-                                }
-                                releases 18.4R1 {
-                                    release-support min-supported-release;
-                                    platform EX4600;
-                                }
-                            }
+                                platforms QFX5110 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }						
                         }
                     }
                     other-vendor cisco-IOS-XR {
                         vendor-name cisco;
-                        operating-system IOS-XR;
+                        operating-systems IOS-XR;
                     }
                 }
             }

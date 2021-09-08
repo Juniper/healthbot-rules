@@ -3,34 +3,18 @@
  * by querying database of rule vcenter.evpn/get-vcenter-details and displays entire
  * path in dashboard.
  *
- * This rule to work, users need to create tagging profile and apply to device group.
- * Tagging profile will create fields "vcenter-device" and "vcenter-device-group".
+ * Four input controls detection
+ * 
+ *   1) db-server-ip, user need to enter HB DB server ip while deploying 
+ *      playbook.
+ *   2) db-port, user need to enter HB DB server udp port while deploying
+ *      playbook.
+ *   3) vcenter-device-group, user need to enter vcenter device group name 
+ *      i.e. where playbook "get-vsphere-details" deployed.
+ *   4) vcenter-device, user need to enter vcenter device name which should
+ *      be part of device group.
  *
- * Below is a sample tagging profile
- * data-enrichment {
- *    tagging-profile <tagging-profile-name> {
- *        policy <tagging-policy-name> {
- *            rules vcenter.evpn/check-vcenter-host-mac-mapping;
- *            term <term-name> {
- *                then {
- *                    add-field vcenter-device {
- *                        value <vcenter device name which is part of vcenter-device-group>;
- *				#example  value vcenter-in-bangalore
- *                        type string;
- *                        in-memory false;
- *                    }
- *                    add-field vcenter-device-group {
- *                        value <vcenter-device-group where playbook "get-vcenter-details" deployed>;
- *				#example  value tme-vcenter-group
- *                        type string;
- *                        in-memory false;
- *                    }
- *                }
- *            }
- *        }
- *    }
- * }
- **/
+ */
  healthbot {
     topic vcenter.evpn {
         rule check-vcenter-host-mac-mapping {
@@ -43,6 +27,12 @@
              function get_vm_name {
                 path get_vcenter_details.py;
                 method get_vm_name;
+                argument db_port {
+                    mandatory;
+                }
+                argument db_server_ip {
+                    mandatory;
+                }
                 argument if_name {
                     mandatory;
                 }
@@ -67,6 +57,35 @@
                 }
             }
             /*
+             * Fields defined using variables.
+             */
+            field db-port {
+                constant {
+                    value "{{db-port}}";
+                }
+                type string;
+                description "Time series database port number";
+            }
+            field db-server-ip {
+                constant {
+                    value "{{db-server-ip}}";
+                }
+                type string;
+                description "Time series database IP address";
+            }
+            field vcenter-device {
+                constant {
+                    value "{{vcenter-device}}";
+                }
+                type string;
+            }
+            field vcenter-device-group {
+                constant {
+                    value "{{vcenter-device-group}}";
+                }
+                type string;
+            }
+            /*
              * Fields defined using sensor paths.
              */
             field lldp-local-interface {
@@ -85,14 +104,13 @@
             }
             /*
              * Fields defined using functions.
-             *
-             * Fields "vcenter-device" and "vcenter-device-group" is dynamically created
-             * by tagging profile
              */
             field vm_name {
                 formula {
                     user-defined-function {
                         function-name get_vm_name;
+                        argument db_port "$db-port";
+                        argument db_server_ip "$db-server-ip";
                         argument if_name "$lldp-local-interface";
                         argument remote_host_name "$lldp-remote-system-name";
                         argument vcenter_device_group "$vcenter-device-group";
@@ -118,6 +136,26 @@
                         }
                     }
                 }
+            }
+            variable db-port {
+                value "";
+                description "Enter DB server port number 30086 for K8 based HB and port 8086 for docker based HB";
+                type string;
+            }
+            variable db-server-ip {
+                value "";
+                description "Enter HB server IP. e.g. 10.87.74.102";
+                type string;
+            }
+            variable vcenter-device {
+                value "";
+                description "Enter vsphere device e.g. tme_vsphere";
+                type string;
+            }
+            variable vcenter-device-group {
+                value "";
+                description "Enter vsphere device group name e.g. vcenter";
+                type string;
             }
             rule-properties {
                 version 1;
