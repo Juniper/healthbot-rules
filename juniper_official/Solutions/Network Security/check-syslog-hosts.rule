@@ -1,0 +1,155 @@
+/*
+ *
+ * Checks for number of syslog hosts and if enhanced timestamp is configured.
+ *
+ *   1) "host-name" variable is configured, it filters the hostname "log".
+ *        
+ * 
+ */
+healthbot {
+    topic system {
+        rule check-syslog-hosts {
+            /*
+             * Checks for number of syslog hosts and if enhanced timestamp is configured.
+             * Use hosts as key for rule.			 
+             *
+             */
+            keys hosts;
+            description "Checks for number of syslog hosts and if enhanced timestamp is configured.";
+            sensor sysloghost {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file syslogconfig.yml;
+                    table syslogConfigTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field count-of-host-names {
+                formula {
+                    count {
+                        field-name "@list-of-host-names";
+                    }
+                }
+                type integer;
+                description "Number of syslog hosts configured.";
+            }
+            field enhanced-timestamp-ms {
+                sensor sysloghost {
+                    path enhanced-timestamp-millisec;
+                }
+                type string;
+                description "Checks if enhanced time-stamp in milliseconds is configured.";
+            }
+            field enhanced-timestamp-year {
+                sensor sysloghost {
+                    path enhanced-timestamp-year;
+                }
+                type string;
+                description "Checks if enhanced time-stamp in years is configured.";
+            }
+            field host-configuration {
+                sensor sysloghost {
+                    path host-config;
+                }
+                type string;
+                description "Checks if host-name is configured.";
+            }
+            field hosts {
+                sensor sysloghost {
+                    where "host-name != /{{host}}/";
+                    path host-name;
+                }
+                type string;
+                description "Lists host names.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger host-names {
+                frequency 2offset;
+                term more-than-one {
+                    when {
+                        greater-than "$count-of-host-names" 1;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "More than 1 host name $list-of-host-names is configured for syslog.";
+                        }
+                    }
+                }
+                term less-than-one {
+                    when {
+                        less-than-or-equal-to "$count-of-host-names" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "One or less than One host name $list-of-host-names is configured for syslog.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter based on 
+             * host name while deploying playbook instance.
+             */
+            variable host {
+                value log;
+                description "Checks for host-name \"log\".";
+                type string;
+            }
+            vector list-of-host-names {
+                path "/topic[topic-name='system']/rule[rule-name=check-syslog-hosts-list]/hosts";
+                time-range 90s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files syslogconfig.yml;
+                }
+            }
+        }
+    }
+}

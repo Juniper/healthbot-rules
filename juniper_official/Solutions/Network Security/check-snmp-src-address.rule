@@ -1,0 +1,113 @@
+/*
+ *
+ * Checks if source address is confgured for snmp 
+ * 
+ */
+healthbot {
+    topic system {
+        rule check-snmp-src-address {
+            /*
+             * Checks if source address is confgured for snmp.
+             *
+             */
+            description "Checks if source address is confgured for snmp.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor snmpsrc {
+                iAgent {
+                    file snmpSrcAddr.yml;
+                    table snmpSrcTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field source-address {
+                sensor snmpsrc {
+                    path source-address;
+                }
+                type string;
+                description "SNMP source address.";
+            }
+            field source-address-configured {
+                sensor snmpsrc {
+                    path source-addressConfig;
+                }
+                type string;
+                description "Cheks if snmp source address is configured.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger snmp-source-addr {
+                frequency 1.5offset;
+                term src-addr-present {
+                    when {
+                        matches-with "$source-address-configured" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "snmp trap-options source address $source-address is configured.";
+                        }
+                    }
+                }
+                term src-addr-not-present {
+                    when {
+                        matches-with "$source-address-configured" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "snmp trap-options source address is not conifgured.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files snmpSrcAddr.yml;
+                }
+            }
+        }
+    }
+}

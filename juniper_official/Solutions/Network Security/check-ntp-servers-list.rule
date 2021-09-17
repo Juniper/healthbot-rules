@@ -1,0 +1,80 @@
+/*
+ *
+ * Checks information about NTP server names. 
+ * 
+ */
+healthbot {
+    topic system {
+        rule check-ntp-servers-list {
+            /*
+             * Checks information about NTP server names.
+             * Use ntpServerName as key for rule.			 
+             *
+             */
+            keys ntpServerName;
+            description "Collects names of ntp servers.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor ntpServers {
+                iAgent {
+                    file ntpServers.yml;
+                    table ntpServerTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field ntpServerName {
+                sensor ntpServers {
+                    path name;
+                }
+                type string;
+                description "name of the ntp server.";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ntpServers.yml;
+                }
+            }
+        }
+    }
+}

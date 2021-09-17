@@ -1,0 +1,239 @@
+/*
+ *
+ * Checks  for  configuration that secures console,auxillary and diagnostic ports 
+ * 
+ */
+healthbot {
+    topic system {
+        description "Checks  for  configuration that secures console,auxillary and diagnostic ports";
+        rule check-ports-config-secure {
+            /*
+             * Checks for Ports that have configuration on them.
+             *
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor systemports {
+                iAgent {
+                    file systemportsconfig.yml;
+                    table SystemPortsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field auxiliary-disable {
+                sensor systemports {
+                    path auxiliary-disable;
+                }
+                type string;
+                description "Checks if auxillary port is disabled.";
+            }
+            field auxiliary-insecure {
+                sensor systemports {
+                    path auxiliary-insecure;
+                }
+                type string;
+                description "Checks if auxillary port insecure is configured.";
+            }
+            field console-insecure {
+                sensor systemports {
+                    path console-insecure;
+                }
+                type string;
+                description "Checks if console port insecure is configured.";
+            }
+            field console-log-out-on-disconnect {
+                sensor systemports {
+                    path console-log-out-on-disconnect;
+                }
+                type string;
+                description "Checks if console port log-out on disconnect is configured.";
+            }
+            field diag-port-authentication {
+                sensor systemports {
+                    path diag-port-authentication;
+                }
+                type string;
+                description "Checks if diagnostic port authentication is configured.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger auxiliary-disable-insecure {
+                frequency 2offset;
+                term auxiliary-disable-insecure-present {
+                    when {
+                        matches-with "$auxiliary-disable" true;
+                        matches-with "$auxiliary-insecure" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Auxillary port disable and insecure  are both configured.";
+                        }
+                    }
+                }
+                term auxiliary-disable-insecure-not-present {
+                    when {
+                        matches-with "$auxiliary-disable" false;
+                        matches-with "$auxiliary-insecure" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Both Auxillary port disable and insecure are not configured.";
+                        }
+                    }
+                }
+                term only-auxillary {
+                    when {
+                        matches-with "$auxiliary-disable" true;
+                        matches-with "$auxiliary-insecure" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Only Auxillary port disable is configured, insecure is not configured.";
+                        }
+                    }
+                }
+                term only-insecure {
+                    when {
+                        matches-with "$auxiliary-disable" false;
+                        matches-with "$auxiliary-insecure" true;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Only Auxillary port insecure is configured, disable option  is not configured.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger console-insecure-logout {
+                frequency 2offset;
+                term console-insecure-present {
+                    when {
+                        matches-with "$console-insecure" true;
+                        matches-with "$console-log-out-on-disconnect" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "console-insecure and disconnect configuration is present.";
+                        }
+                    }
+                }
+                term console-insecure-not-present {
+                    when {
+                        matches-with "$console-insecure" false;
+                        matches-with "$console-log-out-on-disconnect" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "console-insecure and disconnect configuration is not present.";
+                        }
+                    }
+                }
+                term only-console-insecure {
+                    when {
+                        matches-with "$console-insecure" true;
+                        matches-with "$console-log-out-on-disconnect" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "only console insecure";
+                        }
+                    }
+                }
+                term only-disconnect {
+                    when {
+                        matches-with "$console-insecure" false;
+                        matches-with "$console-log-out-on-disconnect" true;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message only-disconnect;
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger diag-port-authentication {
+                frequency 2offset;
+                term diag-port-authentication-present {
+                    when {
+                        matches-with "$diag-port-authentication" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "diag-port-authentication configuration is present.";
+                        }
+                    }
+                }
+                term diag-port-authentication-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "diag-port-authentication configuration is not present.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files systemportsconfig.yml;
+                }
+            }
+        }
+    }
+}
