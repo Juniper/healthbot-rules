@@ -1,0 +1,211 @@
+/*
+ * Checks for anomalies in optic module temperature 
+ *  
+ */
+healthbot {
+    topic linecard.optical {
+        rule check-optical-temperature-netconf-ml {
+            /*
+             * Monitors anomalies in optic module temperature
+             *
+             * Use interface-name as key for rule.
+             */		
+            keys interface-name;
+            synopsis "Optical module temperature KPI";
+            description "Check if  optical temp is having  anomaly ";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor temperature {
+                iAgent {
+                    file opticalTemperature.yml;
+                    table module_TemperatureTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */			
+            field interface-name {
+                sensor temperature {
+                    where "name =~ /{{if-name}}/";
+                    path name;
+                }
+                type string;
+                description "Name of the interface.";
+            }
+            field opt-temp {
+                sensor temperature {
+                    path module-temperature;
+                }
+                type integer;
+                description "Temperature of the Optical Module in degrees Centigrade.";
+            }
+            field opt-temp-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$opt-temp";
+                    }
+                }
+                type integer;
+                description "Anomaly of optic module temperature";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger optical-temperature-anomaly {
+                synopsis "high optical temperature";
+                description "Sets health based on the optical temperature";
+                frequency 1.5offset;
+                /*
+                 * Sets dashboard color to yellow when temperature anomaly is detected and sends 
+                 * notification.
+                 */				
+                term anomaly-present {
+                    when {
+                        equal-to "$opt-temp-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Temperature Anomaly detected for the optical module $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no temperature anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-anomaly-present {
+                    then {
+                        status {
+                            color green;
+                            message "No Temperature Anomaly detected for the optical module $interface-name  ";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter alarms based on high
+             * and low temperatures while deploying playbook instance.
+             */			
+            variable if-name {
+                value .*;
+                description "Name of the interface.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1{ ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms EX4650 {
+                                    releases 18.3R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms EX4600 {
+                                    releases 18.4R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products MX {
+                                platforms all {
+                                    releases 15.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms MX2010 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms MX150 {
+                                    releases 17.3R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products PTX {
+                                platforms PTX1000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX5000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files opticalTemperature.yml;
+                }				
+            }
+        }
+    }
+}	

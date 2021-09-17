@@ -1,0 +1,136 @@
+/*
+ * Checks for anomalies in pfe normal discard count 
+ *  
+ */
+healthbot {
+    topic linecard.pfe {
+        rule check-pfe-normal-discards-ml {
+            /*
+             * Monitors anomalies in pfe normal discard count
+             *
+             * Use fpc no and pfe no as keys for rule.
+             */		
+            keys [ fpc-no pfe-no ];
+            synopsis "Packet forwarding engine hardware discard statistics analyzer";
+            description "Collects packet forwarding engine hardware discard statistics  and notifies when normal  discard anomaly  is detected";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor pfe-sensor {
+                synopsis "iAgent netconf sensor definition";
+                description "Collects data from network device netconf rpc using get-pfe-traffic-statistics";
+                iAgent {
+                    file pfe-discard-statistics.yml;
+                    table PfeDiscardStatisticsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */			
+            field bad-route-discard {
+                sensor pfe-sensor {
+                    path bad-route-discard;
+                }
+                type integer;
+                description "Bad route discard count";
+            }
+            field bad-route-discard-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$bad-route-discard";
+                    }
+                }
+                type string;
+                description "Checks for bad route discard anomaly";
+            }
+            field drop-threshold {
+                constant {
+                    value "{{discard-count}}";
+                }
+                type integer;
+                description "Drop count increase threshold";
+            }
+            field fpc-no {
+                sensor pfe-sensor {
+                    path pfe-fpc-index;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field pfe-no {
+                sensor pfe-sensor {
+                    path pfe-index;
+                }
+                type string;
+                description "PFE number";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger pfe-bad-route-discard-anomaly {
+                synopsis "PFE bad route discards KPI";
+                description "Sets health based on the change in PFE bad route discard count";
+                frequency 1.25offset;
+                /*
+                 * Sets dashboard color to yellow when pfe discard anomaly is detected and sends 
+                 * notification.
+                 */				
+                term is-bad-route-discard-anomaly {
+                    when {
+                        equal-to "$bad-route-discard-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "bad-route-discard anomaly on FPC $fpc-no PFE $pfe-no";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no pfe discard anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-bad-route-discard-anomaly {
+                    then {
+                        status {
+                            color green;
+                            message "No bad-route-discard anomaly on FPC $fpc-no PFE $pfe-no";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter alarms based on high
+             * and low temperatures while deploying playbook instance.
+             */			
+            variable discard-count {
+                value 1;
+                description "PFE discard threshold: Number of discards increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	
