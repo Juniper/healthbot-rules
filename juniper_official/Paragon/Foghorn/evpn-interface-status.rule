@@ -1,0 +1,121 @@
+/*
+ * Indicates whether an interface is UP or DOWN;
+ */
+healthbot {
+    topic foghorn.evpn {
+        rule get-interface-details {
+            keys [ interface-name sub-interface-index ];
+            /*
+             * Collects all interface and sub-interface(IFL) details periodically
+             *
+             * Use interface-name and  sub-interface-index as keys for rule.
+             */
+            synopsis "Interface details collector.";
+            description "Collects interface and IFL status periodically";
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/;
+                    frequency 60s;
+                }
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces {
+                    path /interfaces/interface/subinterfaces/subinterface/state/oper-status;
+                }
+                type string;
+                description "Sub Interface oper status.";
+            }
+            field sub-interface-index {
+                sensor interfaces {
+                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
+                    path "/interfaces/interface/subinterfaces/subinterface/@index";
+                }
+                type string;
+                description "IFL to be monitored";
+            }
+            trigger l2vpn-pe-interface-state {
+                frequency 1.5offset;
+                term is-pe-interface-up {
+                    when {
+                        matches-with "$link-state" UP;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PE interface $interface-name.$sub-interface-index is $link-state";
+                        }
+                    }
+                }
+                term is-pe-interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "PE interface $interface-name.$sub-interface-index is $link-state";
+                        }
+                    }
+                }
+            }
+            variable ifd-name {
+                value .*;
+                description "Interfaces to be monitored, regular expression, eg 'ge-.*';";
+                type string;
+            }
+            variable ifl-no {
+                value .*;
+                description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX2010 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

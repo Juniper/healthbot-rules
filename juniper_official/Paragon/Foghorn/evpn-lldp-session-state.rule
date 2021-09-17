@@ -1,0 +1,179 @@
+/*
+ * Detects LLDP (session) state changes and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) if-name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ */
+healthbot {
+    topic foghorn.evpn {
+        description "Monitors lldp information i.e. neighbor state and notify anomalies";
+        synopsis "LLDP session statistics analyzer";
+        rule check-lldp-session {
+            description "Collects lldp session state periodically and notify anomaly when state is down";
+            synopsis "LLDP session state analyzer";
+            /*
+             * Monitors the LLDP session state. Notifies via the dashboard
+             * colors when the session state is false and color is set to red.
+             * Otherwise the color is set to green.
+             * 
+             * Use interface name as key for rule.
+             */
+            keys interface-name;
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor lldp-sensor {
+                synopsis "LLDP open-config sensor definition";
+                description "/lldp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /lldp/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field if-lldp-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/state/enabled;
+                }
+                type string;
+                description "Local interface LLDP state";
+            }
+            field interface-name {
+                sensor lldp-sensor {
+                    where "/lldp/interfaces/interface/@name =~ /{{if-name}}/";
+                    path "/lldp/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field neighbor-state {
+                reference {
+                    path "/topic[topic-name='foghorn.evpn']/rule[rule-name='get-lldp-state']/field[interface-name='$interface-name']/neighbor-capability-state";
+                    time-range 60s;
+                }
+                type string;
+                description "LLDP neighbor state";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger lldp-session-state {
+                synopsis "LLDP state KPI";
+                description "Sets health based on lldp session state changes and notify anomaly.";
+                frequency 1offset;
+                /*
+                 * Sets color to green when LLDP neighbor state is true.
+                 */
+                term is-lldp-session-up {
+                    when {
+                        matches-with "$neighbor-state" true;
+                        matches-with "$if-lldp-state" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $interface-name lldp session is up";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */
+                term lldp-session-down {
+                    then {
+                        status {
+                            color red;
+                            message "Interface-$interface-name lldp session down";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable if-name {
+                value ".*";
+                type string;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+           }
+        }
+        rule get-lldp-state {
+            keys interface-name;
+            synopsis "LLDP neighbor state collector";
+            description "Collects lldp session state periodically";
+            sensor lldp-sensor {
+                synopsis "LLDP open-config sensor definition";
+                description "/lldp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /lldp/;
+                    frequency 55s;
+                }
+            }
+            field interface-name {
+                sensor lldp-sensor {
+                    where "/lldp/interfaces/interface/@name =~ /{{if-name}}/";
+                    path "/lldp/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field neighbor-capability-state {
+                sensor lldp-sensor {
+                    path /lldp/interfaces/interface/neighbors/neighbor/capabilities/capability/state/enabled;
+                }
+                type string;
+                description "Remote LLDP neighbor state";
+            }
+            variable if-name {
+                value .*;
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX2010 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 20.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
