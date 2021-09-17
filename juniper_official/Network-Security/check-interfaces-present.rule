@@ -1,0 +1,97 @@
+/*
+*
+* Checks for List of interfaces present on the device 
+*
+* One input control detection.
+* 
+*   1) "interface-name" variable is configured, if needed ge interface name can be
+*       updated.
+*/
+healthbot {
+    topic interface.monitor {
+        rule check-interfaces-present {
+            /*
+             * List of interfaces present on the device
+             *
+             * Use interface name as keys for rule.
+             */
+            keys name;
+            synopsis "Tnterface state analyzer";
+            description "List of interfaces present on the device";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interface-stats {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file interface-details.yml;
+                    table intfaceStats;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field name {
+                sensor interface-stats {
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interface names.";
+            }
+            /*
+             * Values can be changed while trying to filter based on 
+             * interface name while deploying playbook instance.
+             */
+            variable interface-name {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files interface-details.yml;
+                }
+            }
+        }
+    }
+}

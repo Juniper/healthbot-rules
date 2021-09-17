@@ -1,0 +1,78 @@
+/*
+*
+* Collects NTP trusted key information. 
+* 
+*/
+healthbot {
+    topic system {
+        rule check-ntp-trusted-list {
+            /*
+             * Collects NTP trusted key information. 
+             * Use trustedKey as key for rule.			 
+             *
+             */
+            keys trustedKey;
+            sensor NTPtrusted {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file ntpTrusted.yml;
+                    table trustedKeytable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field trustedKey {
+                sensor NTPtrusted {
+                    path trusted-key;
+                }
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ntpTrusted.yml;
+                }
+            }
+        }
+    }
+}

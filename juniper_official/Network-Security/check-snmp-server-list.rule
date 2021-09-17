@@ -1,0 +1,85 @@
+/*
+*
+* Collects snmp information about target address and name. 
+* 
+*/
+healthbot {
+    topic protocol.snmp {
+        rule check-snmp-server-list {
+            /*
+             * Collects snmp information about target address and name.
+             * Use serverAddress as key for rule.			 
+             *
+             */
+            keys serverAddress;
+            sensor snmpserver {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file snmpServerConfig.yml;
+                    table snmpServerConfigTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field serverAddress {
+                sensor snmpserver {
+                    path snmp-target-address;
+                    zero-suppression;
+                }
+                type string;
+            }
+            field serverName {
+                sensor snmpserver {
+                    path snmp-target-name;
+                }
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files snmpServerConfig.yml;
+                }
+            }
+        }
+    }
+}

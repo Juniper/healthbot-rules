@@ -1,0 +1,123 @@
+/*
+*
+* Checks snmp configuratio for community accesss for read/write permission. 
+* 
+*/
+healthbot {
+    topic protocol.snmp {
+        rule check-community-access {
+            /*
+             * Collects ntp server names
+             * Use communityname as key for rule.			 
+             *
+             */
+            keys communityname;
+            description "Checks for snmp community access";
+            sensor communityAccess {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file snmpcommunityAccess.yml;
+                    table snmpcommunityAccessTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field authorization {
+                sensor communityAccess {
+                    path authorization;
+                }
+                type string;
+                description "authorization type.";
+            }
+            field communityListName {
+                sensor communityAccess {
+                    path client-list-name;
+                    zero-suppression;
+                }
+                type string;
+                description "client list name.";
+            }
+            field communityname {
+                sensor communityAccess {
+                    path name;
+                }
+                type string;
+                description "name of the community.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger snmpcommunityAccess {
+                frequency 2offset;
+                term communityaccessread {
+                    when {
+                        matches-with "$authorization" read-only;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Community $communityname is applied to client list $communityListName and has read only permission.";
+                        }
+                    }
+                }
+                term communityaccess-readwrite {
+                    when {
+                        matches-with "$authorization" read-write;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Community $communityname is applied to client list $communityListName and  has read-write permission.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files snmpcommunityAccess.yml;
+                }
+            }
+        }
+    }
+}
