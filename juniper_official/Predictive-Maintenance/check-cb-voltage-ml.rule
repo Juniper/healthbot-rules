@@ -1,0 +1,140 @@
+/*
+ * Checks for anomalies in reference voltage for Control Board 
+ *  
+ */
+healthbot {
+    topic control.board {
+        rule check-cb-voltage-ml {
+           /*
+             * Monitors voltage anomalies on Control Board.
+             *
+             * Use Control Board number and reference-voltage as keys for rule.
+             */		
+            keys [ cb_number reference-voltage ];
+            description "Check if control board voltage is having  anomaly";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor control {
+                iAgent {
+                    file cb-power-voltage-outlier.yml;
+                    table cb-power-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */			
+            field actual-voltage {
+                sensor control {
+                    path actual-voltage;
+                }
+                type integer;
+                description "actual voltage of the reference voltage";
+            }
+            field actual-voltage-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$actual-voltage";
+                    }
+                }
+                type integer;
+                description "Anomaly detection for actual voltage";
+            }
+            field cb_number {
+                sensor control {
+                    path name;
+                }
+                type string;
+                description "control board number";
+            }
+            field reference-voltage {
+                sensor control {
+                    path reference-voltage;
+                }
+                type string;
+                description "reference voltage";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger cb--voltage-anomaly {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when anomaly is detected and sends 
+                 * notification.
+                 */				
+                term anomaly-present {
+                    when {
+                        equal-to "$actual-voltage-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly present for cb $cb_number reference voltage $reference-voltage";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-anomaly-present {
+                    then {
+                        status {
+                            color green;
+                            message "No Anomaly present for cb $cb_number reference voltage $reference-voltage";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files cb-power-voltage-outlier.yml;
+                }
+            }			
+        }
+    }
+}	
