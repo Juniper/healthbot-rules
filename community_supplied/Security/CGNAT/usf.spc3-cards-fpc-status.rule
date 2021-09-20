@@ -1,0 +1,86 @@
+/*
+ * This rule flags RED if the interested FPC slot is not Online
+ * Else it keeps flagging GREEN
+ *
+ */
+healthbot {
+    topic usf.spc3-cards-fpc-status {
+        rule spc3-cards-fpc-status {
+            keys [ fpc-slot fpc-type ];
+            description "Check FPC status";
+            sensor FpcPicStatus {
+                iAgent {
+                    file spc3_fpc_pics.yml;
+                    table Spc3FpcStatusTable;
+                    frequency 60s;
+                }
+            }
+            field fpc-slot {
+                sensor FpcPicStatus {
+                    path slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field fpc-state {
+                sensor FpcPicStatus {
+                    path fpc-state;
+                }
+                type string;
+                description "FPC Status";
+            }
+            field fpc-type {
+                sensor FpcPicStatus {
+                    where "description =~ /{{fpc-type}}/";
+                    path description;
+                }
+                type string;
+                description "FPC type";
+            }
+            trigger FpcStatusTriggeer {
+                frequency 60s;
+                term StatusCheck {
+                    when {
+                        does-not-match-with "$fpc-state" Online;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC $fpc-slot which is $fpc-type is not Online, status is $fpc-state";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "FPC $fpc-slot which is $fpc-type is Online";
+                        }
+                    }
+                }
+            }
+            variable fpc-type {
+                value SPC3;
+                description "FPC type to be matched";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,82 @@
+/*
+ * This rule fetches data related to sessions-subscriber-analysis
+ *
+ * Data to sensor can be fetched:
+ *  - Based on service interface name (parse vms-.* or ams.* for all vms or ams interfaces)
+ *  - Selected service interface names using | seperated values e.g: ams0 | ams1
+ *  - Specific service interface name using the name of service interface e.g: ams0
+ *
+ */
+healthbot {
+    topic usf.services-subscribers-analysis {
+        rule services-subscribers-analysis {
+            keys pic-name;
+            description "Services Subscribers Analysis";
+            sensor ServicesSubscribersAnalysis {
+                iAgent {
+                    file services_subscibers_analysis.yml;
+                    table ServicesSubscriberAnalysisTable;
+                    frequency 60s;
+                    args interface {
+                        arg-value "{{service-interface-name}}";
+                    }
+                }
+            }
+            field num-created-subs-per-sec {
+                sensor ServicesSubscribersAnalysis {
+                    path num-created-subs-per-sec;
+                }
+                type integer;
+                description "Subscribers Created Per Second";
+            }
+            field num-deleted-subs-per-sec {
+                sensor ServicesSubscribersAnalysis {
+                    path num-deleted-subs-per-sec;
+                }
+                type integer;
+                description "Subscribers deleted per second";
+            }
+            field num-total-subs-active {
+                sensor ServicesSubscribersAnalysis {
+                    path num-total-subs-active;
+                }
+                type integer;
+                description "Total subscribers Active";
+            }
+            field peak-created-subs-per-second {
+                sensor ServicesSubscribersAnalysis {
+                    path peak-created-subs-per-second;
+                }
+                type integer;
+                description "Peak subscribers created per second";
+            }
+            field peak-deleted-subs-per-second {
+                sensor ServicesSubscribersAnalysis {
+                    path peak-deleted-subs-per-second;
+                }
+                type integer;
+                description "Peak subscribers deleted per second";
+            }
+            field peak-total-subs-active {
+                sensor ServicesSubscribersAnalysis {
+                    path peak-total-subs-active;
+                }
+                type integer;
+                description "Peak total subscribers active";
+            }
+            field pic-name {
+                sensor ServicesSubscribersAnalysis {
+                    where "pic-name =~ /{{service-interface-name}}/";
+                    path pic-name;
+                }
+                type string;
+                description "Name of the service PIC";
+            }
+            variable service-interface-name {
+                value vms-*;
+                description "Service Interface Name";
+                type sensor-argument;
+            }
+        }
+    }
+}

@@ -1,0 +1,22 @@
+---
+SourceDeterministicNatPortBlockTable:
+    command: show services nat source deterministic | no-more
+    key: pool_name
+    item: 'Pool name: (\w+)'
+    view: SourceDetNatPortBlockPoolView
+
+SourceDetNatPortBlockPoolView:
+  fields:
+    pool: _PoolDetailTable
+
+_PoolDetailTable:
+  item: '*'
+  title: "Pool name"
+  view: _PoolDetailView
+
+_PoolDetailView:
+  regex:
+        port-over-loading-factor: 'Port-overloading-factor:\s+(\d+)'
+        port-block-size: 'Port block size:\s+(\d+)'
+        used-blocks: 'Used\/total port blocks:\s+(\d+)\/'
+        total-blocks: 'Used\/total port blocks:\s+\d+\/(\d+)\s+'

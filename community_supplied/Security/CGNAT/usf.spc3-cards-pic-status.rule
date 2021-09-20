@@ -1,0 +1,98 @@
+/*
+ * This rule flags RED if interested PIC slot of an FPC is not Online
+ * Else it keeps flagging GREEN
+ *
+ */
+healthbot {
+    topic usf.spc3-cards-pic-status {
+        rule spc3-cards-pic-status {
+            keys [ fpc-slot fpc-type pic-slot ];
+            description "Check PIC status";
+            sensor PicStatus {
+                iAgent {
+                    file spc3_fpc_pics.yml;
+                    table Spc3FpcStatusTable;
+                    frequency 60s;
+                }
+            }
+            field fpc-slot {
+                sensor PicStatus {
+                    path slot;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field fpc-type {
+                sensor PicStatus {
+                    where "description =~ /{{fpc-type}}/";
+                    path description;
+                }
+                type string;
+            }
+            field pic-slot {
+                sensor PicStatus {
+                    where "pic-slot =~ /{{pic-slot}}/";
+                    path pic-slot;
+                }
+                type string;
+                description "PIC slot number";
+            }
+            field pic-state {
+                sensor PicStatus {
+                    path pic-state;
+                }
+                type string;
+                description "Status of PIC";
+            }
+            trigger PicStatusTriggeer {
+                frequency 60s;
+                term StatusCheck {
+                    when {
+                        does-not-match-with "$pic-state" Online;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PIC $pic-slot of FPC $fpc-slot is not Online, status is $fpc-state";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "PIC $pic-slot of FPC $fpc-slot is Online";
+                        }
+                    }
+                }
+            }
+            variable fpc-type {
+                value SPC3;
+                description "FPC type to be matched";
+                type string;
+            }
+            variable pic-slot {
+                value None;
+                description "PIC slot to be matched";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

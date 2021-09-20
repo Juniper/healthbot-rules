@@ -1,0 +1,93 @@
+/*
+ * Monitors service interface link state and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *
+ */
+healthbot {
+    topic usf.service-interface-status {
+        rule service-interface-status {
+            keys name;
+            synopsis "";
+            description "Service Interface Status";
+            sensor ServiceInterfaceStatus {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables & views to collect data from network device";
+                iAgent {
+                    file IntStatsTable.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            field admin-status {
+                sensor ServiceInterfaceStatus {
+                    path admin-status;
+                }
+                type string;
+                description "Admin status";
+            }
+            field name {
+                sensor ServiceInterfaceStatus {
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field oper-status {
+                sensor ServiceInterfaceStatus {
+                    path oper-status;
+                }
+                type string;
+                description "Interfaces status";
+            }
+            trigger interface-status {
+                synopsis "Interface status";
+                description "Sets health based on interface status";
+                frequency 60s;
+                term interface-up {
+                    when {
+                        matches-with "$oper-status" up;
+                        matches-with "$admin-status" up;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "oper status of $name is $oper-status\nadmin status of $name is $admin-status";
+                        }
+                    }
+                }
+                term is-interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "$name status is $oper-status";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value None;
+                description "Enter interface name in regex i.e. vms-.*";
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
