@@ -1,0 +1,94 @@
+/*
+*
+* Collects ntp authentication information. 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-ntp-authentication-list {
+            /*
+             * Collects ntp authentication information.
+             * Use authenticationKey as key for rule.			 
+             *
+             */
+            keys authenticationKey;
+            description "Collects ntp authentication information.";
+            sensor NTPauthentication {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file ntpAuthentication.yml;
+                    table authenticationTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field authenticationConfig {
+                sensor NTPauthentication {
+                    path authenticationConfig;
+                }
+                type string;
+                description "Checks if authentication key is configured.";
+            }
+            field authenticationKey {
+                sensor NTPauthentication {
+                    path name;
+                }
+                type string;
+                description "name of authentication key.";
+            }
+            field authenticationtype {
+                sensor NTPauthentication {
+                    path authenticationtype;
+                }
+                type string;
+                description "authentication type of key.";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ntpAuthentication.yml;
+                }
+            }
+        }
+    }
+}

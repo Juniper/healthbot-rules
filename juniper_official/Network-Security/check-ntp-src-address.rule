@@ -1,0 +1,115 @@
+/*
+*
+* Checks if source address is confgured for ntp 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-ntp-src-address {
+            /*
+             * Checks if source address is confgured for ntp
+             * Use ntpSrcAddress as key for rule.
+             *
+             */
+            keys ntpSrcAddress;
+            description "Checks if source address is confgured for ntp.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor ntpaddr {
+                iAgent {
+                    file ntpSrcAddr.yml;
+                    table ntpSrcTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field ntpSrcAddress {
+                sensor ntpaddr {
+                    path ntpSrcAddress;
+                }
+                type string;
+                description "NTP source address.";
+            }
+            field ntpSrcConfigured {
+                sensor ntpaddr {
+                    path ntpSrcConfig;
+                }
+                type string;
+                description "Checks if NTP source address is configured.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ntpSrcAddressCheck {
+                frequency 2offset;
+                term srcAddr-present {
+                    when {
+                        matches-with "$ ntpSrcConfigured" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "source address $ntpSrcAddress is configured for NTP.";
+                        }
+                    }
+                }
+                term srcAddr-not-present {
+                    when {
+                        matches-with "$ ntpSrcConfigured" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "NTP Source Address is not configured.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ntpSrcAddr.yml;
+                }
+            }
+        }
+    }
+}

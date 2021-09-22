@@ -1,0 +1,155 @@
+/*
+*
+* Checks the snmp server configuration and displays message. 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-snmp-server-config {
+            /*
+             * Checks the snmp server configuration and displays message.
+             * Use serverAddress as key for rule.			 
+             *
+             */
+            keys serverAddress;
+            sensor snmpserver {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file snmpServerConfig.yml;
+                    table snmpServerConfigTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field count {
+                formula {
+                    count {
+                        field-name "@servers";
+                    }
+                }
+                type integer;
+            }
+            field messageprocessingmodel {
+                reference {
+                    path "/topic[topic-name='security.compliance']/rule[rule-name=check-target-parameters]/field[targetParametersname='$targetParameterName']/message-processing-model";
+                }
+                type string;
+            }
+            field securitymodel {
+                reference {
+                    path "/topic[topic-name='security.compliance']/rule[rule-name=check-target-parameters]/field[targetParametersname='$targetParameterName']/security-model";
+                }
+                type string;
+            }
+            field serverAddress {
+                sensor snmpserver {
+                    path snmp-target-address;
+                }
+                type string;
+            }
+            field serverName {
+                sensor snmpserver {
+                    path snmp-target-name;
+                }
+                type string;
+            }
+            field target-parameter-config {
+                sensor snmpserver {
+                    path target-parameters;
+                }
+                type string;
+            }
+            field targetAddressConfig {
+                sensor snmpserver {
+                    path target-address-config;
+                }
+                type string;
+            }
+            field targetParameterName {
+                sensor snmpserver {
+                    path target-parameters-name;
+                }
+                type string;
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger snmpServers {
+                frequency 1offset;
+                term server-present {
+                    when {
+                        greater-than "$count" 1;
+                        matches-with "$targetAddressConfig" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "snmp server $serverName, address $serverAddress, is configured with message processing model $messageprocessingmodel and security model $securitymodel.";
+                        }
+                    }
+                }
+                term server-less-present {
+                    when {
+                        less-than-or-equal-to "$count" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Need to configure more than 1 snmp server.";
+                        }
+                    }
+                }
+            }
+            vector servers {
+                path "/topic[topic-name='security.compliance']/rule[rule-name=check-snmp-server-list]/serverAddress";
+                time-range 180s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files snmpServerConfig.yml;
+                }
+            }
+        }
+    }
+}

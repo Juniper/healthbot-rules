@@ -1,0 +1,124 @@
+/*
+*
+* Counts the SNMP Trap servers configured for the trap group 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-trap-group {
+            /*
+             * Counts the SNMP Trap servers configured for the trap group
+             * Use trap-servers as key for rule.			 
+             *
+             */
+            keys trap-servers;
+            sensor trapserver {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file snmptrapGroup.yml;
+                    table snmpTrapGroupTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field count {
+                formula {
+                    count {
+                        field-name "@serverlist";
+                    }
+                }
+                type integer;
+            }
+            field trap-group-name {
+                sensor trapserver {
+                    path trap-group-name;
+                }
+                type string;
+            }
+            field trap-servers {
+                sensor trapserver {
+                    path name;
+                }
+                type string;
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger trap-group-servers {
+                frequency 1offset;
+                term more-than-1-servers {
+                    when {
+                        greater-than "$count" 1;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$count Trap servers are configured for the trap group $trap-group-name.";
+                        }
+                    }
+                }
+                term not-more-than-1-servers {
+                    when {
+                        less-than-or-equal-to "$count" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Not enough trap servers configured.";
+                        }
+                    }
+                }
+            }
+            vector serverlist {
+                path "/topic[topic-name='protocol.snmp']/rule[rule-name=check-trap-group-list]/servers";
+                time-range 180s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files snmptrapGroup.yml;
+                }
+            }
+        }
+    }
+}

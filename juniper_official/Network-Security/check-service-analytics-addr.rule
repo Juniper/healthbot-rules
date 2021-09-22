@@ -1,0 +1,122 @@
+/*
+*
+* Checks if local address is configured for profile
+* 
+*/
+healthbot {
+    topic security.compliance {
+        rule check-service-analytics-addr {
+            /*
+             * Checks if local address is configured for profile.
+             * Use profile-local-name as key for rule.			 
+             *
+             */
+            keys profile-local-name;
+            description "Checks if local address is configured for profile.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor servAnalyAddr {
+                iAgent {
+                    file ServiceAnalyticsAddress.yml;
+                    table ServiceAnalyticsAddressTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field profile-local-address {
+                sensor servAnalyAddr {
+                    path profile-local-address;
+                }
+                type string;
+                description "Profile local address.";
+            }
+            field profile-local-name {
+                sensor servAnalyAddr {
+                    path profile-local-name;
+                }
+                type string;
+                description "Profile name.";
+            }
+            field profileAddrConfigured {
+                sensor servAnalyAddr {
+                    path profileAddr;
+                }
+                type string;
+                description "Checks if local address is configured for profile.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger serviceAnalyticsAddr {
+                frequency 1.5offset;
+                term address-present {
+                    when {
+                        matches-with "$profileAddrConfigured" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Local address $profile-local-address is configured for profile $profile-local-name.";
+                        }
+                    }
+                }
+                term address-not-present {
+                    when {
+                        matches-with "$profileAddrConfigured" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Local address is not configured for profile $profile-local-name.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ServiceAnalyticsAddress.yml;
+                }
+            }
+        }
+    }
+}
