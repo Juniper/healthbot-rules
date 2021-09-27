@@ -1,0 +1,140 @@
+/*
+ * Checks for anomalies in temperature for FPC card 
+ * 
+ */
+healthbot {
+    topic linecard.fpc {
+        rule check-fpc-temperature-ml {
+            keys [ fpc-number temperature-reading ];
+            /*
+             * Monitors temperature anomalies on FPC card.
+             *
+             * Use fpc-number and temperature-reading as keys for rule.
+             *			
+            description "Check  if  fpc temp is having anomaly";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor fpc {
+                iAgent {
+                    file fpc-temp-outlier.yml;
+                    table fpc-temp-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */			
+            field fpc-number {
+                sensor fpc {
+                    path name;
+                }
+                type string;
+                description "fpc number.";
+            }
+            field temperature {
+                sensor fpc {
+                    path temperature;
+                }
+                type integer;
+                description "temperature in celsius.";
+            }
+            field temperature-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$temperature";
+                    }
+                }
+                type integer;
+                description "Cheks for temperature anomaly";
+            }
+            field temperature-reading {
+                sensor fpc {
+                    path temperature-name;
+                }
+                type string;
+                description "temperature reading type.";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger temperature-anomaly {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when anomaly is detected and sends 
+                 * notification.
+                 */				
+                term anomaly-present {
+                    when {
+                        equal-to "$temperature-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly present for fpc $fpc-number  temperature name $temperature-reading";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-anomaly-present {
+                    then {
+                        status {
+                            color green;
+                            message "No Anomaly present for fpc $fpc-number  temperature name $temperature-reading";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files fpc-temp-outlier.yml;
+                }
+            }			
+        }
+    }
+}	

@@ -1,0 +1,120 @@
+/*
+ * Checks for anomalies in reference voltage for ADC card 
+ *  
+ */
+healthbot {
+    topic adapter.card {
+        rule check-adc-voltage-ml {
+            /*
+             * Monitors voltage anomalies on ADC card.
+             *
+             * Use adc-card number and reference-voltage as keys for rule.
+             */		
+            keys [ adc-card-number reference-voltage ];
+            description "Check if adc voltage is  having anomaly.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */				
+            sensor adc-voltage {
+                iAgent {
+                    file adc-power-outlier.yml;
+                    table adc-power-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */			
+            field actual-voltage {
+                sensor adc-voltage {
+                    path actual-voltage;
+                }
+                type integer;
+                description "actual voltage value for the reference voltage";
+            }
+            field actual-voltage-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$actual-voltage";
+                    }
+                }
+                type integer;
+                description "Checks for anomaly in actual voltage";
+            }
+            field adc-card-number {
+                sensor adc-voltage {
+                    path name;
+                }
+                type string;
+                description "adc card number";
+            }
+            field reference-voltage {
+                sensor adc-voltage {
+                    path reference-voltage;
+                }
+                type string;
+                description "reference voltage value";
+            }
+            /*
+             * Anomaly detection logic.
+             */				
+            trigger adc-voltage {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when anomaly is detected and sends 
+                 * notification.
+                 */				
+                term anomaly-present {
+                    when {
+                        equal-to "$actual-voltage-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "anomaly detected for adc $adc-card-number and reference voltage $reference-voltage";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-anomaly-present {
+                    then {
+                        status {
+                            color green;
+                            message "No anomaly detected for adc $adc-card-number and reference voltage $reference-voltage";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files adc-power-outlier.yml;
+                }
+            }			
+        }
+    }
+}	
+		
