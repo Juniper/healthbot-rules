@@ -1,0 +1,101 @@
+/*
+*
+* Lists the interfaces that can be disabled.
+* One input control detection.
+* 
+*   1) "interface-name" variable is configured, if needed ge interface name can be
+*       updated. 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-interface-to-disable {
+            /*
+             * Lists the interfaces that can be disabled.
+             *
+             */
+            synopsis "";
+            description "Lists the interfaces that can be disabled.";
+            rule-frequency 60s;
+            /*
+             * Anomaly detection logic.
+             */
+            trigger interfaces-to-disable {
+                frequency 2offset;
+                term disable-interfaces {
+                    then {
+                        status {
+                            color red;
+                            message "The list of interfaces that do not have configuration and can be diabled.$list-of-interfaces-make-down";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter based on 
+             * interface names while deploying playbook instance.
+             */
+            variable interface-name {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            vector list-of-configured-interfaces {
+                path "/topic[topic-name='security.compliance']/rule[rule-name=check-ports-configured]/configured-ports";
+            }
+            vector list-of-interfaces-make-down {
+                formula {
+                    unless {
+                        left-vector "@list-of-interfaces-present";
+                        right-vector "@list-of-configured-interfaces";
+                    }
+                }
+            }
+            vector list-of-interfaces-present {
+                path "/topic[topic-name='security.compliance']/rule[rule-name=check-interfaces-present]/name";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files syslogconfig.yml;
+                }
+            }
+        }
+    }
+}

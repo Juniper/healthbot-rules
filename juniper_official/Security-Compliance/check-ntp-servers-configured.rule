@@ -1,0 +1,150 @@
+/*
+*
+* Checks if more than one NTP servers are configured
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-ntp-servers-configured {
+            /*
+             * Checks if more than one NTP servers are configured.
+             * Use ntpServerName as key for rule.			 
+             *
+             */
+            keys ntpServerName;
+            description "Checks if more than one NTP servers are configured.";
+            sensor ntpServers {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file ntpServers.yml;
+                    table ntpServerTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field autorizationConfigured {
+                sensor ntpServers {
+                    path authenticationConfig;
+                }
+                type string;
+                description "Checks if authentication key  is configured.";
+            }
+            field ntpServerConfigured {
+                sensor ntpServers {
+                    path ntpServerConfig;
+                }
+                type string;
+                description "Checks if NTP server is configured.";
+            }
+            field ntpServerName {
+                sensor ntpServers {
+                    path name;
+                }
+                type string;
+                description "Name of the NTP server.";
+            }
+            field servers-count {
+                formula {
+                    count {
+                        field-name "@ntpServersList";
+                    }
+                }
+                type integer;
+                description "Number of NTP servers configured.";
+            }
+            field trustedkeyConfigured {
+                sensor ntpServers {
+                    path trustedConfig;
+                }
+                type string;
+                description "Checks if NTP trusted key is configured.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ntp-servers {
+                frequency 2offset;
+                term more-than-one {
+                    when {
+                        greater-than "$servers-count" 1;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$servers-count number of servers are configured for NTP at global and group levels combined.";
+                        }
+                    }
+                }
+                term less-than-2 {
+                    when {
+                        less-than-or-equal-to "$servers-count" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$servers-count number of servers are configured for NTP at global and group levels combined..";
+                        }
+                    }
+                }
+            }
+            vector authenticationList {
+                path "/topic[topic-name='security.compliance']/rule[rule-name=check-ntp-authentication-list]/authenticationKey";
+                time-range 180s;
+            }
+            vector ntpServersList {
+                path "/topic[topic-name='security.compliance']/rule[rule-name=check-ntp-servers-list]/ntpServerName";
+                time-range 180s;
+            }
+            vector trustedList {
+                path "/topic[topic-name='security.compliance']/rule[rule-name=check-ntp-trusted-list]/trustedKey";
+                time-range 180s;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ntpServers.yml;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,90 @@
+/*
+*
+* Collects information about snmp target parameters. 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-target-parameters {
+            /*
+             * Collects information about snmp target parameters.
+             * Use targetParametersname as key for rule.			 
+             *
+             */
+            keys targetParametersname;
+            sensor snmptarget {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file snmptargetParameters.yml;
+                    table snmptargetParametersTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field message-processing-model {
+                sensor snmptarget {
+                    path message-processing-model;
+                }
+                type string;
+            }
+            field security-model {
+                sensor snmptarget {
+                    path security-model;
+                }
+                type string;
+            }
+            field targetParametersname {
+                sensor snmptarget {
+                    path name;
+                }
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files snmptargetParameters.yml;
+                }
+            }
+        }
+    }
+}
