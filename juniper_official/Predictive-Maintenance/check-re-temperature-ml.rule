@@ -1,0 +1,234 @@
+/*
+ * Checks for anomalies in re temperature
+ *  
+ */
+healthbot {
+    topic chassis.temperatures {
+        rule check-re-temperature-ml {
+            /*
+             * Monitors anomalies in re temperature
+             *
+             * Use routing-engine no as key for rule.
+             */		
+            keys routing-engine;
+            synopsis "Routing-engine temperature check";
+            description "Collects routing-engine (RE) temperature periodically and notifies anomaly";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor components {
+                synopsis "Chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined with variables and constant values
+             */			
+            field high-threshold {
+                constant {
+                    value "{{re-temperature-high-threshold}}";
+                }
+                type integer;
+                description "RE temperature high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{re-temperature-low-threshold}}";
+                }
+                type integer;
+                description "RE temperature low threshold";
+            }
+            field routing-engine {
+                sensor components {
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-number}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "RE name to monitor";
+            }
+            field routing-engine-temperature {
+                sensor components {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
+                }
+                type integer;
+                description "RE temperature";
+            }
+            field routing-engine-temperature-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$routing-engine-temperature";
+                    }
+                }
+                type integer;
+                description "Checks for re temperature anomaly";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger re-temperature {
+                synopsis "RE temperature KPI";
+                description "Sets health based increase in RE temperature";
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when re temperature anomaly is detected and sends 
+                 * notification.
+                 */				
+                term is-re-temperature-anomaly {
+                    when {
+                        equal-to "$routing-engine-temperature-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly detected for routing engine $routing-engine";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no re temperature anomaly is detected and sends 
+                 * notification.
+                 */				
+                term is-re-temperature-normal {
+                    then {
+                        status {
+                            color green;
+                            message "No Anomaly detected for routing engine $routing-engine";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter alarms based on high
+             * and low temperatures while deploying playbook instance.
+             */			
+            variable discard-count {
+                value 1;
+                description "PFE discard threshold: Number of discards increase between metrics, before we report anomaly";
+                type int;
+            }			
+            variable re-slot-number {
+                value 0-1;
+                description "Routing engine slot numbers to monitor, regular expression, e.g. '0'";
+                type string;
+            }
+            variable re-temperature-high-threshold {
+                value 55;
+                description "RE temperature high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable re-temperature-low-threshold {
+                value 45;
+                description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1{ ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms EX4650 {
+                                    releases 18.3R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms EX4600 {
+                                    releases 18.4R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms MX2010 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms MX150 {
+                                    releases 17.3R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }								
+                            products PTX {
+                                platforms PTX1000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX5000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	
