@@ -20,18 +20,18 @@ healthbot {
                 iAgent {
                     file snmpcommunityAccess.yml;
                     table snmpcommunityAccessTable;
-                    frequency 60s;
+                    frequency 6h;
                 }
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined by specifying the sensor paths
              */
             field authorization {
                 sensor communityAccess {
                     path authorization;
                 }
                 type string;
-                description "authorization type.";
+                description "authorization type";
             }
             field communityListName {
                 sensor communityAccess {
@@ -39,14 +39,14 @@ healthbot {
                     zero-suppression;
                 }
                 type string;
-                description "client list name.";
+                description "client list name";
             }
             field communityname {
                 sensor communityAccess {
                     path name;
                 }
                 type string;
-                description "name of the community.";
+                description "name of the community";
             }
             /*
              * Anomaly detection logic.
@@ -60,7 +60,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Community $communityname is applied to client list $communityListName and has read only permission.";
+                            message "Community is applied to client list $communityListName and has read only permission";
                         }
                     }
                 }
@@ -71,7 +71,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Community $communityname is applied to client list $communityListName and  has read-write permission.";
+                            message "Community is applied to client list $communityListName and  has read-write permission";
                         }
                     }
                 }
@@ -111,6 +111,13 @@ healthbot {
                                     }
                                 }
                             }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
                         }
                     }
                 }

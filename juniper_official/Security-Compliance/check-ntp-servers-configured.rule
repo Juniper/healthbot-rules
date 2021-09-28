@@ -12,7 +12,7 @@ healthbot {
              *
              */
             keys ntpServerName;
-            description "Checks if more than one NTP servers are configured.";
+            description "Checks if more than one NTP servers are configured";
             sensor ntpServers {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -20,32 +20,32 @@ healthbot {
                 iAgent {
                     file ntpServers.yml;
                     table ntpServerTable;
-                    frequency 60s;
+                    frequency 6h;
                 }
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined by specifying the sensor paths
              */
             field autorizationConfigured {
                 sensor ntpServers {
                     path authenticationConfig;
                 }
                 type string;
-                description "Checks if authentication key  is configured.";
+                description "Checks if authentication key  is configured";
             }
             field ntpServerConfigured {
                 sensor ntpServers {
                     path ntpServerConfig;
                 }
                 type string;
-                description "Checks if NTP server is configured.";
+                description "Checks if NTP server is configured";
             }
             field ntpServerName {
                 sensor ntpServers {
                     path name;
                 }
                 type string;
-                description "Name of the NTP server.";
+                description "Name of the NTP server";
             }
             field servers-count {
                 formula {
@@ -54,14 +54,14 @@ healthbot {
                     }
                 }
                 type integer;
-                description "Number of NTP servers configured.";
+                description "Number of NTP servers configured";
             }
             field trustedkeyConfigured {
                 sensor ntpServers {
                     path trustedConfig;
                 }
                 type string;
-                description "Checks if NTP trusted key is configured.";
+                description "Checks if NTP trusted key is configured";
             }
             /*
              * Anomaly detection logic.
@@ -75,7 +75,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$servers-count number of servers are configured for NTP at global and group levels combined.";
+                            message "$servers-count number of servers are configured for NTP at global and group levels combined";
                         }
                     }
                 }
@@ -86,7 +86,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$servers-count number of servers are configured for NTP at global and group levels combined..";
+                            message "$servers-count number of servers are configured for NTP at global and group levels combined";
                         }
                     }
                 }
@@ -138,6 +138,13 @@ healthbot {
                                     }
                                 }
                             }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
                         }
                     }
                 }

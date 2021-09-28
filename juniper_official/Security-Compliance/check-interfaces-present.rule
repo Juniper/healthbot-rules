@@ -27,11 +27,11 @@ healthbot {
                 iAgent {
                     file interface-details.yml;
                     table intfaceStats;
-                    frequency 60s;
+                    frequency 6h;
                 }
             }
             /*
-             * Fields defined with variables and constant values
+             * Fields defined by specifying the sensor paths
              */
             field name {
                 sensor interface-stats {
@@ -39,14 +39,14 @@ healthbot {
                     path name;
                 }
                 type string;
-                description "Interface names.";
+                description "Interface names";
             }
             /*
              * Values can be changed while trying to filter based on 
              * interface name while deploying playbook instance.
              */
             variable interface-name {
-                value .*;
+                value "ge-.*|xe-.*|mge-.*|et-.*";
                 description "Enter interface name in regex i.e. ge-.*";
                 type string;
             }
@@ -85,6 +85,13 @@ healthbot {
                                     }
                                 }
                             }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
                         }
                     }
                 }
