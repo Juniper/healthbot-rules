@@ -1,0 +1,98 @@
+/*
+*
+* Checks for Ports that have configuration on them.
+*   1) "interface-name" variable is configured, if needed ge interface name can be
+*       updated. 
+* 
+*/
+healthbot {
+    topic security.compliance {
+        rule check-ports-configured {
+            /*
+             * Checks for Ports that have configuration on them.
+             *
+             * Use configured-ports as key for rule.
+             */
+            keys configured-ports;
+            description "Ports that have configuration on them.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor configured-ports {
+                iAgent {
+                    file interfaceconfig.yml;
+                    table interfaceConfigTable;
+                    frequency 6h;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */
+            field configured-ports {
+                sensor configured-ports {
+                    where "interface-name =~ /{{interface-name}}/";
+                    path interface-name;
+                }
+                type string;
+                description "Ports that have configuration.";
+            }
+            /*
+             * Values can be changed while trying to filter based on 
+             * interface names.
+             */
+            variable interface-name {
+                value "ge-.*|xe-.*|mge-.*|et-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files interfaceconfig.yml;
+                }
+            }
+        }
+    }
+}

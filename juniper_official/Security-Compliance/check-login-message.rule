@@ -1,0 +1,110 @@
+/*
+*
+* Checks if system login message is configured. 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-login-message {
+            /*
+             * Checks if system login message is configured.
+             *
+             */
+            description "Checks if system login message is configured";
+            sensor systemmessage {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file systemmessage.yml;
+                    table SystemMessageTable;
+                    frequency 6h;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */
+            field message {
+                sensor systemmessage {
+                    path message;
+                }
+                type string;
+                description "Checks if system login message is present";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger login-message {
+                frequency 1offset;
+                term message-present {
+                    when {
+                        matches-with "$message" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "System Login message is present";
+                        }
+                    }
+                }
+                term message-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "System Login message is not present";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files systemmessage.yml;
+                }
+            }
+        }
+    }
+}
