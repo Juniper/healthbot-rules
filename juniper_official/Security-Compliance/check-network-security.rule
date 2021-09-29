@@ -1,0 +1,270 @@
+/*
+*
+* Checks system network security parameters.
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-network-security {
+            /*
+             * Checks system network security parameters
+             *
+             */
+            description "Checks system network security";
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor systemconfig {
+                iAgent {
+                    file systemconfig.yml;
+                    table SystemTable;
+                    frequency 6h;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */
+            field no-ping-record-route {
+                sensor systemconfig {
+                    path no-ping-record-route;
+                }
+                type string;
+                description "Checks if no ping record route is configured";
+            }
+            field no-ping-time-stamp {
+                sensor systemconfig {
+                    path no-ping-time-stamp;
+                }
+                type string;
+                description "Checks if no-ping time stamp is configured";
+            }
+            field no-redirects {
+                sensor systemconfig {
+                    path no-redirects;
+                }
+                type string;
+                description "Checks ipv4 no redirects is configured";
+            }
+            field no-redirects-ipv6 {
+                sensor systemconfig {
+                    path no-redirects-ipv6;
+                }
+                type string;
+                description "Checks ipv6 no redirects is configured";
+            }
+            field source-quench {
+                sensor systemconfig {
+                    path source-quench;
+                }
+                type string;
+                description "Checks source quench is configured";
+            }
+            field tcp-drop-synfin-set {
+                sensor systemconfig {
+                    path tcp-drop-synfin-set;
+                }
+                type string;
+                description "Checks tcp-drop-synfin-set is configured";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger no-ping-record-route {
+                frequency 2offset;
+                term no-ping-record-route-present {
+                    when {
+                        matches-with "$no-ping-record-route" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "no-ping-record-route configuration is present";
+                        }
+                    }
+                }
+                term no-ping-record-route-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "no-ping-record-route configuration is not present";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger no-ping-time-stamp {
+                frequency 2offset;
+                term no-ping-time-stamp-present {
+                    when {
+                        matches-with "$no-ping-time-stamp" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "no-ping-time-stamp configuration is present";
+                        }
+                    }
+                }
+                term no-ping-time-stamp-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "no-ping-time-stamp configuration is not present";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger no-redirects {
+                frequency 2offset;
+                term no-redirects-present {
+                    when {
+                        matches-with "$no-redirects" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "noredirects configurtaion is present";
+                        }
+                    }
+                }
+                term no-redirects-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "noredirects configurtaion is not present";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger no-redirects-ipv6 {
+                frequency 2offset;
+                term no-redirects-ipv6-present {
+                    when {
+                        matches-with "$no-redirects-ipv6" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "no-redirects-ipv6 configuration is present";
+                        }
+                    }
+                }
+                term no-redirects-ipv6-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "no-redirects-ipv6 configuration is not present";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger source-quench {
+                frequency 2offset;
+                term source-quench-present {
+                    when {
+                        matches-with "$source-quench" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "source-quench configuration is present";
+                        }
+                    }
+                }
+                term source-quench-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "source-quench configuration is not present";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger tcp-drop-synfin-set {
+                frequency 2offset;
+                term tcp-drop-synfin-set-present {
+                    when {
+                        matches-with "$tcp-drop-synfin-set" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "TCP packets with the SYN and FIN flag combination will be dropped";
+                        }
+                    }
+                }
+                term tcp-drop-synfin-set-not-present {
+                    then {
+                        status {
+                            color red;
+                            message "TCP packets with the SYN and FIN flag combination will not be dropped";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files systemconfig.yml;
+                }
+            }
+        }
+    }
+}
