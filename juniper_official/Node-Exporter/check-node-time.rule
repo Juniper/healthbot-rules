@@ -1,0 +1,118 @@
+/*
+ * Checks if node time is increasing every minute else raises alarm 
+ *  
+ */
+healthbot {
+    topic node.exporter {
+        rule check-node-time {
+            /*
+             * Monitors system time is incrementing by 60 every minute.
+             */		
+            description "Checks system time is increasing ";
+            sensor node-time {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /node/time;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field current-time {
+                sensor node-time {
+                    path /node/time/seconds;
+                    zero-suppression;
+                }
+                type integer;
+                description "Current time of the node";
+            }
+            field threshold {
+                constant {
+                    value 60;
+                }
+                type integer;
+                description "threshold value increase to be compared with";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger node-down {
+                frequency 1offset;
+                term time-increasing {
+                    when {
+                        increasing-at-least-by-value "$current-time" {
+                            value "$threshold";
+                            time-range 1offset;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Current time has increased by 60 in the last minute";
+                        }
+                    }
+                }
+                term not-increasing {
+                    then {
+                        status {
+                            color red;
+                            message "Current time has not increased since the last minute";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+            }			
+        }
+    }
+}	
+	

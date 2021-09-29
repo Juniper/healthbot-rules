@@ -1,0 +1,222 @@
+/*
+ * Checks if node memory fields are increasing by more than threshold value and  
+ * raises alarm when anomalies are present.
+ * One input control detection.
+ * 
+ *   1) "threshold-diff" is used to check if the difference of current and previous
+ *      values is increasing by more than the threshold-diff.
+ *  
+ */
+healthbot {
+    topic node.exporter {
+        rule check-node-memory {
+            /*
+             * Monitors Node memory and notifies anomalies.
+             *
+             * Use host as key for rule.
+             */		
+            keys host;
+            synopsis "Memory kpi";
+            description "Check node memory";
+            function difference {
+                description "Method that calculates the difference between current and previous readings ";
+                path generic_functions.py;
+                method value_diff;
+                argument key_name {
+                    mandatory;
+                }
+                argument value;
+            }
+            function used-percentage {
+                description "Method to calculate the percentage";
+                path used-percentage.py;
+                method used_percentage;
+                argument total {
+                    mandatory;
+                }
+                argument used {
+                    mandatory;
+                }
+            }
+            sensor node-memory {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /node/memory;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field diff-free-bytes {
+                formula {
+                    user-defined-function {
+                        function-name difference;
+                        argument key_name "$host";
+                        argument value "$memory-free-bytes";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";
+            }
+            field diff-inactive-bytes {
+                formula {
+                    user-defined-function {
+                        function-name difference;
+                        argument key_name "$host";
+                        argument value "$memory-inactive-bytes";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";
+            }
+            field frequency {
+                constant {
+                    value "{{freq}}";
+                }
+                type integer;
+                description "interval between 2 datapoints";
+            }
+            field host {
+                sensor node-memory {
+                    path host;
+                }
+                type string;
+                description "host name";
+            }
+            field memory-free-bytes {
+                sensor node-memory {
+                    path /node/memory/free/bytes;
+                    zero-suppression;
+                }
+                type integer;
+                description "memory free bytes";
+            }
+            field memory-inactive-bytes {
+                sensor node-memory {
+                    path /node/memory/inactive/bytes;
+                }
+                type integer;
+                description "memory inactive bytes";
+            }
+            field threshold-diff {
+                constant {
+                    value "{{threshold-diff}}";
+                }
+                type integer;
+                description "threshold value increase to be compared with";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger used-free-bytes {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$diff-free-bytes" "$threshold-diff" {
+                            time-range 3offset;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "used-free-bytes $diff-free-bytes  exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "used-free-bytes $diff-free-bytes is normal";
+                        }
+                    }
+                }
+            }
+            trigger used-inactive-bytes {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$diff-inactive-bytes" "$threshold-diff" {
+                            time-range 3offset;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "used-inactive-bytes $diff-inactive-bytes exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "used-inactive-bytes $diff-inactive-bytes  is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while deploying playbook instance. 
+             *  
+             */			
+            variable threshold-diff {
+                value 100000000;
+                description "threshold value";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+            }			
+        }
+    }
+}	
