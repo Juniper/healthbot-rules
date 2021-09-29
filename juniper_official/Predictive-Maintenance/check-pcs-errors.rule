@@ -1,0 +1,183 @@
+/*
+ * Checks for increase in pcs bit-error-seconds and errored-blocks-seconds
+ *  
+ */
+healthbot {
+    topic interface.statistics {
+        rule check-pcs-errors {
+            /*
+             * Monitors increase in pcs bit-error-seconds and 
+             * errored-blocks-seconds
+             * Use interface no as key for rule.
+             */		
+            keys interface;
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor pcs {
+                iAgent {
+                    file pcs-outlier-Table.yml;
+                    table pcs-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field bit-error-seconds {
+                sensor pcs {
+                    path bit-error-seconds;
+                }
+                type string;
+                description "pcs bit error seconds";
+            }
+            field errored-blocks-seconds {
+                sensor pcs {
+                    path errored-blocks-seconds;
+                }
+                type integer;
+                description "pcs errored blocks seconds";
+            }
+            field interface {
+                sensor pcs {
+                    path name;
+                }
+                type string;
+                description "name of the physical interface.";
+            }
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "threshold value";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger bit-error-seconds {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to red when bit-error-seconds is increasing by 1
+                 * during 2offset interval and sends notification.
+                 */				
+                term increase-in-value {
+                    when {
+                        increasing-at-least-by-value "$bit-error-seconds" {
+                            value "$threshold";
+                            time-range 2offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "bit error seconds is increasing.";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when bit-error-seconds is not increasing
+                 * and sends notification.
+                 */				
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "bit error seconds is normal";
+                        }
+                    }
+                }
+            }
+            trigger errored-blocks-seconds {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to red when errored-blocks-seconds is increasing by 1
+                 * during 2offset interval and sends notification.
+                 */				
+                term increase-in-value {
+                    when {
+                        increasing-at-least-by-value "$errored-blocks-seconds" {
+                            value "$threshold";
+                            time-range 2offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "pcs errored-blocks-seconds is increasing.";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when errored-blocks-seconds is not increasing
+                 * and sends notification.
+                 */				
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "pcs errored-blocks-seconds is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while trying to filter alarms
+             * while deploying playbook instance.
+             */			
+            variable threshold {
+                value 1;
+                type int;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files pcs-outlier-Table.yml;
+                }
+            }			
+        }	
+    }
+}	
