@@ -1,0 +1,274 @@
+/*
+*
+* Checks ssh services configuration. 
+* 
+*/
+healthbot {
+    topic  security.compliance {
+        rule check-ssh-services {
+            /*
+             * Checks ssh services configuration.
+             *
+             */
+            description "Checks ssh services configuration.";
+            sensor sshService {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */
+                iAgent {
+                    file systemsshServices.yml;
+                    table sshTable;
+                    frequency 6h;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */
+            field conn-limit-config {
+                sensor sshService {
+                    path conn-limit-config;
+                }
+                type string;
+                description "Checks if ssh connection limit is configured.";
+            }
+            field connection-limit {
+                sensor sshService {
+                    path connection-limit;
+                }
+                type string;
+                description "ssh connection limits configured.";
+            }
+            field protocol-version {
+                sensor sshService {
+                    path protocol-version;
+                }
+                type string;
+                description "ssh version configured.";
+            }
+            field rate-limit {
+                sensor sshService {
+                    path rate-limit;
+                }
+                type string;
+                description "ssh rate limits configured.";
+            }
+            field rate-limit-config {
+                sensor sshService {
+                    path rate-limit-config;
+                }
+                type string;
+                description "Checks if rate limit is configured.";
+            }
+            field root-login {
+                sensor sshService {
+                    path root-login;
+                    zero-suppression;
+                }
+                type string;
+                description "Root login configured.";
+            }
+            field root-login-config {
+                sensor sshService {
+                    path root-login-config;
+                    zero-suppression;
+                }
+                type string;
+                description "Checks if ssh  root login is configured.";
+            }
+            field version-config {
+                sensor sshService {
+                    path version-config;
+                }
+                type string;
+                description "Checks if ssh  version is configured.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger connection-limit {
+                frequency 1offset;
+                term connnection-limit-configured {
+                    when {
+                        matches-with "$conn-limit-config" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Connection limit of $connection-limit is configured..";
+                        }
+                    }
+                }
+                term connnection-limit-not-configured {
+                    when {
+                        matches-with "$conn-limit-config" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Connection Limit is not configured.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger rate-limit {
+                frequency 1offset;
+                term rate-limit-configured {
+                    when {
+                        matches-with "$rate-limit-config" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Rate Limit of $rate-limit is configured.";
+                        }
+                    }
+                }
+                term rate-limit--not-configured {
+                    when {
+                        matches-with "$rate-limit-config" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rate limit  is not configured.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger root-login {
+                frequency 1offset;
+                term deny-configured {
+                    when {
+                        matches-with "$root-login" deny;
+                        matches-with "$root-login" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "root-login deny is configured.";
+                        }
+                    }
+                }
+                term allow-configured {
+                    when {
+                        matches-with "$root-login" allow;
+                        matches-with "$root-login-config" true;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "root-login allow is configured.";
+                        }
+                    }
+                }
+                term not-configured {
+                    when {
+                        matches-with "$root-login-config" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "root-login is not configured.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger sshVersion {
+                frequency 1offset;
+                term sshV2-Configured {
+                    when {
+                        matches-with "$protocol-version" v2;
+                        matches-with "$version-config" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "ssh protocol version 2 is configured.";
+                        }
+                    }
+                }
+                term sshV2-not-Configured {
+                    when {
+                        matches-with "$version-config" true;
+                        does-not-match-with "$protocol-version" v2;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ssh protocol is configured but version 2 is not configured.";
+                        }
+                    }
+                }
+                term not-configured {
+                    when {
+                        matches-with "$version-config" false;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ssh version is not conifgured.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files check-ssh-services;
+                }
+            }
+        }
+    }
+}

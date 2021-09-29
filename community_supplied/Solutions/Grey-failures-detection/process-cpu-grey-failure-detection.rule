@@ -1,0 +1,203 @@
+healthbot {
+    topic system.processes {
+        rule process-cpu-grey-failures-detection {
+            keys [ daemon pid ];
+            synopsis "System processes cpu analyzer";
+            description "Collects system process's cpu utilization periodically and notifies anomalies when daemon CPU usage exceed threshold";
+            function generate_node_maitenance {
+                path notify_pathfinder.py;
+                method generate_node_maitenance;
+                argument hb_alert {
+                    mandatory;
+                }
+                argument mnt_time {
+                    mandatory;
+                }
+            }
+            function remove_node_maitenance {
+                path notify_pathfinder.py;
+                method remove_node_maitenance;
+            }
+            sensor systemprocexttable {
+                synopsis "System processes CPU iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-proc-ext.yml;
+                    table SystemProcExtTable;
+                    frequency 30s;
+                }
+            }
+            field daemon {
+                sensor systemprocexttable {
+                    path cmd;
+                }
+                type string;
+                description "Daemon to be monitored";
+            }
+            field max-threshold {
+                constant {
+                    value "{{process-cpu-high-threshold}}";
+                }
+                type integer;
+                description "Daemon cpu high threshold";
+            }
+            field min-threshold {
+                constant {
+                    value "{{process-cpu-low-threshold}}";
+                }
+                type integer;
+                description "Daemon cpu low threshold";
+            }
+            field mnt_time {
+                constant {
+                    value "{{maintenance_period}}";
+                }
+                type string;
+            }
+            field pid {
+                sensor systemprocexttable {
+                    path pid;
+                }
+                type string;
+                description "PID to be monitored";
+            }
+            field process-name {
+                constant {
+                    value "{{process-name-input}}";
+                }
+                type string;
+                description "Selected daemon to be monitored";
+            }
+            field util-percent {
+                sensor systemprocexttable {
+                    path wcpu;
+                }
+                type float;
+                description "Daemon CPU utilization";
+            }
+            trigger processes-cpu-utilization {
+                synopsis "System prcoesses cpu utilization kpi";
+                description "Sets health based on system processes cpu utilization";
+                frequency 1offset;
+                term is-processes-not-found {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                term is-cpu-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$util-percent" "$max-threshold" {
+                            time-range 4offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon cpu utilization:($util-percent), crossed high threshold($max-threshold). Node kept under maintenance in pathfinder";
+                        }
+                        user-defined-action generate_node_maitenance {
+                            argument mnt_time "$mnt_time";
+                            argument hb_alert HbAlert_daemon_cpu_utilization_high_node_kept_under_maintenance_in_pathfinder;
+                        }
+                    }
+                }
+                term is-cpu-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$util-percent" "$min-threshold" {
+                            time-range 2offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon cpu utilization:($util-percent), is in middle range";
+                        }
+                        user-defined-action generate_node_maitenance {
+                            argument mnt_time "$mnt_time";
+                            argument hb_alert HbAlert_daemon_cpu_utilization_high_node_kept_under_maintenance_in_pathfinder;
+                        }
+                    }
+                }
+                term cpu-utilization-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon cpu utilization:($util-percent) is normal";
+                        }
+                        user-defined-action remove_node_maitenance;
+                    }
+                }
+            }
+            variable maintenance_period {
+                value 0:1:0;
+                description "Enter node maintenance period in D:H:M format. Default is 0 days, 1 hour and 0 minutes";
+                type string;
+            }
+            variable process-cpu-high-threshold {
+                value 80;
+                description "Daemon cpu high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable process-cpu-low-threshold {
+                value 50;
+                description "Daemon cpu low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable process-name-input {
+                value .*;
+                description "Demon name to monitor, regular regular expression, eg 'rpd|dfwd|dcd'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products ACX {
+                                releases 15.2R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products EX {
+                                releases 15.2R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products MX {
+                                releases 15.2R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products PTX {
+                                releases 15.2R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products QFX {
+                                releases 15.2R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                            products SRX {
+                                releases 15.2R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files system-proc-ext.yml;
+                }
+            }
+        }
+    }
+}

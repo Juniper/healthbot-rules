@@ -1,0 +1,196 @@
+/*
+ * Checks for anomalies in optic module tx and rx 
+ *  
+ */
+healthbot {
+    topic linecard.optical {
+        rule check-optics-tx-rx-power-ml {
+            /*
+             * Monitors anomalies in optic module tx and rx
+             *
+             * Use interface-name as key for rule.
+             */		
+            keys interface-name;
+            description "tx and rx anomaly for optic  interface";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor optics-power {
+                iAgent {
+                    file interfaceOpticsDiagnostics-tx-rx.yml;
+                    table interfaceOpticsDiagnostics-tx-rx;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field interface-name {
+                sensor optics-power {
+                    path name;
+                }
+                type string;
+                description "interface name";
+            }
+            field rx-power {
+                sensor optics-power {
+                    path rx-signal-avg-optical-power-dbm;
+                }
+                type float;
+                description "optic rx power in db";
+            }
+            field rx-power-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$rx-power";
+                    }
+                }
+                type integer;
+                description "rx power anomaly";
+            }
+            field tx-power {
+                sensor optics-power {
+                    path laser-output-power-dbm;
+                }
+                type float;
+                description "optic tx power in db";
+            }
+            field tx-power-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$tx-power";
+                    }
+                }
+                type integer;
+                description "tx power anomaly";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger optics-tx-rx-power-dt {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when tx anomaly is detected and sends 
+                 * notification.
+                 */				
+                term only-tx-power {
+                    when {
+                        equal-to "$tx-power-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Only tx anomaly detected for optic $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to yellow when rx anomaly is detected and sends 
+                 * notification.
+                 */				
+                term only-rx-power {
+                    when {
+                        equal-to "$rx-power-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Only rx anomaly detected for optic $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to yellow when both tx and rx anomaly is detected and sends 
+                 * notification.
+                 */				
+                term both-tx-rx-power {
+                    when {
+                        equal-to "$rx-power-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                        equal-to "$tx-power-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Both tx and rx anomaly detected for optic $interface-name";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when both tx and rx do not show anomaly and sends 
+                 * notification.
+                 */				
+                term both-tx-rx-power {
+                    then {
+                        status {
+                            color green;
+                            message "Both tx and rx are normal for optic $interface-name";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files interfaceOpticsDiagnostics-tx-rx.yml;
+                }
+            }			
+        }
+    }
+}	

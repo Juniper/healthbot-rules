@@ -1,0 +1,153 @@
+/*
+ * Checks for anomalies in temperature for ADC card 
+ * 
+ * Two input control detection.
+ * 
+ *   1) "high-temperature" variable is configured, if needed high values of temperature
+ *       can be checked.
+ *   2) "low-temperature " variable is configured, if needed low values of temperature
+ *       can be checked.
+ *  
+ */
+healthbot {
+    topic adapter.card {
+        rule check-adc-temperature-ml {
+            /*
+             * Monitors temperature anomalies on ADC card.
+             *
+             * Use adc-card number and temperature name as keys for rule.
+             */		
+            keys [ adc-card-number temperature-name ];
+            description "Check  if adapter card temp is within outlier";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor adc-card {
+                iAgent {
+                    file adc-temp-outlier.yml;
+                    table adc-temp-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field adc-card-number {
+                sensor adc-card {
+                    path name;
+                }
+                type string;
+                description "adc card number";
+            }
+            field high-threshold {
+                constant {
+                    value "{{high-temperature}}";
+                }
+                type integer;
+                description "high threshold value";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-temperature}}";
+                }
+                type integer;
+                description "low threshold value";
+            }
+            field temperature {
+                sensor adc-card {
+                    path temperature;
+                }
+                type integer;
+                description "temperature reading in celsius";
+            }
+            field temperature-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$temperature";
+                    }
+                }
+                type integer;
+                description "Checks for anomaly in temperature";
+            }
+            field temperature-name {
+                sensor adc-card {
+                    path temperature-name;
+                }
+                type string;
+                description "name of the temperature";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger adc-temperature-dt {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when anomaly is detected and sends 
+                 * notification.
+                 */				
+                term anomaly-detected {
+                    when {
+                        equal-to "$temperature-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly detected for adc card $adc-card-number temperature type $temperature-name";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-anomaly-detected {
+                    then {
+                        status {
+                            color green;
+                            message "No Anomaly detected for adc card $adc-card-number temperature type $temperature-name";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while deploying playbook instance.
+             * 
+             */			
+            variable high-temperature {
+                value 60;
+                description "Checks for high temperature";
+                type int;
+            }
+            variable low-temperature {
+                value 50;
+                description "Checks for low temperature";
+                type int;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files adc-temp-outlier.yml;
+                }
+            }			
+        }
+    }
+}	
+	

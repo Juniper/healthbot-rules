@@ -1,0 +1,154 @@
+/*
+ * Checks for anomalies in reference voltage for FPC Card 
+ *  
+ */
+healthbot {
+    topic linecard.fpc {
+        rule check-fpc-voltage-ml {
+           /*
+             * Monitors voltage anomalies on FPC Card.
+             *
+             * Use fpc and reference-voltage as keys for rule.
+             */		
+            keys [ fpc reference-voltage ];
+            description "Check  if  fpc voltage is having anomaly";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor fpc {
+                iAgent {
+                    file fpc-power-outlier.yml;
+                    table fpc-power-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field actual-voltage {
+                sensor fpc {
+                    path actual-voltage;
+                }
+                type integer;
+                description "Actual voltage of the reference voltage";
+            }
+            field actual-voltage-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$actual-voltage";
+                    }
+                }
+                type integer;
+                description "Anomaly of actual-voltage";
+            }
+            field fpc {
+                sensor fpc {
+                    path name;
+                }
+                type string;
+                description "fpc number";
+            }
+            field power-type {
+                sensor fpc {
+                    path power-type;
+                }
+                type string;
+                description "Power Information";
+            }
+            field reference-voltage {
+                sensor fpc {
+                    path reference-voltage;
+                }
+                type string;
+                description reference-voltage.;
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger fpc-actual-voltage-dt {
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to yellow when anomaly is detected and sends 
+                 * notification.
+                 */				
+                term anomaly-present {
+                    when {
+                        equal-to "$actual-voltage-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly detected for fpc $fpc reference voltage $reference-voltage";
+                        }
+                    }
+                }
+                /*
+                 * Sets dashboard color to green when no anomaly is detected and sends 
+                 * notification.
+                 */				
+                term no-anomaly-present {
+                    then {
+                        status {
+                            color green;
+                            message "No Anomaly detected for fpc $fpc reference voltage $reference-voltage";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files fpc-power-outlier.yml;
+                }
+            }			
+        }
+    }
+}	

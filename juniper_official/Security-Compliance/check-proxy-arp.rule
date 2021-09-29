@@ -1,0 +1,153 @@
+/*
+*
+* Checks if porxy-arp restricted and unrestricted are conifgured
+* 
+*/
+healthbot {
+    topic security.compliance {
+        rule check-proxy-arp {
+            /*
+             * Checks if porxy-arp restricted and unrestricted are conifgured.
+             * Use interface name and unit-number as keys for rule.			 
+             *
+             */
+            keys [ interface-name unit-number ];
+            description "Checks if porxy-arp restricted and unrestricted are conifgured.";
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor proxy-arp {
+                iAgent {
+                    file interfaceProxyArpConfig.yml;
+                    table interfaceProxyArpConfigTable;
+                    frequency 6h;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */
+            field interface-name {
+                sensor proxy-arp {
+                    path interface-name;
+                }
+                type string;
+                description "Interface name.";
+            }
+            field proxy-configured {
+                sensor proxy-arp {
+                    path proxy-arp-config;
+                }
+                type string;
+                description "Checks if proxy arp configuration is present.";
+            }
+            field proxy-restricted {
+                sensor proxy-arp {
+                    path restricted-config;
+                }
+                type string;
+                description "Checks if proxy arp restricted is configured.";
+            }
+            field proxy-unrestricted {
+                sensor proxy-arp {
+                    path unrestricted-config;
+                }
+                type string;
+                description "Checks if proxy arp un-restricted is configured.";
+            }
+            field unit-number {
+                sensor proxy-arp {
+                    path unit-name;
+                }
+                type string;
+                description "Interface unit number.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger proxy-restricted {
+                frequency 2offset;
+                term resticted {
+                    when {
+                        matches-with "$proxy-configured" true {
+                            ignore-case;
+                        }
+                        matches-with "$proxy-restricted" true {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Arp Proxy is restricted on $interface-name unit $unit-number";
+                        }
+                    }
+                }
+                term unresticted {
+                    when {
+                        matches-with "$proxy-unrestricted" true {
+                            ignore-case;
+                        }
+                        matches-with "$proxy-configured" true {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Arp Proxy is unrestricted on $interface-name unit $unit-number";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files interfaceProxyArpConfig.yml;
+                }
+            }
+        }
+    }
+}
