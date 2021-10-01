@@ -4,11 +4,11 @@
  * One input control detection.
  * 
  *   1) "threshold" is used to check if the used percentage is
- *      increasinng by more than the threshold value.
+ *      increasing by more than the threshold value.
  *  
  */
 healthbot {
-    topic node.exporter {
+    topic server.monitoring {
         rule check-network-usage {
             /*
              * Monitors network usage and notifies anomalies.
@@ -17,20 +17,6 @@ healthbot {
              */			
             keys network-device;
             description "";
-            function difference {
-                path generic_functions.py;
-                method value_diff;
-                argument key_name {
-                    mandatory;
-                }
-                argument value;
-            }
-            function used-percent {
-                path used-percentage.py;
-                method used_percentage;
-                argument total;
-                argument used;
-            }
             sensor check-network {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -46,44 +32,40 @@ healthbot {
              */			
             field diff-receive-errors {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$network-device";
-                        argument value "$receive-errors-total";
+                    value-difference {
+                        field-name "$receive-errors-total";
                     }
                 }
                 type integer;
-            }
+                description "Difference of previous and current values";				
+            }			
             field diff-receive-multicast-total {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$network-device";
-                        argument value "$receive-multicast-total";
+                    value-difference {
+                        field-name "$receive-multicast-total";
                     }
                 }
                 type integer;
-            }
+                description "Difference of previous and current values";				
+            }			
             field diff-transmit-errors {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$network-device";
-                        argument value "$transmit-errors-total";
+                    value-difference {
+                        field-name "$transmit-errors-total";
                     }
                 }
                 type integer;
-            }
+                description "Difference of previous and current values";				
+            }			
             field diff-transmit-packets {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$network-device";
-                        argument value "$transmit-packets-total";
+                    value-difference {
+                        field-name "$transmit-packets-total";
                     }
                 }
                 type integer;
-            }
+                description "Difference of previous and current values";				
+            }			
             field frequency {
                 constant {
                     value 60;
@@ -99,14 +81,13 @@ healthbot {
             }
             field receive-error-used-percentage {
                 formula {
-                    user-defined-function {
-                        function-name used-percent;
-                        argument total "$frequency";
-                        argument used "$diff-receive-errors";
+                    eval {
+                        expression "( $diff-receive-errors / $frequency ) * 100";
                     }
                 }
                 type float;
-            }
+                description "Percentage of receive-error-used";		
+            }			
             field receive-errors-total {
                 sensor check-network {
                     path /node/network/receive/errs/total;
@@ -121,14 +102,13 @@ healthbot {
             }
             field receive-multicast-used-percentage {
                 formula {
-                    user-defined-function {
-                        function-name used-percent;
-                        argument total "$frequency";
-                        argument used "$diff-receive-multicast-total";
+                    eval {
+                        expression "( $diff-receive-multicast-total / $frequency ) * 100";
                     }
                 }
                 type float;
-            }
+                description "Percentage of receive-multicast-used";				
+            }			
             field threshold {
                 constant {
                     value "{{threshold}}";
@@ -143,24 +123,22 @@ healthbot {
             }
             field transmit-errors-used-percent {
                 formula {
-                    user-defined-function {
-                        function-name used-percent;
-                        argument total "$frequency";
-                        argument used "$diff-transmit-errors";
+                    eval {
+                        expression "( $diff-transmit-errors / $frequency ) * 100";
                     }
                 }
                 type float;
-            }
+                description "Percentage of transmit-errors-used";				
+            }			
             field transmit-packet-used-percent {
                 formula {
-                    user-defined-function {
-                        function-name used-percent;
-                        argument total "$frequency";
-                        argument used "$diff-transmit-packets";
+                    eval {
+                        expression "( $diff-transmit-packets / $frequency ) * 100";
                     }
                 }
                 type float;
-            }
+                description "Percentage of transmit-packet-used";				
+            }			
             field transmit-packets-total {
                 sensor check-network {
                     path /node/network/transmit/packets/total;
@@ -176,12 +154,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$receive-error-used-percentage" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "receive-error-used-percentage $receive-error-used-percentage exceeds threshold";
                         }
                     }
@@ -201,12 +179,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$receive-multicast-used-percentage" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "receive-multicast-used-percentage $receive-multicast-used-percentage exceeds threshold";
                         }
                     }
@@ -226,12 +204,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$transmit-errors-used-percent" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "transmit-errors-used-percent $transmit-errors-used-percent exceeds threshold";
                         }
                     }
@@ -251,12 +229,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$transmit-packet-used-percent" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "transmit-packet-used-percent $transmit-packet-used-percent exceeds threshold";
                         }
                     }

@@ -8,7 +8,7 @@
  *  
  */
 healthbot {
-    topic node.exporter {
+    topic server.monitoring {
         rule check-node-memory {
             /*
              * Monitors Node memory and notifies anomalies.
@@ -18,26 +18,6 @@ healthbot {
             keys host;
             synopsis "Memory kpi";
             description "Check node memory";
-            function difference {
-                description "Method that calculates the difference between current and previous readings ";
-                path generic_functions.py;
-                method value_diff;
-                argument key_name {
-                    mandatory;
-                }
-                argument value;
-            }
-            function used-percentage {
-                description "Method to calculate the percentage";
-                path used-percentage.py;
-                method used_percentage;
-                argument total {
-                    mandatory;
-                }
-                argument used {
-                    mandatory;
-                }
-            }
             sensor node-memory {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -53,26 +33,22 @@ healthbot {
              */			
             field diff-free-bytes {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$host";
-                        argument value "$memory-free-bytes";
+                    value-difference {
+                        field-name "$memory-free-bytes";
                     }
                 }
                 type integer;
-                description "Difference of previous and current values";
-            }
+                description "Difference of previous and current values";				
+            }			
             field diff-inactive-bytes {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$host";
-                        argument value "$memory-inactive-bytes";
+                    value-difference {
+                        field-name "$memory-inactive-bytes";
                     }
                 }
                 type integer;
-                description "Difference of previous and current values";
-            }
+                description "Difference of previous and current values";				
+            }			
             field host {
                 sensor node-memory {
                     path host;
@@ -111,12 +87,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$diff-free-bytes" "$threshold-diff" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "used-free-bytes $diff-free-bytes  exceeds threshold";
                         }
                     }
@@ -136,12 +112,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$diff-inactive-bytes" "$threshold-diff" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "used-inactive-bytes $diff-inactive-bytes exceeds threshold";
                         }
                     }

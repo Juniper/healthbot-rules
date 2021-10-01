@@ -11,7 +11,7 @@
  *  
  */
 healthbot {
-    topic node.exporter {
+    topic server.monitoring {
         rule check-disk-write-usage {
             /*
              * Monitors disk write usage fields and notifies through alarms if
@@ -21,22 +21,6 @@ healthbot {
              */		
             keys disk-name;
             description "Disk write information";
-            function difference {
-                description "Method that calculates the difference between current and previous readings ";
-                path generic_functions.py;
-                method value_diff;
-                argument key_name {
-                    mandatory;
-                }
-                argument value;
-            }
-            function used-percentage {
-                description "Method to calculate the percentage";
-                path used-percentage.py;
-                method used_percentage;
-                argument total;
-                argument used;
-            }
             sensor disk-write {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -68,48 +52,40 @@ healthbot {
             }
             field completed-used-percentage {
                 formula {
-                    user-defined-function {
-                        function-name used-percentage;
-                        argument total "$frequency";
-                        argument used "$diff-completed";
+                    eval {
+                        expression "( $diff-completed / $frequency ) * 100";
                     }
                 }
                 type float;
-                description "Percentage of disk read completed";
-            }
+                description "Percentage of disk write completed-used";				
+            }			
             field diff-completed {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$disk-name";
-                        argument value "$completed-total";
+                    value-difference {
+                        field-name "$completed-total";
                     }
                 }
                 type integer;
-                description "Difference of previous and current values";
-            }
+                description "Difference of previous and current values";				
+            }			
             field diff-time-seconds {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$disk-name";
-                        argument value "$time-seconds-total";
+                    value-difference {
+                        field-name "$time-seconds-total";
                     }
                 }
                 type integer;
-                description "Difference of previous and current values";
-            }
+                description "Difference of previous and current values";				
+            }			
             field diff_bytes {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$disk-name";
-                        argument value "$bytes-total";
+                    value-difference {
+                        field-name "$bytes-total";
                     }
                 }
                 type integer;
-                description "Difference of previous and current values";
-            }
+                description "Difference of previous and current values";				
+            }			
             field disk-name {
                 sensor disk-write {
                     path device;
@@ -148,15 +124,13 @@ healthbot {
             }
             field time-seconds-used-percentage {
                 formula {
-                    user-defined-function {
-                        function-name used-percentage;
-                        argument total "$frequency";
-                        argument used "$diff-time-seconds";
+                    eval {
+                        expression "( $diff-time-seconds / $frequency ) * 100";
                     }
                 }
                 type float;
-                description "threshold value increase to be compared with";
-            }
+                description "Percentage of time-seconds-used";				
+            }			
             /*
              * Anomaly detection logic.
              */			
@@ -166,12 +140,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$diff_bytes" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "The bytes-used-increase $diff_bytes for $disk-name exceeds threshold";
                         }
                     }
@@ -191,12 +165,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$completed-used-percentage" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "completed-used-percentage \"$completed-used-percentage\" for $disk-name exceeds threshold";
                         }
                     }
@@ -216,12 +190,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$time-seconds-used-percentage" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "time-seconds-used-percentage \"$time-seconds-used-percentage\" for $disk-name exceeds threshold";
                         }
                     }

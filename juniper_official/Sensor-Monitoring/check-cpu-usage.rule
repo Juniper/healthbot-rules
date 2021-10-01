@@ -9,7 +9,7 @@
  *  
  */
 healthbot {
-    topic node.exporter {
+    topic server.monitoring {
         rule check-cpu-usage {
             /*
              * Monitors cpu usage fields and notifies through alarms if
@@ -20,31 +20,6 @@ healthbot {
             keys [ cpu mode ];
             synopsis "CPU Usage KPI";
             description "Checks CPU total seconds";
-            function difference {
-                description "Method that calculates the difference between current and previous readings ";
-                path generic_functions.py;
-                method value_diff;
-                argument key_name {
-                    mandatory;
-                }
-                argument sub_key_name {
-                    mandatory;
-                }
-                argument value {
-                    mandatory;
-                }
-            }
-            function used-percentage {
-                description "Method to calculate the percentage";
-                path used-percentage.py;
-                method used_percentage;
-                argument total {
-                    mandatory;
-                }
-                argument used {
-                    mandatory;
-                }
-            }
             sensor node-cpu {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -73,29 +48,6 @@ healthbot {
                 type integer;
                 description "total cpu seconds";
             }
-            field cpu-used-percentage {
-                formula {
-                    user-defined-function {
-                        function-name used-percentage;
-                        argument total "$diff-prev-curr";
-                        argument used "$frequency";
-                    }
-                }
-                type float;
-                description "CPU used percentage for a specific CPU number and mode";
-            }
-            field diff-prev-curr {
-                formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$cpu";
-                        argument sub_key_name "$mode";
-                        argument value "$cpu-total-seconds";
-                    }
-                }
-                type integer;
-                description "Difference in current and previous cpu total seconds value";
-            }
             field frequency {
                 constant {
                     value "{{freq}}";
@@ -117,6 +69,23 @@ healthbot {
                 type integer;
                 description "threshold value to compare cpu used percentage";
             }
+            field cpu-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-prev-curr-total-seconds / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of cpu-used";				
+            }
+            field diff-prev-curr-total-seconds {
+                formula {
+                    value-difference {
+                        field-name "$cpu-total-seconds";
+                    }
+                }
+                type integer;
+            }			
             /*
              * Anomaly detection logic.
              */			
@@ -126,12 +95,12 @@ healthbot {
                     when {
                         greater-than-or-equal-to "$cpu-used-percentage" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "The cpu usage $cpu-used-percentage for cpu$cpu  mode$mode exceeds threshold.";
                         }
                     }

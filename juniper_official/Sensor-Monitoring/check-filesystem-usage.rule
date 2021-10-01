@@ -10,7 +10,7 @@
  *   3) "freq" is the interval between data points.
  */
 healthbot {
-    topic node.exporter {
+    topic server.monitoring {
         rule check-filesystem-usage {
             /*
              * Monitors file system usage fields and notifies through alarms if
@@ -21,28 +21,6 @@ healthbot {
             keys [ device fstype mountpoint ];
             synopsis "File  system kpi";
             description "Checks file sytem usage";
-            function difference {
-                description "Method that calculates the difference between current and previous readings ";
-                path multiple-keys.py;
-                method value_diff;
-                argument key_name {
-                    mandatory;
-                }
-                argument sub_key_name {
-                    mandatory;
-                }
-                argument sub_key_name2 {
-                    mandatory;
-                }
-                argument value;
-            }
-            function used-percentage {
-                description "Method to calculate the percentage";
-                path used-percentage.py;
-                method used_percentage;
-                argument total;
-                argument used;
-            }
             sensor fileysystem {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -52,18 +30,10 @@ healthbot {
                     sensor-name /node/filesystem;
                     frequency 60s;
                 }
-            }
+            }			
             /*
              * Fields defined by specifying the sensor paths
              */			
-            field available-bytes {
-                sensor fileysystem {
-                    where "mountpoint !~ /.*host/sys/fs/cgroup.*/";
-                    path /node/filesystem/avail/bytes;
-                }
-                type string;
-                description "available bytes for the file system.";
-            }
             field device {
                 sensor fileysystem {
                     path device;
@@ -78,43 +48,24 @@ healthbot {
                 type integer;
                 description "Device error";
             }
-            field diff-available-bytes {
-                formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$device";
-                        argument sub_key_name "$fstype";
-                        argument sub_key_name2 "$mountpoint";
-                        argument value "$available-bytes";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";
-            }
             field diff-error {
                 formula {
-                    user-defined-function {
-                        function-name difference;
-                        argument key_name "$device";
-                        argument sub_key_name "$fstype";
-                        argument sub_key_name2 "$mountpoint";
-                        argument value "$device-error";
+                    value-difference {
+                        field-name "$device-error";
                     }
                 }
                 type integer;
-                description "Difference of previous and current values";
-            }
+                description "Difference of previous and current values";				
+            }			
             field filesystem-error-used-percentage {
                 formula {
-                    user-defined-function {
-                        function-name used-percentage;
-                        argument total "$frequency";
-                        argument used "$diff-error";
+                    eval {
+                        expression "( $diff-error / $frequency ) * 100";
                     }
                 }
                 type float;
-                description "Percentage of filesystem error";
-            }
+                description "Percentage of filesystem-error-used";				
+            }			
             field frequency {
                 constant {
                     value "{{freq}}";
@@ -153,44 +104,18 @@ healthbot {
             /*
              * Anomaly detection logic.
              */			
-            trigger available-bytes-used-increase {
-                frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        increasing-at-least-by-value "$diff-available-bytes" {
-                            value "$threshold-increase";
-                            time-range 3offset;
-                            any;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "available-bytes-used-difference $diff-available-bytes has exceeded threshold increase";
-                        }
-                    }
-                }
-                term normal {
-                    then {
-                        status {
-                            color green;
-                            message "available-bytes-used-difference $diff-available-bytes is normal";
-                        }
-                    }
-                }
-            }
             trigger file-error-used-percent {
                 frequency 1offset;
                 term exceeds-threshold {
                     when {
                         greater-than-or-equal-to "$filesystem-error-used-percentage" "$threshold" {
                             time-range 3offset;
-                            any;
+                            all;
                         }
                     }
                     then {
                         status {
-                            color red;
+                            color yellow;
                             message "filesystem-error-used-percentage $filesystem-error-used-percentage exceeds threshold";
                         }
                     }
