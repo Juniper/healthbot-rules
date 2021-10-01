@@ -1,0 +1,258 @@
+/*
+ * Checks if network usage fields are exceeding threshold value and raises alarm. 
+ * 
+ * One input control detection.
+ * 
+ *   1) "threshold" is used to check if the used percentage is
+ *      increasing by more than the threshold value.
+ *  
+ */
+healthbot {
+    topic server.monitoring {
+        rule check-network-usage {
+            /*
+             * Monitors network usage and notifies anomalies.
+             *
+             * Use network-device as key for rule.
+             */			
+            keys network-device;
+            description "";
+            sensor check-network {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /node/network/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field diff-receive-errors {
+                formula {
+                    value-difference {
+                        field-name "$receive-errors-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field diff-receive-multicast-total {
+                formula {
+                    value-difference {
+                        field-name "$receive-multicast-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field diff-transmit-errors {
+                formula {
+                    value-difference {
+                        field-name "$transmit-errors-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field diff-transmit-packets {
+                formula {
+                    value-difference {
+                        field-name "$transmit-packets-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field frequency {
+                constant {
+                    value 60;
+                }
+                type integer;
+            }
+            field network-device {
+                sensor check-network {
+                    path device;
+                }
+                type string;
+                description "";
+            }
+            field receive-error-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-receive-errors / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of receive-error-used";		
+            }			
+            field receive-errors-total {
+                sensor check-network {
+                    path /node/network/receive/errs/total;
+                }
+                type integer;
+            }
+            field receive-multicast-total {
+                sensor check-network {
+                    path /node/network/receive/multicast/total;
+                }
+                type integer;
+            }
+            field receive-multicast-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-receive-multicast-total / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of receive-multicast-used";				
+            }			
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+            }
+            field transmit-errors-total {
+                sensor check-network {
+                    path /node/network/transmit/errs/total;
+                }
+                type integer;
+            }
+            field transmit-errors-used-percent {
+                formula {
+                    eval {
+                        expression "( $diff-transmit-errors / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of transmit-errors-used";				
+            }			
+            field transmit-packet-used-percent {
+                formula {
+                    eval {
+                        expression "( $diff-transmit-packets / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of transmit-packet-used";				
+            }			
+            field transmit-packets-total {
+                sensor check-network {
+                    path /node/network/transmit/packets/total;
+                }
+                type integer;
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger receive-error-used-percentage {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$receive-error-used-percentage" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "receive-error-used-percentage $receive-error-used-percentage exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "receive-error-used-percentage $receive-error-used-percentage is normal";
+                        }
+                    }
+                }
+            }
+            trigger receive-multicast-used-percentage {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$receive-multicast-used-percentage" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "receive-multicast-used-percentage $receive-multicast-used-percentage exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "receive-multicast-used-percentage $receive-multicast-used-percentage is normal";
+                        }
+                    }
+                }
+            }
+            trigger transmit-errors-used-percent {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$transmit-errors-used-percent" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "transmit-errors-used-percent $transmit-errors-used-percent exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "transmit-errors-used-percent $transmit-errors-used-percent is normal";
+                        }
+                    }
+                }
+            }
+            trigger transmit-packet-used-percent {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$transmit-packet-used-percent" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "transmit-packet-used-percent $transmit-packet-used-percent exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "transmit-packet-used-percent $transmit-packet-used-percent is normal";
+                        }
+                    }
+                }
+            }
+            variable threshold {
+                value 60;
+                type int;
+            }
+        }
+    }
+}	
+	

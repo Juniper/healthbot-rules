@@ -1,0 +1,153 @@
+/*
+ * Checks if cpu load average for 1min,5mins and 15mins is exceeding threshold 
+ * value and raises alarm.
+ * One input control detection.
+ * 
+ *   1) "threshold" is used to check if the used percentage is
+ *      increasinng by more than the threshold value.
+ *  
+ */
+healthbot {
+    topic server.monitoring {
+        rule check-load {
+            /*
+             * Monitors cpu load average for 1min,5mins and 15mins and notifies
+             * anomalies.
+             * 
+             */		
+            synopsis "CPU load kpi ";
+            description "CPU load average for 1min,5min and 15 mins";
+            sensor node-load {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /node;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field load-1 {
+                sensor node-load {
+                    path /node/load1;
+                    zero-suppression;
+                }
+                type integer;
+                description "CPU load average in 1 minute ";
+            }
+            field load-15 {
+                sensor node-load {
+                    path /node/load15;
+                    zero-suppression;
+                }
+                type integer;
+                description "CPU load average in 15 minutes ";
+            }
+            field load-5 {
+                sensor node-load {
+                    path /node/load5;
+                    zero-suppression;
+                }
+                type integer;
+                description "CPU load average in 15 minutes ";
+            }
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "threshold percentage to be compared with";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger load-average-in-1-min {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$load-1" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The load average $load-1 in 1 min is exceeding threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "The load average $load-1 in 1 min is normal";
+                        }
+                    }
+                }
+            }
+            trigger load-average-in-15-min {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$load-15" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The load average $load-15 in 15 min is exceeding threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "The load average $load-15 in 15 min is normal";
+                        }
+                    }
+                }
+            }
+            trigger load-average-in-5-min {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$load-5" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The load average $load-5 in 5 min is exceeding threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "The load average $load-5 in 5 min is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while deploying playbook instance. 
+             *  
+             */			
+            variable threshold {
+                value 70;
+                description "threshold percentage value ";
+                type int;
+            }
+        }
+    }
+}	

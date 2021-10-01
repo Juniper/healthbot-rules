@@ -1,0 +1,133 @@
+/*
+ * Checks if cpu usage is exceeding threshold value and raises alarm.
+ * 
+ * Two input control detection.
+ * 
+ *   1) "threshold" is used to check if the used percentage is
+ *      increasing by more than the threshold value.
+ *   2) "freq" is the interval between data points.
+ *  
+ */
+healthbot {
+    topic server.monitoring {
+        rule check-cpu-usage {
+            /*
+             * Monitors cpu usage fields and notifies through alarms if
+             * anomalies are found.
+             *
+             * Use cpu and mode as key for rule.			 
+             */			
+            keys [ cpu mode ];
+            synopsis "CPU Usage KPI";
+            description "Checks CPU total seconds";
+            sensor node-cpu {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /node/cpu;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field cpu {
+                sensor node-cpu {
+                    path cpu;
+                }
+                type string;
+                description "cpu number";
+            }
+            field cpu-total-seconds {
+                sensor node-cpu {
+                    path /node/cpu/seconds/total;
+                    zero-suppression;
+                }
+                type integer;
+                description "total cpu seconds";
+            }
+            field frequency {
+                constant {
+                    value "{{freq}}";
+                }
+                type integer;
+                description "time interval to calculate cpu used percentage";
+            }
+            field mode {
+                sensor node-cpu {
+                    path mode;
+                }
+                type string;
+                description "Different modes like iowait,idle,nice,system etc";
+            }
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "threshold value to compare cpu used percentage";
+            }
+            field cpu-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-prev-curr-total-seconds / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of cpu-used";				
+            }
+            field diff-prev-curr-total-seconds {
+                formula {
+                    value-difference {
+                        field-name "$cpu-total-seconds";
+                    }
+                }
+                type integer;
+            }			
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger cpu-usage {
+                frequency 1offset;
+                term above-threshold {
+                    when {
+                        greater-than-or-equal-to "$cpu-used-percentage" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "The cpu usage $cpu-used-percentage for cpu$cpu  mode$mode exceeds threshold.";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "The cpu usage $cpu-used-percentage for cpu$cpu  mode$mode is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while deploying playbook instance. 
+             *  
+             */			
+            variable freq {
+                value 60;
+                description "time interval to calculate cpu used percentage";
+                type int;
+            }
+            variable threshold {
+                value 70;
+                description "threshold value";
+                type int;
+            }
+        }
+    }
+}	
