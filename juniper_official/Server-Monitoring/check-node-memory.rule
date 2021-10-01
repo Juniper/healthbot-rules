@@ -1,0 +1,145 @@
+/*
+ * Checks if node memory fields are increasing by more than threshold value and  
+ * raises alarm when anomalies are present.
+ * One input control detection.
+ * 
+ *   1) "threshold-diff" is used to check if the difference of current and previous
+ *      values is increasing by more than the threshold-diff.
+ *  
+ */
+healthbot {
+    topic server.monitoring {
+        rule check-node-memory {
+            /*
+             * Monitors Node memory and notifies anomalies.
+             *
+             * Use host as key for rule.
+             */		
+            keys host;
+            synopsis "Memory kpi";
+            description "Check node memory";
+            sensor node-memory {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /node/memory;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field diff-free-bytes {
+                formula {
+                    value-difference {
+                        field-name "$memory-free-bytes";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field diff-inactive-bytes {
+                formula {
+                    value-difference {
+                        field-name "$memory-inactive-bytes";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field host {
+                sensor node-memory {
+                    path host;
+                }
+                type string;
+                description "host name";
+            }
+            field memory-free-bytes {
+                sensor node-memory {
+                    path /node/memory/free/bytes;
+                    zero-suppression;
+                }
+                type integer;
+                description "memory free bytes";
+            }
+            field memory-inactive-bytes {
+                sensor node-memory {
+                    path /node/memory/inactive/bytes;
+                }
+                type integer;
+                description "memory inactive bytes";
+            }
+            field threshold-diff {
+                constant {
+                    value "{{threshold-diff}}";
+                }
+                type integer;
+                description "threshold value increase to be compared with";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger used-free-bytes {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$diff-free-bytes" "$threshold-diff" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "used-free-bytes $diff-free-bytes  exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "used-free-bytes $diff-free-bytes is normal";
+                        }
+                    }
+                }
+            }
+            trigger used-inactive-bytes {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$diff-inactive-bytes" "$threshold-diff" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "used-inactive-bytes $diff-inactive-bytes exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "used-inactive-bytes $diff-inactive-bytes  is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while deploying playbook instance. 
+             *  
+             */			
+            variable threshold-diff {
+                value 100000000;
+                description "threshold value";
+                type int;
+            }
+        }
+    }
+}	

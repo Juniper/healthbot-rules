@@ -1,0 +1,233 @@
+/*
+ * Checks if disk write usage fields exceed threshold value and raises alarm.
+ *
+ * Three input control detection.
+ * 
+ *   1) "threshold" is used to check if the used percentage is
+ *      increasing by more than the threshold value.
+ *   2) "threshold-increase" is used to check if the difference of current and previous
+ *      values is increasing by more than the threshold-increase value.
+ *   3) "freq" is the interval between data points.
+ *  
+ */
+healthbot {
+    topic server.monitoring {
+        rule check-disk-write-usage {
+            /*
+             * Monitors disk write usage fields and notifies through alarms if
+             * anomalies are found.
+             *
+             * Use disk-name as key for rule.			 
+             */		
+            keys disk-name;
+            description "Disk write information";
+            sensor disk-write {
+                /*
+                 * Sensor configuration to get data from network devices.
+                 */			
+                description "node disk in seconds";
+                server-monitoring {
+                    sensor-name /node/disk;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined by specifying the sensor paths
+             */			
+            field bytes-total {
+                sensor disk-write {
+                    path /node/disk/written/bytes/total;
+                    zero-suppression;
+                }
+                type integer;
+                description "total Disk bytes";
+            }
+            field completed-total {
+                sensor disk-write {
+                    path /node/disk/writes/completed/total;
+                    zero-suppression;
+                }
+                type integer;
+                description "total Disk reads completed";
+            }
+            field completed-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-completed / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of disk write completed-used";				
+            }			
+            field diff-completed {
+                formula {
+                    value-difference {
+                        field-name "$completed-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field diff-time-seconds {
+                formula {
+                    value-difference {
+                        field-name "$time-seconds-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field diff_bytes {
+                formula {
+                    value-difference {
+                        field-name "$bytes-total";
+                    }
+                }
+                type integer;
+                description "Difference of previous and current values";				
+            }			
+            field disk-name {
+                sensor disk-write {
+                    path device;
+                }
+                type string;
+                description "disk name";
+            }
+            field frequency {
+                constant {
+                    value "{{freq}}";
+                }
+                type integer;
+                description "interval between 2 datapoints";
+            }
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "threshold percentage to be compared with";
+            }
+            field threshold-increase {
+                constant {
+                    value "{{threshold-increase}}";
+                }
+                type integer;
+                description "threshold value increase to be compared with";
+            }
+            field time-seconds-total {
+                sensor disk-write {
+                    path /node/disk/write/time/seconds/total;
+                    zero-suppression;
+                }
+                type integer;
+                description "total Disk read time";
+            }
+            field time-seconds-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-time-seconds / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of time-seconds-used";				
+            }			
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger bytes-used-increase {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$diff_bytes" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "The bytes-used-increase $diff_bytes for $disk-name exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "The bytes-used-increase $diff_bytes  for $disk-name is normal";
+                        }
+                    }
+                }
+            }
+            trigger completed-used-percentage {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$completed-used-percentage" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "completed-used-percentage \"$completed-used-percentage\" for $disk-name exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "completed-used-percentage \"$completed-used-percentage\" for $disk-name is normal";
+                        }
+                    }
+                }
+            }
+            trigger time-seconds-used-percentage {
+                frequency 1offset;
+                term exceeds-threshold {
+                    when {
+                        greater-than-or-equal-to "$time-seconds-used-percentage" "$threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "time-seconds-used-percentage \"$time-seconds-used-percentage\" for $disk-name exceeds threshold";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "time-seconds-used-percentage \"$time-seconds-used-percentage\" for $disk-name is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Values can be changed while deploying playbook instance. 
+             *  
+             */			
+            variable freq {
+                value 60;
+                description "time interval to calculate used percentage";
+                type int;
+            }
+            variable threshold {
+                value 60;
+                description "threshold percentage value ";
+                type int;
+            }
+            variable threshold-increase {
+                value 10000;
+                description "threshold value";
+                type int;
+            }
+        }
+    }
+}	
