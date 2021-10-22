@@ -4,28 +4,17 @@
 * 
 */
 healthbot {
-    topic  security.compliance {
+    topic security.compliance {
         rule check-ntp-src-address {
-            /*
-             * Checks if source address is confgured for ntp
-             * Use ntpSrcAddress as key for rule.
-             *
-             */
             keys ntpSrcAddress;
             description "Checks if source address is confgured for ntp";
-            /*
-             * Sensor configuration to get data from network devices.
-             */
             sensor ntpaddr {
                 iAgent {
                     file ntpSrcAddr.yml;
                     table ntpSrcTable;
-                    frequency 6h;
+                    frequency 60s;
                 }
             }
-            /*
-             * Fields defined by specifying the sensor paths
-             */
             field ntpSrcAddress {
                 sensor ntpaddr {
                     path ntpSrcAddress;
@@ -40,14 +29,11 @@ healthbot {
                 type string;
                 description "Checks if NTP source address is configured";
             }
-            /*
-             * Anomaly detection logic.
-             */
             trigger ntpSrcAddressCheck {
                 frequency 2offset;
                 term srcAddr-present {
                     when {
-                        matches-with "$ ntpSrcConfigured" true;
+                        matches-with "$ntpSrcConfigured" true;
                     }
                     then {
                         status {
@@ -58,7 +44,7 @@ healthbot {
                 }
                 term srcAddr-not-present {
                     when {
-                        matches-with "$ ntpSrcConfigured" false;
+                        matches-with "$ntpSrcConfigured" false;
                     }
                     then {
                         status {
@@ -109,7 +95,7 @@ healthbot {
                                         release-support min-supported-release;
                                     }
                                 }
-                            }							
+                            }
                         }
                     }
                 }
@@ -119,4 +105,4 @@ healthbot {
             }
         }
     }
-}
+}	
