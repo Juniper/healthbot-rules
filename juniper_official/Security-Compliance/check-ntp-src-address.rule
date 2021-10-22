@@ -4,18 +4,18 @@
 * 
 */
 healthbot {
-    topic  security.compliance {
+    topic security.compliance {
         rule check-ntp-src-address {
             /*
              * Checks if source address is confgured for ntp
              * Use ntpSrcAddress as key for rule.
              *
-             */
+             */		
             keys ntpSrcAddress;
             description "Checks if source address is confgured for ntp";
             /*
              * Sensor configuration to get data from network devices.
-             */
+             */			
             sensor ntpaddr {
                 iAgent {
                     file ntpSrcAddr.yml;
@@ -24,8 +24,8 @@ healthbot {
                 }
             }
             /*
-             * Fields defined by specifying the sensor paths
-             */
+             * Fields defined with variables and constant values
+             */			
             field ntpSrcAddress {
                 sensor ntpaddr {
                     path ntpSrcAddress;
@@ -42,12 +42,12 @@ healthbot {
             }
             /*
              * Anomaly detection logic.
-             */
+             */			
             trigger ntpSrcAddressCheck {
-                frequency 2offset;
+                frequency 1offset;
                 term srcAddr-present {
                     when {
-                        matches-with "$ ntpSrcConfigured" true;
+                        matches-with "$ntpSrcConfigured" true;
                     }
                     then {
                         status {
@@ -58,7 +58,7 @@ healthbot {
                 }
                 term srcAddr-not-present {
                     when {
-                        matches-with "$ ntpSrcConfigured" false;
+                        matches-with "$ntpSrcConfigured" false;
                     }
                     then {
                         status {
@@ -109,7 +109,7 @@ healthbot {
                                         release-support min-supported-release;
                                     }
                                 }
-                            }							
+                            }
                         }
                     }
                 }
