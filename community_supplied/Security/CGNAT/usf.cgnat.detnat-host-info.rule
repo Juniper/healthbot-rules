@@ -1,0 +1,165 @@
+/*
+ * This rule is responsible for flagging high port-utilization of a particular subscriber in detnat
+ *
+ * This rule flags RED if percentage ports used by a subscriber is > threshold (default:90%)
+ *
+ * The data can be fetched for:
+ *  - All subscibers (parse .* for variable host-ip)
+ *  - A subset of subscribers (parse | seperated values for host-ip e.g: 20.1.1.2 | 20.1.1.3)
+ *  - A single subscriber (parse exact value for host-ip)
+ *  - Based on pool name (parse .* for variable pool-name for all pools)
+ *  - Selected pool names (parse | seperated values for subset e.g: p1 | p2)
+ *  - For a particular pool (parse exact pool name) 
+ */
+healthbot {
+    topic usf.cgnat.detnat-host-info {
+        rule detnat-host-info {
+            keys [ host-ip pool-name ];
+            description "DetNat Host Info";
+            sensor DetHostInfo {
+                iAgent {
+                    file source_detnat_port_block_info.yml;
+                    table SourceDetNatPortBlockTable;
+                    frequency 60s;
+                }
+            }
+            field actual-ports-used-percentage {
+                formula {
+                    eval {
+                        expression "$ports-used / $total-ports-for-host * 100";
+                    }
+                }
+                type float;
+                description "Actual ports used percentage";
+            }
+            field block-size {
+                sensor DetHostInfo {
+                    path block-size;
+                }
+                type integer;
+                description "Port block size";
+            }
+            field blocks-available {
+                sensor DetHostInfo {
+                    path blocks-available;
+                }
+                type integer;
+                description "Number of blocks assigned";
+            }
+            field external-ip {
+                sensor DetHostInfo {
+                    path external-ip;
+                }
+                type string;
+                description "Post NAT IP address";
+            }
+            field host-ip {
+                sensor DetHostInfo {
+                    where "host-ip =~ /{{host-ip}}/";
+                    path host-ip;
+                }
+                type string;
+                description "IP address of host for which port block is assigned";
+            }
+            field pool-name {
+                sensor DetHostInfo {
+                    where "pool_name =~ /{{pool-name}}/";
+                    path pool_name;
+                }
+                type string;
+                description "Pool Name";
+            }
+            field port-block-range-high {
+                sensor DetHostInfo {
+                    path port-block-range-high;
+                }
+                type string;
+                description "Higher range of port block assigned";
+            }
+            field port-block-range-low {
+                sensor DetHostInfo {
+                    path port-block-range-low;
+                }
+                type string;
+                description "Lower range of port block assigned";
+            }
+            field ports-used {
+                sensor DetHostInfo {
+                    path ports-used;
+                }
+                type integer;
+                description "Number of ports used";
+            }
+            field ports-used-threshold-percentage {
+                constant {
+                    value "{{ports-used-threshold-percentage}}";
+                }
+                description "Ports Used Threshold Percentage";
+            }
+            field total-ports-for-host {
+                formula {
+                    eval {
+                        expression "$block-size * $blocks-available";
+                    }
+                }
+                type integer;
+                description "Total Ports available for host";
+            }
+            trigger DetNat_Host_Info_Triggers {
+                frequency 60s;
+                term Ports_Used_Percentage_high {
+                    when {
+                        greater-than-or-equal-to "$actual-ports-used-percentage" "$ports-used-threshold-percentage";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DetNat Ports used percentage is $actual-ports-used-percentage higher than threshold $ports-used-threshold-percentage for $host-ip , pool-name $pool-name";
+                        }
+                    }
+                }
+                term default {
+                    then {
+                        status {
+                            color green;
+                            message "Host util normal for $host-ip";
+                        }
+                    }
+                }
+            }
+            variable host-ip {
+                value None;
+                description "Host IP address to be matched";
+                type string;
+            }
+            variable pool-name {
+                value None;
+                description "Name of the pool to be matched";
+                type string;
+            }
+            variable ports-used-threshold-percentage {
+                value 90.0;
+                description "Threshold percentage for total used ports";
+                type float;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

@@ -1,0 +1,122 @@
+/*
+ * This rule checks if port-block-utilization percentage of a detnat pool is above threshold
+ *
+ * Flags RED if port-block-utilization percentage of a detnat pool is above threshold (default: 90%)
+ * Else it flags GREEN
+ *
+ * The data can be fetched for:
+ *  - Based on pool name (parse .* for variable pool-name for all pools)
+ *  - Selected pool names (parse | seperated values for subset e.g: p1 | p2)
+ *  - For a particular pool (parse exact pool name)
+ *
+ */
+healthbot {
+    topic usf.cgnat.detnat-pool-info {
+        rule detnat-pool-info {
+            keys pool_name;
+            description "Deterministic Nat Pool Information";
+            sensor DetNatPoolInfo {
+                iAgent {
+                    file source_detnat_pool_info.yml;
+                    table SourceDeterministicNatPortBlockTable;
+                    frequency 60s;
+                }
+            }
+            field act-port-block-usage-percentage {
+                formula {
+                    eval {
+                        expression "$used-blocks / $total-blocks * 100";
+                    }
+                }
+                type float;
+                description "Actual value of port block usage percentage";
+            }
+            field exp-port-block-usage-percentage {
+                constant {
+                    value "{{exp-port-block-usage-percentage}}";
+                }
+                type float;
+            }
+            field pool_name {
+                sensor DetNatPoolInfo {
+                    where "pool_name =~ /{{pool-name}}/";
+                    path pool_name;
+                }
+                type string;
+            }
+            field port-block-size {
+                sensor DetNatPoolInfo {
+                    path port-block-size;
+                }
+                type integer;
+            }
+            field port-over-loading-factor {
+                sensor DetNatPoolInfo {
+                    path port-over-loading-factor;
+                }
+                type integer;
+            }
+            field total-blocks {
+                sensor DetNatPoolInfo {
+                    path total-blocks;
+                }
+                type integer;
+            }
+            field used-blocks {
+                sensor DetNatPoolInfo {
+                    path used-blocks;
+                }
+                type integer;
+            }
+            trigger port-block-pool-info-trigger {
+                frequency 60s;
+                term used_port_block_percentage_high {
+                    when {
+                        greater-than-or-equal-to "$act-port-block-usage-percentage" "$exp-port-block-usage-percentage";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DetNat block usage percentage is high for $pool_name";
+                        }
+                    }
+                }
+                term Default {
+                    then {
+                        status {
+                            color green;
+                            message "DetNat Port block usage is normal for $pool_name";
+                        }
+                    }
+                }
+            }
+            variable exp-port-block-usage-percentage {
+                value 90.0;
+                description "Expected value for port block usage percentage";
+                type float;
+            }
+            variable pool-name {
+                value None;
+                description "Pool name to be matched";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
