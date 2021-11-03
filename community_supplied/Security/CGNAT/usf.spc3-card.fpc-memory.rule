@@ -1,0 +1,92 @@
+/*
+ * This rule fetches FPC memory info of SPC3 from VTY command output
+ * VTY target string is a mandatory argument
+ *
+ */
+healthbot {
+    topic usf.spc3-card.fpc-memory {
+        rule fpc-memory {
+            keys id;
+            description "Services FPC Memory";
+            sensor ServicesFpcMemory {
+                iAgent {
+                    file svc_fpc_mem.yml;
+                    table SvcFpcMemory;
+                    frequency 60s;
+                    target "{{fpc-pic-string}}";
+                }
+            }
+            field base {
+                sensor ServicesFpcMemory {
+                    path base;
+                }
+                type string;
+                description Base;
+            }
+            field free {
+                sensor ServicesFpcMemory {
+                    path free;
+                }
+                type string;
+                description "free memory";
+            }
+            field id {
+                sensor ServicesFpcMemory {
+                    path id;
+                }
+                type string;
+                description ID;
+            }
+            field name {
+                sensor ServicesFpcMemory {
+                    path name;
+                }
+                type string;
+                description name;
+            }
+            field percentage {
+                sensor ServicesFpcMemory {
+                    path perc;
+                }
+                type string;
+                description percentage;
+            }
+            field total {
+                sensor ServicesFpcMemory {
+                    path total;
+                }
+                type string;
+                description "total memory";
+            }
+            field used {
+                sensor ServicesFpcMemory {
+                    path used;
+                }
+                type string;
+                description "used memory";
+            }
+            variable fpc-pic-string {
+                value None;
+                description "FPC PIC string";
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

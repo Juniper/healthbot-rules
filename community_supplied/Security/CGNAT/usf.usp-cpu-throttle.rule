@@ -1,0 +1,114 @@
+/*
+ * This rule fetches CPU throttle info from VTY command output
+ * VTY target string will be a mandatory argument
+ *
+ */
+healthbot {
+    topic usf.usp-cpu-throttle {
+        rule usp-cpu-throttle {
+            keys svc-intf;
+            description "Usp Cpu Throttle";
+            sensor UspCpuThrottle {
+                iAgent {
+                    file svc_usp_cpu_throttle.yml;
+                    table UspCpuThrottleTable;
+                    frequency 60s;
+                    target "{{fpc-pic-string}}";
+                }
+            }
+            field current-load {
+                sensor UspCpuThrottle {
+                    path current-load;
+                }
+                type float;
+                description "Current Load";
+            }
+            field fpc-pic-string {
+                sensor UspCpuThrottle {
+                    path target;
+                }
+                type string;
+                description "FPC PIC string";
+            }
+            field load-zone {
+                sensor UspCpuThrottle {
+                    path load-zone;
+                }
+                type string;
+                description "Load zone";
+            }
+            field red-limit {
+                sensor UspCpuThrottle {
+                    path red-limit;
+                }
+                type float;
+                description "Red Limit";
+            }
+            field svc-intf {
+                sensor UspCpuThrottle {
+                    path svc-intf;
+                }
+                type string;
+                description "Service Interface";
+            }
+            field throttled-packets {
+                sensor UspCpuThrottle {
+                    path throttled-packets;
+                }
+                type integer;
+                description "Throttled packets";
+            }
+            field yellow-limit {
+                sensor UspCpuThrottle {
+                    path yellow-limit;
+                }
+                type float;
+                description "Yellow limit";
+            }
+            trigger CPU_Throttle_Trigger {
+                frequency 60s;
+                term load_zone_term {
+                    when {
+                        does-not-match-with "$load-zone" GREEN;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "CPU for $fpc-pic-string is throttled and in $load-zone zone";
+                        }
+                    }
+                }
+                term Default {
+                    then {
+                        status {
+                            color green;
+                            message "CPU is not loaded for $fpc-pic-string";
+                        }
+                    }
+                }
+            }
+            variable fpc-pic-string {
+                value None;
+                description "FPC PIC string";
+                type sensor-argument;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 21.1R1 {
+                                    release-support min-supported-release;
+                                    platform All-models-where-SPC3-is-supported;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

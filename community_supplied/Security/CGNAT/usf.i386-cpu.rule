@@ -1,0 +1,100 @@
+/*
+ * This rule fetches i386 CPU utilisation information for all cores using VTY ouptut
+ * VTY target string is a mandatory argument
+ *
+ * This rule flags RED if utilisation gors beyond threshold (default: 90%) for a CPU core
+ *
+ */
+healthbot {
+    topic usf.i386-cpu {
+        rule i386-cpu {
+            keys [ cpu-core fpc-pic-string ];
+            description "I386 CPU status";
+            sensor I386Cpu {
+                iAgent {
+                    file svc_i386_cpu.yml;
+                    table SvcCoreCpu;
+                    frequency 60s;
+                    target "{{fpc-pic-string}}";
+                }
+            }
+            field cpu-core {
+                sensor I386Cpu {
+                    where "cpu =~ /{{cpu-core}}/";
+                    path cpu;
+                }
+                type string;
+                description "CPU core number";
+            }
+            field exp-util {
+                constant {
+                    value "{{exp-util}}";
+                }
+                type float;
+            }
+            field fpc-pic-string {
+                sensor I386Cpu {
+                    path target;
+                }
+                type string;
+                description "FPC PIC string";
+            }
+            field schedcounter {
+                sensor I386Cpu {
+                    path schedcounter;
+                }
+                type integer;
+                description "Sched Counter";
+            }
+            field status {
+                sensor I386Cpu {
+                    path status;
+                }
+                type string;
+                description "Status of CPU";
+            }
+            field util {
+                sensor I386Cpu {
+                    path util;
+                }
+                type float;
+                description Utilisation;
+            }
+            field wutil {
+                sensor I386Cpu {
+                    path wutil;
+                }
+                type float;
+                description Wutil;
+            }
+            trigger I386_CPU_Trigger {
+                frequency 60s;
+                term util_high {
+                    when {
+                        greater-than-or-equal-to "$util" "$exp-util";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Utilization is high for $fpc-pic-string and core $cpu-core";
+                        }
+                    }
+                }
+            }
+            variable cpu-core {
+                value .*;
+                description "CPU core to be matched";
+                type string;
+            }
+            variable exp-util {
+                value 90.0;
+                type float;
+            }
+            variable fpc-pic-string {
+                value None;
+                description "FPC PIC string to VTY";
+                type sensor-argument;
+            }
+        }
+    }
+}
