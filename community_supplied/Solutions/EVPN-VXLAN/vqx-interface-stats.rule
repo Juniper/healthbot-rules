@@ -1,0 +1,780 @@
+healthbot {
+    topic interface-stats-vqfx {
+        rule check-ifl-traffic-netconf {
+            keys name;
+            synopsis "Interface input and output traffic analyzer";
+            description "Collects the interface input and output traffic.";
+            function delta-bytes {
+                description "Function to calculate input-bytes delta as input-bps is unavailable on physical interfaces of EM1-14 interfaces";
+                path generic_functions.py;
+                method octets_to_bytes_per_second;
+                argument intf_name {
+                    mandatory;
+                }
+                argument octets {
+                    mandatory;
+                }
+            }
+            sensor int-stats {
+                iAgent {
+                    file interface-stats.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            field delta-in-bytes {
+                formula {
+                    user-defined-function {
+                        function-name delta-bytes;
+                        argument intf_name "$name";
+                        argument octets "$ifl-input-bytes";
+                    }
+                }
+                type integer;
+                description "Delta calculated of input bytes as bps is unavailable.";
+            }
+            field delta-out-bytes {
+                formula {
+                    user-defined-function {
+                        function-name delta-bytes;
+                        argument intf_name "$name";
+                        argument octets "$ifl-output-bytes";
+                    }
+                }
+                type integer;
+                description "Delta calculated of output bytes as bps is unavailable.";
+            }
+            field dt-in-bps {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$delta-in-bytes";
+                    }
+                }
+                type integer;
+                description "Interface delta input bps dynamic threshold";
+            }
+            field dt-out-bps {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$delta-out-bytes";
+                    }
+                }
+                type integer;
+                description "Interface delta output bps dynamic threshold";
+            }
+            field ifl-input-bps {
+                sensor int-stats {
+                    path ifl-input-bps;
+                }
+                type integer;
+                description "Logical Interface input bps";
+            }
+            field ifl-input-bytes {
+                sensor int-stats {
+                    path ifl-input-bytes;
+                }
+                type integer;
+                description "Logical Interface input bytes";
+            }
+            field ifl-input-pps {
+                sensor int-stats {
+                    path ifl-input-pps;
+                }
+                type integer;
+                description "Logical Interface input pps";
+            }
+            field ifl-output-bps {
+                sensor int-stats {
+                    path ifl-output-bps;
+                }
+                type integer;
+                description "Logical Interface output bps";
+            }
+            field ifl-output-bytes {
+                sensor int-stats {
+                    path ifl-output-bytes;
+                }
+                type integer;
+                description "Logical Interface output bytes";
+            }
+            field ifl-output-pps {
+                sensor int-stats {
+                    path ifl-output-pps;
+                }
+                type integer;
+                description "Logical Interface output pps";
+            }
+            field input-interface-name {
+                constant {
+                    value "{{interface-name}}";
+                }
+                type string;
+                description "Input Variable Interface Name";
+            }
+            field name {
+                sensor int-stats {
+                    where "logical-interface/name =~ /{{interface-name}}/";
+                    path logical-interface/name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "Interface traffic increase threshold";
+            }
+            trigger ifl-in-traffic-bps {
+                synopsis "Interface input traffic";
+                description "Sets health based on the change in input traffic";
+                frequency 1.5offset;
+                term is-input-traffic-abnormal {
+                    when {
+                        greater-than-or-equal-to "$delta-in-bytes" "$threshold";
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name input traffic($delta-in-bytes bps) crossed static threshold value ($threshold bps)";
+                        }
+                    }
+                }
+                term is-input-traffic-above-dt {
+                    when {
+                        equal-to "$dt-in-bps" 1;
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name input traffic($delta-in-bytes bps) is above dynamic threshold";
+                        }
+                    }
+                }
+                term is-input-traffic-normal {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$name input traffic($delta-in-bytes bps) is normal";
+                        }
+                    }
+                }
+            }
+            trigger ifl-out-traffic-bps {
+                synopsis "Interface output traffic ";
+                description "Sets health based on the change in output traffic";
+                frequency 1.5offset;
+                term is-output-traffic-abnormal {
+                    when {
+                        greater-than-or-equal-to "$delta-out-bytes" "$threshold";
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name output traffic($delta-out-bytes bps) crossed static threshold value ($threshold bps)";
+                        }
+                    }
+                }
+                term is-output-traffic-above-dt {
+                    when {
+                        equal-to "$dt-out-bps" 1;
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name output traffic($delta-out-bytes bps) is above dynamic threshold";
+                        }
+                    }
+                }
+                term is-output-traffic-normal {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$name output traffic($delta-out-bytes bps) is normal";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value xe-*.*;
+                description "Enter logical interface name in regex i.e. xe-.*";
+                type string;
+            }
+            variable threshold {
+                value 8000000000;
+                description "Interface traffic high threshold value in bps.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R3-S5.3 {
+                                    release-support min-supported-release;
+                                    platform vQFX;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule check-interface-errors-netconf {
+            keys name;
+            synopsis "Interface error analyzer";
+            description "Collects the interface errors (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            sensor int-stats {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables & views to collect data from network device";
+                iAgent {
+                    file interface-stats.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            field admin-status {
+                sensor int-stats {
+                    path admin-status;
+                }
+                type string;
+                description "Admin status";
+            }
+            field bpdu-error {
+                sensor int-stats {
+                    path bpdu-error;
+                }
+                type string;
+                description "Interface bpdu error";
+            }
+            field dt-in-errors {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$input-errors";
+                    }
+                }
+                type integer;
+                description "Interface input errors dynamic threshold";
+            }
+            field dt-out-errors {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$output-errors";
+                    }
+                }
+                type integer;
+                description "Interface output errors dynamic threshold";
+            }
+            field error-threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "Errors count increase threshold";
+            }
+            field input-errors {
+                sensor int-stats {
+                    path input-errors;
+                }
+                type integer;
+                description "Interfaces input error";
+            }
+            field input-interface-name {
+                constant {
+                    value "{{interface-name}}";
+                }
+                type string;
+                description "Input Variable Interface Name";
+            }
+            field l2pt-error {
+                sensor int-stats {
+                    path l2pt-error;
+                }
+                type string;
+                description "Interfaces l2pt error";
+            }
+            field ld-pdu-error {
+                sensor int-stats {
+                    path ld-pdu-error;
+                }
+                type string;
+                description "Interfaces ld pdu error";
+            }
+            field name {
+                sensor int-stats {
+                    where "admin-status =~ /up/";
+                    where "name  =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field output-errors {
+                sensor int-stats {
+                    path output-errors;
+                }
+                type integer;
+                description "Interfaces output error";
+            }
+            trigger L2-pdu-errors {
+                synopsis "L2 pdu errors";
+                description "Sets health based on the change in L2-pdu-errors count";
+                frequency 1.5offset;
+                term is-l2-pdu-error {
+                    when {
+                        does-not-match-with "$ld-pdu-error" none {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Ld-pdu error($ld-pdu-error) count is increasing on $name";
+                        }
+                    }
+                }
+                term no-l2-pdu-error {
+                    then {
+                        status {
+                            color green;
+                            message "Ld-pdu error($ld-pdu-error) count is normal on $name";
+                        }
+                    }
+                }
+            }
+            trigger L2pt-errors {
+                synopsis "L2 pt errors";
+                description "Sets health based on the change in L2pt-errors count";
+                frequency 1.5offset;
+                term is-L2pt-errors {
+                    when {
+                        does-not-match-with "$l2pt-error" none {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "L2pt error($l2pt-error) count is increasing on $name";
+                        }
+                    }
+                }
+                term no-L2pt-errors {
+                    then {
+                        status {
+                            color green;
+                            message "L2pt error($l2pt-error) count is normal on $name";
+                        }
+                    }
+                }
+            }
+            trigger bpdu-errors {
+                synopsis "bpdu errors";
+                description "Sets health based on the change in bpdu-errors count";
+                frequency 1offset;
+                term is-bpdu-errors {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                        does-not-match-with "$bpdu-error" none {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Detected BPDU errors($bpdu-error) on $name";
+                        }
+                    }
+                }
+                term no-bpdu-errors {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "BPDU error($bpdu-error) count is normal on $name";
+                        }
+                    }
+                }
+            }
+            trigger interface-in-errors {
+                synopsis "Interface input-errors";
+                description "Sets health based on the change in input-errors count";
+                frequency 1.5offset;
+                term is-in-errors {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                        increasing-at-least-by-value "$input-errors" {
+                            value "$error-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name input error count($input-errors) is increasing";
+                        }
+                    }
+                }
+                term in-errors-above-dt {
+                    when {
+                        equal-to "$dt-in-errors" 1;
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name input error count($input-errors) is above dynamic threshold";
+                        }
+                    }
+                }
+                term no-in-errors {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$name input error count($input-errors) is normal";
+                        }
+                    }
+                }
+            }
+            trigger interface-out-errors {
+                synopsis "Interface output-errors";
+                description "Sets health based on the change in output-errors count";
+                frequency 1.5offset;
+                term is-out-errors {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                        increasing-at-least-by-value "$output-errors" {
+                            value "$error-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name output error count($output-errors) is increasing";
+                        }
+                    }
+                }
+                term out-errors-above-dt {
+                    when {
+                        equal-to "$dt-out-errors" 1;
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$name output error count($output-errors) is above dynamic threshold";
+                        }
+                    }
+                }
+                term no-out-errors {
+                    when {
+                        matches-with "$name" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$name output error count($output-errors) is normal";
+                        }
+                    }
+                }
+            }
+            variable error-threshold {
+                value 1;
+                description "Interface traffic low threshold value in bps.";
+                type int;
+            }
+            variable interface-name {
+                value xe-.*;
+                description "Enter interface name in regex i.e. xe-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                releases 18.1R3-S5.3 {
+                                    release-support min-supported-release;
+                                    platform vQFX;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule check-interface-traffic-netconf {
+            keys name;
+            synopsis "Interface input and output traffic analyzer";
+            description "Collects the interface input and output traffic.";
+            function delta-bytes {
+                description "Function to calculate input-bytes delta as input-bps is unavailable on physical interfaces of EM1-14 interfaces";
+                path generic_functions.py;
+                method octets_to_bytes_per_second;
+                argument intf_name {
+                    mandatory;
+                }
+                argument octets {
+                    mandatory;
+                }
+            }
+            function return-xe-intf {
+                description "Returns xe- interface for the em interface.";
+                path return_interface.py;
+                method get_intf;
+                argument ifname {
+                    mandatory;
+                }
+            }
+            sensor int-stats {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables & views to collect data from network device";
+                iAgent {
+                    file interface-stats.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            field admin-status {
+                sensor int-stats {
+                    path admin-status;
+                }
+                type string;
+                description "Admin Status of Interfaces to be monitored";
+            }
+            field delta-in-bytes {
+                formula {
+                    user-defined-function {
+                        function-name delta-bytes;
+                        argument intf_name "$name";
+                        argument octets "$input-bytes";
+                    }
+                }
+                type integer;
+                description "Delta calculated of input bytes as bps is unavailable.";
+            }
+            field delta-out-bytes {
+                formula {
+                    user-defined-function {
+                        function-name delta-bytes;
+                        argument intf_name "$name";
+                        argument octets "$output-bytes";
+                    }
+                }
+                type integer;
+                description "Delta calculated of output bytes as bps is unavailable.";
+            }
+            field dt-in-bps {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$delta-in-bytes";
+                    }
+                }
+                type integer;
+                description "Interface delta input bps dynamic threshold";
+            }
+            field dt-out-bps {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7d;
+                        pattern-periodicity 1h;
+                        field-name "$delta-out-bytes";
+                    }
+                }
+                type integer;
+                description "Interface delta output bps dynamic threshold";
+            }
+            field input-bytes {
+                sensor int-stats {
+                    path input-bytes;
+                }
+                type integer;
+                description "Interface input bytes";
+            }
+            field input-interface-name {
+                constant {
+                    value "{{interface-name}}";
+                }
+                type string;
+                description "Input Variable Interface Name";
+            }
+            field name {
+                sensor int-stats {
+                    where "admin-status =~ /up/";
+                    where "name =~ /em*/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field output-bytes {
+                sensor int-stats {
+                    path output-bytes;
+                }
+                type integer;
+                description "Interface output bytes";
+            }
+            field real-intf {
+                formula {
+                    user-defined-function {
+                        function-name return-xe-intf;
+                        argument ifname "$name";
+                    }
+                }
+                description "Returns the xe- interface for the em interface.";
+            }
+            field threshold {
+                constant {
+                    value "{{threshold}}";
+                }
+                type integer;
+                description "Interface traffic increase threshold";
+            }
+            trigger in-traffic-bps {
+                synopsis "Interface input traffic";
+                description "Sets health based on the change in input traffic";
+                frequency 1.5offset;
+                term is-input-traffic-abnormal {
+                    when {
+                        greater-than-or-equal-to "$delta-in-bytes" "$threshold";
+                        matches-with "$real-intf" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$real-intf ($name) input traffic($delta-in-bytes bps) crossed static threshold value ($threshold bps)";
+                        }
+                    }
+                }
+                term is-input-traffic-above-dt {
+                    when {
+                        equal-to "$dt-in-bps" 1;
+                        matches-with "$real-intf" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$real-intf ($name) input traffic($delta-in-bytes bps) is above dynamic threshold";
+                        }
+                    }
+                }
+                term is-input-traffic-normal {
+                    when {
+                        matches-with "$real-intf" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$real-intf ($name) input traffic($delta-in-bytes bps) is normal";
+                        }
+                    }
+                }
+            }
+            trigger out-traffic-bps {
+                synopsis "Interface output traffic ";
+                description "Sets health based on the change in output traffic";
+                frequency 1.5offset;
+                term is-output-traffic-abnormal {
+                    when {
+                        greater-than-or-equal-to "$delta-out-bytes" "$threshold";
+                        matches-with "$real-intf" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$real-intf ($name) output traffic($delta-out-bytes bps) crossed static threshold value ($threshold bps)";
+                        }
+                    }
+                }
+                term is-output-traffic-above-dt {
+                    when {
+                        equal-to "$dt-out-bps" 1;
+                        matches-with "$real-intf" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$real-intf ($name) output traffic($delta-out-bytes bps) is above dynamic threshold";
+                        }
+                    }
+                }
+                term is-output-traffic-normal {
+                    when {
+                        matches-with "$real-intf" "$input-interface-name";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$real-intf ($name) output traffic($delta-out-bytes bps) is normal";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value xe-.*;
+                description "Enter interface name in regex i.e. xe-.*";
+                type string;
+            }
+            variable threshold {
+                value 8000000000;
+                description "Interface traffic high threshold value in bps.";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 3.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products QFX {
+                                platforms vQFX {
+                                    releases 18.1R3-S5.3 {
+                                        release-support min-supported-release;
+                                    }
+                                }						
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
