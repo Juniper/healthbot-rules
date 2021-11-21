@@ -64,6 +64,7 @@ healthbot {
             field neighbor-address {
                 sensor bgp-sensor {
                     where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/last-established =~ /.+/";
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
                 }
                 type string;
@@ -86,6 +87,22 @@ healthbot {
                 synopsis "BGP neighbor session flaps KPI";
                 description "Sets health based on increase in bgp neighbor session flaps";
                 frequency 1offset;
+                /*
+                 * Set color to green when neighbor is stable.
+                 */
+                term is-session-stable {
+                    when {
+                        increasing-at-most-by-value "$established-transitions" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor session stable, last-established:$last-established";
+                        }
+                    }
+                }               
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the BGP neighbor session transition
@@ -120,17 +137,6 @@ healthbot {
                         status {
                             color yellow;
                             message "Neighbor session inconsistent, last-established:$last-established";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */
-                term is-session-stable {
-                    then {
-                        status {
-                            color green;
-                            message "Neighbor session stable, last-established:$last-established";
                         }
                     }
                 }
@@ -243,12 +249,12 @@ healthbot {
                                         release-support min-supported-release;
                                     }
                                 }								
-                            }						
+                            }
                         }
                     }
                     other-vendor cisco-IOS-XR {
                         vendor-name cisco;
-                        operating-systems IOS-XR;
+                        operating-system IOS-XR;
                     }
                 }
             }

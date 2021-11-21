@@ -1,0 +1,30 @@
+healthbot {
+    ingest {
+        syslog {
+            /* Header for parsing syslog packets from cisco devices */
+            header-pattern cisco-header {
+                filter "^(.*):([A-Z][a-z]{2} \\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2}\\.\\d*)\\s:\\s([a-z]*)\\[(\\d*)\\]:\\s*(.*)\\s*";
+                description "Header for parsing syslog packets from cisco devices";
+                /* Position of host name */
+                field __log_host__ {
+                    description "Position of host name";
+                    from "$1";
+                }
+                /* Position of payload */
+                field __log_message_payload__ {
+                    description "Position of payload";
+                    from "$5";
+                }
+                /* Position of time stamp */
+                field __log_timestamp__ {
+                    description "Position of time stamp";
+                    from "$2";
+                }
+                field pid {
+                    from "$4";
+                }
+                key-fields [ __log_timestamp__ pid ];
+            }
+        }
+    }
+}

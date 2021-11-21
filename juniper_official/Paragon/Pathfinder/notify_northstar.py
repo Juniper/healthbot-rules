@@ -92,7 +92,7 @@ def generate_link_maitenance(ifd_name, ifl_number, mnt_time, hb_alert, **kwargs)
            start_time = current_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
            add_time = current_time + datetime.timedelta(days = int(mnt_time.split(":")[0]), hours = int(mnt_time.split(":")[1]), minutes = int(mnt_time.split(":")[2]))
            end_time = add_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-           simulation_payload='{"topoObjectType":"maintenance","topologyIndex":1,"elements":[{"topoObjectType":"link","index":'+str(link_index)+',"id":"'+str(link_id)+'"}],"user":"spadmin","name":"'+str("LinkMaintenanceOfLinkID:"+link_id)+'","comment":"'+str(hb_alert)+'","autocomplete": true,"startTime":"'+str(start_time)+'","endTime":"'+str(end_time)+'"}'
+           simulation_payload='{"topoObjectType":"maintenance","topologyIndex":1,"elements":[{"topoObjectType":"link","index":'+str(link_index)+',"id":"'+str(link_id)+'"}],"user":"insights","name":"'+str("LinkMaintenanceOfLinkID:"+link_id)+'","comment":"'+str(hb_alert)+'","autocomplete": true,"startTime":"'+str(start_time)+'","endTime":"'+str(end_time)+'"}'
            try:
                r = requests.post(link_mnt_url, data=simulation_payload, headers=headers, verify=False)
                if r.status_code == 201:
@@ -145,7 +145,7 @@ def generate_node_maitenance(mnt_time, hb_alert, **kwargs):
         start_time = current_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
         add_time = current_time + datetime.timedelta(days = int(mnt_time.split(":")[0]), hours = int(mnt_time.split(":")[1]), minutes = int(mnt_time.split(":")[2]))
         end_time = add_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-        simulation_payload='{"topoObjectType":"maintenance","topologyIndex":1,"elements":[{"topoObjectType":"node","index":'+str(node_index)+',"id":"'+str(node_id)+'"}],"user":"spadmin","name":"'+str("NodeMaintenanceOf"+hostname)+'","comment":"'+str(hb_alert)+'","autocomplete": true,"startTime":"'+str(start_time)+'","endTime":"'+str(end_time)+'"}'
+        simulation_payload='{"topoObjectType":"maintenance","topologyIndex":1,"elements":[{"topoObjectType":"node","index":'+str(node_index)+',"id":"'+str(node_id)+'"}],"user":"insights","name":"'+str("NodeMaintenanceOf"+hostname)+'","comment":"'+str(hb_alert)+'","autocomplete": true,"startTime":"'+str(start_time)+'","endTime":"'+str(end_time)+'"}'
         try: 
             r = requests.post(mnt_url, data=simulation_payload, headers=headers, verify=False)
             if r.status_code == 201:

@@ -14,6 +14,16 @@ healthbot {
             keys interface-name;
             synopsis "Interface rx optical power";
             description "Collects the interface input optical power and notifies in case of anomalies";
+            function threshold_adjustment {
+                path optics-threshold-adjustment.py;
+                method threshold_adjustment;
+                argument highlow {
+                    mandatory;
+                }
+                argument threshold {
+                    mandatory;
+                }
+            }
             /*
              * Sensor configuration to get data from network devices.
              */
@@ -38,6 +48,17 @@ healthbot {
                 description "Interfaces to be monitored";
             }
             field rx-power-high {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument threshold "$rx-power-high-pre";
+                        argument highlow "{{rx-high-threshold}}";
+                    }
+                }
+                type float;
+                description "Receiver power high alarm threshold";
+            }
+            field rx-power-high-pre {
                 sensor interfaces {
                     path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
                     zero-suppression;
@@ -46,13 +67,36 @@ healthbot {
                 description "Receiver power high alarm threshold";
             }
             field rx-power-low {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument highlow "{{rx-low-threshold}}";
+                        argument threshold "$rx-power-low-pre";
+                    }
+                }
+                type float;
+                description "Receive low power threshold";
+            }
+            field rx-power-low-pre {
                 sensor interfaces {
                     path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
+                    zero-suppression;
                 }
                 type float;
                 description "Receive low power threshold";
             }
             field tx-power-high {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument threshold "$tx-power-high-pre";
+                        argument highlow "{{tx-high-threshold}}";
+                    }
+                }
+                type float;
+                description "Transmit power high alarm threshold";
+            }
+            field tx-power-high-pre {
                 sensor interfaces {
                     path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
                     zero-suppression;
@@ -61,8 +105,20 @@ healthbot {
                 description "Transmit power high alarm threshold";
             }
             field tx-power-low {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument threshold "$tx-power-low-pre";
+                        argument highlow "{{tx-low-threshold}}";
+                    }
+                }
+                type float;
+                description "Transmit low power threshold";
+            }
+            field tx-power-low-pre {
                 sensor interfaces {
                     path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
+                    zero-suppression;
                 }
                 type float;
                 description "Transmit low power threshold";
@@ -76,10 +132,30 @@ healthbot {
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
             }
+            variable rx-high-threshold {
+                value 10.0;
+                description "Default high threshold in dB if receive threshold is not supported by the optic.";
+                type float;
+            }
+            variable rx-low-threshold {
+                value -39.0;
+                description "Default low threshold in dB if receive threshold is not supported by the optic.";
+                type float;
+            }
+            variable tx-high-threshold {
+                value 10.0;
+                description "Default high threshold in dB if transmit threshold is not supported by the optic.";
+                type float;
+            }
+            variable tx-low-threshold {
+                value -39.0;
+                description "Default low threshold in dB if transmit threshold is not supported by the optic.";
+                type float;
+            }
             rule-properties {
-                version 1;
+                version 2;
                 contributor juniper;
-                supported-healthbot-version 3.1.0;
+                supported-healthbot-version 4.0.0;
                 supported-devices {
                     juniper {
                         operating-system junos {
@@ -138,7 +214,7 @@ healthbot {
                                         release-support min-supported-release;
                                     }
                                 }								
-                            }						
+                            }
                         }
                     }
                 }

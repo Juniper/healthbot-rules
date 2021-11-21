@@ -2,7 +2,7 @@ import requests
 import traceback
 from tand_udf import MultiRows
 
-global to_avoid_tand
+to_avoid_tand = {}
 
 '''
 res = {
@@ -17,11 +17,10 @@ res = {
 '''
 
 # Queries influxdb and returns vm_name vm_ip vm_mac, datacenter name, cluster name of vecnter
-def get_vm_name(remote_host_name, if_name, vcenter_device_group,
-                vcenter_device, db_server_ip, db_port, **kwargs):
+def get_vm_name(remote_host_name, if_name, vcenter_device_group, vcenter_device, **kwargs):
+                global to_avoid_tand
     database_name = "{0}:{1}".format(vcenter_device_group, vcenter_device)
-    url = "http://{0}:{1}/query?db={2}&rp={2}".format(db_server_ip, db_port,
-                                                      database_name)
+    url = "http://tsdb:8086/query?db={0}&rp={0}".format(database_name)
     params = {
         'q': 'select "datacenter", "cluster", "host-name", "name" , "mac", "ip" from "vcenter.evpn/get-vcenter-details" where "host-name" = \'{0}\' and time > now()- 5m order by desc'.format(
             remote_host_name)
