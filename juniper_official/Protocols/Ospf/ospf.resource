@@ -10,11 +10,6 @@ healthbot {
                         field-name interface-name;
                     }
                 }
-                source {
-                    rule protocol.ospf/check-ospf-neighbor-state {
-                        field-name interface;
-                    }
-                }
             }
             field neighbor-id {
                 type string;
@@ -32,7 +27,7 @@ healthbot {
             field dr-address {
                 type string;
                 source {
-                    rule ospf/check-ospf-neighbor-information {
+                    rule protocol.ospf/check-ospf-neighbor-information {
                         field-name dr-address;
                     }
                 }
