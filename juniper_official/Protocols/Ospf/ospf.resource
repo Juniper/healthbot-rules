@@ -19,7 +19,7 @@ healthbot {
             field neighbor-id {
                 type string;
                 source {
-                    rule ospf/check-ospf-neighbor-information {
+                    rule protocol.ospf/check-ospf-neighbor-information {
                         field-name neighbor-id;
                     }
                 }
