@@ -18,11 +18,6 @@ healthbot {
                         field-name neighbor-id;
                     }
                 }
-                source {
-                    rule protocol.ospf/check-ospf-neighbor-state {
-                        field-name neighbor_address;
-                    }
-                }
             }
             field dr-address {
                 type string;
