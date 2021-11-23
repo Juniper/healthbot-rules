@@ -37,7 +37,7 @@ healthbot {
                         label-as ifl;
                         where {
                             matches-with "$ospf-interface-split-1" "$ifl:interface-name";
-                            matches-with "$isis-interface-split-2" "$ifl:sub-interface-index";
+                            matches-with "$ospf-interface-split-2" "$ifl:sub-interface-index";
                         }
                     }
                 }
