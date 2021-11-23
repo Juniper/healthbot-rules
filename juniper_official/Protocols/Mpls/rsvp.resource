@@ -39,6 +39,26 @@ healthbot {
                     }
                 }
             }
+            depends-on protocols/ospf {
+                term ospf-dependency {
+                    locate-resource protocols/ospf {
+                        label-as ospf;
+                        where {
+                            matches-with "$interface-name" "$ospf:interface-name";
+                        }
+                    }
+                }
+            }
+            depends-on protocols/isis {
+                term ospf-dependency {
+                    locate-resource protocols/isis {
+                        label-as isis;
+                        where {
+                            matches-with "$interface-name" "$isis:interface-name";
+                        }
+                    }
+                }
+            }
         }
     }
 }

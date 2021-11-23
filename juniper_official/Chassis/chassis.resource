@@ -100,5 +100,67 @@ healthbot {
                 }
             }
         }
+        resource system-power {
+            field system-power-remaining-in-percentage {
+                type string;
+                source {
+                    rule chassis.power/check-system-power-usage {
+                        field-name system-power-remaining-in-percentage;
+                    }
+                }
+			}
+            depends-on chassis/zone-power {
+                term zone-power-dependency {
+                    locate-resource chassis/zone-power {
+                        label-as system-power;
+                        where {
+                            matches-with "true" "true";
+                        }
+                    }						
+                }
+            }			
+        }
+        resource zone-power {
+            keys [ zone ];		
+            field zone {
+                type string;
+                source {
+                    rule chassis.power/check-zone-power-usage {
+                        field-name zone;
+                    }
+                }
+			}
+            depends-on chassis/pem-power {
+                term pem-power-dependency {
+                    locate-resource chassis/pem-power {
+                        label-as pem-power;
+                        where {
+                            matches-with "true" "true";
+                        }
+                    }						
+                }
+            }			
+        }		
+        resource pem-power {
+            keys [ pem-slot ];		
+            field pem-slot {
+                type string;
+                source {
+                    rule chassis.power/check-pem-power-usage {
+                        field-name pem-slot;
+                    }
+                }
+			}
+            depends-on chassis/chassis-temperature {
+                term temperature-dependency {
+                    locate-resource chassis/chassis-temperature {
+                        label-as temperature;
+                        where {
+                            matches-with "true" "true";
+                        }
+                    }						
+                }
+            }
+        }		
     }
 }
