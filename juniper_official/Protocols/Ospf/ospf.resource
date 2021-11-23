@@ -27,7 +27,7 @@ healthbot {
                     }
                 }
             }
-            depends-on interfaces/interface {
+            depends-on interfaces/sub-interface {
                 term ifl-dependency {
                     with-capture-group ospf-interface-split {
                         expression "(.*)\.(\d+)";
