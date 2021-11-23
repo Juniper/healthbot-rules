@@ -35,13 +35,14 @@ healthbot {
             depends-on interfaces/interface {
                 term ifl-dependency {
                     with-capture-group ospf-interface-split {
-                        expression "(.*)\.\d+";
+                        expression "(.*)\.(\d+)";
                         field-name "$interface-name";
                     }
-                    locate-resource interfaces/interface {
-                        label-as ifd;
+                    locate-resource interfaces/sub-interface {
+                        label-as ifl;
                         where {
-                            matches-with "$ospf-interface-split-1" "$ifd:interface-name";
+                            matches-with "$ospf-interface-split-1" "$ifl:interface-name";
+                            matches-with "$isis-interface-split-2" "$ifl:sub-interface-index";
                         }
                     }
                 }
@@ -66,13 +67,14 @@ healthbot {
         			    }
         			}
         			locate-resource remote-device:interface/interface {
-        			    label-as remote-ifd;
+        			    label-as remote-if1;
         			    with-capture-group ospf-remote-interface-split {
-                        	expression "(.*)\.\d+";
+                        	expression "(.*)\.(\d+)";
                         	field-name "$remote-ospf:interface-name";
                     	}
         			    where {
-        			        matches-with "$ospf-remote-interface-split-1" "$remote-ifd:interface-name";
+        			        matches-with "$ospf-remote-interface-split-1" "$remote-if1:interface-name";
+        			        matches-with "$ospf-remote-interface-split-2" "$remote-if1:sub-interface-index";
         			    }
         			}
 				}
