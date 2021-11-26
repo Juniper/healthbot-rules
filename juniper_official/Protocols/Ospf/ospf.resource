@@ -44,36 +44,36 @@ healthbot {
                 term ifl-remote-dependency {
                 	for-every-device {
             			label-as remote-device;
-        			}
-        			locate-resource remote-device:protocols/routing-instance {
-            			label-as remote-routing-instance;
-            			where {
-                			matches-with "$neighbor-id" "$remote-routing-instance:router-id";
-            			}
-        			}
-        			locate-resource protocol/routing-instance {
-        			    label-as local-routing-instance;
-        			}
-        			locate-resource remote-device:protocols/ospf {
-        			    label-as remote-ospf;
-        			    where {
-        			        matches-with "$local-routing-instance:router-id" "$remote-ospf:neighbor-id";
-        			        matches-with "$dr-address" "$remote-ospf:dr-address";
-        			    }
-        			    with-capture-group ospf-remote-interface-split {
+                    }
+                    locate-resource remote-device:protocols/routing-instance {
+                        label-as remote-routing-instance;
+                        where {
+                            matches-with "$neighbor-id" "$remote-routing-instance:router-id";
+                        }
+                    }
+                    locate-resource protocol/routing-instance {
+                        label-as local-routing-instance;
+                    }
+                    locate-resource remote-device:protocols/ospf {
+                        label-as remote-ospf;
+                        where {
+                            matches-with "$local-routing-instance:router-id" "$remote-ospf:neighbor-id";
+                            matches-with "$dr-address" "$remote-ospf:dr-address";
+                        }
+                    }
+                    locate-resource remote-device:interface/sub-interface {
+                        label-as remote-ifl;
+                        with-capture-group ospf-remote-interface-split {
                         	expression "(.*)\.(\d+)";
                         	field-name "$remote-ospf:interface-name";
-                    	}
-        			}
-        			locate-resource remote-device:interface/interface {
-        			    label-as remote-if1;
-        			    where {
-        			        matches-with "$ospf-remote-interface-split-1" "$remote-if1:interface-name";
-        			        matches-with "$ospf-remote-interface-split-2" "$remote-if1:sub-interface-index";
-        			    }
-        			}
-				}
-			}
-		}
-	}
+                        }
+                        where {
+                            matches-with "$ospf-remote-interface-split-1" "$remote-ifl:interface-name";
+                            matches-with "$ospf-remote-interface-split-2" "$remote-ifl:sub-interface-index";
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

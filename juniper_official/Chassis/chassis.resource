@@ -68,9 +68,9 @@ healthbot {
                     }
                 }
             }    
-            depends-on chassis/re-temperature {
+            depends-on chassis/routing-engine-temperature {
                 term re-temperature-dependency {
-                    locate-resource chassis/re-temperature {
+                    locate-resource chassis/routing-engine-temperature {
                         label-as chassis-re-temperature;
                         where {
                             matches-with "true" "true";

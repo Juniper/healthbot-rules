@@ -119,9 +119,9 @@ healthbot {
                     }
                 }       
             }
-            depends-on system/system-processes-cpu {
+            depends-on system/processes-cpu {
                 term storage-dependency {
-                    locate-resource system/system-processes-cpu {
+                    locate-resource system/processes-cpu {
                         label-as daemon-cpu;
                         where {
                             matches-with "true" "true";
