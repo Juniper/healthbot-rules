@@ -61,7 +61,7 @@ healthbot {
                             matches-with "$dr-address" "$remote-ospf:dr-address";
                         }
                     }
-                    locate-resource remote-device:interface/sub-interface {
+                    locate-resource remote-device:interfaces/sub-interface {
                         label-as remote-ifl;
                         with-capture-group ospf-remote-interface-split {
                         	expression "(.*)\.(\d+)";
