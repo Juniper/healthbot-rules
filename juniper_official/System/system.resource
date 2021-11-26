@@ -56,6 +56,17 @@ healthbot {
                     }
                 }
             }
+            depends-on system/processes-memory {
+                depends-on-multiple-instances true;
+                term storage-dependency {
+                    locate-resource system/processes-memory{
+                        label-as daemon-mem;
+                        where {
+                            matches-with "true" "true";
+                        }
+                    }
+                }
+            }
         }
         resource processes-memory {
             description "Processes memory resources depends on system memory";
@@ -78,16 +89,6 @@ healthbot {
                 source {
                     rule system.processes/check-process-memory{
                         field-name pid;
-                    }
-                }
-            }
-            depends-on system/system-memory {
-                term system-memory-dependency {
-                    locate-resource system/system-memory {
-                        label-as system-memory;
-                        where {
-                            matches-with "true" "true";
-                        }
                     }
                 }
             }
@@ -118,6 +119,16 @@ healthbot {
                     }
                 }       
             }
+            depends-on system/system-processes-cpu {
+                term storage-dependency {
+                    locate-resource system/system-processes-cpu {
+                        label-as daemon-cpu;
+                        where {
+                            matches-with "true" "true";
+                        }
+                    }
+                }
+            }
         }
         resource processes-cpu {
             description "Processes cpu depends on system cpu";
@@ -135,16 +146,6 @@ healthbot {
                 source {
                     rule system.processes/check-process-cpu{
                         field-name pid;
-                    }
-                }
-            }
-            depends-on system/system-cpu {
-                term storage-dependency {
-                    locate-resource system/system-cpu {
-                        label-as cpu;
-                        where {
-                            matches-with "true" "true";
-                        }
                     }
                 }
             }
