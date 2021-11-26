@@ -24,6 +24,7 @@ healthbot {
                 }
             }    
             depends-on chassis/fan {
+                depends-on-multiple-instances true;
                 term fan-dependency {
                     locate-resource chassis/fan {
                         label-as fan;
@@ -34,7 +35,7 @@ healthbot {
                 }
             }
         }
-        resource re-temperature {
+        resource routing-engine-temperature {
             description "Routing engine temperature resources depends on chassis temperature";
             keys [ routing-engine ];
             field routing-engine {
@@ -56,7 +57,7 @@ healthbot {
                 }
             }
         }
-        resource re-cpu-temperature {
+        resource routing-engine-cpu-temperature {
             description "Routing engine cpu temperature resources depends on re temperature";
             keys [ routing-engine ];
             field routing-engine {
