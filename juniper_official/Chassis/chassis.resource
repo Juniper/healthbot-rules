@@ -88,12 +88,13 @@ healthbot {
                     rule chassis.temperatures/check-fpc-temperature {
                         field-name fpc;
                     }
+                }
                 source {
                     rule linecard.pfe.wedge/check-pfe-chassisd-events {
                         field-name fpcnumber;
                     }                  
                 }
-            }    
+            }
             depends-on chassis/chassis-temperature {
                 term chassis-temperature-dependency {
                     locate-resource chassis/chassis-temperature {
