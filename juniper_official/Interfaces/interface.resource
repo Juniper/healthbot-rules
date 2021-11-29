@@ -14,6 +14,24 @@ healthbot {
                     }                
                 }
             }
+            depends-on chassis/fpc-temperature {
+                term fpc-dependency {
+                    with-capture-group interface-split {
+                        expression "-(\d+)\/\d+\/\d+";
+                        field-name "$interface-name";
+                    }
+                    locate-resource chassis/fpc-temperature {
+                        label-as fpc;
+                        with-capture-group fpc-split {
+                            expression "(\d+)";
+                            field-name fpc;
+                        }
+                        where {
+                            matches-with "$interface-split-1" "$fpc-split-1";
+                        }
+                    }
+                }
+            }
         }
         resource interface {
             description "Interface resources depends on optics";
