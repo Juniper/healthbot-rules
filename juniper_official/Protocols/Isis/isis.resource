@@ -23,7 +23,21 @@ healthbot {
                         field-name interface-name;
                     }
                 }
-            }            
+            }
+            depends-on interfaces/interface {
+                term ifd-dependency {
+                    with-capture-group isis-interface-split {
+                        expression "(.*)\.\d+";
+                        field-name "$interface-name";
+                    }
+                    locate-resource interfaces/interface {
+                        label-as ifd;
+                        where {
+                            matches-with "$isis-interface-split-1" "$ifd:interface-name";
+                        }
+                    }
+                }
+            }         
             depends-on interfaces/sub-interface {
                 term ifl-dependency {
                     with-capture-group isis-interface-split {
