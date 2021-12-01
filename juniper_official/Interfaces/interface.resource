@@ -146,7 +146,7 @@ healthbot {
                         expression "-(\d+)\/\d+\/\d+";
                         field-name "$interface-name";
                     }
-                    locate-resource linecard/fpc {
+                    locate-resource linecard/linecard {
                         label-as fpc;
                         with-capture-group fpc-split {
                             expression "(\d+)";
