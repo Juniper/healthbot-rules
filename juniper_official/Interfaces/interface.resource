@@ -140,6 +140,42 @@ healthbot {
                     }
                 }
             }
+            depends-on linecard/fpc {
+                term fpc-dependency {
+                    with-capture-group interface-split {
+                        expression "-(\d+)\/\d+\/\d+";
+                        field-name "$interface-name";
+                    }
+                    locate-resource linecard/fpc {
+                        label-as fpc;
+                        with-capture-group fpc-split {
+                            expression "(\d+)";
+                            field-name fpc-slot;
+                        }
+                        where {
+                            matches-with "$interface-split-1" "$fpc-split-1";
+                        }
+                    }
+                }
+            }
+            depends-on linecard/pfe {
+                term fpc-dependency {
+                    with-capture-group interface-split {
+                        expression "-(\d+)\/\d+\/\d+";
+                        field-name "$interface-name";
+                    }
+                    locate-resource linecard/pfe {
+                        label-as pfe;
+                        with-capture-group fpc-split {
+                            expression "(\d+)";
+                            field-name fpc-slot;
+                        }
+                        where {
+                            matches-with "$interface-split-1" "$fpc-split-1";
+                        }
+                    }
+                }
+            }
         }
         resource sub-interface {
             description "Sub-interface resources depends on ifd";

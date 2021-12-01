@@ -3,14 +3,6 @@ healthbot {
         resource mpls-rsvp-lsp {
             description "Mpls lsp resources depends on rsvp";
             keys [ interface-name lsp-name];
-            field interface-name {
-                type string;
-                source {
-                    rule protocol.mpls/check-lsp-state-oc {
-                        field-name interface-name;
-                    }
-                }
-            }
             field lsp-name {
                 type string;
                 source {
