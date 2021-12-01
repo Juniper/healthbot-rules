@@ -123,7 +123,7 @@ healthbot {
             }
             depends-on linecard/linecard {
                 term fpc-dependency {
-                    locate-resource linecard/fpc {
+                    locate-resource linecard/linecard {
                         label-as fpc;
                         where {
                             matches-with "$fpc-slot" "$fpc:fpc-slot";
