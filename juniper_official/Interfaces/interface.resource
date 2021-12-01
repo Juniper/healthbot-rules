@@ -140,7 +140,7 @@ healthbot {
                     }
                 }
             }
-            depends-on linecard/fpc {
+            depends-on linecard/linecard {
                 term fpc-dependency {
                     with-capture-group interface-split {
                         expression "-(\d+)\/\d+\/\d+";

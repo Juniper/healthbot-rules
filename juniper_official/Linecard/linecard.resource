@@ -1,6 +1,6 @@
 healthbot {
     topic linecard {
-        resource fpc {
+        resource linecard {
             description "FPC resources";
             keys [ fpc-slot ];
             field fpc-slot {
@@ -121,7 +121,7 @@ healthbot {
                     }
                 }
             }
-            depends-on linecard/fpc {
+            depends-on linecard/linecard {
                 term fpc-dependency {
                     locate-resource linecard/fpc {
                         label-as fpc;
