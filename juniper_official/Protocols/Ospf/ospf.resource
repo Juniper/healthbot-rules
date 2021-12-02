@@ -74,6 +74,20 @@ healthbot {
                     }
                 }
             }
+            depends-on interfaces/interface {
+                term ifd-dependency {
+                    with-capture-group ospf-interface-split {
+                        expression "(.*)\.\d+";
+                        field-name "$interface-name";
+                    }
+                    locate-resource interfaces/interface {
+                        label-as ifd;
+                        where {
+                            matches-with "$ospf-interface-split-1" "$ifd:interface-name";
+                        }
+                    }
+                }
+            }
         }
     }
 }
