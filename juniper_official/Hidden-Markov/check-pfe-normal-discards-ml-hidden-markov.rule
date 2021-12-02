@@ -1,0 +1,119 @@
+healthbot {
+    topic linecard.pfe {
+        rule check-pfe-normal-discards-ml-hidden-markov {
+            keys [ fpc-number pfe-number ];
+            synopsis "Packet forwarding engine hardware discard statistics analyzer";
+            description "Collects packet forwarding engine hardware discard statistics  and notifies when normal  discard anomaly  is detected";
+            sensor pfe-sensor {
+                synopsis "iAgent netconf sensor definition";
+                description "Collects data from network device netconf rpc using get-pfe-traffic-statistics";
+                iAgent {
+                    file pfe-discard-statistics.yml;
+                    table PfeDiscardStatisticsTable;
+                    frequency 60s;
+                }
+            }
+            field bad-route-discard {
+                sensor pfe-sensor {
+                    path bad-route-discard;
+                }
+                type integer;
+                description "Bad route discard count";
+            }
+            field bad-route-discard-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$bad-route-discard";
+                    }
+                }
+                type string;
+                description "Checks for bad route discard anomaly";
+            }
+            field bad-route-discard-prediction {
+                formula {
+                    predict {
+                        algorithm hidden-markov;
+                        learning-period 7days;
+                        seasonality 1days;
+                        field-name "$bad-route-discard";
+                        prediction-offset 7days;
+                    }
+                }
+                type integer;
+                description "Predicts bad route discard";				
+            }
+            field drop-threshold {
+                constant {
+                    value "{{discard-count}}";
+                }
+                type integer;
+                description "Drop count increase threshold";
+            }
+            field fpc-number {
+                sensor pfe-sensor {
+                    path pfe-fpc-index;
+                }
+                type string;
+                description "FPC slot number";
+            }
+            field pfe-number {
+                sensor pfe-sensor {
+                    path pfe-index;
+                }
+                type string;
+                description "PFE number";
+            }
+            trigger pfe-bad-route-discard-dt {
+                synopsis "PFE bad route discards KPI";
+                description "Sets health based on the change in PFE bad route discard count";
+                frequency 1.25offset;
+                term is-bad-route-discard-anomaly {
+                    when {
+                        equal-to "$bad-route-discard-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "bad-route-discard anomaly on FPC $fpc-number PFE $pfe-number, bad-route-discards predicted is $bad-route-discard-prediction";
+                        }
+                    }
+                }
+                term no-bad-route-discard-anomaly {
+                    then {
+                        status {
+                            color green;
+                            message "No bad-route-discard anomaly on FPC $fpc-number PFE $pfe-number";
+                        }
+                    }
+                }
+            }
+            variable discard-count {
+                value 1;
+                description "PFE discard threshold: Number of discards increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                releases 15.1R1 { ## Warning: 'releases' is deprecated
+                                    release-support min-supported-release;
+                                    platform All;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	

@@ -1,0 +1,64 @@
+healthbot {
+    topic kube-metrics {
+        rule check-daemonset-metrics {
+            keys [ daemonset namespace ];
+            synopsis "";
+            description "Checks daemon set unavailable status";
+            sensor daemonset-status {
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /kube/daemonset;
+                    frequency 60s;
+                }
+            }
+            field daemonset {
+                sensor daemonset-status {
+                    path daemonset;
+                }
+                type string;
+                description "Checks status for demonset key.";
+            }
+            field daemonset_status {
+                sensor daemonset-status {
+                    path /kube/daemonset/status/number/unavailable;
+                }
+                type float;
+                description "Field to check true(0) or false(1) condition.";
+            }
+            field namespace {
+                sensor daemonset-status {
+                    path namespace;
+                }
+                type string;
+                description "Checks status for healthbot key.";
+            }
+            trigger daemonset-status {
+                frequency 1offset;
+                term available {
+                    when {
+                        equal-to "$daemonset_status" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "daemonset $daemonset for namespace $namespace is available.";
+                        }
+                    }
+                }
+                term notavailable {
+                    then {
+                        status {
+                            color red;
+                            message "daemonset $daemonset for namespace $namespace is not available.";
+                        }
+                    }
+                }
+            }
+            variable value {
+                value 0.0;
+                description "Variable to match true(0) condition.";
+                type float;
+            }
+        }
+    }
+}	

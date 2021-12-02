@@ -1,0 +1,74 @@
+healthbot {
+    topic kube-metrics {
+        rule check-node {
+            keys [ condition node ];
+            synopsis "";
+            description "Checks node condition  status";
+            sensor node-status {
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /kube/node;
+                    frequency 60s;
+                }
+            }
+            field condition {
+                sensor node-status {
+                    path condition;
+                }
+                type string;
+                description "Node condition";
+            }
+            field node {
+                sensor node-status {
+                    path node;
+                }
+                type string;
+                description "Node name.";
+            }
+            field node_status {
+                constant {
+                    value "{{value}}";
+                }
+                type integer;
+                description "Field to check true(0) or false(1) condition.";
+            }
+            field status {
+                sensor node-status {
+                    path status;
+                }
+                type string;
+                description "Status of the node.";
+            }
+            trigger node-status {
+                frequency 1offset;
+                term available {
+                    when {
+                        matches-with "$status" true {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$condition for node $node is $status.";
+                        }
+                    }
+                }
+                term notavailable {
+                    then {
+                        status {
+                            color red;
+                            message "$condition for node $node is $status.";
+                        }
+                    }
+                }
+            }
+            variable value {
+                value 0;
+                description "Variable to match true(0) condition.";
+                type int;
+            }
+        }
+    }
+}	
+	

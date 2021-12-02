@@ -1,0 +1,135 @@
+healthbot {
+    topic control.board {
+        rule check-cb-voltage-ml-hidden-markov {
+            keys [ cb-number reference-voltage ];
+            description "Check if control board voltage is having  anomaly";
+            sensor control {
+                iAgent {
+                    file cb-power-voltage-outlier.yml;
+                    table cb-power-outlier-Table;
+                    frequency 60s;
+                }
+            }
+            field actual-voltage {
+                sensor control {
+                    path actual-voltage;
+                }
+                type integer;
+                description "actual voltage of the reference voltage";
+            }
+            field actual-voltage-anomaly {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 7days;
+                        pattern-periodicity 1days;
+                        field-name "$actual-voltage";
+                    }
+                }
+                type integer;
+                description "Anomaly detection for actual voltage";
+            }
+            field actual-voltage-predict {
+                formula {
+                    predict {
+                        algorithm hidden-markov;
+                        learning-period 7days;
+                        seasonality 1days;
+                        field-name "$actual-voltage";
+                        prediction-offset 7days;
+                    }
+                }
+                type integer;
+                description "Predicts actual voltage";				
+            }
+            field cb-number {
+                sensor control {
+                    path name;
+                }
+                type string;
+                description "control board number";
+            }
+            field reference-voltage {
+                sensor control {
+                    path reference-voltage;
+                }
+                type string;
+                description "reference voltage";
+            }
+            trigger cb-voltage-dt {
+                frequency 1offset;
+                term anomaly-present {
+                    when {
+                        equal-to "$actual-voltage-anomaly" 1 {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Anomaly present for cb $cb-number reference voltage $reference-voltage,actual voltage predicted is $actual-voltage-predict ";
+                        }
+                    }
+                }
+                term no-anomaly-present {
+                    then {
+                        status {
+                            color green;
+                            message "No Anomaly present for cb $cb-number reference voltage $reference-voltage";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                supported-healthbot-version 4.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files cb-power-voltage-outlier.yml;
+                }
+            }
+        }
+    }
+}	
+	
