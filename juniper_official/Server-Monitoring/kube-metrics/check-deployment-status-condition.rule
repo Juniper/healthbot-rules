@@ -1,0 +1,66 @@
+healthbot {
+    topic kube-metrics {
+        rule check-deployment-status-condition {
+            keys [ condition deployment namespace ];
+            synopsis "";
+            description "Checks kube metrics deployment  status condition";
+            sensor daemonset-status {
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /kube/deployment;
+                    frequency 60s;
+                }
+            }
+            field condition {
+                sensor daemonset-status {
+                    path condition;
+                }
+                type string;
+                description "Deployment condition";
+            }
+            field deployment {
+                sensor daemonset-status {
+                    path deployment;
+                }
+                type string;
+                description "Checks status for deployment key.";
+            }
+            field namespace {
+                sensor daemonset-status {
+                    path namespace;
+                }
+                type string;
+                description "Checks status for namespace key.";
+            }
+            field status {
+                sensor daemonset-status {
+                    path status;
+                }
+                type string;
+                description "Checks for true or false condition";
+            }
+            trigger deployment-status {
+                frequency 1offset;
+                term available {
+                    when {
+                        matches-with "$status" true;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Deployment status for $deployment is  $status";
+                        }
+                    }
+                }
+                term notavailable {
+                    then {
+                        status {
+                            color red;
+                            message "Deployment status for $deployment is  $status";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	

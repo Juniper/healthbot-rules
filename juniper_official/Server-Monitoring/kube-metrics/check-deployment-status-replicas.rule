@@ -1,26 +1,26 @@
 healthbot {
     topic kube-metrics {
-        rule check-daemonset-metrics {
-            keys [ daemonset namespace ];
+        rule check-deployment-status-replicas {
+            keys [ deployment namespace ];
             synopsis "";
-            description "Checks daemon set unavailable status";
+            description "Checks kube metrics deployment  status";
             sensor daemonset-status {
                 description "node cpu in seconds";
                 server-monitoring {
-                    sensor-name /kube/daemonset;
+                    sensor-name /kube/deployment;
                     frequency 60s;
                 }
             }
-            field daemonset {
+            field deployment {
                 sensor daemonset-status {
-                    path daemonset;
+                    path deployment;
                 }
                 type string;
-                description "Checks status for demonset key.";
+                description "Checks status for deployment key.";
             }
-            field daemonset_status {
+            field deployment_status {
                 sensor daemonset-status {
-                    path /kube/daemonset/status/number/unavailable;
+                    path /kube/deployment/status/replicas;
                 }
                 type float;
                 description "Field to check true(0) or false(1) condition.";
@@ -30,18 +30,18 @@ healthbot {
                     path namespace;
                 }
                 type string;
-                description "Checks status for healthbot key.";
+                description "Checks status for namespace key.";
             }
-            trigger daemonset-status {
+            trigger deployment-status {
                 frequency 1offset;
                 term available {
                     when {
-                        equal-to "$daemonset_status" 0;
+                        equal-to "$deployment_status" 0;
                     }
                     then {
                         status {
                             color green;
-                            message "daemonset $daemonset for namespace $namespace is available.";
+                            message "Deployment status for replicaset is $deployment_status for $namespace $deployment,  ";
                         }
                     }
                 }
@@ -49,15 +49,10 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "daemonset $daemonset for namespace $namespace is not available.";
+                            message "Deployment status for replicaset is $deployment_status for $namespace $deployment";
                         }
                     }
                 }
-            }
-            variable value {
-                value 0.0;
-                description "Variable to match true(0) condition.";
-                type float;
             }
         }
     }

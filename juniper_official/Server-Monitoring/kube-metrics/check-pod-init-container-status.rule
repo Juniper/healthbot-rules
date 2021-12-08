@@ -1,0 +1,75 @@
+healthbot {
+    topic kube-metrics {
+        rule check-pod-init-container-status {
+            keys [ container namespace pod uid ];
+            synopsis "";
+            description "Checks pod init container  status waiting";
+            sensor pod-init-container-status {
+                description "node cpu in seconds";
+                server-monitoring {
+                    sensor-name /kube/pod/init/container;
+                    frequency 60s;
+                }
+            }
+            field container {
+                sensor pod-init-container-status {
+                    path container;
+                }
+                type string;
+                description "container name";
+            }
+            field namespace {
+                sensor pod-init-container-status {
+                    path namespace;
+                }
+                type string;
+                description "namespace of the pod";
+            }
+            field pod {
+                sensor pod-init-container-status {
+                    path pod;
+                }
+                type string;
+                description "pod name";
+            }
+            field status {
+                sensor pod-init-container-status {
+                    path /kube/pod/init/container/status/waiting;
+                }
+                type integer;
+                description "Statius value (0/1)";
+            }
+            field uid {
+                sensor pod-init-container-status {
+                    path uid;
+                }
+                type string;
+                description "Id ";
+            }
+            trigger waiting-status {
+                frequency 1offset;
+                term matches-zero {
+                    when {
+                        equal-to "$status" 0 {
+                            time-range 10offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$namespace  $pod  $container status is $status  ";
+                        }
+                    }
+                }
+                term is-not-zero {
+                    then {
+                        status {
+                            color red;
+                            message "$namespace  $pod  $container status is $status  ";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	

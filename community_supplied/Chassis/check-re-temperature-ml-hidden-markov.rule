@@ -42,18 +42,6 @@ healthbot {
                 type integer;
                 description "RE temperature";
             }
-            field routing-engine-temperature-anomaly {
-                formula {
-                    anomaly-detection {
-                        algorithm 3sigma;
-                        learning-period 7days;
-                        pattern-periodicity 1days;
-                        field-name "$routing-engine-temperature";
-                    }
-                }
-                type integer;
-                description "Checks for re temperature anomaly";
-            }
             field routing-engine-temperature-predict {
                 formula {
                     predict {
@@ -65,30 +53,27 @@ healthbot {
                     }
                 }
                 type integer;
-                description "Predicts re temperature";				
             }
-            trigger re-temperature-dt {
+            trigger re-temperature-prediction {
                 synopsis "RE temperature KPI";
                 description "Sets health based increase in RE temperature";
                 frequency 1offset;
-                term is-re-temperature-anomaly {
-                    when {
-                        equal-to "$routing-engine-temperature-anomaly" 1 {
-                            time-range 3offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "Anomaly detected for routing engine $routing-engine,temperature predicted is $routing-engine-temperature-predict";
-                        }
-                    }
-                }
                 term is-re-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                    }
                     then {
                         status {
                             color green;
-                            message "No Anomaly detected for routing engine $routing-engine";
+                            message "routing engine $routing-engine,temperature is normal";
+                        }
+                    }
+                }
+                term re-temperature-predict {
+                    then {
+                        status {
+                            color red;
+                            message "re temperature predicted is $routing-engine-temperature-predict";
                         }
                     }
                 }
