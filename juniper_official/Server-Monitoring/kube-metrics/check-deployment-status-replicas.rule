@@ -3,45 +3,45 @@ healthbot {
         rule check-deployment-status-replicas {
             keys [ deployment namespace ];
             synopsis "";
-            description "Checks kube metrics deployment  status";
-            sensor daemonset-status {
-                description "node cpu in seconds";
+            description "Checks kube metrics deployment replica status";
+            sensor deployment-status {
+                description "Checks kube metrics deployment replica status";
                 server-monitoring {
                     sensor-name /kube/deployment;
                     frequency 60s;
                 }
             }
             field deployment {
-                sensor daemonset-status {
+                sensor deployment-status {
                     path deployment;
                 }
                 type string;
-                description "Checks status for deployment key.";
+                description "Deployment pod name";
             }
             field deployment_status {
-                sensor daemonset-status {
+                sensor deployment-status {
                     path /kube/deployment/status/replicas;
                 }
                 type float;
-                description "Field to check true(0) or false(1) condition.";
+                description "Field to check 0 or other values";
             }
             field namespace {
-                sensor daemonset-status {
+                sensor deployment-status {
                     path namespace;
                 }
                 type string;
-                description "Checks status for namespace key.";
+                description "Namespace key";
             }
             trigger deployment-status {
                 frequency 1offset;
                 term available {
                     when {
-                        equal-to "$deployment_status" 0;
+                        not-equal-to "$deployment_status" 0;
                     }
                     then {
                         status {
                             color green;
-                            message "Deployment status for replicaset is $deployment_status for $namespace $deployment,  ";
+                            message "Deployment status for replicaset is $deployment_status for $namespace $deployment";
                         }
                     }
                 }

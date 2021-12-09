@@ -3,9 +3,9 @@ healthbot {
         rule check-node-status {
             keys [ condition node ];
             synopsis "";
-            description "Checks node condition  status";
+            description "Checks node status";
             sensor node-status {
-                description "node cpu in seconds";
+                description "Checks node status";
                 server-monitoring {
                     sensor-name /kube/node;
                     frequency 60s;
@@ -23,27 +23,27 @@ healthbot {
                     path node;
                 }
                 type string;
-                description "Node name.";
+                description "Node name";
             }
             field node_status {
                 constant {
                     value "{{value}}";
                 }
                 type integer;
-                description "Field to check true(0) or false(1) condition.";
+                description "Field to check condition";
             }
             field status {
                 sensor node-status {
                     path status;
                 }
                 type string;
-                description "Status of the node.";
+                description "Status of the node";
             }
             trigger node-status {
                 frequency 1offset;
                 term available {
                     when {
-                        matches-with "$status" true {
+                        matches-with "$status" false {
                             ignore-case;
                         }
                     }
