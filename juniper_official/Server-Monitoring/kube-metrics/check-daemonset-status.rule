@@ -2,8 +2,8 @@ healthbot {
     topic kube-metrics {
         rule check-daemonset-status {
             keys [ daemonset namespace ];
-            synopsis "";
-            description "Checks daemon set unavailable status";
+            synopsis "KPI to find the daemonset unavailable status";
+            description "Checks for zero unavailable daemon sets";
             sensor daemonset-status {
                 description "Checks daemon set unavailable status";
                 server-monitoring {
@@ -36,12 +36,15 @@ healthbot {
                 frequency 1offset;
                 term available {
                     when {
-                        equal-to "$daemonset_status" 0;
+                        equal-to "$daemonset_status" 0 {
+                            time-range 3offset;
+                            any;
+                        }
                     }
                     then {
                         status {
                             color green;
-                            message "Unavailable demons set is 0 for  $namespace $daemonset";
+                            message "Unavailable demons set is 0 for $namespace $daemonset";
                         }
                     }
                 }
@@ -49,7 +52,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Unavailable demons set is not 0 for  $namespace $daemonset";
+                            message "Unavailable demons set is not 0 for $namespace $daemonset";
                         }
                     }
                 }

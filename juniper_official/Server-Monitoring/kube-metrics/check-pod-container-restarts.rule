@@ -2,8 +2,8 @@ healthbot {
     topic kube-metrics {
         rule check-pod-container-restarts {
             keys [ container namespace pod uid ];
-            synopsis "";
-            description "Checks pod container status restarts";
+            synopsis "KPI to check pod container total restarts";
+            description "Monitors number of pod container restarts";
             sensor pod-init-container-status {
                 description "Checks pod container status restarts";
                 server-monitoring {
@@ -50,12 +50,15 @@ healthbot {
                 frequency 1offset;
                 term less-than-ten {
                     when {
-                        less-than-or-equal-to "$restart-value" 10;
+                        less-than-or-equal-to "$restart-value" 10 {
+                            time-range 3offset;
+                            any;
+						}	
                     }
                     then {
                         status {
                             color green;
-                            message "$namespace  pod $pod container $container restart total is  $restart-value  ";
+                            message "$namespace pod $pod container $container restart total is $restart-value  ";
                         }
                     }
                 }
@@ -64,12 +67,13 @@ healthbot {
                         range "$restart-value" {
                             min 10;
                             max 20;
+                            time-range 3offset;							
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$namespace pod $pod container  $container restart total is  $restart-value  ";
+                            message "$namespace pod $pod container $container restart total is $restart-value  ";
                         }
                     }
                 }
@@ -77,7 +81,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$namespace pod $pod container  $container restart total is  $restart-value";
+                            message "$namespace pod $pod container $container restart total is $restart-value";
                         }
                     }
                 }

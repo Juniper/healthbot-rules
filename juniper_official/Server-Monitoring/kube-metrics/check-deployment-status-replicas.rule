@@ -2,8 +2,8 @@ healthbot {
     topic kube-metrics {
         rule check-deployment-status-replicas {
             keys [ deployment namespace ];
-            synopsis "";
-            description "Checks kube metrics deployment replica status";
+            synopsis "KPI to monitor zero unavailable replicasets";
+            description "Checks for zero unavailable replicasets";
             sensor deployment-status {
                 description "Checks kube metrics deployment replica status";
                 server-monitoring {
@@ -36,7 +36,10 @@ healthbot {
                 frequency 1offset;
                 term available {
                     when {
-                        not-equal-to "$deployment_status" 0;
+                        not-equal-to "$deployment_status" 0 {
+                            time-range 3offset;
+                            any;							
+                        }
                     }
                     then {
                         status {

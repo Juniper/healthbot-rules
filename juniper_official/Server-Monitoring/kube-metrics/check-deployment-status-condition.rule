@@ -2,8 +2,8 @@ healthbot {
     topic kube-metrics {
         rule check-deployment-status-condition {
             keys [ condition deployment namespace ];
-            synopsis "";
-            description "Checks kube metrics deployment status condition";
+            synopsis "KPI to check pod deployment status";
+            description "Checks that there are zero unavailable daemons sets and that critical pieces such as docker-registry/docker-registry are up and running";
             sensor deployment-status {
                 description "Checks kube metrics deployment status condition";
                 server-monitoring {
@@ -43,12 +43,15 @@ healthbot {
                 frequency 1offset;
                 term available {
                     when {
-                        matches-with "$status" true;
+                        matches-with "$status" true {
+                            time-range 3offset;
+                            any;
+                        }
                     }
                     then {
                         status {
                             color green;
-                            message "Deployment status for $deployment is  $status";
+                            message "Deployment status for $deployment is $status";
                         }
                     }
                 }
@@ -56,7 +59,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Deployment status for $deployment is  $status";
+                            message "Deployment status for $deployment is $status";
                         }
                     }
                 }
