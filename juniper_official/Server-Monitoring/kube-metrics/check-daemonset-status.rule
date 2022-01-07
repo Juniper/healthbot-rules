@@ -1,0 +1,63 @@
+healthbot {
+    topic kube-metrics {
+        rule check-daemonset-status {
+            keys [ daemonset namespace ];
+            synopsis "KPI to find daemonset unavailable status";
+            description "Checks for zero unavailable daemon sets";
+            sensor daemonset-status {
+                description "Checks for daemon set unavailable status";
+                server-monitoring {
+                    sensor-name /kube/daemonset;
+                    frequency 60s;
+                }
+            }
+            field daemonset {
+                sensor daemonset-status {
+                    path daemonset;
+                }
+                type string;
+                description "Checks status for demonset key";
+            }
+            field daemonset_status {
+                sensor daemonset-status {
+                    path /kube/daemonset/status/number/unavailable;
+                }
+                type float;
+                description "Field to check condition";
+            }
+            field namespace {
+                sensor daemonset-status {
+                    path namespace;
+                }
+                type string;
+                description "Checks status for namespace key";
+            }
+            trigger daemonset-status {
+                frequency 1offset;
+                term available {
+                    when {
+                        equal-to "$daemonset_status" 0 {
+                            time-range 3offset;
+                            any;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Unavailable demons set is 0 for $namespace $daemonset";
+                        }
+                    }
+                }
+                term not-available {
+                    then {
+                        status {
+                            color red;
+                            message "Unavailable demons set is not 0 for $namespace $daemonset";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	
+	
