@@ -1,0 +1,73 @@
+healthbot {
+    topic kube-metrics {
+        rule check-node-status {
+            keys [ condition node ];
+            synopsis "Node status KPI";
+            description "For each node, we track info about NetworkUnavailable, MemoryPressure, DiskPressure, PIDPressure, etc  and ensure that these are healthy";
+            sensor node-status {
+                description "Checks node status";
+                server-monitoring {
+                    sensor-name /kube/node;
+                    frequency 60s;
+                }
+            }
+            field condition {
+                sensor node-status {
+                    path condition;
+                }
+                type string;
+                description "Node condition";
+            }
+            field node {
+                sensor node-status {
+                    path node;
+                }
+                type string;
+                description "Node name";
+            }
+            field node_status {
+                constant {
+                    value "{{value}}";
+                }
+                type integer;
+                description "Field to check condition";
+            }
+            field status {
+                sensor node-status {
+                    path status;
+                }
+                type string;
+                description "Status of the node";
+            }
+            trigger node-status {
+                frequency 1offset;
+                term available {
+                    when {
+                        matches-with "$status" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$condition for $node is $status";
+                        }
+                    }
+                }
+                term not-available {
+                    then {
+                        status {
+                            color red;
+                            message "$condition for $node is $status.";
+                        }
+                    }
+                }
+            }
+            variable value {
+                value 0;
+                description "Variable to match true(0) condition.";
+                type int;
+            }
+        }
+    }
+}	
