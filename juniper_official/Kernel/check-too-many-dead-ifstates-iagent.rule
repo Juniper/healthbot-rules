@@ -44,12 +44,10 @@ healthbot {
                 }
                 type integer;
             }
-            field ratio {
+            field alive-half-cnt {
                 formula {
-                    user-defined-function {
-                        function-name get-dead-alive-ratio;
-                        argument alive_ifstates_cnt "$alive-cnt";
-                        argument dead_ifstates_cnt "$dead-cnt";
+                    eval {
+                        expression "$alive-cnt / 2";
                     }
                 }
                 type integer;
@@ -60,7 +58,7 @@ healthbot {
                 frequency 1.1offset; 
                 term dead-alive-cnt-normal-iagent {
                     when {
-                        equal-to "$ratio" 0;
+                        less-than "$dead-cnt" "$alive-half-cnt";
                     }
                     then {
                         status {
@@ -71,10 +69,7 @@ healthbot {
                 }
                 term dead-alive-cnt-abnormal-iagent {
                     when {
-                        equal-to "$ratio" 1 {
-                            time-range 6offset;
-                            all;
-                        }
+                        greater-than "$dead-cnt" "$alive-half-cnt";
                     }
                     then {
                         status {
