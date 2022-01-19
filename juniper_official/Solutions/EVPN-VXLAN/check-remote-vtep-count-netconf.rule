@@ -17,16 +17,6 @@ healthbot {
             keys vlan-name;
             synopsis "Monitor remote VTEPs count";
             description "Monitor the remote VTEPs count for provided VLAN name and notify anomaly when count is less than threshold";
-            function subtract-function {
-                path subtract.py;
-                method subtract;
-                argument subtract {
-                    mandatory;
-                }
-                argument subtract_from {
-                    mandatory;
-                }
-            }
             sensor vtep-count {
                 synopsis "Remote VTEP interface count iAgent sensor definition";
                 description "Netconf rpc get-vlan-information to collect data from network device";
@@ -38,10 +28,8 @@ healthbot {
             }
             field actual-remote-vtep {
                 formula {
-                    user-defined-function {
-                        function-name subtract-function;
-                        argument subtract_from "$remote-vtep";
-                        argument subtract 1;
+                    eval {
+                        expression "( $remote-vtep - 1 )";
                     }
                 }
                 type integer;

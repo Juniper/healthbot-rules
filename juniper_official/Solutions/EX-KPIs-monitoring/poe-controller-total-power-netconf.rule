@@ -19,16 +19,6 @@ healthbot {
             /*
              * Function to calculate the ratio of total vs used percentage 
              */			
-            function used_percentage {
-                path used-percentage.py;
-                method used_percentage;
-                argument total {
-                    mandatory;
-                }
-                argument used {
-                    mandatory;
-                }
-            }
             /*
              * Sensor configuration to get data from network devices.
              */				
@@ -59,10 +49,8 @@ healthbot {
             }
             field power-utilization-percent {
                 formula {
-                    user-defined-function {
-                        function-name used_percentage;
-                        argument total "$controller-maxpower";
-                        argument used "$controller-power";
+                    eval {
+                        expression "( $controller-power / $controller-maxpower ) * 100";
                     }
                 }
                 type integer;

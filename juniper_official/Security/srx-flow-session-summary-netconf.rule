@@ -44,16 +44,6 @@ healthbot {
             /*
              * Fields defined with variables, dynamic thresholds and constant values
              */
-            function decimal_to_percent {
-                path generic_functions.py;
-                method decimal_to_percent;
-                argument denominator {
-                    mandatory;
-                }
-                argument numerator {
-                    mandatory;
-                }
-            }
             field active-sessions {
                 sensor flow-session {
                     path active-sessions;
@@ -109,10 +99,8 @@ healthbot {
             }
             field flows-percent {
                 formula {
-                    user-defined-function {
-                        function-name decimal_to_percent;
-                        argument numerator "$active-sessions";
-                        argument denominator "$max-sessions";
+                    eval {
+                        expression "( $active-sessions / $max-sessions ) * 100";
                     }
                 }
                 type float;

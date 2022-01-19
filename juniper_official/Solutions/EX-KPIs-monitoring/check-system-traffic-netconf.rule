@@ -23,17 +23,6 @@ healthbot {
              * “$traffic-diff-anomaly-detection” is equal to 1 for a 5m
              * time range. Otherwise the color is set to green.
              */
-            function traffic_diff {
-                description "Function traffic_diff returns io traffic difference";
-                path traffic_diff.py;
-                method traffic_diff;
-                argument inpkts {
-                    mandatory;
-                }
-                argument outpkts {
-                    mandatory;
-                }
-            }
             /*
              * Sensor configuration to get data from network devices.
              */
@@ -101,10 +90,8 @@ healthbot {
             }
             field traffic-difference {
                 formula {
-                    user-defined-function {
-                        function-name traffic_diff;
-                        argument inpkts "$pfe-in-packets";
-                        argument outpkts "$pfe-out-packets";
+                    eval {
+                        expression "( ( $pfe-in-packets - $pfe-out-packets ) / $pfe-in-packets ) * 100";
                     }
                 }
                 type integer;
@@ -241,7 +228,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files [ SystemTrafficTable.yml traffic_diff.py ];
+                    list-of-files [ SystemTrafficTable.yml ];
                 }
             }
         }

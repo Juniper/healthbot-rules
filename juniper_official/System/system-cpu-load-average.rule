@@ -36,14 +36,6 @@ healthbot {
              * Router provides RE CPU idle percent hence function derives used
              * percent by subtracting idle percent with 100.
              */
-            function subtract {
-                description "function that tweaks thresholds by subtracting them from 100 so that CPU utilization can be found from cpu-idle%";
-                path system-sensors.py;
-                method subtract;
-                argument threshold {
-                    mandatory;
-                }
-            }
             /*
              * Sensor configuration to get data from network devices
              */
@@ -57,13 +49,12 @@ healthbot {
                 }
             }
             /*
-             * Fields defined using formulae by user-defined function (UDF)
+             * Fields defined using formulae by user-defined eval formula.
              */
             field cpu-15min {
                 formula {
-                    user-defined-function {
-                        function-name subtract;
-                        argument threshold $cpu-idle-15min;
+                    eval {
+                        expression "( 100 - $cpu-idle-15min )";
                     }
                 }
                 type integer;
@@ -71,9 +62,8 @@ healthbot {
             }
             field cpu-5min {
                 formula {
-                    user-defined-function {
-                        function-name subtract;
-                        argument threshold $cpu-idle-5min;
+                    eval {
+                        expression "( 100 - $cpu-idle-5min )";
                     }
                 }
                 type integer;
@@ -81,9 +71,8 @@ healthbot {
             }
             field cpu-1min {
                 formula {
-                    user-defined-function {
-                        function-name subtract;
-                        argument threshold $cpu-idle-1min;
+                    eval {
+                        expression "( 100 - $cpu-idle-1min )";
                     }
                 }
                 type integer;
