@@ -47,17 +47,6 @@ healthbot {
              * Router provides power values in number hence function derives
              * used percent.
              */
-             function used-percentage {
-                description "Calculates % of power usage out of total available";
-                path used-percentage.py;
-                method used_percentage;
-                argument total {
-                    mandatory;
-                }
-                argument used {
-                    mandatory;
-                }
-            }
             /*
              * Sensor configuration to get data from network devices.
              */
@@ -125,14 +114,12 @@ healthbot {
                 description "PEM temperature";
             }
             /*
-             * Fields defined using formulae by user-defined function
+             * Fields defined using formulae by eval function
              */
             field pem-power-usage {
                 formula {
-                    user-defined-function {
-                        function-name used-percentage;
-                        argument total "$power-capacity-maximum";
-                        argument used "$power-dc-output";
+                    eval {
+                        expression "( $power-dc-output / $power-capacity-maximum ) * 100";
                     }
                 }
                 type integer;

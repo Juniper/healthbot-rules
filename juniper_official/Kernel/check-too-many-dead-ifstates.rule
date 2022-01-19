@@ -12,17 +12,6 @@
 healthbot {
     topic kernel.ifstate {
         rule check-too-many-dead-ifstates {
-            function alive-dead-ifs-ratio {
-                description "This returns the number of alive/dead ifstates count ratio";
-                path get-dead-alive-ratio.py;
-                method get_dead_alive_ratio;
-                argument alive_ifstates_cnt {
-                    mandatory;
-                }
-                argument dead_ifstates_cnt {
-                    mandatory;
-                }
-            }
             sensor kernel-ifstate-sensor {
                 synopsis "Number of dead/alive ifstates open-config sensor";
                 description "Monitor number of dead and alive ifstates on the network device";
@@ -45,16 +34,13 @@ healthbot {
                 type integer;
                 description "Dead ifstates counter - OC sensor";
             }
-            field ratio-value {
+            field alive-ifstates-cnt-half {
                 formula {
-                    user-defined-function {
-                        function-name alive-dead-ifs-ratio;
-                        argument dead_ifstates_cnt "$dead-ifstates-cnt";
-                        argument alive_ifstates_cnt "$alive-ifstates-cnt";
+                    eval {
+                        expression "$alive-ifstates-cnt / 2";
                     }
                 }
                 type integer;
-                description "This field has the value of final decision if alive/dead ifstates in the system are normal";
             }
             trigger report-dead-alive-ifstates-ratio {
                 synopsis "report dead/alive ifstate on the system";
@@ -62,7 +48,7 @@ healthbot {
                 frequency 1.1offset;
                 term dead-alive-cnt-normal {
                     when {
-                        equal-to "$ratio-value" 0;
+                        less-than "$dead-ifstates-cnt" "$alive-ifstates-cnt-half";
                     }
                     then {
                         status {
@@ -73,10 +59,7 @@ healthbot {
                 }
                 term dead-alive-cnt-abnormal {
                     when {
-                        equal-to "$ratio-value" 1 {
-                            time-range 6offset;
-                            all;
-                        }
+                        greater-than "$dead-ifstates-cnt" "$alive-ifstates-cnt-half";
                     }
                     then {
                         status {

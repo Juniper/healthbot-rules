@@ -29,17 +29,6 @@ healthbot {
              * Function to find the cpu utilisation.
              * 
              */
-            function difference {
-                description "Functions derives cpu used percent";
-                path generic_functions.py;
-                method difference;
-                argument num1 {
-                    mandatory;
-                }
-                argument num2 {
-                    mandatory;
-                }
-            }
             /*
              * Sensor configuration to collect date from the monitored device.
              */
@@ -124,13 +113,11 @@ healthbot {
                 description "Static threshold of CPU";
             }
             field used_percent {
-                 formula {
-                     user-defined-function {
-                         function-name difference;
-                         argument num1 100;
-                         argument num2 "$idle";
-                     }
-                 }
+                formula {
+                    eval {
+                        expression "( 100 - $idle )";
+                    }
+                }
                  type float;
                  description "CPU utilization percentage ";
             }

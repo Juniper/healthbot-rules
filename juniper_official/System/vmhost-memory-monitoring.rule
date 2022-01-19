@@ -27,17 +27,6 @@ healthbot {
               * of total memory and free memory.
               *
               */
-            function decimal_to_percent {
-                description "Functions derives used Memory percentage";
-                path generic_functions.py;
-                method decimal_to_percent;
-                argument denominator {
-                    mandatory;
-                }
-                argument numerator {
-                    mandatory;
-                }
-            }
             /*
 		     * Sensor configuration to collect date from the monitored device.
              */
@@ -111,12 +100,10 @@ healthbot {
                 description "Used memory in the vmhost";
             }
             field used_percent {                    
-                formula {                           
-                    user-defined-function {         
-                        function-name decimal_to_percent;
-                        argument denominator "$total";
-                        argument numerator "$used"; 
-                    }                               
+                formula {
+                    eval {
+                        expression " ( $used / $total ) * 100";
+                    }
                 }                                   
                 type float;                         
                 description "Used memory in percentage";

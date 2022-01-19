@@ -63,14 +63,6 @@
                 }
                 type integer;
             }
-            function micro-milli {
-               path micro_milli.py;
-               method rtt_micro_milli;
-               argument micros {
-                  mandatory;
-               }
-               description "This function converts microseconds to milliseconds";
-            }
             field dt-response-time {
                 formula {
                     anomaly-detection {
@@ -84,12 +76,11 @@
                 description "anomaly-detection for field rtt-average-ms";
             }
             field rtt-average-ms {              
-               formula {                       
-                  user-defined-function {     
-                     function-name micro-milli;
-                     argument micros "$rtt";
-                  }                           
-               }                               
+                formula {
+                    eval {
+                        expression "( $rtt / 1000.0 )";
+                    }
+                }                               
                type float;                   
                description "Round trip time";  
             }                   
