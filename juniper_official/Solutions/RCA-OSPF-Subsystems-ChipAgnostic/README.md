@@ -5,12 +5,12 @@
 		> Description: "Playbook detects chip agnostic anomalies"
 		> Synopsis: "Chip agnostic kpis"
 		> Playbook file name: rca-chip-agnostic.playbook
-		> Detals:
+		> Details:
 ### Playbook name: rca-ospf-playbook 
 		> Description: "Playbook detects OSPF protocol and its subsystems anomalies"
 		> Synopsis: "OSPF RCA kpis"
 		> Playbook file name: rca-ospf-subsystems.playbook
-		> Detals:
+		> Details:
 
 ## RCA-OSPF-Subsystems-ChipAgnostic rules
 
