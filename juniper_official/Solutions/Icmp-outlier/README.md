@@ -5,7 +5,7 @@
 		> Description: "Detects network group outlier w.r.t RTT average response across devices"
 		> Synopsis: "ICMP outlier detector"
 		> Playbook file name: icmp.playbook
-		> Detals:
+		> Details:
 
 ## Icmp-outlier rules
 
@@ -13,15 +13,14 @@
 		> Description: "Detects ICMP outlier response time and notify anomalies"
 		> Synopsis: "ICMP outlier analyzer"
 		> Rule file name: icmp.rule
+		> Sensor type: iAgent 
+		> Supported HealthBot version: 2.0.0
+		> Supported product:MX, Platforms:A, Junos:11.4
+		> Supported product:MX, Platforms:A, Junos:11.4
 
-		> Supported products: MX 
-		> Supported products: MX 
 
-			> Supported platforms: All;
-			> Supported platforms: All;
 
-		> Supported healthbot version: 2.0.0
-		> Detals:
+		> More details:
 		 Sends ICMP probes to user specified destination host and notifies anomalies
 		 when round trip time average response is above static or dynamic thresholds.
 		 And also detects outlier across the devices in device group ML algorithms.

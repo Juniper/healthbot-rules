@@ -5,7 +5,7 @@
 		> Description: "Playbook detects bgp ipv4 and ipv6 route hijack"
 		> Synopsis: "Playbook detects route hijack"
 		> Playbook file name: bgp-route-hijack.playbook
-		> Detals:
+		> Details:
 		 Playbook contains multiple rules which detect BGP IPv4 and IPv4 route
 		 hijacks and notifies when anomalies are found.
 		
@@ -20,45 +20,53 @@
 		> Description: "Checks bgp ipv4 route hijack"
 		> Synopsis: "IPv4 bgp route hijack detector"
 		> Rule file name: bgp-route-hijack-v4.rule
+		> Sensor type: open-config 
+		> Supported HealthBot version: 1.0.1
+		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
+		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
+		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
+		> Supported product:MX, Platforms:MX240, Junos:17.2R1
+		> Supported product:MX, Platforms:MX480, Junos:17.2R1
+		> Supported product:MX, Platforms:MX960, Junos:17.2R1
+		> Supported product:MX, Platforms:MX2010, Junos:17.2R1
+		> Supported product:MX, Platforms:MX2020, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX5000, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX1000, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX10000, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX10000, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX5200, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX5110, Junos:17.3R1
+		> Supported product:QFX, Platforms:QFX5100, Junos:18.1R1
+		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
-		> Supported products: EX 
+		> Other vendor product support: cisco-IOS-XR 
 
-			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
-			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
-			> Supported platforms: [ QFX10000 QFX5200 ];
-			> Supported platforms: QFX5110;
-			> Supported platforms: QFX5100;
-			> Supported platforms: QFX5120-48Y;
-			> Supported platforms: EX9200;
-			> Supported platforms: EX4650;
-			> Supported platforms: EX4600;
-
-		> Supported healthbot version: 1.0.1
-		> Detals:
+		> More details:
 		 Collects bgp session statistics and notifies when bgp v4 route hijack.
 ### Rule name: check-route-hijacking-v6 
 		> Description: "Checks bgp ipv6 route hijacks"
 		> Synopsis: "IPv4 bgp route hijack detector"
 		> Rule file name: bgp-route-hijack-v6.rule
+		> Sensor type: open-config 
+		> Supported HealthBot version: 1.0.1
+		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
+		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
+		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
+		> Supported product:MX, Platforms:MX240, Junos:17.2R1
+		> Supported product:MX, Platforms:MX480, Junos:17.2R1
+		> Supported product:MX, Platforms:MX960, Junos:17.2R1
+		> Supported product:MX, Platforms:MX2010, Junos:17.2R1
+		> Supported product:MX, Platforms:MX2020, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX5000, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX1000, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX10000, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX10000, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX5200, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX5110, Junos:17.3R1
+		> Supported product:QFX, Platforms:QFX5100, Junos:18.1R1
+		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
-		> Supported products: EX 
+		> Other vendor product support: cisco-IOS-XR 
 
-			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
-			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
-			> Supported platforms: [ QFX10000 QFX5200 ];
-			> Supported platforms: QFX5110;
-			> Supported platforms: QFX5100;
-			> Supported platforms: QFX5120-48Y;
-			> Supported platforms: EX9200;
-			> Supported platforms: EX4650;
-			> Supported platforms: EX4600;
-
-		> Supported healthbot version: 1.0.1
-		> Detals:
+		> More details:
 		 Collects bgp session statistics and notifies when bgp v4 route hijacks.
