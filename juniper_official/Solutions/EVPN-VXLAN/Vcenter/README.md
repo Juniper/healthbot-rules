@@ -5,7 +5,7 @@
 
 
 		> Playbook file name: vcenter-evpn-host-mapping.playbook
-		> Detals:
+		> Details:
 		 Collects vm host information from vcenter
 		 Rule get-vcenter-details, collects ESXi host name, VM name, VM mac-address,
 		 VM IP, datacenter name, cluster name from vcenter.
@@ -21,34 +21,49 @@
 		> Description: "Collects datacenter VMs information from vcenter and LLDP information from routers then maps \"ESXi-VM-IP-MAC-Leaf Node-Egress Interface\" path by referring rule vmware/get-vcenter-details"
 		> Synopsis: "VM path finder in EVPN"
 		> Rule file name: check-vcenter-host-mac-mapping.rule
+		> Sensor type: iAgent 
+		> Supported HealthBot version: 3.2.0
+		> Supported product:QFX, Platforms:A, Junos:18.1R1
 
-		> Supported products: QFX 
-
-			> Supported platforms: All;
+		> Other vendor product support: vmware 
 		> Helper files: [ get_vcenter_details.py LldpNbrStatsTable.yml ];
-		> Supported healthbot version: 3.2.0
-		> Detals:
+		> More details:
 		 Collects vm host information from EVPN nodes and maps with vcenter ESXi host
 		 by querying database of rule vcenter.evpn/get-vcenter-details and displays entire
 		 path in dashboard.
-		 Four input controls detection
-		
-		   1) db-server-ip, user need to enter HB DB server ip while deploying
-		      playbook.
-		   2) db-port, user need to enter HB DB server udp port while deploying
-		      playbook.
-		   3) vcenter-device-group, user need to enter vcenter device group name
-		      i.e. where playbook "get-vsphere-details" deployed.
-		   4) vcenter-device, user need to enter vcenter device name which should
-		      be part of device group.
+		 This rule to work, users need to create tagging profile and apply to device group.
+		 Tagging profile will create fields "vcenter-device" and "vcenter-device-group".
+		 Below is a sample tagging profile
+		 data-enrichment 
+		    tagging-profile <tagging-profile-name> 
+		        policy <tagging-policy-name> 
+		            rules vcenter.evpn/check-vcenter-host-mac-mapping
+		            term <term-name> 
+		                then 
+		                    add-field vcenter-device 
+		                        value <vcenter device name which is part of vcenter-device-group>
+		                        type string
+		                        in-memory false
+		                    }
+		                    add-field vcenter-device-group 
+		                        value <vcenter-device-group where playbook "get-vcenter-details" deployed>
+		                        type string
+		                        in-memory false
+		                    }
+		                }
+		            }
+		        }
+		    }
+		 }
 ### Rule name: get-vcenter-details 
 		> Description: "Collects datacenter VMs information from Vmware Vcenter Vsphere"
 		> Synopsis: "Vcenter VMs data collector"
 		> Rule file name: get-vcenter-details.rule
+		> Sensor type: iAgent 
+		> Supported HealthBot version: 3.2.0
 
-
+		> Other vendor product support: vmware 
 		> Helper files: [ split_fqdn.py vsphere_hb.py vsphere_hb.yml ];
-		> Supported healthbot version: 3.2.0
-		> Detals:
+		> More details:
 		 Collects ESXi hosts information i.e. VM names, VM IPs, VM mac-addresses,
 		 datacenter names and cluster names from vmware vsphere vcenter.

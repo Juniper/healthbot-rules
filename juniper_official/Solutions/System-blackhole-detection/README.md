@@ -5,7 +5,7 @@
 		> Description: "Playbook detects blackhole based on difference between input and output traffic and notifies anomalies"
 		> Synopsis: "System blackhole detection key performance indicators"
 		> Playbook file name: system-blackhole-detection.playbook
-		> Detals:
+		> Details:
 		 Playbook monitor system total input and output packets usage and notify in
 		 case difference in io traffic is above static and dynamic threshold
 		
@@ -18,23 +18,18 @@
 		> Description: "Collects system total io packets and notifies in case of anomalies when io traffic difference is above static and dynamic threshold"
 		> Synopsis: "system traffic statistics analyzer"
 		> Rule file name: system-traffic.rule
+		> Sensor type: iAgent 
+		> Supported HealthBot version: 1.0.1
+		> Supported product:MX, Platforms:A, Junos:15.2R1
+		> Supported product:PTX, Platforms:A, Junos:15.2R1
+		> Supported product:QFX, Platforms:A, Junos:15.2R1
+		> Supported product:EX, Platforms:A, Junos:15.2R1
+		> Supported product:ACX, Platforms:A, Junos:15.2R1
+		> Supported product:SRX, Platforms:A, Junos:15.2R1
 
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
-		> Supported products: EX 
-		> Supported products: ACX 
-		> Supported products: SRX 
 
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-			> Supported platforms: All;
-		> Helper files: [ traffic_diff.py traffic-statistics.yml ];
-		> Supported healthbot version: 1.0.1
-		> Detals:
+		> Helper files: [ traffic-statistics.yml ];
+		> More details:
 		 Checks system total input and output packets count periodically and
 		 notifies anomaly when total input and output packets count is abnormal.
 		 Two dynamic inputs control detection

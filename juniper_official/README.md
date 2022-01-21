@@ -1,16 +1,6 @@
-# Healthbot default KPIs
-#
- 
-Contains readily consumable healthbot playbooks and rules which are specific to chassis, linecard, system, interface and protocols
-key performance indicators (KPIs). KPI rules collects the statistics from network devices then analyzes the data and act.
+# HealthBot juniper_official KPI rules and playbooks
 
-KPI playbook is set of rules, each rule is defined with set of KPIs.
+## juniper_official playbooks
 
-Playbooks for chassis, linecard, system, interface and protocols (bgp, lldp, rib) are available in respective folders.
+## juniper_official rules
 
-Rules are defined with default variable values which can be changed while deploying playbook.
-
-
-## Usage
-
-Apply the playbook to device-group under playbooks section using healthbot GUI.

@@ -5,7 +5,7 @@
 		> Description: "Playbook checks the ISIS adjacencies health and notify anomaly when statistics are unusual"
 		> Synopsis: "ISIS adjacency key performance indicators"
 		> Playbook file name: isis-statistics.playbook
-		> Detals:
+		> Details:
 		 Playbook contains multiple rules which checks the ISIS adjacency statistics
 		 and notifies when anomalies are found.
 		 1) Rule "check-isis-adjacencies" detects the ISIS adjacency session state
@@ -22,38 +22,47 @@
 		> Description: "Check SPF run time and count  for isis"
 		> Synopsis: "SPF KPI"
 		> Rule file name: check-spf-isis-netconf.rule
+		> Sensor type: iAgent 
+		> Supported HealthBot version: 3.1.0
+		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
+		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
+		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
+		> Supported product:MX, Platforms:, Junos:15.1R1
+		> Supported product:MX, Platforms:MX240, Junos:16.1R1
+		> Supported product:MX, Platforms:MX480, Junos:16.1R1
+		> Supported product:MX, Platforms:MX960, Junos:16.1R1
+		> Supported product:MX, Platforms:MX2010, Junos:16.1R1
+		> Supported product:MX, Platforms:MX2020, Junos:16.1R1
+		> Supported product:MX, Platforms:MX150, Junos:17.3R1
+		> Supported product:PTX, Platforms:PTX5000, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX1000, Junos:17.2R1
+		> Supported product:PTX, Platforms:PTX10000, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX10000, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX5200, Junos:17.2R1
+		> Supported product:QFX, Platforms:QFX5100, Junos:18.1R1
+		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
-		> Supported products: EX 
-		> Supported products: MX 
-		> Supported products: PTX 
-		> Supported products: QFX 
+		> Other vendor product support: cisco-IOS-XR 
 
-			> Supported platforms: EX9200;
-			> Supported platforms: EX4650;
-			> Supported platforms: EX4600;
-			> Supported platforms: all;
-			> Supported platforms: [ MX2010 MX2020 MX240 MX480 MX960 ];
-			> Supported platforms: MX150;
-			> Supported platforms: [ PTX1000 PTX10000 PTX5000 ];
-			> Supported platforms: [ QFX10000 QFX5200 ];
-			> Supported platforms: QFX5100;
-			> Supported platforms: QFX5120-48Y;
-
-		> Supported healthbot version: 3.1.0
-		> Detals:
+		> More details:
 ### Rule name: check-isis-adjacencies 
 		> Description: "Collects ISIS adjacency state periodically and notify anomaly when state is down"
 		> Synopsis: "ISIS session state analyzer"
 		> Rule file name: isis-adjacency.rule
+		> Sensor type: open-config 
+		> Supported HealthBot version: 1.0.1
+		> Supported product:MX, Platforms:MX240, Junos:17.4R1
+		> Supported product:MX, Platforms:MX480, Junos:17.4R1
+		> Supported product:MX, Platforms:MX960, Junos:17.4R1
+		> Supported product:MX, Platforms:MX2010, Junos:17.4R1
+		> Supported product:MX, Platforms:MX2020, Junos:17.4R1
+		> Supported product:PTX, Platforms:PTX5000, Junos:17.4R1
+		> Supported product:PTX, Platforms:PTX1000, Junos:17.4R1
+		> Supported product:PTX, Platforms:PTX10000, Junos:17.4R1
 
-		> Supported products: MX 
-		> Supported products: PTX 
 
-			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
-			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
 
-		> Supported healthbot version: 1.0.1
-		> Detals:
+		> More details:
 		 Detects ISIS adjacency state changes and notifies when anomalies are found.
 		 Three input control detection
 		
@@ -73,15 +82,20 @@
 		> Description: "Collects ISIS session statistics(lsp, csnp, esh, iih, ish, psnp and unknown drops) periodically and notify anomaly when breaches threshold"
 		> Synopsis: "ISIS adjacency statistics analyzer"
 		> Rule file name: isis-statistics.rule
+		> Sensor type: open-config 
+		> Supported HealthBot version: 1.0.1
+		> Supported product:MX, Platforms:MX240, Junos:17.4R1
+		> Supported product:MX, Platforms:MX480, Junos:17.4R1
+		> Supported product:MX, Platforms:MX960, Junos:17.4R1
+		> Supported product:MX, Platforms:MX2010, Junos:17.4R1
+		> Supported product:MX, Platforms:MX2020, Junos:17.4R1
+		> Supported product:PTX, Platforms:PTX5000, Junos:17.4R1
+		> Supported product:PTX, Platforms:PTX1000, Junos:17.4R1
+		> Supported product:PTX, Platforms:PTX10000, Junos:17.4R1
 
-		> Supported products: MX 
-		> Supported products: PTX 
 
-			> Supported platforms: [ MX240 MX480 MX960 MX2010 MX2020 ];
-			> Supported platforms: [ PTX5000 PTX1000 PTX10000 ];
 
-		> Supported healthbot version: 1.0.1
-		> Detals:
+		> More details:
 		 Detects ISIS packet drops and notifies when anomalies are found.
 		 Two input control detection
 		
