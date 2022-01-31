@@ -1,6 +1,6 @@
 /*
- * Checks if node memory fields are increasing by more than threshold value and  
- * raises alarm when anomalies are present.
+ * Checks if node memory fields are increasing by more than threshold value, raises red 
+ * alarm if it is more than threshold for 3 offsets else dashboard color is set to green.
  * One input control detection.
  * 
  *   1) "threshold-diff" is used to check if the difference of current and previous
@@ -17,7 +17,7 @@ healthbot {
              */		
             keys host;
             synopsis "Memory kpi";
-            description "Check node memory";
+            description "Collects system Memory statistics and notifies anomaly in case free and inactive bytes increase is above threshold for 3 offsets";
             sensor node-memory {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -140,6 +140,14 @@ healthbot {
                 description "threshold value";
                 type int;
             }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }			
         }
     }
 }	

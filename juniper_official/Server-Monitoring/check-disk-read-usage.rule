@@ -1,6 +1,6 @@
 /*
- * Checks if disk read usage fields exceed threshold value and raises alarm.
- *
+ * Checks if disk read usage fields exceed threshold value and raises red alarm if 
+ * usage is more than threshold for 3 offsets else dashboard color is set to green.
  * Three input control detection.
  * 
  *   1) "threshold" is used to check if the used percentage is
@@ -21,7 +21,8 @@ healthbot {
              * Use disk-name as key for rule.			 
              */		
             keys disk-name;
-            description "Disk read information";
+            synopsis "Disk read usage KPI";			
+            description "Collects disk read information and notifies anomaly in case bytes-total,completed-total and time-seconds-total used percentage values are above threshold for 3 offsets";
             sensor node-disk-read {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -229,6 +230,14 @@ healthbot {
                 description "threshold value";
                 type int;
             }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }			
         }
     }
 }	

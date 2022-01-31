@@ -1,19 +1,20 @@
 /*
-* Monitors protcol related distributed denial of service statistics for system 
-* ,notifies when anomalies are found.
-* One input control detection
-*
-* 1) ddos-threshold,  is the threshold that causes the rule to report
-* an anomaly. By default it is 1. This rule will set a dashboard color to red
-* when packet dropped count increases by atleast a value of 1.
-* If anomaly is detected then dashboard color is set to yellow else the color
-* is set to green.
-* 
-*/
+ * Monitors protcol related distributed denial of service statistics for system 
+ * and notifies when anomalies are found.
+ * One input control detection
+ *
+ * 1) ddos-threshold,  is the threshold that causes the rule to report
+ * an anomaly. By default it is 1. This rule will set a dashboard color to red
+ * when packet dropped count increases by atleast a value of 1.
+ * If anomaly is detected then dashboard color is set to yellow else the color
+ * is set to green.
+ * 
+ */
 healthbot {
     topic security.ddos {
         rule check-protcol-ddos-system-statistics {
             keys [ group-name packet-type ];
+            synopsis "protocol ddos system statistics KPI";			
             description "Monitors protcol related distributed denial of service statistics";
             /*
              * Monitors protocol related distributed denial of service statistics. 
@@ -175,6 +176,9 @@ healthbot {
                         }
                     }
                 }
+                helper-files other {
+                    list-of-files ddosProtocolsStats.yml;
+                }				
             }
         }
     }

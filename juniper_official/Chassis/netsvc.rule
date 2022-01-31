@@ -1,6 +1,15 @@
+/*
+ * Detects mismatched chassis network-services setting, will advise corrective 
+ * action if detected.
+ */
 healthbot {
     topic chassis.networkservices {
         rule netsvc-rule {
+            synopsis "Check Network Services";
+            description "Calls netsvc.py to determine the state and advise action if required";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
             sensor netsvc-sensor {
                 iAgent {
                     file netsvc.yml;
@@ -8,8 +17,15 @@ healthbot {
                     frequency 1h;
                 }
             }
+            /*
+             * Anomaly detection logic.
+             */			
             trigger netsvc-sync {
-		frequency 1offset;
+		        frequency 1offset;
+                /*
+                 * Sets color to green when network services are in sync.
+                 * 
+                 */				
                 term synched {
                     when {
                         matches-with "$netsvc_sync" true {
@@ -22,6 +38,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */				
                 term else {
                     when {
                         matches-with "$netsvc_sync" false {
