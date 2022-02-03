@@ -1,14 +1,15 @@
 /*
- * Checks if node time is increasing every minute else raises alarm 
+ * Collects current node time and is referenced by "check-system-reboot" rule
  *  
  */
 healthbot {
     topic server.monitoring {
         rule check-node-time {
             /*
-             * Monitors system time is incrementing by 60 every minute.
-             */		
-            description "Checks system time is increasing ";
+             * Collects system time every minute.
+             */
+            synopsis "system current-time KPI";			 
+            description "Collects system current time and is referred to another rule";
             sensor node-time {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -37,35 +38,14 @@ healthbot {
                 type integer;
                 description "threshold value increase to be compared with";
             }
-            /*
-             * Anomaly detection logic.
-             */			
-            trigger node-down {
-                frequency 1offset;
-                term time-increasing {
-                    when {
-                        increasing-at-least-by-value "$current-time" {
-                            value "$threshold";
-                            time-range 1offset;
-                            any;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Current time has increased by 60 in the last minute";
-                        }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
                     }
                 }
-                term not-increasing {
-                    then {
-                        status {
-                            color red;
-                            message "Current time has not increased since the last minute";
-                        }
-                    }
-                }
-            }
+            }			
         }
     }
 }	

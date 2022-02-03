@@ -42,7 +42,14 @@
 		> Other vendor product support: cisco-IOS-XR 
 
 		> More details:
-		 Collects bgp session statistics and notifies when bgp v4 route hijack.
+		 Collects bgp session statistics and notifies when bgp ipv4 routes are hijacked.
+		
+		 Two inputs control detection:
+		   1) ipv4-as-path, is the as-path that should match the as-path in the ipv4 route.
+		      This rule will set dashboard color to red when the as-path do not match.
+		
+		   2) ipv4-community, is the community name that should match the community in the ipv4 route.
+		      This rule will set dashboard color to yellow if the community names match.
 ### Rule name: check-route-hijacking-v6 
 		> Description: "Checks bgp ipv6 route hijacks"
 		> Synopsis: "IPv4 bgp route hijack detector"
@@ -69,4 +76,11 @@
 		> Other vendor product support: cisco-IOS-XR 
 
 		> More details:
-		 Collects bgp session statistics and notifies when bgp v4 route hijacks.
+		 Collects bgp session statistics and notifies when bgp ipv6 routes are hijacked.
+		
+		 Two inputs control detection:
+		   1) ipv6-as-path, is the as-path that should match the as-path in the ipv6 route.
+		      This rule will set dashboard color to red when the as-path does not match.
+		
+		   2) ipv6-community, is the community that should match the community in the ipv6 route.
+		      This rule will set dashboard color to yellow if the community names match.

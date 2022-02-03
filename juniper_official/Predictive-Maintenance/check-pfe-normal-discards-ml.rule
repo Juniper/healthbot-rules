@@ -1,6 +1,9 @@
 /*
  * Checks for anomalies in pfe normal discard count 
- *  
+ * One input controls detection
+ * 
+ *  1) discard-count variable, is the Number of discards increase between metrics,
+ *     before anomaly is reported.Default value is 1.  
  */
 healthbot {
     topic linecard.pfe {
@@ -123,14 +126,18 @@ healthbot {
                     juniper {
                         operating-system junos {
                             products MX {
-                                releases 15.1R1 { ## Warning: 'releases' is deprecated
-                                    release-support min-supported-release;
-                                    platform All;
-                                }
+                                platforms All {
+                                    releases 15.1R1 { ## Warning: 'releases' is deprecated
+                                        release-support min-supported-release;
+                                    }
+                                }							
                             }
                         }
                     }
                 }
+                helper-files other {
+                    list-of-files pfe-discard-statistics.yml;
+                }				
             }
         }
     }

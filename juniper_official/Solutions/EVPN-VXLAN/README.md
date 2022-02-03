@@ -247,6 +247,9 @@
 		> Helper files: bfd-session-state.yml;
 		> More details:
 		   This rule checks health of each bfd session state and notify in case any of the health monitored field crosses threshold
+		   One input controls detection
+		
+		   1) bfd-session-id, is the BFD session IP to monitor
 ### Rule name: check-bpdu-errors-netconf 
 		> Description: "Collects aggregate ethernet BPDU statistics and notify anomalies when error count increases"
 		> Synopsis: "BPDU error detector"
@@ -345,6 +348,13 @@
 		> Helper files: mac-count.yml;
 		> More details:
 		   This rule checks health of MAC count in ethernet switching table and notify in case any of the health monitored field crosses threshold
+		   Two input controls detection
+		
+		  1) static-threshold variable, MAC limit threshold per VLAN.
+		
+		  2) vlan-id variable, vlan id to be monitored.
+		
+		
 ### Rule name: check-multihomed-state-netconf 
 		> Description: "Collects evpn multihome status periodically and notifies anomaly when state if not forwarding"
 		> Synopsis: "Evpn multihome status analyzer"
@@ -510,6 +520,9 @@
 		> Helper files: IrbIntefaceStatusTable.yml;
 		> More details:
 		   This rule monitors IRB admin and operational status and notify in case any of any anomalies
+		   One input controls detection
+		
+		  1) irb-if-name variable, is the irb interface name to monitor.
 ### Rule name: check-irb-traffic 
 		> Description: "This rule collects IRB input and output traffic periodically and notifies in case of anomalies"
 		> Synopsis: "IRB input and output traffic analyzer"
@@ -522,6 +535,13 @@
 		> Helper files: IrbIntefaceTrafficTable.yml;
 		> More details:
 		   This rule monitors IRB input and output traffic and notify in case any of the health monitored field crosses threshold
+		   Three input controls detection
+		
+		  1) in-threshold variable, is the input threshold value.
+		     By default the value is 800000000.
+		  2) out-threshold variable, is the output threshold value.
+		     By default the value is 800000000.
+		  3) irb-if-name variable, is the irb interface name to monitor.
 ### Rule name: check-irb-next-hops 
 		> Description: "This rule collects IRB next hop periodically and notifies in case of anomalies"
 		> Synopsis: "IRB next hop analyzer"
@@ -534,6 +554,9 @@
 		> Helper files: [ IrbIntefaceStatsTable.yml generic_functions.py ];
 		> More details:
 		   This rule monitors IRB next hop count and notify in case any of the health monitored field crosses threshold
+		   One input controls detection
+		
+		  1) irb-if-name variable, is the irb interface name to monitor.
 ### Rule name: verify-mac-ip-netconf 
 		> Description: "This rule retrieves IP address for dynamic MAC address and triggers an alert if IP address not present."
 		> Synopsis: "This rule retrieves IP address for dynamic MAC address and triggers an alert if IP address not present."
@@ -560,9 +583,8 @@
 		> More details:
 		 Detects VTEP interfaces count and notifies when anomalies are found.
 		 Input control detection
-		   1) "vtep-count-static-threshold"  is the threshold that causes the
-		      rule to report an anomaly. By default it's 10. This rule will set
-		      a dashboard color to red when advertised route count exceed threshold
+		   1) "vtep-threshold-max" is the VTEP interface max threshold value.
+		      By default it's 3200.
 ### Rule name: check-vtep-interface-errors 
 		> Description: "Collects statistics periodically and notifies in case of any anomaly"
 		> Synopsis: "VTEP interface statistics analyzer"
@@ -615,6 +637,9 @@
 		> More details:
 		 Monitors VTEP interface admin status, operations status and
 		 notifies when anomalies are found.
+		 One input controls detection
+		
+		  1) oper-status-var variable, is the VTEP interface operational state.
 ### Rule name: check-vtep-interface-traffic 
 		> Description: "Collects statistics periodically and notifies in case of any anomaly"
 		> Synopsis: "VTEP interface statistics analyzer"
@@ -675,3 +700,7 @@
 		> Helper files: [ used-percentage.py vport.yml ];
 		> More details:
 		   This rule monitors vports used percentage and notify in case any of the health monitored field crosses threshold
+		   One input controls detection
+		
+		  1) vport_max_count variable, is the max value of vport count.
+		     Default value is 3200.

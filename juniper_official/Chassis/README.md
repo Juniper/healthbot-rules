@@ -115,10 +115,10 @@
 		> Synopsis: "Check whether graceful-switchover is configured or not"
 		> Rule file name: check-failover-configured.rule
 		> Sensor type: iAgent 
+		> Supported HealthBot version: 1.0.1
 
 
-
-
+		> Helper files: failover-info.yml;
 		> More details:
 		 Checks if graceful-switchover is configured on a dual RE chassis or not
 		 First checks if other routing engine is present or not. If present, checks
@@ -185,7 +185,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:A, Junos:15.1R1
 		> Supported product:MX, Platforms:MX960, Junos:16.1R1
 		> Supported product:MX, Platforms:MX2010, Junos:16.1R1
 		> Supported product:MX, Platforms:MX2020, Junos:16.1R1
@@ -203,6 +202,25 @@
 		> Other vendor product support: cisco-IOS-XR 
 
 		> More details:
+		 Monitors lacp link status and notifies when anomalies are found.
+		 Four input control detection
+		 1) lacp-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when lacp tx and rx packets are not increasing by
+		 lacp-threshold value during each cycle.
+		 2) detached, is the threshold that causes the rule to report
+		 an anomaly. By default it is 50.00 %. This rule will set a
+		 dashboard color to yellow when file descriptor usage percent
+		 exceeds threshold value in time range of 2 days. Otherwise
+		 it is set to green.
+		 3) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 4) unknown-illegal-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when illegal or unknown packets are increasing by
+		 unknown-illegal-threshold value during range interval of 300s.
 ### Rule name: check-fpc-temperature 
 		> Description: "Collects FPC temperature periodically and notifies anomaly when temperature exceed threshold"
 		> Synopsis: "FPC temperature check"
@@ -246,8 +264,8 @@
 		      temperature is below high threshold. Otherwise color is set to
 		      red and notify anomaly.
 ### Rule name: netsvc-rule 
-
-
+		> Description: "Calls netsvc.py to determine the state and advise action if required"
+		> Synopsis: "Check Network Services"
 		> Rule file name: netsvc.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 1.0.1
@@ -261,6 +279,8 @@
 
 		> Helper files: netsvc.yml;
 		> More details:
+		 Detects mismatched chassis network-services setting, will advise corrective
+		 action if detected.
 ### Rule name: check-pem-power-usage 
 		> Description: "Collects PEM power usage periodically and notifies anomaly when power usage exceed threshold"
 		> Synopsis: "PEM power check"
@@ -451,6 +471,14 @@
 
 		> Helper files: system-virtual-memory.yml;
 		> More details:
+		 Monitors the virtual memory and interrupt rate and notifies when
+		 anomalies are found.
+		 Two inputs control detection
+		   1) "interrupt-rate-threshold-value" is System Interrupt Rate threshold value.
+		      By default it's '500'.
+		   2) "virtual-memory-threshold" is the Virtual Memory threshold value in bytes.
+		      By default it's 1000000000.
+		
 ### Rule name: check-zone-power-usage 
 		> Description: "Collects chassis zone power usage periodically and notifies anomaly when power usage exceed threshold"
 		> Synopsis: "Zone power check"
@@ -465,7 +493,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.2R1
 
 
-		> Helper files: [ chassis-power.yml used-percentage.py ];
+		> Helper files: chassis-power.yml;
 		> More details:
 		 Detects chassis power zone usage threshold breaches and notifies when
 		 anomalies are found.

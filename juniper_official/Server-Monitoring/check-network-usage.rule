@@ -1,5 +1,6 @@
 /*
- * Checks if network usage fields are exceeding threshold value and raises alarm. 
+ * Checks if network usage fields are exceeding threshold value and raises red alarm if
+ * it is more than threshold for 3 offsets else dashboard color is set to green. 
  * 
  * One input control detection.
  * 
@@ -16,7 +17,8 @@ healthbot {
              * Use network-device as key for rule.
              */			
             keys network-device;
-            description "";
+            synopsis "Network usage KPI ";			
+            description "Collects Network statistics and notify anomaly in case transmit, receive and multicast error is above threshold for 3 offsets";
             sensor check-network {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -71,13 +73,14 @@ healthbot {
                     value 60;
                 }
                 type integer;
+                description "time interval between data collection to calculate the usage";				
             }
             field network-device {
                 sensor check-network {
                     path device;
                 }
                 type string;
-                description "";
+                description "Network Device name";
             }
             field receive-error-used-percentage {
                 formula {
@@ -93,12 +96,14 @@ healthbot {
                     path /node/network/receive/errs/total;
                 }
                 type integer;
+                description "Receive error packet count";				
             }
             field receive-multicast-total {
                 sensor check-network {
                     path /node/network/receive/multicast/total;
                 }
                 type integer;
+                description "Toatal multicast receive packets count";				
             }
             field receive-multicast-used-percentage {
                 formula {
@@ -114,12 +119,14 @@ healthbot {
                     value "{{threshold}}";
                 }
                 type integer;
+                description "Threshold value to compare the fields";				
             }
             field transmit-errors-total {
                 sensor check-network {
                     path /node/network/transmit/errs/total;
                 }
                 type integer;
+                description "Transmit error packet count";				
             }
             field transmit-errors-used-percent {
                 formula {
@@ -144,6 +151,7 @@ healthbot {
                     path /node/network/transmit/packets/total;
                 }
                 type integer;
+                description "Total transmit packets count";				
             }
             /*
              * Anomaly detection logic.
@@ -252,6 +260,14 @@ healthbot {
                 value 60;
                 type int;
             }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }			
         }
     }
 }	

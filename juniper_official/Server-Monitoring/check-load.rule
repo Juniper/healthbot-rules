@@ -1,10 +1,10 @@
 /*
- * Checks if cpu load average for 1min,5mins and 15mins is exceeding threshold 
- * value and raises alarm.
+ * Checks if cpu load average for 1min,5mins and 15mins is exceeding threshold and raises 
+ * red alarm if usage is more than threshold for 3 offsets else dashboard color is set to green.
  * One input control detection.
  * 
  *   1) "threshold" is used to check if the used percentage is
- *      increasinng by more than the threshold value.
+ *      increasing by more than the threshold value.Default is 70.
  *  
  */
 healthbot {
@@ -16,7 +16,7 @@ healthbot {
              * 
              */		
             synopsis "CPU load kpi ";
-            description "CPU load average for 1min,5min and 15 mins";
+            description "Collects system CPU statistics and notifies anomaly in case cpu utilization for 1min,5min and 15 mins are above threshold for 3 offsets";
             sensor node-load {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -148,6 +148,14 @@ healthbot {
                 description "threshold percentage value ";
                 type int;
             }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }			
         }
     }
 }	

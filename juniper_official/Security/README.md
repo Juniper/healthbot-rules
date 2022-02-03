@@ -97,8 +97,16 @@
 		> Supported product:QFX, Platforms:QFX5200, Junos:16.1R1
 
 
-
+		> Helper files: DDOSprotection.yml;
 		> More details:
+		 Monitors global related distributed denial of service statistics and notifies
+		 when anomalies are found.
+		 One input control detection
+		 1) ddos-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a dashboard color to red
+		 when packet violation count increases by atleast a value of 1.
+		 If anomaly is detected then dashboard color is set to yellow else the color
+		 is set to green.
 ### Rule name: check-idp-memory-counter-netconf 
 		> Description: "Check idp memory counters of SRX cluster"
 		> Synopsis: "IDP memory counters analyzer"
@@ -138,7 +146,7 @@
 		
 ### Rule name: check-protcol-ddos-statistics 
 		> Description: "Monitors protocol related distributed denial of service statistics"
-
+		> Synopsis: "protcol ddos KPI"
 		> Rule file name: check-protcol-ddos-statistics.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 3.0.0
@@ -151,11 +159,21 @@
 		> Supported product:QFX, Platforms:QFX5200, Junos:16.1R1
 
 
-
+		> Helper files: ddosProtocolsStats.yml;
 		> More details:
+		 Monitors protcol related distributed denial of service statistics for routing engine
+		 and line card,notifies when anomalies are found.
+		 Two input control detection
+		 1) ddos-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a dashboard color to red
+		 when packet dropped count increases by atleast a value of 1.
+		 If anomaly is detected then dashboard color is set to yellow else the color
+		 is set to green.
+		
+		 2) fpc-slot-no,  is used to filter the fpc slot number.
 ### Rule name: check-protcol-ddos-system-statistics 
 		> Description: "Monitors protcol related distributed denial of service statistics"
-
+		> Synopsis: "protocol ddos system statistics KPI"
 		> Rule file name: check-protcol-ddos-system-statistics.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 3.0.0
@@ -168,11 +186,20 @@
 		> Supported product:QFX, Platforms:QFX5200, Junos:16.1R1
 
 
-
+		> Helper files: ddosProtocolsStats.yml;
 		> More details:
+		 Monitors protcol related distributed denial of service statistics for system
+		 and notifies when anomalies are found.
+		 One input control detection
+		 1) ddos-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a dashboard color to red
+		 when packet dropped count increases by atleast a value of 1.
+		 If anomaly is detected then dashboard color is set to yellow else the color
+		 is set to green.
+		
 ### Rule name: check-veriexec-status-iagent 
-
-
+		> Description: "monitor status of veriexec on the network device"
+		> Synopsis: "veriexec status iAgent sensor"
 		> Rule file name: check-veriexec-status-iagent.rule
 		> Sensor type: iAgent 
 
@@ -184,7 +211,7 @@
 		 anomalies based on if veriexec is loaded and enforced or not.
 		 It's recommended to have always veriexec enabled and loaded.
 ### Rule name: check-veriexec-status 
-
+		> Description: "monitor status of veriexec on the network device"
 		> Synopsis: "Checks for the veriexec status via OC sensor"
 		> Rule file name: check-veriexec-status.rule
 		> Sensor type: open-config 
@@ -211,7 +238,7 @@
 		> Supported product:SRX, Platforms:A, Junos:19.3R1
 
 
-
+		> Helper files: get-dev-key-state.yml;
 		> More details:
 		 This rule checks if development keys have been left on the system.
 		
@@ -250,7 +277,7 @@
 		> Supported product:SRX, Platforms:SRX4600, Junos:19.3R1
 
 
-
+		> Helper files: secure-boot-status.yml;
 		> More details:
 		 This rule checks if secure boot is running and enforced and returns
 		 an error if it is not.
@@ -268,7 +295,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: srx-cluster-performance-spu.yml;
 		> More details:
 		 Detects linecards SPU utilization percentage in SRX cluster device and notifies when
 		 anomalies are found.
@@ -286,7 +313,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: flow-session-summary.yml;
 		> More details:
 		 Detects flow session details for each PIC and notifies when anomalies are found.
 		
@@ -307,7 +334,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: srx-performance-spu.yml;
 		> More details:
 		 Detects linecards SPU utilization percentage and notifies when
 		 anomalies are found.

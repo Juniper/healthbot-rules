@@ -51,7 +51,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
 		> Supported product:MX, Platforms:MX480, Junos:16.1R1
 		> Supported product:MX, Platforms:MX960, Junos:16.1R1
@@ -67,18 +66,20 @@
 		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
 
-
+		> Helper files: fabric.yml;
 		> More details:
+		 Monitors  packet drops for source/destination FPC and PFE and notifies when
+		 anomalies are found.
 ### Rule name: check-pfe-discards 
 		> Description: "Collects packet forwarding engine hardware discard statistics  and notifies when discard count increases"
 		> Synopsis: "Packet forwarding engine hardware discard statistics analyzer"
 		> Rule file name: check-pfe-discards.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 2.0.1
-		> Supported product:MX, Platforms:, Junos:15.1R1
+		> Supported product:MX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: pfe-discard-statistics.yml;
 		> More details:
 		 Detects PFE discards and notifies when anomalies are found.
 		 One inputs control detection
@@ -103,6 +104,7 @@
 
 		> Helper files: cm-error.yml;
 		> More details:
+		 Collects CM error statistics periodically and notifies in case of anomalies.
 ### Rule name: check-cm-events 
 		> Description: "Collects CM errors and count periodically and notifies when error count increases"
 		> Synopsis: "CM error analyzer"
@@ -144,6 +146,8 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors the center chip cell fabric-in cell timeouts,crc error packets,late cells,
+		 error cells and malloc drops and notifies anomalies
 ### Rule name: check-center-chip-fabric-in 
 		> Description: "Monitors the center chip fabric-in packets dropped ,error packets, received and sent packets"
 		> Synopsis: "center chip fabric-in packets statistics analyzer"
@@ -160,6 +164,8 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors the center chip fabric-in packets dropped ,error packets, received,
+		 sent packets and notifies anomalies.
 ### Rule name: check-fpc-cpu-memory-usage-netconf 
 		> Description: "Collects system FPC CPU statistics periodically and notifies anomalies when CPU utilization exceed threshold"
 		> Synopsis: "FPC CPU analyzer"
@@ -169,7 +175,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: srx-fpc-state.yml;
 		> More details:
 		 Detects linecards CPU utilization threshold breaches and notifies when
 		 anomalies are found.
@@ -193,7 +199,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: srx-cluster-fpc-util.yml;
 		> More details:
 		 Detects linecards CPU utilization threshold breaches in SRX cluster device and notifies when
 		 anomalies are found.
@@ -327,6 +333,11 @@
 
 		> Helper files: fpc-threads.yml;
 		> More details:
+		 Monitors the CPU utilization by FPC threads and notifies anomalies
+		 One input controls detection
+		
+		  1) fpc-cpu-usage-threshold, Linecard CPU usage threshold value.
+		     Default value is 80.
 ### Rule name: check-fpc-utilization-information 
 		> Description: "Monitors FPC buffer, heap and cpu utilization"
 		> Synopsis: "Linecard FPC, heap and CPU analyzer"
@@ -343,6 +354,15 @@
 
 		> Helper files: fpc-utilization.yml;
 		> More details:
+		 Monitors FPC buffer, heap and cpu utilization and notifies anomalies.
+		 Three input controls detection
+		
+		  1) fpc-buffer-usage-threshold variable, Linecard Buffer Memory usage threshold value.
+		     Default value is 80.
+		  2) fpc-cpu-usage-threshold variable, Linecard CPU usage threshold value.
+		     Default value is 80.
+		  3) fpc-heap-usage-threshold variable, Linecard Heap Memory usage threshold value.
+		     Default value is 80.
 ### Rule name: check-center-chip-host-path 
 		> Description: "Monitors the center chip hostpath drops"
 		> Synopsis: "Center chip hostpath analyzer"
@@ -359,6 +379,7 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors the center chip hostpath drops and notifies anomalies.
 ### Rule name: check-host-loopback-status 
 		> Description: "Monitors the host loopback to detected wedges, toolkit errors"
 		> Synopsis: "Host loopback analyzer"
@@ -375,6 +396,7 @@
 
 		> Helper files: task-io.yml;
 		> More details:
+		 Monitors the host loopback to detected wedges, toolkit errors and notifies anomalies.
 ### Rule name: check-ithrottle-statistics 
 		> Description: "Monitors throttle statistics such as adjacency ups and downs, starts and stops, disables and enables"
 		> Synopsis: "Throttle statistics analyzer"
@@ -391,6 +413,14 @@
 
 		> Helper files: ithrottle.yml;
 		> More details:
+		 Monitors throttle statistics such as adjacency ups and downs, starts and stops,
+		 disables and enables and notifies anomalies.
+		 Two input controls detection
+		
+		  1) fpc-ithrottle-higher-rate variable, Linecard interrupt throttle HIGH threshold value.
+		     Default value is 5.
+		  2) fpc-ithrottle-lower-rate variable, Linecard interrupt throttle Low threshold value.
+		     Default value is 1.
 ### Rule name: check-ithrottle 
 		> Description: "Monitors interrupt throttle configuration, state and usage"
 		> Synopsis: "iThrottle statistics analyzer"
@@ -407,6 +437,13 @@
 
 		> Helper files: ithrottle.yml;
 		> More details:
+		 Monitors interrupt throttle configuration, state, usage and notifies anomalies.
+		 Two input controls detection
+		
+		  1) fpc-ithrottle-state-ok variable, Linecard Interrupt Throttle OK state value.
+		     Default value is 1.
+		  2) fpc-ithrottle-usage-threshold variable,Linecard Interrupt Throttle usage threshold
+		     value.Default value is 80.
 ### Rule name: check-jnh-exceptions 
 		> Description: "Monitors the jnh exception packets"
 		> Synopsis: "JNH packet drop analyzer"
@@ -423,6 +460,12 @@
 
 		> Helper files: jnh-exceptions.yml;
 		> More details:
+		 Monitors the jnh exception packets and notifies anomalies.
+		
+		 One input controls detection
+		
+		  1) exception-increase-rate-input variable, Exception increase rate.
+		     Default value is 5.
 ### Rule name: check-jnh-interface-statistics 
 		> Description: "Monitors the jnh ifd stream"
 		> Synopsis: "JNH IFD stream kpi"
@@ -439,6 +482,14 @@
 
 		> Helper files: jnh-ifd-stream.yml;
 		> More details:
+		 Monitors the jnh ifd stream and notifies anomalies.
+		
+		 Two input controls detection
+		
+		  1) fpc-jnh-ifd-stream-increase-rate variable, Linecard JNH IFD Stream Increase
+		     Rate Threshold Value.Default value is 1.
+		  2) ifd-no variable, IFD number to be monitored for jnh streams.
+		     Default value is 153.
 ### Rule name: check-center-chip-lookup-in 
 		> Description: "Monitors center chip lookup in interrupts counters"
 		> Synopsis: "Center chip lookup analyzer"
@@ -455,6 +506,7 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors center chip lookup in interrupts counters and notifies anomalies.
 ### Rule name: check-linecard-ethernet-statistics 
 		> Description: "This rule collects linecard ethernet statistics periodically and notifies in case of anomalies"
 		> Synopsis: "Linecard ethernet statistics kpi"
@@ -471,6 +523,8 @@
 
 		> Helper files: linecard-ethernet-statistics.yml;
 		> More details:
+		 Collects linecard ethernet statistics periodically and notifies in case of anomalies
+		
 ### Rule name: check-center-chip-lookup-out 
 		> Description: "This topic is to monitors and notify Center chip lookup out error"
 		> Synopsis: "Center chip lookup analyzer"
@@ -487,6 +541,7 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors center chip lookup out error counter and notifies anomalies.
 ### Rule name: update-online-fpc 
 		> Description:  "collects online fpc using udf and updates dependent rules sensor table"
 		> Synopsis: "collects online fpc using udf and updates dependent rules sensor table"
@@ -520,6 +575,7 @@
 
 		> Helper files: pci-error.yml;
 		> More details:
+		 Monitors the PCI link status and notifies anomalies.
 ### Rule name: check-center-chip-pt-entries 
 		> Description: "Monitors the center chip packet table wan & fabric entries"
 		> Synopsis: "Center chip packet statistics analyzer"
@@ -536,6 +592,7 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors the center chip packet table wan & fabric entries and notifies anomalies.
 ### Rule name: monitor-cos-queues-utilization 
 		> Description: "Collects periodically CoS queues utilization for each PFE instance in all FPCs and reports whether it is normal or exceeded threshold "
 		> Synopsis: "CoS queues analyser"
@@ -695,6 +752,13 @@
 
 		> Helper files: scheduler-info.yml;
 		> More details:
+		 Monitors FPC CPU utilization and notifies anomalies.
+		 distribution status is false.
+		 One input controls detection
+		
+		  1) fpc-cpu-threshold variable, FPC Used CPU threshold value.
+		     Default value is 80.
+		
 ### Rule name: check-traffic-offload-engine-status 
 		> Description: "Monitors  TOE packets, Asic blocks, Wedge declaration, Wedge window size, Ucode, Hostpath app status"
 		> Synopsis: "TOE packets analyzer"
@@ -711,6 +775,8 @@
 
 		> Helper files: toe-pfe.yml;
 		> More details:
+		 Monitors  TOE packets, Asic blocks, Wedge declaration, Wedge window size,
+		 Ucode, Hostpath app status and notifies anomalies.
 ### Rule name: update-online-fpc-chipset 
 		> Description:  "collects online fpc using udf and updates dependent rules sensor table"
 		> Synopsis: "collects online fpc using udf and updates dependent rules sensor table"
@@ -727,6 +793,7 @@
 
 		> Helper files: online_fpc_chipset.yml;
 		> More details:
+		 Collects online fpc using udf and updates dependent rules sensor table.
 ### Rule name: update-online-fpc-evpn 
 		> Description:  "collects online fpc using udf and updates dependent rules sensor table"
 		> Synopsis: "collects online fpc using udf and updates dependent rules sensor table"
@@ -743,6 +810,7 @@
 
 		> Helper files: online_fpc_evpn.yml;
 		> More details:
+		 Collects online fpc using udf and updates dependent rules sensor table
 ### Rule name: update-online-fpc-ospf 
 		> Description:  "collects online fpc using udf and updates dependent rules sensor table"
 		> Synopsis: "collects online fpc using udf and updates dependent rules sensor table"
@@ -759,6 +827,7 @@
 
 		> Helper files: online_fpc_ospf.yml;
 		> More details:
+		 Collects online fpc using udf and updates dependent rules sensor table.
 ### Rule name: check-center-chip-wan-out 
 		> Description: "Monitors the center chip wan out transmitted packets"
 		> Synopsis: "Center chip wan out statistics analyzer"
@@ -775,3 +844,4 @@
 
 		> Helper files: chip.yml;
 		> More details:
+		 Monitors the center chip wan out transmitted packets and notifies anomalies.

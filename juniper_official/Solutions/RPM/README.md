@@ -52,7 +52,7 @@
 		> Supported product:QFX, Platforms:QFX5100, Junos:15.1R1
 
 
-
+		> Helper files: RPMprobe.yml;
 		> More details:
 		 Detects RPM probe packet loss and RTT value using Netconf sensor.
 		 One inputs control detection:
@@ -81,7 +81,7 @@
 
 
 		> More details:
-		 Detects RPM probe packet loss using Netconf sensor.
+		 Detects RPM probe packet loss using open config sensor.
 ### Rule name: rpm-probe-rtt-openconfig 
 		> Description: "Collects RPM RTT periodically and notifies anomalies"
 		> Synopsis: "RPM probe RTT monitor"

@@ -32,6 +32,12 @@
 
 		> More details:
 		 Detects microburst in all monitored interface egress queues.
+		 Two input controls detection
+		
+		  1) if-name-expr variable, is the interface name to monitor interfaces.
+		     For specific interfaces to monitor, use regular expression.
+		  2) queue-no-expr variable, is the queue name to monitor queues.
+		     For specific queues to monitor, use regular expression.
 ### Rule name: check-queue 
 		> Description: "Collects all interfaces egress queues data using gpb sensor and detects microbursts"
 		> Synopsis: " Microbust detector"
@@ -48,3 +54,9 @@
 
 		> More details:
 		 Detects microburst in all monitored interface egress queues.
+		 One input controls detection
+		
+		  1) if-name-expr variable, is the interface name to monitor interfaces.
+		     For specific interfaces to monitor, use regular expression.
+		  2) queue-no-expr variable, is the queue name to monitor queues.
+		     For specific queues to monitor, use regular expression.
