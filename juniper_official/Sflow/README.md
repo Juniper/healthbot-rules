@@ -41,7 +41,7 @@
 
 ### Rule name: check-mac-traffic-tagged 
 		> Description: "Check traffic based on mac addresses"
-
+		> Synopsis: "sflow KPI"
 		> Rule file name: check-mac-traffic-tagged.rule
 		> Sensor type: sflow 
 		> Supported HealthBot version: 3.0.0
@@ -70,7 +70,7 @@
 		      'lowthreshold', otherwise color is set to green.
 ### Rule name: check-mac-traffic-untagged 
 		> Description: "Check traffic based on mac addresses"
-
+		> Synopsis: "sflow KPI"
 		> Rule file name: check-mac-traffic-untagged.rule
 		> Sensor type: sflow 
 		> Supported HealthBot version: 3.0.0
@@ -99,7 +99,7 @@
 		      'lowthreshold', otherwise color is set to green.
 ### Rule name: check-tcp-traffic-tagged 
 		> Description: "Rule to check the tcp traffic in the Sflow sample"
-
+		> Synopsis: "sflow KPI"
 		> Rule file name: check-tcp-traffic-tagged.rule
 		> Sensor type: sflow 
 		> Supported HealthBot version: 3.0.0
@@ -128,7 +128,7 @@
 		      'lowthreshold', otherwise color is set to green.
 ### Rule name: check-tcp-traffic-untagged 
 		> Description: "Rule to check the tcp traffic in the Sflow sample"
-
+		> Synopsis: "sflow KPI"
 		> Rule file name: check-tcp-traffic-untagged.rule
 		> Sensor type: sflow 
 		> Supported HealthBot version: 3.0.0
@@ -157,7 +157,7 @@
 		      'lowthreshold', otherwise color is set to green.
 ### Rule name: check-udp-traffic-tagged 
 		> Description: "Rule to check the udp traffic in the Sflow sample"
-
+		> Synopsis: "sflow KPI"
 		> Rule file name: check-udp-traffic-tagged.rule
 		> Sensor type: sflow 
 		> Supported HealthBot version: 3.0.0
@@ -186,7 +186,7 @@
 		      'lowthreshold', otherwise color is set to green.
 ### Rule name: check-udp-traffic-untagged 
 		> Description: "Rule to check the udp traffic in the Sflow sample"
-
+		> Synopsis: "sflow KPI"
 		> Rule file name: check-udp-traffic-untagged.rule
 		> Sensor type: sflow 
 		> Supported HealthBot version: 3.0.0

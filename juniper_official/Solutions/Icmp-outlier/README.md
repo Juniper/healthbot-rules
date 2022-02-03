@@ -19,7 +19,7 @@
 		> Supported product:MX, Platforms:A, Junos:11.4
 
 
-
+		> Helper files: icmp_statistics.yml;
 		> More details:
 		 Sends ICMP probes to user specified destination host and notifies anomalies
 		 when round trip time average response is above static or dynamic thresholds.

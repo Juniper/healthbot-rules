@@ -37,7 +37,7 @@
 		> Supported product:QFX, Platforms:A, Junos:19.2R1
 
 
-
+		> Helper files: interfaces-optics.yml;
 		> More details:
 		 Monitors interface optical state and notifies when anomalies are found.
 ### Rule name: check-optical-interfaces 
@@ -51,6 +51,13 @@
 
 
 		> More details:
+		 Monitors for loss of signal or FEC uncorrected words and notifies when
+		 anomalies are found.
+		 One input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
 ### Rule name: check-optical-rx-netconf 
 		> Description: "To check if the Rx power is within limit."
 		> Synopsis: "Optical module RX level KPI"
@@ -60,7 +67,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
 		> Supported product:MX, Platforms:MX480, Junos:16.1R1
 		> Supported product:MX, Platforms:MX960, Junos:16.1R1
@@ -76,8 +82,15 @@
 		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
 
-
+		> Helper files: opticsPower.yml;
 		> More details:
+		 Monitors optical rx high and low power levels and notifies when
+		 anomalies are found.
+		 One input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
 ### Rule name: check-optical-temperature-netconf 
 		> Description: "To check if the optical temp is within limit."
 		> Synopsis: "Optical module temperature KPI"
@@ -87,7 +100,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
 		> Supported product:MX, Platforms:MX480, Junos:16.1R1
 		> Supported product:MX, Platforms:MX960, Junos:16.1R1
@@ -103,8 +115,15 @@
 		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
 
-
+		> Helper files: opticalTemperature.yml;
 		> More details:
+		 Monitors optical temperature and notifies when anomalies are found.
+		
+		 One input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
 ### Rule name: check-optics-power-openconfig 
 		> Description: "Collects the interface input optical power and notifies in case of anomalies"
 		> Synopsis: "Interface rx optical power"
@@ -123,7 +142,7 @@
 		> Supported product:QFX, Platforms:QFX5200, Junos:18.1R1
 
 
-
+		> Helper files: round_float.py;
 		> More details:
 		 Detects interface flaps and notifies when anomalies are found.
 		 Two inputs control detection
@@ -137,6 +156,10 @@
 		      'flaps-threshold-variable' for 180s. If it sees any flaps increase for a
 		      period of less than 180s, it'll turn the color to yellow,
 		      otherwise color is set to green.
+		   3) unsupported_val1 variable, is the unsupported tx/rx value.
+		      Default value is -100000.
+		   4) unsupported_val2 variable, is the unsupported tx/rx value.
+		      Default value is 0.
 ### Rule name: check-optics-power-thresholds-openconfig 
 		> Description: "Collects the interface input optical power and notifies in case of anomalies"
 		> Synopsis: "Interface rx optical power"
@@ -155,7 +178,7 @@
 		> Supported product:QFX, Platforms:QFX5200, Junos:18.1R1
 
 
-
+		> Helper files: optics-threshold-adjustment.py;
 		> More details:
 		 Detects interface optical power and notifies when anomalies are found.
 		 One inputs control detection

@@ -69,6 +69,14 @@
 		> Other vendor product support: cisco-IOS-XR 
 
 		> More details:
+		 Collects ifl stats and notifies in-case status is down.
+		 Two input controls detection
+		
+		  1) ifd-name variable, is the interface name to monitor. By default monitors all
+		     interfaces. For specific interfaces to monitor, use regular expression.
+		  2) ifl-no variable, is the sub-interface name to monitor. By default monitors all
+		     interfaces. For specific interfaces to monitor, use regular expression.
+		
 ### Rule name: check-interface-bandwidth-netconf 
 		> Description: "Monitors the interface input and output bandwidth utilization"
 		> Synopsis: "Interface bandwidth utilization analyzer"
@@ -79,8 +87,21 @@
 		> Supported product:MX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: [ IntStatsTable.yml speed-conversion.py ] ;
 		> More details:
+		 Monitors the interface bandwidth utilization and notifies when
+		 anomalies are found.
+		 Two input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 2) threshold, is the threshold that causes the rule to report
+		 an anomaly. By default it is 75.00 %. This rule will set a
+		 dashboard color to red when io bandwidth utilization percent
+		 exceeds threshold value. If dynamic threshold of io bandwidth
+		 utilization is equal to 1, the color is set to yellow. Otherwise
+		 it is set to green.
 ### Rule name: check-lacp-state-netconf 
 		> Description: "Collects LACP interfaces status  periodically and notifies when distribution status is false"
 		> Synopsis: "Lacp state analyzer"
@@ -108,7 +129,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX2010, Junos:16.1R1
 		> Supported product:MX, Platforms:MX2020, Junos:16.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
@@ -126,6 +146,25 @@
 		> Other vendor product support: cisco-IOS-XR 
 
 		> More details:
+		 Monitors lacp link status and notifies when anomalies are found.
+		 Four input control detection
+		 1) lacp-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when lacp tx and rx packets are not increasing by
+		 lacp-threshold value during each cycle.
+		 2) detached, is the threshold that causes the rule to report
+		 an anomaly. By default it is 50.00 %. This rule will set a
+		 dashboard color to yellow when file descriptor usage percent
+		 exceeds threshold value in time range of 2 days. Otherwise
+		 it is set to green.
+		 3) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 4) unknown-illegal-threshold,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when illegal or unknown packets are increasing by
+		 unknown-illegal-threshold value during range interval of 300s.
 ### Rule name: check-queue-depth-netconf 
 		> Description: "To moitor the interface queue depth"
 		> Synopsis: "Queue Depth KPI"
@@ -135,7 +174,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX2010, Junos:16.1R1
 		> Supported product:MX, Platforms:MX2020, Junos:16.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
@@ -151,15 +189,29 @@
 		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
 		> Other vendor product support: cisco-IOS-XR 
-
+		> Helper files: queue-depth.yml;
 		> More details:
+		 Monitors queue depth for each interface queue and notifies when anomalies are found.
+		
+		 Three input control detection
+		 1) high-threshold-var,  is the threshold that causes the rule to report
+		 an anomaly. By default it is 85.00 %. This rule will set a
+		 dashboard color to red when file descriptor usage percent
+		 exceeds threshold value.
+		 2) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 3) queue-number, is a regular expression that matches the
+		 queue that you would like to monitor. By default it '.*',
+		 which matches all queues.
+		
 ### Rule name: check-queue-red-drop-netconf 
 		> Description: "To monitor the interface queue RED dropped packets"
 		> Synopsis: "Queue  RED Drop KPI"
 		> Rule file name: check-queue-red-drop-netconf.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 3.1.0
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
 		> Supported product:MX, Platforms:MX480, Junos:16.1R1
 		> Supported product:MX, Platforms:MX960, Junos:16.1R1
@@ -170,8 +222,20 @@
 		> Supported product:PTX, Platforms:PTX10000, Junos:17.2R1
 
 		> Other vendor product support: cisco-IOS-XR 
-
+		> Helper files: queue-red-drop.yml;
 		> More details:
+		 Monitors the interface queue drop for RED packets and notifies when
+		 anomalies are found.
+		 Three input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 2) threshold, is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when RED drop packets increase by min value of
+		 1 in 2mins interval . Otherwise it is set to green.
+		 3) queue, is the queue number of the interface that is being monitored.
 ### Rule name: check-queue-red-drop-oc 
 		> Description: "To monitor the interface queue RED dropped packets"
 		> Synopsis: "Queue  RED Drop KPI"
@@ -181,7 +245,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1
-		> Supported product:MX, Platforms:, Junos:15.1R1
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1
 		> Supported product:MX, Platforms:MX480, Junos:16.1R1
 		> Supported product:MX, Platforms:MX960, Junos:16.1R1
@@ -198,6 +261,18 @@
 		> Other vendor product support: cisco-IOS-XR 
 
 		> More details:
+		 Monitors the interface queue drop for RED packets and notifies when
+		 anomalies are found.
+		 Three input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 2) threshold, is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when RED drop packets increase by min value of
+		 1 in 3mins interval . Otherwise it is set to green.
+		 3) queue, is the queue number of the interface that is being monitored.
 ### Rule name: check-queue-red-drop-total-netconf 
 		> Description: "To monitor the interface queue RED dropped packets"
 		> Synopsis: "Queue  RED Drop KPI"
@@ -210,8 +285,21 @@
 		> Supported product:QFX, Platforms:QFX5120-48Y, Junos:18.3R1
 
 		> Other vendor product support: cisco-IOS-XR 
-
+		> Helper files: queue-red-drop-total.yml;
 		> More details:
+		 Monitors the interface queue drop for RED packets and notifies when
+		 anomalies are found.The rule considers the increase in total dropped packets
+		 for RED drop.
+		 Three input control detection
+		 1) interface-name, is a regular expression that matches the
+		 interfaces that you would like to monitor. By default it '.*',
+		 which matches all interfaces. Use something like 'ge.*' to
+		 match only gigabit ethernet interfaces.
+		 2) threshold, is the threshold that causes the rule to report
+		 an anomaly. By default it is 1. This rule will set a
+		 dashboard color to red when RED drop packets increase by min value of
+		 1 in 2mins interval . Otherwise it is set to green.
+		 3) queue, is the queue number of the interface that is being monitored.
 ### Rule name: check-interface-health 
 		> Description: "Using this rule any one of the interface statistics counter (in and out errors, packets, octets, flaps) will be monitored"
 		> Synopsis: "Interface KPI monitor based on description"
@@ -278,9 +366,15 @@
 		> Supported product:QFX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: interface-details.yml;
 		> More details:
 		 Detects interface flaps and notifies when anomalies are found.
+		 Two input controls detection
+		
+		  1) flaps-threshold-variable variable, Number of flap increase between metrics,
+		     before we report anomaly.Default value is 1.
+		  2) interface-name variable, is the interface name to monitor.
+		
 ### Rule name: check-interface-flaps 
 		> Description: "Collects link flap count periodically and notifies when flap count increases"
 		> Synopsis: "Link flaps detector"
@@ -333,9 +427,15 @@
 		> Supported product:QFX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: interface-details.yml;
 		> More details:
 		 Detects interface in errors and notifies when anomalies are found.
+		 Two input controls detection
+		
+		  1) error-threshold-variable variable, Input and output interface error threshold
+		      value.Default value is 1.
+		  2) interface-name variable, is the interface name to monitor.
+		
 ### Rule name: check-in-errors 
 		> Description: "Collects the interface input error (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies"
 		> Synopsis: "Interface in-error analyzer"
@@ -391,9 +491,17 @@
 		> Supported product:QFX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: interface-details.yml;
 		> More details:
 		 Detects interface input traffic and notifies when anomalies are found.
+		 Three input controls detection
+		
+		  1) in-octets-high-threshold variable, Interface input traffic high threshold value in octets.
+		     Traffic rate of increase between metrics, before we report anomaly.
+		  2) in-octets-low-threshold variable, Interface input traffic low threshold value in octets.
+		     Traffic rate of increase between metrics, before we report anomaly.
+		  3) interface-name variable, is the interface name to monitor. By default monitors all
+		     interfaces. For specific interfaces to monitor, use regular expression
 ### Rule name: check-in-traffic 
 		> Description: "Collects input traffic (in-octets) periodically and notifies in case of traffic is above threshold"
 		> Synopsis: "Interface input traffic analyzer"
@@ -517,9 +625,14 @@
 		> Supported product:QFX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: interface-details.yml;
 		> More details:
 		 Detects interface out errors and notifies anomalies when error count increases.
+		 Two input controls detection
+		
+		  1) error-threshold-variable variable, Input and output interface error threshold
+		      value.Default value is 1.
+		  2) interface-name variable, is the interface name to monitor.
 ### Rule name: check-out-errors 
 		> Description: "This rule collects interface output error (errors(all), drops, discards, timeouts and runts) periodically and notifies in case of anomalies"
 		> Synopsis: "Interface out-errors analyzer"
@@ -572,9 +685,17 @@
 		> Supported product:QFX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: interface-details.yml;
 		> More details:
 		 Detects interface output traffic and notifies when anomalies are found.
+		 Three input controls detection
+		
+		  1) in-octets-high-threshold variable, Interface input traffic high threshold value in octets.
+		     Traffic rate of increase between metrics, before we report anomaly.
+		  2) in-octets-low-threshold variable, Interface input traffic low threshold value in octets.
+		     Traffic rate of increase between metrics, before we report anomaly.
+		  3) interface-name variable, is the interface name to monitor. By default monitors all
+		     interfaces. For specific interfaces to monitor, use regular expression
 ### Rule name: check-out-traffic 
 		> Description: "Collects output traffic(out-octets) periodically and notifies in case of traffic is above threshold"
 		> Synopsis: "interface output traffic analyzer"
@@ -632,9 +753,13 @@
 		> Supported product:QFX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: interface-details.yml;
 		> More details:
 		 Monitors interface link state and notifies when anomalies are found.
+		 One input controls detection
+		
+		  1) interface-name variable, is the interface name to monitor. By default monitors all
+		     interfaces. For specific interfaces to monitor, use regular expression
 ### Rule name: check-interface-status 
 		> Description: "Collects interface link oper state periodically and notifies when neighbor sate is down"
 		> Synopsis: "Tnterface state analyzer"

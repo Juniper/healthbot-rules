@@ -15,15 +15,15 @@
 ## CFM rules
 
 ### Rule name: check-cfm-delay-statistics-netconf 
-
-
+		> Description: "Monitors CFM average and max delay to configured destination"
+		> Synopsis: "cfm delay statistics KPI"
 		> Rule file name: check-cfm-delay-statistics.rule
 		> Sensor type: sensor cfm_iAgent 
 		> Supported HealthBot version: 4.0.0
 		> Supported product:MX, Platforms:A, Junos:18.1R1
 
 
-
+		> Helper files: cfm.yml;
 		> More details:
 		 Monitors CFM average and max delay to configured destination and notifies anomalies
 		 when average and max delay is above static thresholds.

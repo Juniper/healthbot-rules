@@ -48,7 +48,7 @@
 
 ### Rule name: check-adc-temperature-ml 
 		> Description: "Check  if adapter card temp is within outlier"
-
+		> Synopsis: "ADC card temperature anomaly"
 		> Rule file name: check-adc-temperature-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -68,7 +68,7 @@
 		
 ### Rule name: check-adc-voltage-ml 
 		> Description: "Check if adc voltage is  having anomaly"
-
+		> Synopsis: "ADC card voltage anomaly"
 		> Rule file name: check-adc-voltage-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -81,7 +81,7 @@
 		
 ### Rule name: check-cb-temperature-ml 
 		> Description: "Check  if control board temp is having anomaly"
-
+		> Synopsis: "Control board temperature anomaly"
 		> Rule file name: check-cb-temperature-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -98,7 +98,7 @@
 		
 ### Rule name: check-cb-voltage-ml 
 		> Description: "Check if control board voltage is having  anomaly"
-
+		> Synopsis: "Control board voltage anomaly"
 		> Rule file name: check-cb-voltage-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -115,7 +115,7 @@
 		
 ### Rule name: check-fpc-temperature-ml 
 		> Description: "Check  if  fpc temp is having anomaly"
-
+		> Synopsis: "FPC temperature anomaly"
 		> Rule file name: check-fpc-temperature-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -132,7 +132,7 @@
 		
 ### Rule name: check-fpc-voltage-ml 
 		> Description: "Check  if  fpc voltage is having anomaly"
-
+		> Synopsis: "FPC voltage anomaly"
 		> Rule file name: check-fpc-voltage-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -156,7 +156,6 @@
 		> Supported product:EX, Platforms:EX9200, Junos:17.3R1{ ## Warning: 'releases' is deprecated
 		> Supported product:EX, Platforms:EX4650, Junos:18.3R1 { ## Warning: 'releases' is deprecated
 		> Supported product:EX, Platforms:EX4600, Junos:18.4R1 { ## Warning: 'releases' is deprecated
-		> Supported product:MX, Platforms:, Junos:15.1R1 { ## Warning: 'releases' is deprecated
 		> Supported product:MX, Platforms:MX2010, Junos:16.1R1 { ## Warning: 'releases' is deprecated
 		> Supported product:MX, Platforms:MX2020, Junos:16.1R1 { ## Warning: 'releases' is deprecated
 		> Supported product:MX, Platforms:MX240, Junos:16.1R1 { ## Warning: 'releases' is deprecated
@@ -174,11 +173,15 @@
 
 		> Helper files: opticalTemperature.yml;
 		> More details:
-		 Checks for anomalies in optic module temperature
+		 Checks for anomalies in optic module temperature.
+		 One input controls detection
+		
+		  1) if-name variable, is the interface name to monitor. By default monitors all
+		     interfaces.For specific interfaces to monitor, use regular expression.
 		
 ### Rule name: check-optics-tx-rx-power-ml 
 		> Description: "tx and rx anomaly for optic  interface"
-
+		> Synopsis: "Optic module tx and rx anomaly"
 		> Rule file name: check-optics-tx-rx-power-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -191,11 +194,11 @@
 
 		> Helper files: interfaceOpticsDiagnostics-tx-rx.yml;
 		> More details:
-		 Checks for anomalies in optic module tx and rx
+		 Checks for anomalies in optic module tx and rx.
 		
 ### Rule name: check-pcs-errors 
-
-
+		> Description: "Checks for increase in pcs bit-error-seconds and errored-blocks-seconds and notifies when anomaly is detected"
+		> Synopsis: "PCS anomalies"
 		> Rule file name: check-pcs-errors.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 4.0.1
@@ -208,7 +211,11 @@
 
 		> Helper files: pcs-outlier-Table.yml;
 		> More details:
-		 Checks for increase in pcs bit-error-seconds and errored-blocks-seconds
+		 Checks for increase in pcs bit-error-seconds and errored-blocks-seconds.
+		 One input controls detection
+		
+		  1) threshold variable, is the increase by which anomalies for pcs bit-error-seconds
+		     and errored-blocks-seconds are monitored.
 		
 ### Rule name: check-pfe-normal-discards-ml 
 		> Description: "Collects packet forwarding engine hardware discard statistics  and notifies when normal  discard anomaly  is detected"
@@ -216,12 +223,16 @@
 		> Rule file name: check-pfe-normal-discards-ml.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 2.0.1
+		> Supported product:MX, Platforms:A, Junos:15.1R1 { ## Warning: 'releases' is deprecated
 
 
-
+		> Helper files: pfe-discard-statistics.yml;
 		> More details:
 		 Checks for anomalies in pfe normal discard count
+		 One input controls detection
 		
+		  1) discard-count variable, is the Number of discards increase between metrics,
+		     before anomaly is reported.Default value is 1.
 ### Rule name: check-re-temperature-ml 
 		> Description: "Collects routing-engine (RE) temperature periodically and notifies anomaly"
 		> Synopsis: "Routing-engine temperature check"
@@ -248,5 +259,15 @@
 
 
 		> More details:
-		 Checks for anomalies in re temperature
+		 Checks for anomalies in re temperature.
+		 Four input controls detection
+		
+		  1) discard-count variable, is the Number of discards increase between metrics
+		     before anomaly is reported.
+		  2) re-slot-number variable, is the Routing engine slot numbers to monitor.
+		     For specific re to monitor, use regular expression.
+		  3) re-temperature-high-threshold variable, is the RE temperature high threshold
+		     Utilization increase between metrics before anomaly is reported.Default is 55.
+		  4) re-temperature-low-threshold variable, is the RE temperature low threshold
+		     Utilization increase between metrics before anomaly is reported.Default is 45.
 		
