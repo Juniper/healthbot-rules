@@ -33,6 +33,8 @@
 
 		> Helper files: [ jnhexceptionpkt.yml mplslabel.py ];
 		> More details:
+		 Collects jnh exception traces from line cards and analyzes.Checks packet drops and
+		 shows dashboard color as red.
 ### Rule name: check-rsvp 
 		> Description: "Collects RSVP statistics and analyzes"
 		> Synopsis: "RSVP statistics analyzer"
@@ -49,3 +51,5 @@
 
 		> Helper files: rsvpsession.yml;
 		> More details:
+		 Collects RSVP statistics and analyzes.Checks rspv session and collects label data.
+		

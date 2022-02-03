@@ -171,8 +171,8 @@
 ## Kernel rules
 
 ### Rule name: check-client-limit-reached 
-
-
+		> Description: "Monitor the number of Ifstate based routing sockets opened by application"
+		> Synopsis: "Client limit reached KPI"
 		> Rule file name: check-client-limit-reached.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -193,8 +193,8 @@
 		 This rule checks if any application has opened more than the allowed number
 		 of Ifstate based routing sockets.
 ### Rule name: check-dead-ifstate-client 
-
-
+		> Description: "Monitors if there are any dead ifstate clients that are not cleaned up"
+		> Synopsis: "Dead ifstate client KPI"
 		> Rule file name: check-dead-ifstate-client.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -217,8 +217,8 @@
 		 By default, it checks if all the samples collected every 1 minute are
 		 non-zero for contiguous 20 minutes.
 ### Rule name: check-delayed-unrefs-anomaly-iagent 
-
-
+		> Description: "Monitor delayed unrefs on the system"
+		> Synopsis: "Delayed unref anomaly using iagent sensor"
 		> Rule file name: check-delayed-unrefs-anomaly-iagent.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 2.1.0
@@ -234,7 +234,7 @@
 		> Supported product:PTX, Platforms:A, Junos:19.1R1
 
 
-
+		> Helper files: delayed_unref.yml;
 		> More details:
 		 This rule checks if there are any delayed unrefs and if they are greater than
 		 a particular threshold (sysctl net.rt_nh_max_delayed_unrefs).
@@ -242,8 +242,8 @@
 		 major events and is not a cause for worry. But, if this situation persists for
 		 significant amount of time (say in minutes), then it can result in traffic loss.
 ### Rule name: check-delayed-unrefs-anomaly 
-
-
+		> Description: "Monitor delayed unrefs on the system"
+		> Synopsis: "Delayed unref anomaly using open-config sensor"
 		> Rule file name: check-delayed-unrefs-anomaly.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -262,7 +262,7 @@
 
 		> More details:
 		 This rule checks if there are any delayed unrefs and if they are greater than
-		 a particular threshol (sysctl net.rt_nh_max_delayed_unrefs).
+		 a particular threshold (sysctl net.rt_nh_max_delayed_unrefs).
 		 Transient spikes in delayed unref count is expected in certain catastrophic or
 		 major events and is not a cause for worry. But, if this situation persists for
 		 significant amount of time (say in minutes), then it can result in traffic loss.
@@ -284,7 +284,7 @@
 		> Supported product:PTX, Platforms:A, Junos:19.1R1
 
 
-
+		> Helper files: tcpconn.yml;
 		> More details:
 		 This rule detects any intra-chassis connection (part of Internal Routing
 		 Instance) drops because of keep alive expiry.
@@ -297,8 +297,14 @@
 		> Supported product:MX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: krt-ack-stats.yml;
 		> More details:
+		 This rule collects kernel route and next-hop acknowledgement statistics  periodically
+		 and notifies anomaly in case of timeout.
+		 One input controls detection
+		
+		  1) error-threshold variable, Number of timeout increase between metrics, before
+		     anomaly is reported.
 ### Rule name: check-krt-tx-bulk-msg-fail 
 		> Description: "Collect KRT bulking statistics and notifies when message fail count increases"
 		> Synopsis: "KRT bulking statistics analyzer"
@@ -308,11 +314,15 @@
 		> Supported product:MX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: krt-tx-bulk-stats.yml;
 		> More details:
+		 This rule collects KRT bulking statistics and notifies when message fail count increases.
+		 One input controls detection
+		 1) error-threshold variable, Number of timeout increase between metrics, before
+		    anomaly is reported.
 ### Rule name: check-pfeman-conn-drops 
-
-
+		> Description: "Monitors if Peer infra module replicates FIB states to the line cards and processes incoming IPCs from them"
+		> Synopsis: "pfeman connection drops KPI"
 		> Rule file name: check-pfeman-conn-drops.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -335,8 +345,8 @@
 		 with Master Routing Engine Junos Kernel.
 		 This rule monitors and ungraceful connection drops in these pfeman connections.
 ### Rule name: check-spurious-ppt-wkups 
-
-
+		> Description: "Monitors if peer proxy kernel thread gets woken up spuriously"
+		> Synopsis: "spurious ppt wkups KPI"
 		> Rule file name: check-spurious-ppt-wkups.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -362,8 +372,8 @@
 		 pending events to be processed), it can result in performance issues and
 		 should thus be monitored. This rule does exactly that.
 ### Rule name: check-stuck-ifstate-clients-iagent 
-
-
+		> Description: "iagent rule to monitor any stuck ifstate client on a network device"
+		> Synopsis: "Stuck ifstate client"
 		> Rule file name: check-stuck-ifstate-clients-iagent.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 2.1.0
@@ -379,15 +389,15 @@
 		> Supported product:PTX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: fetch_stuck_client.yml;
 		> More details:
 		 This rule checks if there are any stuck ifstate clients present in the system.
 		 Though rare, but when any Ifstate client (application/FPC peer) gets stuck,
 		 it can result in resource accumulation and eventually can lead to traffic loss.
 		 It checks if the "slow peers" alarm has been raised on the device.
 ### Rule name: check-stuck-ifstate-clients 
-
-
+		> Description: "Open-config rule to monitor any stuck ifstate client on a network device"
+		> Synopsis: "Stuck ifstate client"
 		> Rule file name: check-stuck-ifstate-clients.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -412,8 +422,8 @@
 		 condition and should be mitigated asap by restarting the client. See readme
 		 in healthbot rules folder for details.
 ### Rule name: check-too-many-dead-ifstates-iagent 
-
-
+		> Description: "Monitor number of dead and alive ifstates on the network device"
+		> Synopsis: "Number of dead/alive ifstates"
 		> Rule file name: check-too-many-dead-ifstates-iagent.rule
 		> Sensor type: iAgent 
 		> Supported HealthBot version: 2.1.0
@@ -429,7 +439,7 @@
 		> Supported product:PTX, Platforms:A, Junos:15.1R1
 
 
-
+		> Helper files: deadalive.yml;
 		> More details:
 		 This rule checks for the number of dead ifstates at any given time in
 		 the system. A dead Ifstate gets garbage collected once all the consumers
@@ -440,8 +450,8 @@
 		 are too many of these (> 50% of alive ifstates) detected for significant
 		 duration of time (1 hour).
 ### Rule name: check-too-many-dead-ifstates 
-
-
+		> Description: "Monitor number of dead and alive ifstates on the network device"
+		> Synopsis: "Number of dead/alive ifstates"
 		> Rule file name: check-too-many-dead-ifstates.rule
 		> Sensor type: open-config 
 		> Supported HealthBot version: 2.1.0
@@ -485,7 +495,7 @@
 		> Supported product:PTX, Platforms:A, Junos:18.3R3
 
 
-
+		> Helper files: rtsock-error-count.yml;
 		> More details:
 		 This rule checks for the total number of routing socket errors at any given time in the system.
 		 Routing socket errors includes errors returned from rtsock, veto and mproc layers.
@@ -493,6 +503,10 @@
 		 these detected for significant duration of time.
 		 This rule checks if the error has benn increased by 100 from its previous value in ALL the samples
 		 for the last 70 or 130 seconds and raises the alarm accordingly.
+		 One input controls detection
+		
+		  1) rtsock-error-count-threshold-input variable, is the RTSOCK Error count threshold value.
+		     Default value is 100.
 ### Rule name: detect-routing-socket-errors 
 		> Description: "Detect errors in rtsock, veto and mproc layers"
 		> Synopsis: "Detect Routing Socket errors in the system"
@@ -520,9 +534,13 @@
 		
 		 This rule checks if the error has been increased by 100 from its previous value in ALL the samples
 		 for the last 70 or 130 seconds and raises the alarm accordingly.
+		 One input controls detection
+		
+		  1) rtsock-error-count-threshold-input variable, is the RTSOCK Error count threshold value.
+		     Default value is 100.
 ### Rule name: check-krt-state 
-
-
+		> Description: "Collects kernel state fields stats"
+		> Synopsis: "KRT Statistics"
 		> Rule file name: krtasync.rule
 		> Sensor type: iAgent 
 
@@ -530,3 +548,6 @@
 
 
 		> More details:
+		    These rules collect and monitor if kernel is stuck by checking the different
+		    fields like krt-tree-current-count,krt-tree-delete-count,krtq-async-count
+		    write-count,krtq-operations-queued,etc.

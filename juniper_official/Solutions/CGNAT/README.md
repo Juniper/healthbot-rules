@@ -49,6 +49,7 @@
 
 		> Helper files: cpu.yml;
 		> More details:
+		 Monitors CGNAT service CPU utilization for different interfaces and service sets.
 ### Rule name: check-service-memory 
 		> Description: "Monitors the CGNAT service memory utilization"
 		> Synopsis: "CGNAT memory utilization analyzer"
@@ -60,3 +61,4 @@
 
 		> Helper files: memory.yml;
 		> More details:
+		 Monitors the CGNAT service memory utilization for interfaces and service sets.

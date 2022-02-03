@@ -1,6 +1,6 @@
 /*
- * Checks if file sytem usage is exceeding threshold value and
- * raises alarm.
+ * Checks if file sytem device error percent is exceeding threshold value and raises red alarm if 
+ * it is more than threshold for 3 offsets else dashboard color is set to green.
  * One input control detection.
  * 
  *   1) "threshold" is used to check if the used percentage is
@@ -20,8 +20,8 @@ healthbot {
              */		
             keys [ device fstype mountpoint ];
             synopsis "File  system kpi";
-            description "Checks file sytem usage";
-            sensor fileysystem {
+            description "Collects file system information and notifies anomaly in case device error percentage value are is threshold for 3 offsets";
+            sensor filesystem {
                 /*
                  * Sensor configuration to get data from network devices.
                  */			
@@ -35,14 +35,14 @@ healthbot {
              * Fields defined by specifying the sensor paths
              */			
             field device {
-                sensor fileysystem {
+                sensor filesystem {
                     path device;
                 }
                 type string;
                 description "file system name";
             }
             field device-error {
-                sensor fileysystem {
+                sensor filesystem {
                     path /node/filesystem/device/error;
                 }
                 type integer;
@@ -74,14 +74,14 @@ healthbot {
                 description "interval between 2 datapoints";
             }
             field fstype {
-                sensor fileysystem {
+                sensor filesystem {
                     path fstype;
                 }
                 type string;
                 description "file system type";
             }
             field mountpoint {
-                sensor fileysystem {
+                sensor filesystem {
                     path mountpoint;
                 }
                 type string;
@@ -148,6 +148,22 @@ healthbot {
                 description "threshold value";
                 type int;
             }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }			
         }
     }
 }	

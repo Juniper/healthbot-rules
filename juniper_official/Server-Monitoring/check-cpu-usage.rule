@@ -1,11 +1,11 @@
 /*
- * Checks if cpu usage is exceeding threshold value and raises alarm.
- * 
+ * Checks if cpu usage is exceeding threshold default value for 3 offsets and raises red alarm,
+ * else dashboard color is set to green.
  * Two input control detection.
  * 
  *   1) "threshold" is used to check if the used percentage is
- *      increasing by more than the threshold value.
- *   2) "freq" is the interval between data points.
+ *      increasing by more than the threshold value.Default is 70.
+ *   2) "freq" is the interval between data points.Default is 60.
  *  
  */
 healthbot {
@@ -19,7 +19,7 @@ healthbot {
              */			
             keys [ cpu mode ];
             synopsis "CPU Usage KPI";
-            description "Checks CPU total seconds";
+            description "Collects system CPU statistics and notifies anomaly in case cpu utilization is above threshold";
             sensor node-cpu {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -128,6 +128,14 @@ healthbot {
                 description "threshold value";
                 type int;
             }
+            rule-properties {
+                supported-devices {
+                    other-vendor linux {
+                        vendor-name ubuntu;
+                        operating-system ubuntu;
+                    }
+                }
+            }			
         }
     }
 }	

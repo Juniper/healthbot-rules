@@ -28,7 +28,7 @@
 		> Supported product:SRX, Platforms:A, Junos:15.2R1
 
 
-		> Helper files: [ traffic-statistics.yml ];
+		> Helper files: traffic-statistics.yml;
 		> More details:
 		 Checks system total input and output packets count periodically and
 		 notifies anomaly when total input and output packets count is abnormal.
