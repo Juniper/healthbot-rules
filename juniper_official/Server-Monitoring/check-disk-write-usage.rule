@@ -1,27 +1,18 @@
 /*
- * Checks if disk write usage fields exceed threshold value and raises red alarm if 
- * usage is more than threshold for 3 offsets else dashboard color is set to green.
- * Three input control detection.
- * 
- *   1) "threshold" is used to check if the used percentage is
- *      increasing by more than the threshold value.
- *   2) "threshold-increase" is used to check if the difference of current and previous
- *      values is increasing by more than the threshold-increase value.
- *   3) "freq" is the interval between data points.
- *  
+ * Collects disk write usage fields and shows dashboard color as green with information 
+ * about the usage.
  */
 healthbot {
     topic server.monitoring {
         rule check-disk-write-usage {
             /*
-             * Monitors disk write usage fields and notifies through alarms if
-             * anomalies are found.
+             * Monitors disk write usage fields and displays information.
              *
              * Use disk-name as key for rule.			 
              */		
             keys disk-name;
-            synopsis "Disk write usage KPI";			
-            description "Collects disk write information and notifies anomaly in case bytes-total,completed-total and time-seconds-total used percentage values are above threshold for 3 offsets";
+            synopsis "Disk write KPI";
+            description "Disk write information";
             sensor disk-write {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -43,6 +34,15 @@ healthbot {
                 type integer;
                 description "total Disk bytes";
             }
+            field bytes-total-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$bytes-total";
+                    }
+                }
+                type float;
+                description "Rate of total bytes read.";
+            }
             field completed-total {
                 sensor disk-write {
                     path /node/disk/writes/completed/total;
@@ -51,69 +51,21 @@ healthbot {
                 type integer;
                 description "total Disk reads completed";
             }
-            field completed-used-percentage {
+            field completed-total-rate {
                 formula {
-                    eval {
-                        expression "( $diff-completed / $frequency ) * 100";
-                    }
-                }
-                type float;
-                description "Percentage of disk write completed-used";				
-            }			
-            field diff-completed {
-                formula {
-                    value-difference {
+                    rate-of-change {
                         field-name "$completed-total";
                     }
                 }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field diff-time-seconds {
-                formula {
-                    value-difference {
-                        field-name "$time-seconds-total";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field diff_bytes {
-                formula {
-                    value-difference {
-                        field-name "$bytes-total";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
+                type float;
+                description "Rate of completed disk write.";
+            }
             field disk-name {
                 sensor disk-write {
                     path device;
                 }
                 type string;
                 description "disk name";
-            }
-            field frequency {
-                constant {
-                    value "{{freq}}";
-                }
-                type integer;
-                description "interval between 2 datapoints";
-            }
-            field threshold {
-                constant {
-                    value "{{threshold}}";
-                }
-                type integer;
-                description "threshold percentage to be compared with";
-            }
-            field threshold-increase {
-                constant {
-                    value "{{threshold-increase}}";
-                }
-                type integer;
-                description "threshold value increase to be compared with";
             }
             field time-seconds-total {
                 sensor disk-write {
@@ -123,111 +75,50 @@ healthbot {
                 type integer;
                 description "total Disk read time";
             }
-            field time-seconds-used-percentage {
+            field time-seconds-total-rate {
                 formula {
-                    eval {
-                        expression "( $diff-time-seconds / $frequency ) * 100";
+                    rate-of-change {
+                        field-name "$time-seconds-total";
                     }
                 }
                 type float;
-                description "Percentage of time-seconds-used";				
-            }			
+                description "Rate of total time in seconds.";
+            }
             /*
              * Anomaly detection logic.
              */			
-            trigger bytes-used-increase {
+            trigger bytes-total-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$diff_bytes" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "The bytes-used-increase $diff_bytes for $disk-name exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "The bytes-used-increase $diff_bytes  for $disk-name is normal";
+                            message "bytes-total-rate is $bytes-total-rate for $disk-name";
                         }
                     }
                 }
             }
-            trigger completed-used-percentage {
+            trigger completed-total-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$completed-used-percentage" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "completed-used-percentage \"$completed-used-percentage\" for $disk-name exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "completed-used-percentage \"$completed-used-percentage\" for $disk-name is normal";
+                            message "completed-total-rate is \"$completed-total-rate\" for $disk-name";
                         }
                     }
                 }
             }
-            trigger time-seconds-used-percentage {
+            trigger time-seconds-total-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$time-seconds-used-percentage" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "time-seconds-used-percentage \"$time-seconds-used-percentage\" for $disk-name exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "time-seconds-used-percentage \"$time-seconds-used-percentage\" for $disk-name is normal";
+                            message "time-seconds-total-rate is \"$time-seconds-total-rate\" to write to $disk-name";
                         }
                     }
                 }
-            }
-            /*
-             * Values can be changed while deploying playbook instance. 
-             *  
-             */			
-            variable freq {
-                value 60;
-                description "time interval to calculate used percentage";
-                type int;
-            }
-            variable threshold {
-                value 60;
-                description "threshold percentage value ";
-                type int;
-            }
-            variable threshold-increase {
-                value 10000;
-                description "threshold value";
-                type int;
             }
             rule-properties {
                 supported-devices {
