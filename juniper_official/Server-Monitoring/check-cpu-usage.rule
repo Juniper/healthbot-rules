@@ -16,10 +16,10 @@ healthbot {
              * anomalies are found.
              *
              * Use cpu and mode as key for rule.			 
-             */			
+             */		
             keys [ cpu mode ];
             synopsis "CPU Usage KPI";
-            description "Collects system CPU statistics and notifies anomaly in case cpu utilization is above threshold";
+            description "Checks CPU total seconds";
             sensor node-cpu {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -48,6 +48,23 @@ healthbot {
                 type integer;
                 description "total cpu seconds";
             }
+            field cpu-used-percentage {
+                formula {
+                    eval {
+                        expression "( $diff-prev-curr-total-seconds / $frequency ) * 100";
+                    }
+                }
+                type float;
+                description "Percentage of cpu-used";
+            }
+            field diff-prev-curr-total-seconds {
+                formula {
+                    value-difference {
+                        field-name "$cpu-total-seconds";
+                    }
+                }
+                type integer;
+            }
             field frequency {
                 constant {
                     value "{{freq}}";
@@ -57,10 +74,11 @@ healthbot {
             }
             field mode {
                 sensor node-cpu {
+                    where "mode != /\"idle\"/";
                     path mode;
                 }
                 type string;
-                description "Different modes like iowait,idle,nice,system etc";
+                description "Different modes like iowait,nice,system etc except \"idle\".";
             }
             field threshold {
                 constant {
@@ -69,23 +87,6 @@ healthbot {
                 type integer;
                 description "threshold value to compare cpu used percentage";
             }
-            field cpu-used-percentage {
-                formula {
-                    eval {
-                        expression "( $diff-prev-curr-total-seconds / $frequency ) * 100";
-                    }
-                }
-                type float;
-                description "Percentage of cpu-used";				
-            }
-            field diff-prev-curr-total-seconds {
-                formula {
-                    value-difference {
-                        field-name "$cpu-total-seconds";
-                    }
-                }
-                type integer;
-            }			
             /*
              * Anomaly detection logic.
              */			
@@ -101,7 +102,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "The cpu usage $cpu-used-percentage for cpu$cpu  mode$mode exceeds threshold.";
+                            message "The cpu usage \"$cpu-used-percentage\" for cpu$cpu  mode$mode exceeds threshold.";
                         }
                     }
                 }
@@ -109,7 +110,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "The cpu usage $cpu-used-percentage for cpu$cpu  mode$mode is normal";
+                            message "The cpu usage \"$cpu-used-percentage\" for cpu$cpu  mode$mode is normal";
                         }
                     }
                 }

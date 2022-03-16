@@ -1,24 +1,18 @@
 /*
- * Checks if network usage fields are exceeding threshold value and raises red alarm if
- * it is more than threshold for 3 offsets else dashboard color is set to green. 
- * 
- * One input control detection.
- * 
- *   1) "threshold" is used to check if the used percentage is
- *      increasing by more than the threshold value.
- *  
+ * Collects network usage fields,displays rate information in the message 
+ * and sets dashboard color to green.
  */
 healthbot {
     topic server.monitoring {
         rule check-network-usage {
             /*
-             * Monitors network usage and notifies anomalies.
+             * Monitors network usage and displays information
              *
              * Use network-device as key for rule.
-             */			
+             */		
             keys network-device;
-            synopsis "Network usage KPI ";			
-            description "Collects Network statistics and notify anomaly in case transmit, receive and multicast error is above threshold for 3 offsets";
+            synopsis "Networking usage KPI.";
+            description "Checks network usage for devices.";
             sensor check-network {
                 /*
                  * Sensor configuration to get data from network devices.
@@ -32,233 +26,123 @@ healthbot {
             /*
              * Fields defined by specifying the sensor paths
              */			
-            field diff-receive-errors {
-                formula {
-                    value-difference {
-                        field-name "$receive-errors-total";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field diff-receive-multicast-total {
-                formula {
-                    value-difference {
-                        field-name "$receive-multicast-total";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field diff-transmit-errors {
-                formula {
-                    value-difference {
-                        field-name "$transmit-errors-total";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field diff-transmit-packets {
-                formula {
-                    value-difference {
-                        field-name "$transmit-packets-total";
-                    }
-                }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field frequency {
-                constant {
-                    value 60;
-                }
-                type integer;
-                description "time interval between data collection to calculate the usage";				
-            }
             field network-device {
                 sensor check-network {
                     path device;
                 }
                 type string;
-                description "Network Device name";
+                description "Network device name.";
             }
-            field receive-error-used-percentage {
+            field receive-error-rate {
                 formula {
-                    eval {
-                        expression "( $diff-receive-errors / $frequency ) * 100";
+                    rate-of-change {
+                        field-name "$receive-errors-total";
                     }
                 }
                 type float;
-                description "Percentage of receive-error-used";		
-            }			
+                description "Rate of receive errors.";
+            }
             field receive-errors-total {
                 sensor check-network {
                     path /node/network/receive/errs/total;
                 }
                 type integer;
-                description "Receive error packet count";				
+                description "Total error packets received.";
+            }
+            field receive-multicast-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$receive-multicast-total";
+                    }
+                }
+                type float;
+                description "Rate of receive multicast. ";
             }
             field receive-multicast-total {
                 sensor check-network {
                     path /node/network/receive/multicast/total;
                 }
                 type integer;
-                description "Toatal multicast receive packets count";				
+                description "Total multicast packets received.";
             }
-            field receive-multicast-used-percentage {
+            field transmit-errors-rate {
                 formula {
-                    eval {
-                        expression "( $diff-receive-multicast-total / $frequency ) * 100";
+                    rate-of-change {
+                        field-name "$transmit-errors-total";
                     }
                 }
                 type float;
-                description "Percentage of receive-multicast-used";				
-            }			
-            field threshold {
-                constant {
-                    value "{{threshold}}";
-                }
-                type integer;
-                description "Threshold value to compare the fields";				
+                description "Rate of transmit errors.";
             }
             field transmit-errors-total {
                 sensor check-network {
                     path /node/network/transmit/errs/total;
                 }
                 type integer;
-                description "Transmit error packet count";				
+                description "Total transmit error packets.";
             }
-            field transmit-errors-used-percent {
+            field transmit-packet-rate {
                 formula {
-                    eval {
-                        expression "( $diff-transmit-errors / $frequency ) * 100";
+                    rate-of-change {
+                        field-name "$transmit-packets-total";
                     }
                 }
                 type float;
-                description "Percentage of transmit-errors-used";				
-            }			
-            field transmit-packet-used-percent {
-                formula {
-                    eval {
-                        expression "( $diff-transmit-packets / $frequency ) * 100";
-                    }
-                }
-                type float;
-                description "Percentage of transmit-packet-used";				
-            }			
+                description "Rate of transmit packets.";
+            }
             field transmit-packets-total {
                 sensor check-network {
                     path /node/network/transmit/packets/total;
                 }
                 type integer;
-                description "Total transmit packets count";				
+                description "Total packets transmitted.";
             }
             /*
              * Anomaly detection logic.
              */			
-            trigger receive-error-used-percentage {
+            trigger receive-error-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$receive-error-used-percentage" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "receive-error-used-percentage $receive-error-used-percentage exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "receive-error-used-percentage $receive-error-used-percentage is normal";
+                            message "receive-error-rate is $receive-error-rate for device $network-device";
                         }
                     }
                 }
             }
-            trigger receive-multicast-used-percentage {
+            trigger receive-multicast-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$receive-multicast-used-percentage" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "receive-multicast-used-percentage $receive-multicast-used-percentage exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "receive-multicast-used-percentage $receive-multicast-used-percentage is normal";
+                            message "receive-multicast-rate is $receive-multicast-rate for $network-device";
                         }
                     }
                 }
             }
-            trigger transmit-errors-used-percent {
+            trigger transmit-errors-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$transmit-errors-used-percent" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "transmit-errors-used-percent $transmit-errors-used-percent exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "transmit-errors-used-percent $transmit-errors-used-percent is normal";
+                            message "transmit-errors-rate is $transmit-errors-rate for $network-device";
                         }
                     }
                 }
             }
-            trigger transmit-packet-used-percent {
+            trigger transmit-packet-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$transmit-packet-used-percent" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "transmit-packet-used-percent $transmit-packet-used-percent exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "transmit-packet-used-percent $transmit-packet-used-percent is normal";
+                            message "transmit-packet-rate is $transmit-packet-rate for $network-device";
                         }
                     }
                 }
-            }
-            variable threshold {
-                value 60;
-                type int;
             }
             rule-properties {
                 supported-devices {
@@ -271,4 +155,3 @@ healthbot {
         }
     }
 }	
-	

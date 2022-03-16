@@ -1,27 +1,19 @@
 /*
- * Checks if file sytem device error percent is exceeding threshold value and raises red alarm if 
- * it is more than threshold for 3 offsets else dashboard color is set to green.
- * One input control detection.
- * 
- *   1) "threshold" is used to check if the used percentage is
- *      increasing by more than the threshold value.
- *   2) "threshold-increase" is used to check if the difference of current and previous
- *      values is increasing by more than the threshold-increase value.
- *   3) "freq" is the interval between data points.
+ * Collects file sytem device error field,displays rate information in the message 
+ * and sets dashboard color to green.
  */
 healthbot {
     topic server.monitoring {
         rule check-filesystem-usage {
             /*
-             * Monitors file system usage fields and notifies through alarms if
-             * anomalies are found.
+             * Monitors file system usage fields and displays information in message
              *
              * Use device,fstype and mountpoint as keys for rule.			 
              */		
             keys [ device fstype mountpoint ];
             synopsis "File  system kpi";
-            description "Collects file system information and notifies anomaly in case device error percentage value are is threshold for 3 offsets";
-            sensor filesystem {
+            description "Checks file sytem usage";
+            sensor fileysystem {
                 /*
                  * Sensor configuration to get data from network devices.
                  */			
@@ -30,129 +22,58 @@ healthbot {
                     sensor-name /node/filesystem;
                     frequency 60s;
                 }
-            }			
+            }
             /*
              * Fields defined by specifying the sensor paths
              */			
             field device {
-                sensor filesystem {
+                sensor fileysystem {
                     path device;
                 }
                 type string;
                 description "file system name";
             }
             field device-error {
-                sensor filesystem {
+                sensor fileysystem {
                     path /node/filesystem/device/error;
                 }
                 type integer;
                 description "Device error";
             }
-            field diff-error {
+            field filesystem-error-rate {
                 formula {
-                    value-difference {
+                    rate-of-change {
                         field-name "$device-error";
                     }
                 }
-                type integer;
-                description "Difference of previous and current values";				
-            }			
-            field filesystem-error-used-percentage {
-                formula {
-                    eval {
-                        expression "( $diff-error / $frequency ) * 100";
-                    }
-                }
                 type float;
-                description "Percentage of filesystem-error-used";				
-            }			
-            field frequency {
-                constant {
-                    value "{{freq}}";
-                }
-                type integer;
-                description "interval between 2 datapoints";
+                description "Rate of filesystem errors.";
             }
             field fstype {
-                sensor filesystem {
+                sensor fileysystem {
                     path fstype;
                 }
                 type string;
                 description "file system type";
             }
             field mountpoint {
-                sensor filesystem {
+                sensor fileysystem {
                     path mountpoint;
                 }
                 type string;
                 description "mount point name";
             }
-            field threshold {
-                constant {
-                    value "{{threshold}}";
-                }
-                type integer;
-                description "threshold percentage to be compared with";
-            }
-            field threshold-increase {
-                constant {
-                    value "{{threshold-increase}}";
-                }
-                type integer;
-                description "threshold value increase to be compared with";
-            }
             /*
              * Anomaly detection logic.
              */			
-            trigger file-error-used-percent {
+            trigger filesystem-error-rate {
                 frequency 1offset;
-                term exceeds-threshold {
-                    when {
-                        greater-than-or-equal-to "$filesystem-error-used-percentage" "$threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "filesystem-error-used-percentage $filesystem-error-used-percentage exceeds threshold";
-                        }
-                    }
-                }
                 term normal {
                     then {
                         status {
                             color green;
-                            message "file-free-bytes-used-percent $filesystem-error-used-percentage is normal";
+                            message "filesystem-error-rate is $filesystem-error-rate for $device, $fstype, $mountpoint";
                         }
-                    }
-                }
-            }
-            /*
-             * Values can be changed while deploying playbook instance. 
-             *  
-             */			
-            variable freq {
-                value 60;
-                description "threshold value";
-                type int;
-            }
-            variable threshold {
-                value 60;
-                description "threshold percentage value ";
-                type int;
-            }
-            variable threshold-increase {
-                value 1000;
-                description "threshold value";
-                type int;
-            }
-            rule-properties {
-                supported-devices {
-                    other-vendor linux {
-                        vendor-name ubuntu;
-                        operating-system ubuntu;
                     }
                 }
             }
