@@ -8,7 +8,7 @@ Submit only the .conf files
 - Add the original repository as a remote called upstream
 - If you created your fork a while ago be sure to pull upstream changes into your local repository. Your fork needs to be in sync with upstream for pull request to get merged
 - Make changes 
-- From your fork open a pull request to the development branch
+- From your fork open a pull request to the development  branch
 
 **NOTE**
 - To contribute to "juniper_official"
