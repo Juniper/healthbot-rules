@@ -1,0 +1,397 @@
+/*
+ * Detects RE CPU load average utilization(1min/5min/15min) threshold breaches
+ * and notifies when anomalies are found.
+ * Two inputs control detection for each 1,5 & 15 minutes CPU load average
+ * utilization KPIs.
+ *
+ *   1) re-cpu-15min-low-threshold or re-cpu-1min-low-threshold
+ *      or re-cpu-5min-low-threshold, is the threshold will set a dashboard
+ *      color to green when RE CPU utilization below low threshold.
+ *
+ *   2) re-cpu-15min-high-threshold or re-cpu-1min-high-threshold
+ *      or re-cpu-5min-high-threshold, is the threshold that causes the rule
+ *      to report an anomaly. This rule will set a dashboard color to yellow
+ *      when RE CPU utilization below high threshold. Otherwise color is set
+ *      to red.
+ */
+healthbot {
+    topic system {
+        description "Monitors system statistics i.e. CPU, memory, storage, processes& queues and notifies anomalies";
+        synopsis "System statistics analyzer";
+        rule check-system-cpu-load-average {
+            description "Collects RE CPU load average data periodically and notifies anomalies when CPU utilization exceed threshold";
+            synopsis "RE CPU load average analyzer";
+            /*
+             * Monitors *all* three RE CPU load average CPU utilization KPIs
+             * i.e. 1 min, 5 min and 15 min. Each trigger notifies anomalies
+             * via dashboard colors when the RE CPU load utilization below low
+             * threshold to green. The color is set to yellow if we see
+             * RE CPU load average utilization is below high threshold.
+             * Otherwise the color is set to red.
+             * 
+             * Use routing engine slot number as key for rule.
+             */
+            keys slot;
+            /*
+             * Router provides RE CPU idle percent hence function derives used
+             * percent by subtracting idle percent with 100.
+             */
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor cpuutilizationtable {
+                synopsis "Routing engines CPU iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file system-cpu.yml;
+                    table CPUutilizationTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using formulae by user-defined eval formula.
+             */
+            field cpu-15min {
+                formula {
+                    eval {
+                        expression "( 100 - $cpu-idle-15min )";
+                    }
+                }
+                type integer;
+                description "Derives CPU used percentage using UDF";
+            }
+            field cpu-5min {
+                formula {
+                    eval {
+                        expression "( 100 - $cpu-idle-5min )";
+                    }
+                }
+                type integer;
+                description "Derives CPU used percentage using UDF";
+            }
+            field cpu-1min {
+                formula {
+                    eval {
+                        expression "( 100 - $cpu-idle-1min )";
+                    }
+                }
+                type integer;
+                description "Derives CPU used percentage using UDF";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field cpu-utilization-15min-high-threshold {
+                constant {
+                    value "{{re-cpu-15min-high-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization 15 minutes load average high threshold";
+            }
+            field cpu-utilization-15min-low-threshold {
+                constant {
+                    value "{{re-cpu-15min-low-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization 15 minutes load average low threshold";
+            }
+            field cpu-utilization-1min-high-threshold {
+                constant {
+                    value "{{re-cpu-1min-high-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization 1 minute load average high threshold";
+            }
+            field cpu-utilization-1min-low-threshold {
+                constant {
+                    value "{{re-cpu-1min-low-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization 1 minute load average low threshold";
+            }
+            field cpu-utilization-5min-high-threshold {
+                constant {
+                    value "{{re-cpu-5min-high-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization 5 minutes load average high threshold";
+            }
+            field cpu-utilization-5min-low-threshold {
+                constant {
+                    value "{{re-cpu-5min-low-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization 5 minutes load average low threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger cpu-utilization-15min {
+                synopsis "RE CPU 15 min load average KPI";
+                description "Sets health based on increase in RE CPU 15 minutes load average utilization";
+                /*
+                 * Sets color to green when the 15min CPU load average
+                 * utilization ($cpu-15min) is below 50%.
+                 */
+                frequency 1offset;
+                term is-cpu-utilization-15min-normal {
+                    when {
+                        less-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Routing Engine$slot 15min CPU utilization($cpu-15min) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the 15min CPU load average utilization ($cpu-15min)
+                 * is below 75%.
+                 */
+                term is-cpu-utilization-15min-middle {
+                    when {
+                        less-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Routing Engine$slot 15min CPU utilization($cpu-15min) is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red.
+                 */ 
+                term cpu-utilization-15min-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-15min" "$cpu-utilization-15min-high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Routing Engine$slot  15min CPU utilization($cpu-15min) exceed high threshold ($cpu-utilization-15min-high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger cpu-utilization-1min {
+                synopsis "RE CPU 1 min load average kpi";
+                description "Sets health based on increase in RE CPU 1 minute load average utilization";
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the 1min CPU load average utilization ($cpu-1min)
+                 * is above 85% for a period of 3 minutes.
+                 */
+                frequency 1offset;
+                term is-cpu-utilization-1min-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-high-threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Routing Engine$slot 1min CPU utilization($cpu-1min) exceed high threshold(cpu-utilization-1min-high-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the 1min CPU load average utilization($cpu-1min) 
+                 * is above 55% for a period of 3 minutes.
+                 */
+                term is-cpu-utilization-1min-middle {
+                    when {
+                        greater-than-or-equal-to "$cpu-1min" "$cpu-utilization-1min-low-threshold" {
+                        time-range 3offset;
+                        all;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Routing Engine$slot  1min CPU utilization($cpu-1min) is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 
+                term cpu-utilization-1min-normal {
+                    when {
+                        less-than "$cpu-1min" "$cpu-utilization-1min-low-threshold" {
+                        time-range 3offset;
+                        all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Routing Engine$slot 1min CPU utilization($cpu-1min) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger cpu-utilization-5min {
+                synopsis "RE CPU 5 min load average KPI";
+                description "Sets health based on increase in RE CPU 5 minutes load average utilization";
+                /*
+                 * Sets color to green when the 5 min CPU load average
+                 * utilization($cpu-5min) is below 55%.
+                 */
+                frequency 1offset;
+                term is-cpu-utilization-5min-normal {
+                    when {
+                        less-than "$cpu-5min" "$cpu-utilization-5min-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Routing Engine$slot 5min CPU utilization($cpu-5min) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the 5 min CPU load average utilization($cpu-5min)
+                 * is below 80%.
+                 */ 
+                term is-cpu-utilization-5min-middle {
+                    when {
+                        less-than "$cpu-5min" "$cpu-utilization-5min-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Routing Engine$slot 5min CPU utilization($cpu-5min) is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red.
+                 */                   
+                term cpu-utilization-5min-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-5min" "$cpu-utilization-5min-high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Routing Engine$slot 5min CPU utilization($cpu-5min) exceed high threshold($cpu-utilization-5min-high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable re-cpu-15min-high-threshold {
+                value 75;
+                type int;
+                description "RE CPU 15 min load average high threshold";
+            }
+            variable re-cpu-15min-low-threshold {
+                value 50;
+                type int;
+                description "RE CPU 15 min load average low threshold";
+            }
+            variable re-cpu-1min-high-threshold {
+                value 85;
+                type int;
+                description "RE CPU 1 min load average high threshold";
+            }
+            variable re-cpu-1min-low-threshold {
+                value 60;
+                type int;
+                description "RE CPU 1 min load average low threshold";
+            }
+            variable re-cpu-5min-high-threshold {
+                value 80;
+                type int;
+                description "RE CPU 5 min load average high threshold";
+            }
+            variable re-cpu-5min-low-threshold {
+                value 55;
+                type int;
+                description "RE CPU 5 min load average low threshold";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }						
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files [ system-cpu.yml system-sensors.py ];
+                }
+            }
+        }
+    }
+}
