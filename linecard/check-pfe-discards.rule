@@ -1,0 +1,381 @@
+healthbot {
+    topic linecard {
+        rule check-pfe-discards {
+            synopsis "Packet forwarding engine hardware discard statistics analyzer";
+            description "Collects packet forwarding engine hardware discard statistics  and notifies when discard count increases";
+            sensor pfe-sensor {
+                synopsis "iAgent netconf sensor definition";
+                description "Collects data from network device netconf rpc using get-pfe-traffic-statistics";
+                iAgent {
+                    file evopfeDiscardStats.yml;
+                    table pfeDiscardStats;
+                    frequency 60s;
+                }
+            }
+            field bad-route-discard {
+                sensor pfe-sensor {
+                    path bad-route-discard;
+                }
+                type integer;
+                description "Bad route discard count";
+            }
+            field bits-to-test-discard {
+                sensor pfe-sensor {
+                    path bits-to-test-discard;
+                }
+                type integer;
+                description "Bits to test discard count";
+            }
+            field data-error-discard {
+                sensor pfe-sensor {
+                    path data-error-discard;
+                }
+                type integer;
+                description "Data error discard count";
+            }
+            field drop-threshold {
+                constant {
+                    value "{{discard-count}}";
+                }
+                type integer;
+                description "Drop count increase threshold";
+            }
+            field fabric-discard {
+                sensor pfe-sensor {
+                    path fabric-discard;
+                }
+                type integer;
+                description "Fabric discard count";
+            }
+            field info-cell-discard {
+                sensor pfe-sensor {
+                    path info-cell-discard;
+                }
+                type integer;
+                description "Info cell discard count";
+            }
+            field invalid-iif-discard {
+                sensor pfe-sensor {
+                    path invalid-iif-discard;
+                }
+                type integer;
+                description "Invalid IIF discard count";
+            }
+            field nexthop-discard {
+                sensor pfe-sensor {
+                    path nexthop-discard;
+                }
+                type integer;
+                description "Nexthop discard count";
+            }
+            field stack-overflow-discard {
+                sensor pfe-sensor {
+                    path stack-overflow-discard;
+                }
+                type integer;
+                description "Stack overflow discard count";
+            }
+            field stack-underflow-discard {
+                sensor pfe-sensor {
+                    path stack-underflow-discard;
+                }
+                type integer;
+                description "Stack underflow discard count";
+            }
+            field tcp-header-error-discard {
+                sensor pfe-sensor {
+                    path tcp-header-error-discard;
+                }
+                type integer;
+                description "TCP header error discard count";
+            }
+            trigger data-error-discard {
+                synopsis "PFE data error discards KPI";
+                description "Sets health based on the change in PFE data error discard count";
+                frequency 1.25offset;
+                term is-data-error-discard {
+                    when {
+                        increasing-at-least-by-value "$data-error-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing data-error-discard count $data-error-discard";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "Data-error-discard count $data-error-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-bad-route-discard {
+                synopsis "PFE bad route discards KPI";
+                description "Sets health based on the change in PFE bad route discard count";
+                frequency 1.25offset;
+                term is-bad-route-discard {
+                    when {
+                        increasing-at-least-by-value "$bad-route-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing bad-route-discard drop count $bad-route-discard";
+                        }
+                    }
+                }
+                term no-bad-route-discard {
+                    then {
+                        status {
+                            color green;
+                            message "bad-route-discard count $bad-route-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-bits-to-test-discard {
+                synopsis "PFE bits to test discards KPI";
+                description "Sets health based on the change in PFE bits to test discard count";
+                frequency 1.25offset;
+                term is-bits-to-test-discard {
+                    when {
+                        increasing-at-least-by-value "$bits-to-test-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing bits-to-test-discard drop count $bits-to-test-discard";
+                        }
+                    }
+                }
+                term no-bits-to-test-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Bits-to-test-discard count $bits-to-test-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-fabric-discards {
+                synopsis "PFE fabric discards KPI";
+                description "Sets health based on the change in PFE fabric discard count";
+                frequency 1.25offset;
+                term is-fabric-drop {
+                    when {
+                        increasing-at-least-by-value "$fabric-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing fabric drop count $fabric-discard";
+                        }
+                    }
+                }
+                term no-fabric-drop {
+                    then {
+                        status {
+                            color green;
+                            message "Fabric drop count $fabric-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-info-cell-discard {
+                synopsis "PFE info cell discards KPI";
+                description "Sets health based on the change in PFE info cell discard count";
+                frequency 1.25offset;
+                term is-info-cell-discard {
+                    when {
+                        increasing-at-least-by-value "$info-cell-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing info-cell-discard drop count $info-cell-discard";
+                        }
+                    }
+                }
+                term no-info-cell-discard {
+                    then {
+                        status {
+                            color green;
+                            message "info-cell-discard count $info-cell-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-invalid-iif-discard {
+                synopsis "PFE invalid IIF discards KPI";
+                description "Sets health based on the change in PFE invalid IIF discard count";
+                frequency 1.25offset;
+                term is-invalid-iif-discard {
+                    when {
+                        increasing-at-least-by-value "$invalid-iif-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing invalid-iif-discard drop count $invalid-iif-discard";
+                        }
+                    }
+                }
+                term no-invalid-iif-discard {
+                    then {
+                        status {
+                            color green;
+                            message "invalid-iif-discard count $invalid-iif-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-nexthop-discard {
+                synopsis "PFE nexthop discards KPI";
+                description "Sets health based on the change in PFE nexthop discard count";
+                frequency 1.25offset;
+                term is-nexthop-discard {
+                    when {
+                        increasing-at-least-by-value "$nexthop-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing nexthop-discard drop count $nexthop-discard";
+                        }
+                    }
+                }
+                term no-nexthop-discard {
+                    then {
+                        status {
+                            color green;
+                            message "nexthop-discard count $nexthop-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-stack-overflow-discard {
+                synopsis "PFE stack overflow discards KPI";
+                description "Sets health based on the change in PFE stack overflow discard count";
+                frequency 1.25offset;
+                term is-stack-overflow-discard {
+                    when {
+                        increasing-at-least-by-value "$stack-overflow-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing stack-overflow-discard drop count $stack-overflow-discard";
+                        }
+                    }
+                }
+                term no-stack-overflow-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Stack-overflow-discard count $stack-overflow-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-stack-underflow-discard {
+                synopsis "PFE stack underflow discards KPI";
+                description "Sets health based on the change in PFE stack underflow discard count";
+                frequency 1.25offset;
+                term is-stack-underflow-discard {
+                    when {
+                        increasing-at-least-by-value "$stack-underflow-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing stack-underflow-discard drop count $stack-underflow-discard";
+                        }
+                    }
+                }
+                term no-stack-underflow-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Stack-underflow-discard count $stack-underflow-discard";
+                        }
+                    }
+                }
+            }
+            trigger pfe-tcp-header-error-discard {
+                synopsis "PFE TCP header error discards KPI";
+                description "Sets health based on the change in PFE TCP header error discard count";
+                frequency 1.25offset;
+                term is-tcp-header-error-discard {
+                    when {
+                        increasing-at-least-by-value "$tcp-header-error-discard" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Increasing tcp-header-error-discard drop count $tcp-header-error-discard";
+                        }
+                    }
+                }
+                term no-tcp-header-error-discard {
+                    then {
+                        status {
+                            color green;
+                            message "Tcp-header-error-discard count $tcp-header-error-discard";
+                        }
+                    }
+                }
+            }
+            variable discard-count {
+                value 1;
+                description "PFE discard threshold: Number of discards increase between metrics, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 2.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files evopfeDiscardStats.yml;
+                }				
+            }
+        }
+    }
+}	
