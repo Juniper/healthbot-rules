@@ -1,0 +1,97 @@
+healthbot {
+    topic chassis {
+        rule check-chassis-power-fan-temperature {
+            keys [ class name ];
+            description "Moniters chassis fan and temperature";
+            sensor chassis {
+                iAgent {
+                    file FanTemperature.yml;
+                    table FanTable;
+                    frequency 60s;
+                }
+            }
+            field class {
+                sensor chassis {
+                    path class;
+                }
+                type string;
+                description "Type of item that is monitored";
+            }
+            field comment {
+                sensor chassis {
+                    path comment;
+                }
+                type string;
+                description "RPM  of fan";
+            }
+            field name {
+                sensor chassis {
+                    path name;
+                }
+                type string;
+                description "Name of the item";
+            }
+            field status {
+                sensor chassis {
+                    path status;
+                }
+                type string;
+                description "Status of the monitored item";
+            }
+            field temperature {
+                sensor chassis {
+                    path temperature;
+                }
+                type integer;
+                description "Temperature of item";
+            }
+            trigger fan-temperature-status {
+                frequency 1offset;
+                term status-is-ok {
+                    when {
+                        matches-with "$status" ok {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Status of $class \"$name\" is ok";
+                        }
+                    }
+                }
+                term status-is-not-ok {
+                    then {
+                        status {
+                            color red;
+                            message "Status of $class \"$name\" is not ok";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files FanTemperature.yml;
+                }
+            }			
+        }
+    }
+}	
+	
