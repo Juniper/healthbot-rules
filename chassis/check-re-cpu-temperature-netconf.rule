@@ -1,9 +1,36 @@
+/*
+ * Detects routing-engine and CPU temperature threshold breaches and notifies when
+ * anomalies are found.
+ * Two inputs control detection
+ *
+ *
+ *   1) "re-cpu-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degree Cecilius of 
+ *      RE CPU temperature. This rule will set a dashboard color to green
+ *      when temperature is below low threshold.
+ * 
+ *   2) "re-cpu-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
+ *      CPU temperature. This rule will set a dashboard color to yellow when
+ *      temperature is below high threshold. Otherwise color is set to
+ *      red and notify anomaly.
+ */
 healthbot {
     topic chassis {
         rule check-re-cpu-temperature-netconf {
+            /*
+             * Monitors routing engine temperature and CPU temperature. Notifies via 
+             * the dashboard color green when value is less than low-threshold.
+             * Otherwise the color is set to red to notify anomaly.If the value is less
+             * than high-threshold value dashboard color is yellow.Else it is red. 
+             * Uses routing-engine slot number as key for the rule.
+             */		
             keys routing-engine;
             synopsis "RE CPU temperature check";
-            description "Collects RE CPU temperature periodically and notifies anomaly when temperature exceed threshold";
+            description "Collects RE and CPU temperature periodically and notifies anomaly when temperature exceed threshold";
+            /*
+             * Sensor configuration to get data from network devices
+             */			
             sensor evo-iagent {
                 iAgent {
                     file evoReTemperature.yml;
@@ -11,6 +38,10 @@ healthbot {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined using values in the yml file.
+             * 
+             */			
             field high-threshold {
                 constant {
                     value "{{re-cpu-temperature-high-threshold}}";
@@ -45,7 +76,10 @@ healthbot {
                 }
                 type integer;
                 description "RE temperature";
-            }			
+            }
+            /*
+             * Anomaly detection logic.
+             */			
             trigger re-cpu-temperature {
                 synopsis "RE CPU temperature KPI";
                 description "Sets health based increase in RE CPU temperature";
@@ -115,7 +149,11 @@ healthbot {
                         }
                     }
                 }
-            }			
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
             variable re-cpu-temperature-high-threshold {
                 value 55;
                 description "RE CPU temperature high threshold: Utilization increase between metrics, before we report anomaly";
@@ -126,16 +164,11 @@ healthbot {
                 description "RE CPU temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable re-slot-no {
-                value 0-1;
-                description "Routing engine slot numbers to monitor, regular expression, e.g. '0'";
-                type string;
-            }
             rule-properties {
-                version 2;
+                version 1;
                 contributor juniper;
                 category advanced;
-                supported-healthbot-version 1.0.1;
+                supported-healthbot-version 4.2.0;
                 supported-devices {
                     juniper {
                         operating-system junos {
@@ -239,6 +272,9 @@ healthbot {
                         }
                     }
                 }
+                helper-files other {
+                    list-of-files evoReTemperature.yml;
+                }				
             }
         }
     }

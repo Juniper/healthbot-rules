@@ -1,6 +1,21 @@
+/*
+ * Detects PFE discards and notifies when anomalies are found.
+ * One inputs control detection
+ * 
+ *   1) discard-count, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the discards are greater than
+ *      'discard-count' for 75s. otherwise color is set to green.
+ */
 healthbot {
     topic linecard {
         rule check-pfe-discards {
+             /*
+             * Monitors the pfe discards count on PFE. Notifies via the dashboard
+             * colors when the flaps increase by {{discard-count}} for every collected
+             * metric during a 75s time range (red). Otherwise the color is set to green
+             * 
+             */		
             synopsis "Packet forwarding engine hardware discard statistics analyzer";
             description "Collects packet forwarding engine hardware discard statistics  and notifies when discard count increases";
             sensor pfe-sensor {
@@ -12,6 +27,10 @@ healthbot {
                     frequency 60s;
                 }
             }
+            /*
+             * Fields defined using values in the yml file.
+             * 
+             */			
             field bad-route-discard {
                 sensor pfe-sensor {
                     path bad-route-discard;
@@ -89,6 +108,9 @@ healthbot {
                 type integer;
                 description "TCP header error discard count";
             }
+            /*
+            * Anomaly detection logic.
+            */			
             trigger data-error-discard {
                 synopsis "PFE data error discards KPI";
                 description "Sets health based on the change in PFE data error discard count";
@@ -358,7 +380,7 @@ healthbot {
                 version 1;
                 contributor juniper;
                 category advanced;
-                supported-healthbot-version 2.0.1;
+                supported-healthbot-version 4.2.0;
                 supported-devices {
                     juniper {
                         operating-system junosEvolved {
