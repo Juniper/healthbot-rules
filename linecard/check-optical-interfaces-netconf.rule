@@ -1,0 +1,178 @@
+/*
+ * Monitors interface optical state and notifies when anomalies are found.
+ *
+ */
+healthbot {
+    topic linecard {
+        description "Monitors interface optical state and notifies anomalies";
+        synopsis "Interface optical analyzer";
+        rule check-optical-interfaces-netconf {
+            synopsis "KPI for  interface optical degradation";
+            description "Monitor the interface optical degradation";
+            /*
+             * Monitors the interface optics. Notifies via
+             * the dashboard colors when alarm is ON to red. The color 
+             * is set to green if no alarm found on interface optics.
+             * 
+             * Use lane-index name as key for rule.
+             */
+            keys [ lane-index name ];
+            /*
+             * Sensor configuration to get data from network devices
+             */
+            sensor optical_sensor {
+                synopsis "Interface optics iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file interfaces-optics.yml;
+                    table opticsStats;
+                    frequency 60s;
+                }
+            }
+            field lane-index {
+                sensor optical_sensor {
+                    path lane-index;
+                }
+                type string;
+                description "Interface lane index";
+            }
+            field name {
+                sensor optical_sensor {
+                    path name;
+                }
+                type string;
+                description "Interface name";
+            }
+            field rx-loss-of-signal-alarm {
+                sensor optical_sensor {
+                    path rx-loss-of-signal-alarm;
+                }
+                type string;
+                description "RX loss of signal alarm";
+            }
+            field tx-laser-disabled-alarm {
+                sensor optical_sensor {
+                    path tx-laser-disabled-alarm;
+                }
+                type string;
+                description "tx laster disabled alarm";
+            }
+            field tx-loss-of-signal-functionality-alarm {
+                sensor optical_sensor {
+                    path tx-loss-of-signal-functionality-alarm;
+                }
+                type string;
+                description "tx loss of signal functionality alarm";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger loss-of-signal-functionality {
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the Tx loss of signal functionality alarm is ON.
+                 */
+                frequency 1.5offset;
+                term is-tx-loss-of-signal-functionality-off {
+                    when {
+                        matches-with "$tx-loss-of-signal-functionality-alarm" off {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
+                        }
+                    }
+                }
+                term is-tx-loss-of-signal-functionality-exists {
+                    when {
+                        exists "$tx-loss-of-signal-functionality-alarm";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name, Lane $lane-index Tx loss of signal functionality alarm is ON";
+                        }
+                    }
+                }
+            }
+            trigger tx-laser-disabled-alarm {
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the Tx laser disabled alarm is ON.
+                 */
+                frequency 1.5offset;
+                term is-tx-laser-disabled-alarm-off {
+                    when {
+                        matches-with "$tx-laser-disabled-alarm" off {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name, Lane $lane-index Tx laser disabled alarm is OFF";
+                        }
+                    }
+                }
+                term is-tx-laser-disabled-alarm-exists {
+                    when {
+                        exists "$tx-laser-disabled-alarm";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name, Lane $lane-index Tx laser disabled alarm is ON";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category comprehensive;
+                is-scaling-rule {
+                    description "Fields:name ; Directly impacted by number of interfaces running in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 19.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 19.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files interfaces-optics.yml;
+                }				
+            }
+        }
+    }
+}

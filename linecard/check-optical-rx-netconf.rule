@@ -1,0 +1,223 @@
+/*
+ * Monitors optical rx high and low power levels and notifies when
+ * anomalies are found.
+ * One input control detection
+ *
+ * 1) interface-name, is a regular expression that matches the
+ * interfaces that you would like to monitor. By default it '.*',
+ * which matches all interfaces. Use something like 'ge.*' to
+ * match only gigabit ethernet interfaces.
+ *
+ */
+healthbot {
+    topic linecard {
+        rule check-optical-rx-netconf {
+            keys interface-name;
+            synopsis "Optical module RX level KPI";
+            description "To check if the Rx power is within limit.";
+            /*
+             * Monitors optical rx high and low power levels. Notifies via the 
+             * dashboard colors when usage exceeds the high/low alarm threshold
+             * it sets the color to red.The color is set to yellow when usage exceeds  
+             * high/low warning threshold in a time range of 2 days.
+             * Otherwise the color is set to green.
+             *
+             * Use interface-name as key for rule.			
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor RxPower {
+                iAgent {
+                    file evo-rx-optical.yml;
+                    table opticsStats;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field high-alarm-threshold {
+                sensor RxPower {
+                    path laser-rx-power-high-alarm-threshold-dbm;
+                }
+                type float;
+                description "Default rx power high alarm threshold.";
+            }
+            field high-warning-threshold {
+                sensor RxPower {
+                    path laser-rx-power-high-warn-threshold-dbm;
+                }
+                type float;
+                description "Default rx power high warning threshold.";
+            }
+            field interface-name {
+                sensor RxPower {
+                    where "name =~ /{{if-name}}/";
+                    path name;
+                }
+                type string;
+                description "Name of the interface.";
+            }
+            field low-alarm-threshold {
+                sensor RxPower {
+                    path laser-rx-power-low-alarm-threshold-dbm;
+                }
+                type float;
+                description "Default rx power low alarm threshold.";
+            }
+            field low-warning-threshold {
+                sensor RxPower {
+                    path laser-rx-power-low-warn-threshold-dbm;
+                }
+                type float;
+                description "Default rx power low warning threshold.";
+            }
+            field optics-rx {
+                sensor RxPower {
+                    path laser-rx-optical-power-dbm;
+                }
+                type float;
+                description "rx power level of the optical module.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger optical-rx-high-power {
+                synopsis "high rx power usage";
+                description "Sets health based on the high rx power usage";
+                frequency 1.5offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the rx power ($ptics-rx) is greater than the threshold
+                 * ($high-alarm-threshold).
+                 */
+                term above_alarm_threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx" "$high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rx power $optics-rx is above alarm threshold $high-alarm-threshold for interface $interface-name.";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the rx power ($ptics-rx) is greater than the threshold
+                 * ($high-warning-threshold) in a time range of 2 days.
+                 */
+                term above_warning_threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx" "$high-warning-threshold" {
+                            time-range 2880offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Rx power $optics-rx is above warning threshold $high-warning-threshold for interface $interface-name.";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "Rx power $optics-rx is normal for interface $interface-name.";
+                        }
+                    }
+                }
+            }
+            trigger optical-rx-low-power {
+                synopsis "low rx power usage";
+                description "Sets health based on the low rx power usage";
+                frequency 1.5offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the rx power ($ptics-rx) is lower than the threshold
+                 * ($low-alarm-threshold).
+                 */
+                term below_alarm_threshold {
+                    when {
+                        less-than-or-equal-to "$optics-rx" "$low-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rx power $optics-rx is below alarm threshold $low-alarm-threshold for interface $interface-name.";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the rx power ($ptics-rx) is lower than the threshold
+                 * ($low-warning-threshold) in a time range of 2 days.
+                 */
+                term below_warning_threshold {
+                    when {
+                        less-than-or-equal-to "$optics-rx" "$low-warning-threshold" {
+                            time-range 2880offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Rx power $optics-rx is below warning threshold $low-warning-threshold for interface $interface-name.";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "Rx power $optics-rx is normal for interface $interface-name.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable if-name {
+                value .*;
+                description "Name of the interface.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                is-scaling-rule {
+                    description "Fields:interface-name ; Directly impacted by number of interfaces running in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files evo-rx-optical.yml;
+                }				
+            }
+        }
+    }
+}		

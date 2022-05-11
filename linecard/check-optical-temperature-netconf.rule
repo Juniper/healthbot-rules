@@ -1,0 +1,246 @@
+/*
+ * Monitors optical temperature and notifies when anomalies are found.
+ * 
+ * One input control detection
+ *
+ * 1) interface-name, is a regular expression that matches the
+ * interfaces that you would like to monitor. By default it '.*',
+ * which matches all interfaces. Use something like 'ge.*' to
+ * match only gigabit ethernet interfaces.
+ *
+ */
+healthbot {
+    topic linecard {
+        rule check-optical-temperature-netconf {
+            keys interface-name;
+            synopsis "Optical module temperature KPI";
+            description "To check if the optical temp is within limit.";
+            /*
+             * Monitors optical temperature. Notifies via the dashboard colors
+             * when usage exceeds the high alarm threshold it sets the color to red.
+             * The color is set to yellow when usage exceeds high warning threshold 
+             * Otherwise the color is set to green.
+             *
+             * Use interface-name as key for rule.			
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor temperature {
+                iAgent {
+                    file opticalTemperature.yml;
+                    table module_TemperatureTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Field defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field high-alarm-threshold {
+                sensor temperature {
+                    path module-temperature-high-alarm-threshold;
+                }
+                type integer;
+                description "Default Module temperature high alarm threshold.";
+            }
+            field high-warning-threshold {
+                sensor temperature {
+                    path module-temperature-high-warn-threshold;
+                }
+                type integer;
+                description "Default Module temperature high warning threshold.";
+            }
+            field interface-name {
+                sensor temperature {
+                    where "name =~ /{{if-name}}/";
+                    path name;
+                }
+                type string;
+                description "Name of the interface.";
+            }
+            field opt-temp {
+                sensor temperature {
+                    path module-temperature;
+                }
+                type integer;
+                description "Temperature of the Optical Module in degrees Centigrade.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger optical-temperature {
+                synopsis "high optical temperature";
+                description "Sets health based on the optical temperature";
+                frequency 1.5offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the optical temperature ($opt-temp) is greater than the threshold
+                 * ($high-alarm-threshold).
+                 */
+                term greater-than-alarm-threshold {
+                    when {
+                        greater-than-or-equal-to "$opt-temp" "$high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Temperature of the optical module $interface-name , $opt-temp exceeds default alarm threshold $high-alarm-threshold ";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the optical temperature ($opt-temp) is greater than the threshold
+                 * ($high-warning-threshold).
+                 */
+                term greater-than-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$opt-temp" "$high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Temperature of the optical module $interface-name  , $opt-temp exceeds default warning threshold $high-warning-threshold  ";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "Temperature of the optical module $interface-name $opt-temp is normal.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable if-name {
+                value .*;
+                description "Name of the interface.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                is-scaling-rule {
+                    description "Fields:interface-name ; Directly impacted by number of interfaces running in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                                platforms EX4650 {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms EX4600 {
+                                    releases 18.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products MX {
+                                platforms MX240 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX150 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
+                            products PTX {
+                                platforms PTX5000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX1000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files opticalTemperature.yml;
+                }				
+            }
+        }
+    }
+}

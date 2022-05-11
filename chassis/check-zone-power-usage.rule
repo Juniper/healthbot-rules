@@ -1,0 +1,184 @@
+/*
+ * Detects chassis power zone usage threshold breaches and notifies when 
+ * anomalies are found.
+ * One input control detection
+ *
+ *   1) "zone-power-usage-threshold" is the threshold that causes the rule to
+ *      report an anomaly. By default it's 80% of zone power usage. This rule
+ *      will set a dashboard color to red when power usage exceed threshold
+ *      'zone-power-usage-threshold'. Otherwise color is set to green.
+ */
+healthbot {
+    topic chassis {
+        description "Monitors the chassis power usage of whole system, zone & PEMs and notifies anomalies";
+        synopsis "Chassis power manager";
+        rule check-zone-power-usage {
+            synopsis "Zone power check";
+            description "Collects chassis zone power usage periodically and notifies anomaly when power usage exceed threshold";
+            /*
+             * Monitors chassis zone power usage. Notifies via the dashboard
+             * colors when the PEM power usage exceed by  
+             * {{zone-power-usage-threshold}} to red. Otherwise the color is
+             * set to green.
+             *
+             * Use zone or str-zone as key for rule.
+             */
+            keys zone;
+            /*
+             * Router provides power values in number hence function derives
+             * used percent.
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor chassis-power {
+                synopsis "iAgent sensor definition";
+                description "Netconf rpc used to collect telemetry data from network device";
+                iAgent {
+                    file chassis-power.yml;
+                    table ChassisPowerTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using formulae by eval function.
+             */
+            field zone-power-usage {
+                formula {
+                    eval {
+                        expression "( $capacity-actual-usage / $capacity-max ) * 100";
+                    }
+                }
+                type integer;
+                description "Stores % of zone power used using eval";
+            }
+            field zone {
+                sensor chassis-power {
+                    path zone;
+                }
+                type string;
+                description "Chassis power zone";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field zone-power-usage-threshold {
+                constant {
+                    value "{{zone-power-usage-threshold}}";
+                }
+                type integer;
+                description "Zone power usage threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger zone-power-usage {
+                synopsis "Zone power usage KPI";
+                description "Sets health based increase in zone power usage";
+                frequency 1offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the zone power usage ($pem-power-usage) exceed threshold
+                 * ($pem-power-usage-threshold).
+                 */ 
+                term is-power-usage-abnormal {
+                    when {
+                        greater-than "$zone-power-usage" "$zone-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Zone-$zone power usage($zone-power-usage%) exceed threshold";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 
+                term power-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "Zone-$zone power usage($zone-power-usage%) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable zone-power-usage-threshold {
+                value 80;
+                description "Zone power usage threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files chassis-power.yml;
+                }
+            }
+        }
+    }
+}
