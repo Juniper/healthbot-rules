@@ -1,0 +1,159 @@
+/*
+ * Monitors state of Ingress,Egress and Transit LSP's and notifies anomaly.
+ * 
+ */
+healthbot {
+    topic protocol {
+        rule check-mpls-lsp-status {
+            keys [ destination-address lsp-name source-address ];
+            synopsis "MPLS LSP KPI";
+            description "Checks the  state for Ingress,Egress and Transit  LSP's ";
+            /*
+             * Monitors state of Ingress,Egress and Transit LSP's.Notifies via 
+             * dashboard colors when the LSP state is up or down.
+             * 
+             * Use lsp-name,source-address and destination-address as keys for rule.
+             */			
+            /*
+             * Sensor configuration to get data from network devices
+             */			
+            sensor lsp {
+                iAgent {
+                    file MplsLspTable.yml;
+                    table MplsLspTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields data collected from the raw table.
+             */			
+            field destination-address {
+                sensor lsp {
+                    path destination-address;
+                }
+                type string;
+                description "Destination Address of the LSP";
+            }
+            field lsp-name {
+                sensor lsp {
+                    path name;
+                }
+                type string;
+                description "Name of the LSP";
+            }
+            field lsp-state {
+                sensor lsp {
+                    path lsp-state;
+                }
+                type string;
+                description "State of the LSP";
+            }
+            field session-type {
+                sensor lsp {
+                    path session-type;
+                }
+                type string;
+                description "MPLS session type.";
+            }
+            field source-address {
+                sensor lsp {
+                    path source-address;
+                }
+                type string;
+                description "Source Address of the LSP.";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger lsp-state {
+                frequency 1offset;
+                term lsp-is-up {
+                    when {
+                        matches-with "$lsp-state" Up {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$session-type lsp $lsp-name state is $lsp-state";
+                        }
+                    }
+                }
+                term lsp-is-not-up {
+                    then {
+                        status {
+                            color red;
+                            message "$session-type lsp $lsp-name state is $lsp-state";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files MplsLspTable.yml;
+                }
+            }			
+        }
+    }
+}	
