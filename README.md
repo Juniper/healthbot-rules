@@ -19,7 +19,7 @@ Submit only the .conf files
 - Pull request will be closed automatically if you contributed to the 'Juniper_Official' folder. Please refrain from doing that if you are not a employee
 
 ### Signing a commit
-- Follow the steps from [here](https://help.github.com/articles/generating-a-new-gpg-key/) to generate and add gpg key to your github user account. Use your internal juniper email address for the key. 
+- Follow the  steps from [here](https://help.github.com/articles/generating-a-new-gpg-key/) to generate and add gpg key to your github user account. Use your internal juniper email address for the key. 
 - Follow the steps from [here](https://help.github.com/articles/adding-an-email-address-to-your-github-account/) to add and verify the internal juniper email address to your github account 
 - Set your local repo to use the key generated above for making signed commits
   - Use the `gpg --list-secret-keys --keyid-format LONG` command to list GPG keys and copy the short key
