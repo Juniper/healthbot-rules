@@ -1,0 +1,217 @@
+/*
+ * Detects BGP neighbor state changes and notifies when anomalies are found.
+ * One input control detection
+ * 
+ *   1) "neighbors" is a regular expression that matches the BGP neighbors
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all bap neighbors. Use something like '172.16.*' to match all neighbor
+ *      addresses which are in 172.16.0.0/16 network range.
+ */
+healthbot {
+    topic protocol {
+        description "Monitors BGP sessions statistics i.e. neighbor state, detects flaps, route damping and max received-routes count and notify anomalies";
+        synopsis "BGP session statistics analyzer";
+        rule check-bgp-session-state {
+            description "Collects BGP session state periodically and notify anomalies when neighbor session down";
+            synopsis "BGP session state analyzer";
+            /*
+             * Monitors the BGP neighbor sessions. Notifies via the dashboard
+             * colors when the neighbor session ($session-state) state is 
+             * 'ESTABLISHED' then the color is set to green. Otherwise the
+             * color is set to red.
+             * 
+             * Use neighbor address as key for rule.
+             */
+            keys neighbor-address;
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor bgp-sensor {
+                synopsis "BGP open-config sensor definition";
+                description "/protocol/bgp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/neighbors;
+                    frequency 30s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field neighbor-address {
+                sensor bgp-sensor {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "BGP neighbor addresses to monitor";
+            }
+            field session-state {
+                sensor bgp-sensor {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "BGP session status";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger neigbor-state {
+                synopsis "BGP session state KPI";
+                description "Sets health based on change in BGP neighbor session state";
+                frequency 1offset;
+                /*
+                 * Sets color to green when BGP neighbor session state is
+                 * "ESTABLISHED".
+                 */
+                term is-neighbor-up {
+                    when {
+                        matches-with "$session-state" ESTABLISHED;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Neighbor($neighbor-address) session up";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red and sends out an anomaly notification.
+                 */ 
+                term neighbor-down {
+                    then {
+                        status {
+                            color red;
+                            message "Neighbor($neighbor-address) session down";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                is-scaling-rule {
+                    description "Fields: neighbor-address ; Directly impacted by number of bgp peers in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                                platforms EX4650 {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms EX4600 {
+                                    releases 18.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products MX {
+                                platforms MX240 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms PTX5000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX1000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5110 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }						
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-systems IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,277 @@
+/*
+ * Detects interface flaps and notifies when anomalies are found.
+ * Two inputs control detection
+ * 
+ *   1) interface-name-variable, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ *   2) flaps-threshold-variable, is the threshold that causes the rule to report
+ *      an anomaly.  By default it's 1. This rule will set a dashboard
+ *      color to red when *all* the flap-increases are greater than
+ *      'flaps-threshold-variable' for 180s. If it sees any flaps increase for a
+ *      period of less than 180s, it'll turn the color to yellow,
+ *      otherwise color is set to green.
+ */
+healthbot {
+    topic interface {
+        description "Monitors interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors and notify anomalies";
+        synopsis "Interface statistics analyzer";
+        rule check-interface-flaps-oc {
+            synopsis "Link flaps detector";
+            description "Collects link flap count periodically and notifies when flap count increases";
+            /*
+             * Monitors the link flap count on an interface. Notifies via the
+             * dashboard colors when the flaps increase by {{flaps-threshold-variable}}
+             * for every collected metric during a 60s time range (red).
+             * The color is set to yellow if we see any flap increase by
+             * {{flaps-threshold-variable}}. Otherwise the color is set to green
+             * 
+             * Use interface name as key for rule.
+             */
+            keys interface-name;
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/interface/state;
+                    frequency 30s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field admin-state {
+                sensor interfaces {
+                    path /interfaces/interface/state/admin-status;
+                }
+                type string;
+                description "Interface admin status";
+            }
+            field flaps {
+                sensor interfaces {
+                    path /interfaces/interface/state/counters/carrier-transitions;
+                    zero-suppression;
+                }
+                type integer;
+                description "Number of interface flaps";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field flaps-threshold {
+                constant {
+                    value "{{flaps-threshold-variable}}";
+                }
+                type integer;
+                description "Flap count increase threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger link-flaps {
+                synopsis "Link flaps KPI";
+                description "Sets health based on the change in flap count";
+                /*
+                 * Skips evaluation for admin down interfaces
+                 */
+		frequency 2offset;
+                term is-link-admin-down {
+                    when {
+                        matches-with "$admin-state" DOWN;
+                    }
+                }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface carrier-transition ($flaps) count increases for
+                 * all points in a 180 seconds period.
+                 */
+                term is-link-flapping-consistently {
+                    when {
+                        increasing-at-least-by-value "$flaps" {
+                            value "$flaps-threshold";
+                            time-range 6offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Flaps are increasing continuously on $interface-name, flap count is:$flaps";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the increase is at least once.
+                 */
+                term is-link-fluctuating {
+                    when {
+                        increasing-at-least-by-value "$flaps" {
+                            value "$flaps-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name flaps($flaps) are intermittent";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-link-stable {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name is stable";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable flaps-threshold-variable {
+                value 1;
+                description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable interface-name-variable {
+                value ".*";
+                description "Interface names to monitor, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                is-scaling-rule {
+                    description "Fields: interface-name ; Directly impacted by number of interfaces in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX240 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX150 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products PTX {
+                                platforms PTX5000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX1000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5100 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                                platforms EX4650 {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms EX4600 {
+                                    releases 18.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-systems IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}

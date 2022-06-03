@@ -1,0 +1,205 @@
+/*
+ * Detects system storage utilization threshold breaches and notifies when
+ * anomalies are found.
+ * Three inputs control detection
+ * 
+ *   1) storage-usage-high-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 80% of total size. This rule will
+ *      set a dashboard color to red when storage used exceed
+ *      'storage-usage-high-threshold'.
+ * 
+ *   2) storage-usage-low-threshold, is the threshold that causes the rule to
+ *      report an anomaly. By default it's 50%. This rule will set a dashboard
+ *      color to green when storage used below 'storage-usage-low-threshold'.
+ *      otherwise color is set to yellow as used % is between 50% and 80%.
+ * 
+ *   3) mount-path, is the location where filesystem is mounted.
+ *       
+ */
+healthbot {
+    topic system {
+        rule check-storage-evo {
+            /*
+             * Monitors the filesystem storage used% of system. Notifies via
+             * the dashboard colors when the storage used % exceed by 
+             * {{storage-usage-high-threshold}} to red. The color is set to 
+             * green if we see used % below {{storage-usage-low-threshold}}.
+             * Otherwise the color is set to yellow
+             * 
+             * Use filesystem mounted path name as key for rule.
+             */		
+            keys [ filesystem-name mounted-on ];
+            synopsis "system storage usage analyzer";
+            description "Collects filesystem storage usage periodically and notifies anomalies when used space exceed threshold";
+            /*
+             * Sensor configuration to get data from network devices
+             */			
+            sensor storagetable {
+                synopsis "System storage iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                iAgent {
+                    file evo-system-storage.yml;
+                    table evoStorageTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined in the yml for which data is collected.
+             */			
+            field available-blocks {
+                sensor storagetable {
+                    path available-blocks;
+                }
+                type integer;
+                description "Available block size";
+            }
+            field filesystem-name {
+                sensor storagetable {
+                    where "filesystem-name != /devfs/";
+                    where "filesystem-name != /procfs/";
+                    where "filesystem-name !~ 'dev\/root'";					
+                    path filesystem-name;
+                }
+                type string;
+                description "Name of the file system";
+            }
+            field high-threshold {
+                constant {
+                    value "{{storage-usage-high-threshold}}";
+                }
+                type integer;
+                description "Filesystem used storage high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{storage-usage-low-threshold}}";
+                }
+                type integer;
+                description "Filesystem used storage low threshold";
+            }
+            field mounted-on {
+                sensor storagetable {
+                    where "mounted-on =~ /{{mount-path}}/";
+                    path mounted-on;
+                }
+                type string;
+                description "Location where file system is mounted";
+            }
+            field re-name {
+                sensor storagetable {
+                    path re-name;
+                }
+                type string;
+                description "routing engine";
+            }
+            field total-blocks {
+                sensor storagetable {
+                    path total-blocks;
+                }
+                type integer;
+                description "Total block size";
+            }
+            field used-blocks {
+                sensor storagetable {
+                    path used-blocks;
+                }
+                type integer;
+                description "Used block size";
+            }
+            field used-percentage {
+                sensor storagetable {
+                    path used-percent;
+                }
+                type integer;
+                description "Percentage of space used";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger file-system-utilization {
+                synopsis "File system usage kpi";
+                description "Sets health based on increase in file system storage usage";
+                frequency 1offset;
+                /*
+                 * Sets color to red when the used percentage exceeds high threshold
+                 * 
+                 */				
+                term is-system-storage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$used-percentage" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$re-name $filesystem-name storage used($used-percentage %) is above ($high-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when the used percentage is less than low threshold.
+                 * 
+                 */				
+                term is-system-storage-normal {
+                    when {
+                        less-than "$used-percentage" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$re-name $filesystem-name storage used($used-percentage %) is normal";
+                        }
+                    }
+                }
+                term system-storage-middle {
+                    then {
+                        status {
+                            color yellow;
+                            message "$re-name $filesystem-name storage used($used-percentage %) is in middle range(>=$low-threshold, <=$high-threshold)";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable mount-path {
+                value .*;
+                description "mount-path, is the location where filesystem is mounted.";
+                type string;
+            }
+            variable storage-usage-high-threshold {
+                value 80;
+                description "Filesystem storage high threshold: exceed used % threshold, before we report anomaly";
+                type int;
+            }
+            variable storage-usage-low-threshold {
+                value 50;
+                description "Filesystem storage low threshold: exceed used % threshold, before we report anomaly";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files evo-system-storage.yml;
+                }
+            }
+        }
+    }
+}	

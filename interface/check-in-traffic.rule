@@ -1,0 +1,294 @@
+/*
+ * Monitors interface input traffic and notifies when anomalies are found.
+ * Four inputs control detection
+ *
+ *   1) interface-name-variable, is a regular expression that matches the
+ *      interfaces that you would like to monitor.  By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ *
+ *   2) stats-name, is a regular expression that matches the interface KPI
+ *      statistics counter name that you would like to monitor. By default it's
+ *      in-octets, Use proper counter name something like 'in-pkts' or
+ *      "in-unicast-pkts" or "in-multicast-pkts" etc.
+ *
+ *   3) in-octets-high-threshold, is the threshold that causes the rule to 
+ *      report an anomaly.  By default it's 800000000 octets. This rule will 
+ *      set a dashboard color to red when *all* the input traffic is above 
+ *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
+ *      80000000000 for 100G interface.
+ *
+ *   4) in-octets-low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 180 seconds period, otherwise color is set to green.
+ *      Use 5000000000 octets for 10G & 50000000000 for 100G interface. 
+ */
+healthbot {
+    topic interface {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-in-traffic {
+            synopsis "Interface input traffic analyzer";
+            description "Collects input traffic (in-octets) periodically and notifies in case of traffic is above threshold";
+            /*
+             * Monitors the interface input traffic. Notifies via the dashboard
+             * colors when the traffic is above {{in-octets-high-threshold}}
+             * for every collected metric during a 180s time range (red).
+             * The color is set to yellow when the traffic is above
+             * {{in-octets-low-threshold}} for every collected metric during 
+             * a 180s. Otherwise the color is set to green.
+             * 
+             * Use interface name as key for rule.
+             */
+            keys interface-name;
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces {
+                synopsis "Interface open-config sensor definition";
+                description "Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/interface/state;
+                    frequency 30s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field in-octets-stats-value {
+                sensor interfaces {
+                    path "/interfaces/interface/state/counters/{{stats-name}}";
+                    zero-suppression;
+                }
+                type integer;
+                description "Interface statistics counter (in-octets) value";
+            }
+            field interface-name {
+                sensor interfaces {
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{in-octets-high-threshold}}";
+                }
+                type integer;
+                description "Input traffic high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{in-octets-low-threshold}}";
+                }
+                type integer;
+                description "Input traffic low threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger in-traffic {
+                synopsis "Interface input traffic kpi";
+                description "Sets health based on input traffic exceed threshold";
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-octets-stats-value) is
+                 * abovehigh threshold (in-octets-high-threshold) for all  
+                 * points in a 180 seconds period.
+                 */                
+		frequency 2offset;
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$in-octets-stats-value" {
+                            value "$high-threshold";
+                            time-range 6offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name input traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($in-octets-stats-value) is
+                 * above low threshold (in-octets-low-threshold) for all points 
+                 * in a 180 seconds period.
+                 */   
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$in-octets-stats-value" {
+                            value "$low-threshold";
+                            time-range 6offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name input traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */                
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name input traffic:$in-octets-stats-value is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable in-octets-high-threshold {
+                value 800000000;
+                description "Interface input traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
+                type int;
+            }
+            variable in-octets-low-threshold {
+                value 500000000;
+                description "Interface input traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
+                type int;
+            }
+            variable stats-name {
+                value in-octets;
+                description "Interface input traffic counter name";
+                type string;
+            }
+            variable interface-name-variable {
+                value ".*";
+                description "Interfaces to be monitored";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                is-scaling-rule {
+                    description "Fields: interface-name ; Directly impacted by number of interfaces in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX240 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX150 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products PTX {
+                                platforms PTX5000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX1000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                                platforms EX4650 {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms EX4600 {
+                                    releases 18.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                    other-vendor cisco-IOS-XR {
+                        vendor-name cisco;
+                        operating-systems IOS-XR;
+                    }
+                }
+            }
+        }
+    }
+}
