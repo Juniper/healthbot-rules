@@ -42,4 +42,3 @@ Submit only the .conf files
 - CI pipeline can also be triggered by commenting 'Jenkins please retry a build' on the pull request
 
 
-
