@@ -1,0 +1,182 @@
+/*
+ * Detects interface flaps and notifies when anomalies are found.
+ * Two inputs control detection
+ *
+ * 1) error-threshold, is the threshold that causes the rule to
+ * report an anomaly. By default it is 1. This rule will set the
+ * dashboard color to red when interface flap count increases
+ * atleast by error-threshold value, if the flap count increases
+ * atmost by 1 then the dashboard color is set to green.
+ *
+ * 2) interface-name, is a regular expression that matches the
+ * interfaces that you would like to monitor. By default it’s ‘.*’,
+ * which matches all interfaces. Use something like ‘ge.*’ to
+ * match only gigabit ethernet interfaces.
+ */
+healthbot {
+    topic interface.statistics {
+        description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
+        synopsis "Interface statistics analyzer";
+        rule check-interface-flaps-netconf {
+            keys name;
+            synopsis "Link flaps detector";
+            description "Collects link flap count periodically and notifies when flap count increases";
+            /*
+             * Monitors the interface flap count. Notifies via the
+             * dashboard colors when the flap count increases at least
+             * by {{error-threshold}} it is set to red, if the flap count increases
+             * at most by 1 then it is set to green.
+             *
+             * Use name as key for rule
+             */
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interface {
+                synopsis "Interfaces netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables & views to collect data from network device";
+                iAgent {
+                    file IntStatsTable.yml;
+                    table IntStatsTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field admin-status {
+                sensor interface {
+                    path admin-status;
+                }
+                type string;
+                description "Admin status";
+            }
+            field carrier-transitions {
+                sensor interface {
+                    path carrier-transitions;
+                }
+                type integer;
+                description "Interface flaps count";
+            }
+            /*
+             * Field defined with variable and constant value
+             */
+            field error-threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "Flap count increase threshold";
+            }
+            field name {
+                sensor interface {
+                    where "admin-status =~ /up/";
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger interface-flap-count {
+                synopsis "Interface flap ";
+                description "Sets health based on the change in flap count";
+                frequency 1.5offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface flap count ($carrier-transitions) increases atleast by
+                 * threshold ($error-threshold).
+                 */
+                term is-interface-flap-count-increase-atleast {
+                    when {
+                        increasing-at-least-by-value "$carrier-transitions" {
+                            value "$error-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name flap count($carrier-transitions) increasing";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green and sends out an anomaly notification when
+                 * the interface flap count ($carrier-transitions) increases atmost by
+                 * a value 1.
+                 */
+                term is-interface-flap-count-increase-atmost {
+                    when {
+                        increasing-at-most-by-value "$carrier-transitions" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$name flap count($carrier-transitions) is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable error-threshold {
+                value 1;
+                description "Interface flap count low threshold value.";
+                type int;
+            }
+            variable interface-name {
+                value "ge-.*|xe-.*|mge-.*|et-.*";
+                description "Enter interface name in regex i.e. ge-.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category comprehensive;
+                is-scaling-rule {
+                    description "Fields:name ; Directly impacted by number of interfaces in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files IntStatsTable.yml;
+                }				
+            }
+        }
+    }
+}
