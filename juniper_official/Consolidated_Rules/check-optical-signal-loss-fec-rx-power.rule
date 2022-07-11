@@ -1,0 +1,309 @@
+/*
+ * Detects optics tx and rx signal loss,checks for fec uncorrected errors and moniters
+ * rx power.
+ */
+healthbot {
+    topic interface {
+        rule check-optical-signal-loss-fec-rx-power {
+            /*
+             * Checks for tx and rx signal loss and notifies via dashboard ,red color 
+             * when there is no signal else green. 
+             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
+             * threshold values and notifies by displaying green,yellow and red alarms.
+             * Use name as key for rule.
+             */		
+            keys name;
+            synopsis "KPI for  interface optical degradation";
+            description "Monitor the interface optical degradation";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor optical_sensor-oc {
+                synopsis "Interface optics iAgent sensor definition";
+                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                open-config {
+                    sensor-name /junos/system/linecard/optics/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field fec-uncorrected {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/lanediags/lane/media_fec_uncorr_blocks;
+                }
+                type integer;
+                description "Number of code blocks received that could not be corrected. A non-zero value equals packet loss";
+            }
+            field lane-index {
+                sensor optical_sensor-oc {
+                    path "/interfaces/interface/optics/lanediags/lane/@number";
+                }
+                type string;
+                description "Interface lane index";
+            }
+            field name {
+                sensor optical_sensor-oc {
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interface name";
+            }
+            field rx-loss-of-signal-alarm {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/lanediags/lane/lane_rx_loss_of_signal_alarm;
+                }
+                type string;
+                description "RX loss of signal alarm";
+            }
+            field tx-laser-disabled-alarm {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/lanediags/lane/lane_tx_laser_disabled_alarm;
+                }
+                type string;
+                description "tx laster disabled alarm";
+            }
+            field tx-loss-of-signal-functionality-alarm {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/lanediags/lane/lane_tx_loss_of_signal_alarm;
+                }
+                type string;
+                description "tx loss of signal functionality alarm";
+            }
+            field high-alarm-threshold {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
+                }
+                type float;
+                description "Default rx power high alarm threshold.";
+            }
+            field high-warning-threshold {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/laser_rx_power_high_warning_threshold_dbm;
+                }
+                type float;
+                description "Default rx power high warning threshold.";
+            }
+            field low-alarm-threshold {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
+                }
+                type float;
+                description "Default rx power low alarm threshold.";
+            }
+            field low-warning-threshold {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/laser_rx_power_low_warning_threshold_dbm;
+                }
+                type float;
+                description "Default rx power low warning threshold.";
+            }
+            field optics-rx {
+                sensor optical_sensor-oc {
+                    path /interfaces/interface/optics/lanediags/lane/lane_laser_receiver_power_dbm;
+                }
+                type float;
+                description "rx power level of the optical module.";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger fec-uncorrected {
+                frequency 1.5offset;
+                term is-fec-uncorrected-words {
+                    when {
+                        greater-than "$fec-uncorrected" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$name has non-zero FEC uncorrected words";
+                        }
+                    }
+                }
+            }
+            trigger rx-loss-of-signal-functionality {
+                frequency 1.5offset;
+                term is-rx-loss-of-signal-functionality-off {
+                    when {
+                        matches-with "$rx-loss-of-signal-alarm" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name, Lane $lane-index Rx loss of signal functionality alarm is OFF";
+                        }
+                    }
+                }
+                term is-rx-loss-of-signal-functionality-exists {
+                    when {
+                        exists "$tx-loss-of-signal-functionality-alarm";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name, Lane $lane-index Rx loss of signal functionality alarm is ON";
+                        }
+                    }
+                }
+            }
+            trigger tx-laser-disabled-alarm {
+                frequency 1.5offset;
+                term is-tx-laser-disabled-alarm-off {
+                    when {
+                        matches-with "$tx-laser-disabled-alarm" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name, Lane $lane-index Tx laser disabled alarm is OFF";
+                        }
+                    }
+                }
+                term is-tx-laser-disabled-alarm-exists {
+                    when {
+                        exists "$tx-laser-disabled-alarm";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name, Lane $lane-index Tx laser disabled alarm is ON";
+                        }
+                    }
+                }
+            }
+            trigger tx-loss-of-signal-functionality {
+                frequency 1.5offset;
+                term is-tx-loss-of-signal-functionality-off {
+                    when {
+                        matches-with "$tx-loss-of-signal-functionality-alarm" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
+                        }
+                    }
+                }
+                term is-tx-loss-of-signal-functionality-exists {
+                    when {
+                        exists "$tx-loss-of-signal-functionality-alarm";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $name, Lane $lane-index Tx loss of signal functionality alarm is ON";
+                        }
+                    }
+                }
+            }
+            trigger optical-rx-high-power {
+                synopsis "high rx power usage";
+                description "Sets health based on the high rx power usage";
+                frequency 1.5offset;
+                term above_alarm_threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx" "$high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rx power $optics-rx is above alarm threshold $high-alarm-threshold for interface $name lane $lane-index.";
+                        }
+                    }
+                }
+                term above_warning_threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx" "$high-warning-threshold" {
+                            time-range 2880offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Rx power $optics-rx is above warning threshold $high-warning-threshold for interface $name lane $lane-index.";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "Rx power $optics-rx is normal for interface $name lane $lane-index.";
+                        }
+                    }
+                }
+            }
+            trigger optical-rx-low-power {
+                synopsis "low rx power usage";
+                description "Sets health based on the low rx power usage";
+                frequency 1.5offset;
+                term below_alarm_threshold {
+                    when {
+                        less-than-or-equal-to "$optics-rx" "$low-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rx power $optics-rx is below alarm threshold $low-alarm-threshold for interface $name lane $lane-index.";
+                        }
+                    }
+                }
+                term below_warning_threshold {
+                    when {
+                        less-than-or-equal-to "$optics-rx" "$low-warning-threshold" {
+                            time-range 2880offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Rx power $optics-rx is below warning threshold $low-warning-threshold for interface $name lane $lane-index.";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "Rx power $optics-rx is normal for interface $name lane $lane-index.";
+                        }
+                    }
+                }
+            }			
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category comprehensive;
+                is-scaling-rule {
+                    description "Fields:name ; Directly impacted by number of interfaces running in each network device";
+                }
+                supported-healthbot-version 4.2.0;
+                catalogue {
+                    tier 1;
+                }
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}	

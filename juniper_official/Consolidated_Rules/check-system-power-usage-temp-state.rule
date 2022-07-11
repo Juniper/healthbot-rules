@@ -1,0 +1,238 @@
+/*
+ * Moniters system power usage,temperature,state and notifies when anomalies are found.
+ * 
+ * Three inputs control detection
+ *
+ *   1) "chassis-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degrees. 
+ *
+ *   2) "chassis-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degrees. 
+ * 
+ *   3) "system-power-remaining-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 20.
+ * 
+ */
+healthbot {
+    topic chassis {
+        rule check-system-power-usage-temp-state {
+            /*
+             * Moniters power usage,temperature,state and notifies via dashboard, red color 
+             * when threshold is exceeded else green.
+			 *
+             * Use chassis as key for rule.
+             */			
+            keys chassis;
+            synopsis "Chassis KPI";
+            description "Collects System power usage, Chassis state and temperature periodically and notifies anomaly";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor components-oc {
+                synopsis "Chassis components sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/component;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field chassis {
+                sensor components-oc {
+                    where "/components/component/@name == 'Chassis'";
+                    path "/components/component/@name";
+                }
+                type string;
+            }
+            field chassis-state {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+            }
+            field chassis-temperature {
+                sensor components-oc {
+                    where "/components/component/chassis/properties/property/@name == 'temperature-ambient'";
+                    path /components/component/chassis/properties/property/state/value;
+                }
+                type integer;
+                description "Chassis Ambient temperature.";
+            }
+            field high-threshold {
+                constant {
+                    value "{{chassis-temperature-high-threshold}}";
+                }
+                type integer;
+                description "Chassis ambient temperature high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{chassis-temperature-low-threshold}}";
+                }
+                type integer;
+                description "Chassis ambient temperature low threshold";
+            }
+            field power-system-maximum {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'power-system-maximum'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
+                }
+                type integer;
+                description "System max power available";
+            }
+            field power-system-remaining {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'power-system-remaining'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
+                }
+                type integer;
+                description "System remaining power";
+            }
+            field system-power-remaining-in-percentage {
+                formula {
+                    eval {
+                        expression "( $power-system-remaining / $power-system-maximum ) * 100";
+                    }
+                }
+                type integer;
+                description "Stores remaining power for system using UDF";
+            }
+            field system-power-usage-threshold {
+                constant {
+                    value "{{system-power-remaining-threshold}}";
+                }
+                type integer;
+                description "System power usage threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger Chassis-temperature {
+                frequency 1offset;
+                term is-temperature-normal {
+                    when {
+                        less-than "$chassis-temperature" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Chassis ambient temperature is normal";
+                        }
+                    }
+                }
+                term is-temperature-median {
+                    when {
+                        less-than "$chassis-temperature" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis ambient temperature($chassis-temperature) exceed low threshold";
+                        }
+                    }
+                }
+                term temperature-abnormal {
+                    then {
+                        status {
+                            color red;
+                            message "Chassis ambient temperature($chassis-temperature) exceed high threshold.";
+                        }
+                    }
+                }
+            }
+            trigger chassis-state {
+                frequency 1offset;
+                term state-is-online {
+                    when {
+                        matches-with "$chassis-state" Online {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Chassis is Online.";
+                        }
+                    }
+                }
+                term state-is-not-online {
+                    then {
+                        status {
+                            color red;
+                            message "Chassis is not Online.";
+                        }
+                    }
+                }
+            }
+            trigger system-power-usage {
+                synopsis "System power usage KPI";
+                description "Sets health based on increasing system power usage";
+                frequency 1offset;
+                term is-power-usage-abnormal {
+                    when {
+                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "System power usage abnormal! only $system-power-remaining-in-percentage % of power remaining";
+                        }
+                    }
+                }
+                term power-usage-normal {
+                    then {
+                        status {
+                            color green;
+                            message "System power usage is normal. $system-power-remaining-in-percentage% of power remaining";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable chassis-temperature-high-threshold {
+                value 55;
+                description "Chassis temperature high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable chassis-temperature-low-threshold {
+                value 45;
+                description "Chassis temperature low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable system-power-remaining-threshold {
+                value 20;
+                description "System remaining power threshold percentage";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }
+		}
+    }
+}	
+		       
