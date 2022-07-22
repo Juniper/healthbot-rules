@@ -10,17 +10,17 @@ healthbot {
              * when there is no signal else green. 
              * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
              * threshold values and notifies by displaying green,yellow and red alarms.
-             * Use name as key for rule.
+             * Use interface name as key for rule.
              */		
-            keys name;
+            keys interface-name;
             synopsis "KPI for  interface optical degradation";
             description "Monitor the interface optical degradation";
             /*
              * Sensor configuration to get data from network devices.
              */			
             sensor optical_sensor-oc {
-                synopsis "Interface optics iAgent sensor definition";
-                description "iAgent netconf rpc/cli command sensor to collect data from network device";
+                synopsis "Interface optics open-config sensor definition";
+                description "open-config sensor to collect data from network device";
                 open-config {
                     sensor-name /junos/system/linecard/optics/;
                     frequency 60s;
@@ -44,7 +44,7 @@ healthbot {
                 type string;
                 description "Interface lane index";
             }
-            field name {
+            field interface-name {
                 sensor optical_sensor-oc {
                     path "/interfaces/interface/@name";
                 }
@@ -110,7 +110,7 @@ healthbot {
             /*
              * Anomaly detection logic.
              */			
-            trigger fec-uncorrected {
+            trigger uncorrected-forward-error-correction-errors {
                 frequency 1.5offset;
                 term is-fec-uncorrected-words {
                     when {
@@ -119,7 +119,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$name has non-zero FEC uncorrected words";
+                            message "interface $interface-name has non-zero FEC uncorrected words";
                         }
                     }
                 }
@@ -135,7 +135,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Interface $name, Lane $lane-index Rx loss of signal functionality alarm is OFF";
+                            message "Interface $interface-name, Lane $lane-index Rx loss of signal functionality alarm is OFF";
                         }
                     }
                 }
@@ -146,12 +146,12 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Interface $name, Lane $lane-index Rx loss of signal functionality alarm is ON";
+                            message "Interface $interface-name, Lane $lane-index Rx loss of signal functionality alarm is ON";
                         }
                     }
                 }
             }
-            trigger tx-laser-disabled-alarm {
+            trigger interface-tx-laser-disabled-alarm {
                 frequency 1.5offset;
                 term is-tx-laser-disabled-alarm-off {
                     when {
@@ -162,7 +162,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Interface $name, Lane $lane-index Tx laser disabled alarm is OFF";
+                            message "Interface $interface-name, Lane $lane-index Tx laser disabled alarm is OFF";
                         }
                     }
                 }
@@ -173,12 +173,12 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Interface $name, Lane $lane-index Tx laser disabled alarm is ON";
+                            message "Interface $interface-name, Lane $lane-index Tx laser disabled alarm is ON";
                         }
                     }
                 }
             }
-            trigger tx-loss-of-signal-functionality {
+            trigger tx-loss-of-signal {
                 frequency 1.5offset;
                 term is-tx-loss-of-signal-functionality-off {
                     when {
@@ -189,7 +189,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Interface $name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
+                            message "Interface $interface-name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
                         }
                     }
                 }
@@ -200,12 +200,12 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Interface $name, Lane $lane-index Tx loss of signal functionality alarm is ON";
+                            message "Interface $interface-name, Lane $lane-index Tx loss of signal functionality alarm is ON";
                         }
                     }
                 }
             }
-            trigger optical-rx-high-power {
+            trigger interface-optical-rx-high-power {
                 synopsis "high rx power usage";
                 description "Sets health based on the high rx power usage";
                 frequency 1.5offset;
@@ -216,7 +216,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Rx power $optics-rx is above alarm threshold $high-alarm-threshold for interface $name lane $lane-index.";
+                            message "Rx power $optics-rx is above alarm threshold $high-alarm-threshold for interface $interface-name lane $lane-index.";
                         }
                     }
                 }
@@ -229,7 +229,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Rx power $optics-rx is above warning threshold $high-warning-threshold for interface $name lane $lane-index.";
+                            message "Rx power $optics-rx is above warning threshold $high-warning-threshold for interface $interface-name lane $lane-index.";
                         }
                     }
                 }
@@ -237,12 +237,12 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Rx power $optics-rx is normal for interface $name lane $lane-index.";
+                            message "Rx power $optics-rx is normal for interface $interface-name lane $lane-index.";
                         }
                     }
                 }
             }
-            trigger optical-rx-low-power {
+            trigger interface-optical-rx-low-power {
                 synopsis "low rx power usage";
                 description "Sets health based on the low rx power usage";
                 frequency 1.5offset;
@@ -253,7 +253,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Rx power $optics-rx is below alarm threshold $low-alarm-threshold for interface $name lane $lane-index.";
+                            message "Rx power $optics-rx is below alarm threshold $low-alarm-threshold for interface $interface-name lane $lane-index.";
                         }
                     }
                 }
@@ -266,7 +266,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Rx power $optics-rx is below warning threshold $low-warning-threshold for interface $name lane $lane-index.";
+                            message "Rx power $optics-rx is below warning threshold $low-warning-threshold for interface $interface-name lane $lane-index.";
                         }
                     }
                 }
@@ -274,7 +274,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Rx power $optics-rx is normal for interface $name lane $lane-index.";
+                            message "Rx power $optics-rx is normal for interface $interface-name lane $lane-index.";
                         }
                     }
                 }
@@ -284,7 +284,7 @@ healthbot {
                 contributor juniper;
                 category comprehensive;
                 is-scaling-rule {
-                    description "Fields:name ; Directly impacted by number of interfaces running in each network device";
+                    description "Fields:interface-name ; Directly impacted by number of interfaces running in each network device";
                 }
                 supported-healthbot-version 4.2.0;
                 catalogue {

@@ -8,7 +8,7 @@
  *      'discard-count' for 75s. otherwise color is set to green.
  */
 healthbot {
-    topic linecard.statistics {
+    topic linecard {
         rule check-pfe-discards {
              /*
              * Monitors the pfe discards count on PFE. Notifies via the dashboard
@@ -18,8 +18,8 @@ healthbot {
              */		
             synopsis "Packet forwarding engine hardware discard statistics analyzer";
             description "Collects packet forwarding engine hardware discard statistics  and notifies when discard count increases";
-            sensor pfe-sensor {
-                synopsis "iAgent netconf sensor definition";
+            sensor pfe-sensor-netconf {
+                synopsis "Sensor to collect PFE discard values";
                 description "Collects data from network device netconf rpc using get-pfe-traffic-statistics";
                 iAgent {
                     file evopfeDiscardStats.yml;
@@ -32,21 +32,21 @@ healthbot {
              * 
              */			
             field bad-route-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path bad-route-discard;
                 }
                 type integer;
                 description "Bad route discard count";
             }
             field bits-to-test-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path bits-to-test-discard;
                 }
                 type integer;
                 description "Bits to test discard count";
             }
             field data-error-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path data-error-discard;
                 }
                 type integer;
@@ -60,49 +60,49 @@ healthbot {
                 description "Drop count increase threshold";
             }
             field fabric-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path fabric-discard;
                 }
                 type integer;
                 description "Fabric discard count";
             }
             field info-cell-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path info-cell-discard;
                 }
                 type integer;
                 description "Info cell discard count";
             }
             field invalid-iif-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path invalid-iif-discard;
                 }
                 type integer;
                 description "Invalid IIF discard count";
             }
             field nexthop-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path nexthop-discard;
                 }
                 type integer;
                 description "Nexthop discard count";
             }
             field stack-overflow-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path stack-overflow-discard;
                 }
                 type integer;
                 description "Stack overflow discard count";
             }
             field stack-underflow-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path stack-underflow-discard;
                 }
                 type integer;
                 description "Stack underflow discard count";
             }
             field tcp-header-error-discard {
-                sensor pfe-sensor {
+                sensor pfe-sensor-netconf {
                     path tcp-header-error-discard;
                 }
                 type integer;
@@ -111,11 +111,11 @@ healthbot {
             /*
             * Anomaly detection logic.
             */			
-            trigger data-error-discard {
+            trigger pfe-data-error-discard {
                 synopsis "PFE data error discards KPI";
                 description "Sets health based on the change in PFE data error discard count";
                 frequency 1.25offset;
-                term is-data-error-discard {
+                term data-error-discard-increase {
                     when {
                         increasing-at-least-by-value "$data-error-discard" {
                             value "$drop-threshold";
@@ -128,7 +128,7 @@ healthbot {
                         }
                     }
                 }
-                term Term_2 {
+                term no-data-error-discard-increase {
                     then {
                         status {
                             color green;

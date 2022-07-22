@@ -1,5 +1,5 @@
 /*
- * Detects interface in errors and notifies when anomalies are found.
+ * Moniters interface fields and notifies when anomalies are found.
  * Five inputs control detection
  * 
  *   1) interface-name-variable, is a regular expression that matches the
@@ -38,16 +38,12 @@ healthbot {
         description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
         rule check-interface-in-out-errors-traffic-state-flaps {
-            synopsis "Interface in-error analyzer";
-            description "Collects the interface input error (errors (all), drops,discards, timeouts and runts) periodically and notifies in case of anomalies";
+            synopsis "Interface statistics analyzer";
+            description "Collects the interface input fields like state,flaps,neighbor state etc periodically and notifies in case of anomalies";
             /*
-             * Monitors the interface in-errors count on an interface.
-             * Notifies via the dashboard colors when the flaps increase by
-             * {{in-errors-threshold-variable}} for every collected metric during a 60s
-             * time range (red).  The color is set to yellow if we see any
-             * in errors increase by {{in-errors-threshold-variable}}. Otherwise the
-             * color is set to green.
-             * 
+             * Monitors the interface input fields.
+             * Notifies via the dashboard colors when the field values increase by
+             * more than the threshold values.
              * Use interface name as key for rule.
              */
             keys interface-name;
@@ -140,14 +136,14 @@ healthbot {
                     value "{{errors-threshold-variable}}";
                 }
                 type integer;
-                description "In errors count increase threshold";
+                description "Input errors count increase threshold";
             }
             field out-errors-threshold {
                 constant {
                     value "{{errors-threshold-variable}}";
                 }
                 type integer;
-                description "Out errors count increase threshold";
+                description "Output errors count increase threshold";
             }
             field high-threshold {
                 constant {
@@ -166,12 +162,12 @@ healthbot {
             /*
              * Anomaly detection logic.
              */
-            trigger in-errors {
+            trigger interface-input-errors {
                 synopsis "Interface in-errors kpi";
                 description "Sets health based on the change in in-errors count";
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * interface in errors ($in-errors-count) count increases for 
+                 * interface Input errors ($in-errors-count) count increases for 
                  * all points in 180 seconds period.
                  */
   	         	frequency 2offset;
@@ -185,7 +181,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "In errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
+                            message "Input errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
                         }
                     }
                 }
@@ -202,7 +198,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$interface-name in errors($in-errors-count) are intermittent";
+                            message "$interface-name Input errors($in-errors-count) are intermittent";
                         }
                     }
                  }
@@ -218,12 +214,12 @@ healthbot {
                     }
                 }
             }
-            trigger out-errors {
+            trigger interface-output-errors {
                 synopsis "Interface out-errors kpi";
                 description "Sets health based on the change in out-errors count";
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the interface out errors ($out-errors-count) count increases
+                 * the interface Output errors ($output-errors-count) count increases
                  * for all points in 180 seconds period.
                  */
 	        	frequency 2offset;
@@ -237,7 +233,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Out errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
+                            message "Output errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
                         }
                     }
                 }
@@ -254,7 +250,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$interface-name out errors ($out-errors-count) are intermittent";
+                            message "$interface-name Output errors ($out-errors-count) are intermittent";
                         }
                     }
                 }
@@ -270,7 +266,7 @@ healthbot {
                     }
                 }
             }
-            trigger in-traffic {
+            trigger input-traffic {
                 synopsis "Interface input traffic kpi";
                 description "Sets health based on input traffic exceed threshold";
                 /*
@@ -326,7 +322,7 @@ healthbot {
                     }
                 }
             }
-            trigger out-traffic {
+            trigger output-traffic {
                 synopsis "Interface output traffic kpi";
                 description "Sets health based on output traffic exceed threshold";
                 /*
@@ -360,7 +356,7 @@ healthbot {
                     when {
                         increasing-at-least-by-value "$out-octets-stats-value" {
                             value "$low-threshold";
-                            time-range 180s;
+                            time-range 6offset;
                         }
                     }
                     then {
@@ -382,7 +378,7 @@ healthbot {
                     }
                 }
             }
-            trigger link-state {
+            trigger interface-link-state {
                 synopsis "link state kpi";
                 description "Sets health based on link state";
                 /*
@@ -422,7 +418,7 @@ healthbot {
                     }
                 }
             }
-            trigger link-flaps {
+            trigger interface-link-flaps {
                 synopsis "Link flaps KPI";
                 description "Sets health based on the change in flap count";
                 /*
@@ -488,7 +484,7 @@ healthbot {
              */
             variable errors-threshold-variable {
                 value 1;
-                description "Interface in errors threshold: Number of errors increase between metrics, before we report anomaly";
+                description "Interface Input errors threshold: Number of errors increase between metrics, before we report anomaly";
                 type int;
             }
             variable octets-high-threshold {

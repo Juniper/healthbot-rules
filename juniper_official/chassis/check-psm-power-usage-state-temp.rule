@@ -26,7 +26,7 @@ healthbot {
                 synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
-                    sensor-name /components/component;
+                    sensor-name /components/;
                     frequency 60s;
                 }
             }
@@ -58,7 +58,6 @@ healthbot {
             field psm-state {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == ''state'";
-                    where "/components/component/properties/property/@name == 'state'";
                     path /components/component/properties/property/state/value;
                 }
                 type string;
@@ -89,7 +88,7 @@ healthbot {
             /*
              * Anomaly detection logic.
              */			
-            trigger psm-is-online {
+            trigger psm-online {
                 frequency 1offset;
                 term state-is-online {
                     when {
@@ -108,7 +107,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$psm is not online.";
+                            message "$psm is not online.psm state is $psm-state";
                         }
                     }
                 }

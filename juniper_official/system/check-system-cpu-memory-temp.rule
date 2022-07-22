@@ -1,5 +1,5 @@
 /*
- * Moniters system cpu, memory and temperature and notifies when anomalies are found.
+ * Monitors system cpu, memory and temperature and notifies when anomalies are found.
  * 
  * Five inputs control detection
  *
@@ -31,7 +31,7 @@ healthbot {
     topic system {
         rule check-system-cpu-memory-temp {
             /*
-             * Moniters system cpu, memory and temperature and notifies via dashboard, red color 
+             * Monitors system cpu, memory and temperature and notifies via dashboard, red color 
              * when threshold is exceeded else green. 
 			 *
              * Use routing-engine as key for rule.
@@ -149,7 +149,7 @@ healthbot {
             /*
              * Anomaly detection logic.
              */			
-             trigger re-cpu-utilization {
+             trigger routing-engine-cpu-utilization {
                  synopsis "Routing engine CPU KPI";
                  description "Sets health based on increase in RE CPU utilization";
                  frequency 1offset;
@@ -190,14 +190,14 @@ healthbot {
                      }
                  }
              }
-             trigger re-memory-buffer-utilization {
+             trigger routing-engine-memory-buffer-utilization {
                  synopsis "RE system memory buffer utilization kpi";
                  description "Sets health based on increase in system memory buffer utilization";
                  frequency 1offset;
                  term is-re-memory-buffer-utilization-abnormal {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
-                             time-range 5offset;
+                             time-range 2offset;
                              all;
                          }
                      }
@@ -211,7 +211,7 @@ healthbot {
                  term is-re-memory-buffer-utilization-middle {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
-                             time-range 5offset;
+                             time-range 2offset;
                              all;
                          }
                      }
@@ -231,7 +231,7 @@ healthbot {
                      }
                  }
              }
-            trigger re-temperature {
+            trigger routing-engine-temperature {
                 synopsis "RE temperature KPI";
                 description "Sets health based increase in RE temperature";
                 frequency 1offset;
@@ -278,7 +278,7 @@ healthbot {
                     }
                 }
             }
-            trigger re-cpu-temperature {
+            trigger routing-engine-cpu-temperature {
                 synopsis "RE CPU temperature KPI";
                 description "Sets health based increase in RE CPU temperature";
                 frequency 1offset;
