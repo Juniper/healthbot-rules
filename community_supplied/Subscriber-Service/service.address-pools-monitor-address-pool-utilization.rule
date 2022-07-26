@@ -1,0 +1,220 @@
+healthbot {
+    topic service.address-pools {
+        rule  monitor-address-pool-utilization {
+            keys [ logical-system-routing-instance-name pool-name ];
+            synopsis "Monitors individual address pool utilization";
+            description "Monitor the utilization of individual address pools against utilization thresholds expressed as a percent.";
+            sensor pool {
+                synopsis "A list of pools in a given LSRI";
+                description "The per LSRI list of address pools";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool;
+                    frequency 60s;
+                }
+            }
+            field address-usage-ml {
+                formula {
+                    anomaly-detection {
+                        algorithm 3sigma;
+                        learning-period 1d;
+                        pattern-periodicity 1h;
+                        field-name "$pool-utilization-percent";
+                    }
+                }
+                type integer;
+                description "anomaly-detection Value calculated based on 3sigma algorithm";
+            }
+            field addresses-in-use {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/address-in-use;
+                }
+                type integer;
+                description "The number of addresses in this pool that have been allocated for use";
+            }
+            field addresses-total {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/address-total;
+                }
+                type integer;
+                description "The total number of addresses in this pool";
+            }
+			field linked-pool-head {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/linked-pool-head;
+                }
+                type string;
+                description "The head of the linked address pool.";
+            }
+            field logical-system-routing-instance-name {
+                sensor pool {
+                    path "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/@name";
+                }
+                description "The LSRI context in which this pool exists";
+            }
+            field pool-name {
+                sensor pool {
+                    path "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/@pool-name";
+                }
+                description "The name of the address pool.";
+            }
+            field pool-utilization-percent {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/address-usage-percent;
+                }
+                type integer;
+                description "address-usage-percent field";
+            }
+            field red-level {
+                constant {
+                    value "{{critical-threshold-percent}}";
+                }
+                type integer;
+                description "The utilization percentage at which a critical alarm is triggered";
+            }
+            field utilization-minimum-threshold {
+                constant {
+                    value "{{minimum-pool-utilization-threshold}}";
+                }
+                type integer;
+                description "address pool utilization min threshold";
+            }
+            field yellow-level {
+                constant {
+                    value "{{warning-threshold-percent}}";
+                }
+                type integer;
+                description "The utilization percentage at which a warning alarm is triggered";
+            }
+            trigger address-pool-utilization {
+                synopsis "Pool utilization health";
+                description "Quantify address pool utilization health";
+                frequency 1.5offset;
+                term is-critical-utilization {
+                    when {
+                        greater-than-or-equal-to "$pool-utilization-percent" "$red-level";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Pool $pool-name,  ( Pool head : $linked-pool-head), pool-utilization-percent: ($pool-utilization-percent) is high (>= $red-level %)!. Consider enlarging the address pool. $addresses-in-use in use of $addresses-total in current pool.";
+                        }
+                    }
+                }
+                term is-utilization-abnormal {
+                    when {
+                        less-than "$pool-utilization-percent" "$utilization-minimum-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Pool $pool-name,  ( Pool head : $linked-pool-head), pool-utilization-percent: ($pool-utilization-percent)  is abnormal. It's less than utilization-minimum-threshold% : (< $utilization-minimum-threshold %). $addresses-in-use in use of $addresses-total in current pool.";
+                        }
+                    }
+                }
+                term is-utilization-abnormal-ml {
+                    when {
+                        equal-to "$address-usage-ml" 1 {
+                            time-range 5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Pool $pool-name,  ( Pool head : $linked-pool-head), pool-utilization-percent: ($pool-utilization-percent) is abnormal based on ML algorithm";
+                        }
+                    }
+                }
+                term is-warning-utilization {
+                    when {
+                        greater-than-or-equal-to "$pool-utilization-percent" "$yellow-level";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Pool $pool-name,  ( Pool head : $linked-pool-head), pool-utilization-percent: ($pool-utilization-percent) is High (Warning trigger), it's (>= $yellow-level %). $addresses-in-use in use of $addresses-total in current pool.";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$pool-utilization-percent" "$yellow-level";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Pool $pool-name,  ( Pool head : $linked-pool-head), pool-utilization-percent: ($pool-utilization-percent) is nominal. $addresses-in-use in use of $addresses-total in current pool.";
+                        }
+                    }
+                }
+            }
+            variable critical-threshold-percent {
+                value 90;
+                description "Operator supplied alert threshold percent";
+                type int;
+            }
+            variable minimum-pool-utilization-threshold {
+                value 10;
+                description "address pool utilization minimum threshold value";
+                type int;
+            }
+            variable warning-threshold-percent {
+                value 70;
+                description "Operator supplied warning threshold percent";
+                type int;
+            }
+			rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

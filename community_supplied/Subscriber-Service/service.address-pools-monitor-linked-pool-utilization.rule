@@ -1,0 +1,183 @@
+healthbot {
+    topic service.address-pools {
+        rule monitor-linked-pool-utilization {
+            keys [ linked-pool-head logical-system-routing-instance-name ];
+            synopsis "Monitors the utilization of a linked address-pool";
+            description "Monitors the utilization of a linked address-pool, A linked address-pool is a singly linked list of address pools.";
+            field-aggregation-time-range 50s;
+            sensor pool {
+                open-config {
+                    sensor-name /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool;
+                    frequency 60s;
+                }
+            }
+            field address-in-use-aggregate {
+                formula {
+                    sum {
+                        field-name "$addresses-in-use";
+                        time-range 50s;
+                    }
+                }
+                type integer;
+                description "The number of addresses in this linked pool that have been allocated for use.";
+            }
+            field addresses-in-use {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/address-in-use;
+                }
+                type integer;
+                description "The number of addresses in this pool that have been allocated for use";
+            }
+            field addresses-total {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/address-total;
+                }
+                type integer;
+                description "The total number of addresses in this pool";
+            }
+            field addresses-total-aggregate {
+                formula {
+                    sum {
+                        field-name "$addresses-total";
+                        time-range 50s;
+                    }
+                }
+                type integer;
+                description "The total number of addresses in this linked pool";
+            }
+            field linked-pool-head {
+                sensor pool {
+                    path /junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/linked-pool-head;
+                }
+                type string;
+                description "The head of the linked address pool.";
+            }
+            field linked-pool-utilization-percent {
+                formula {
+                    eval {
+                        expression " ( $address-in-use-aggregate / $addresses-total-aggregate ) * 100";
+                    }
+                }
+                type float;
+                description "Linked pool utilization";
+            }
+            field logical-system-routing-instance-name {
+                sensor pool {
+                    path "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/@name";
+                }
+                type string;
+                description "The LSRI context in which this pool exists";
+            }
+            field red-level {
+                constant {
+                    value "{{critical-threshold-percent}}";
+                }
+                type integer;
+                description "The utilization percentage at which a critical alarm is triggered";
+            }
+            field yellow-level {
+                constant {
+                    value "{{warning-threshold-percent}}";
+                }
+                type integer;
+                description "The utilization percentage at which a warning alarm is triggered";
+            }
+            trigger address-pool-utilization {
+                frequency 1.5offset;
+                term is-critical-utilization {
+                    when {
+                        greater-than-or-equal-to "$linked-pool-utilization-percent" "$red-level";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "linked-pool-head: $linked-pool-head, linked-pool-utilization-percent: $linked-pool-utilization-percent is high ( >= $red-level%). Consider enlarging the address pool."
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$linked-pool-utilization-percent" "$yellow-level";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "linked-pool-head: $linked-pool-head, linked-pool-utilization-percent: $linked-pool-utilization-percent is high (Warning trigger) ( >= $yellow-level%). Consider enlarging the address pool." 
+                        }
+                    }
+                }
+                term is-nominal {
+                    then {
+                        status {
+                            color green;
+                            message "linked-pool-head: $linked-pool-head, linked-pool-utilization-percent: $linked-pool-utilization-percent is nominal." 
+                        }
+                    }
+                }
+            }
+            variable critical-threshold-percent {
+                value 80;
+                description "Operator supplied alert threshold percent";
+                type int;
+            }
+            variable warning-threshold-percent {
+                value 70;
+                description "Operator supplied warning threshold percent";
+                type int;
+            }
+			rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

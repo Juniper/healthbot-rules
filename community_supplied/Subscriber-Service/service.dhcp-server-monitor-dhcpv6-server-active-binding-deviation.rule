@@ -1,0 +1,233 @@
+healthbot {
+    topic service.dhcp-server {
+        rule monitor-dhcpv6-server-active-binding-deviation {
+            keys routing-instance-name;
+            synopsis "Monitors DHCPv6 Server active bindings";
+            description "Monitors deviation of DHCPv6 Server active (bindings in the bound and renew states) bindings";
+            function calculate-percent-deviation {
+                description "Calculates deviation percent from baseline";
+                path math_functions.py;
+                method deviationPercent;
+                argument base;
+                argument newValue;
+            }
+            sensor dhcpv6-statistics {
+                synopsis "DHCPv6 state for a given RI";
+                description "The set of DHCP state and statistics per routing-instance";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance;
+                    frequency 30s;
+                }
+            }
+            field average-clients {
+                constant {
+                    value "{{expected-average-bindings}}";
+                }
+                type integer;
+                description "Baseline value of expected bindings/clients in the active state";
+            }
+            field binding-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-binding;
+                }
+                type integer;
+                description "Number of bindings in the binding state";
+            }
+            field bound-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-bound;
+                }
+                type integer;
+                description "Number of bindings in the bound state";
+            }
+            field clients-with-service {
+                formula {
+				    eval {
+                        expression " $bound-clients + $renewing-clients ";
+                    }
+                }
+                type integer;
+                description "Number of clients in states with service (active)";
+            }
+            field dhcpv6-client-deviation {
+                formula {
+                    user-defined-function {
+                        function-name calculate-percent-deviation;
+                        argument base "$average-clients";
+                        argument newValue "$clients-with-service";
+                    }
+                }
+                description "Deviation of client count to the baseline";
+            }
+            field init-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-init;
+                }
+                type integer;
+                description "Number of bindings in the init state";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-deviation-percent}}";
+                }
+                type integer;
+                description "Critical deviation threshold";
+            }
+            field releasing-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-release;
+                }
+                type integer;
+                description "Number of bindings in the releasing state";
+            }
+            field renewing-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-renew;
+                }
+                type integer;
+                description "Number of bindings in the renewing state";
+            }
+            field requesting-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-requesting;
+                }
+                type integer;
+                description "Number of bindings in the requesting state";
+            }
+            field restoring-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-server-restoring;
+                }
+                type integer;
+                description "Number of bindings in the restoring state";
+            }
+            field routing-instance-name {
+                sensor dhcpv6-statistics {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/@ri-name";
+                }
+                type string;
+                description "The routing-instance context in which the server operates";
+            }
+            field selecting-clients {
+                sensor dhcpv6-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/bindings/binding-state-v6server-selecting;
+                }
+                type integer;
+                description "Number of bindings in the selecting state";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-deviation-percent}}";
+                }
+                type integer;
+                description "Cautionary deviation threshold";
+            }
+            trigger dhcpv6-active-subscriber-deviation {
+                synopsis "Deviation of active bindings from baseline";
+                description "Monitors deviation of DHCPv6 Server active bindings from an established baseline";
+                frequency 1.5offset;
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$dhcpv6-client-deviation" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCPv6 Server active binding count ($clients-with-service) has deviated >= $red-limit% of the expected binding count ($average-clients).";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$dhcpv6-client-deviation" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "DHCPv6 Server active binding count ($clients-with-service) has deviated >= $yellow-limit% of the expected binding count ($average-clients).";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$dhcpv6-client-deviation" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "DHCPv6 Server active-binding count ($clients-with-service) is within tolerable deviation of the expected value ($average-clients).";
+                        }
+                    }
+                }
+            }
+            variable critical-deviation-percent {
+                value 20;
+                description "A critical deviation from the baseline";
+                type int;
+            }
+            variable expected-average-bindings {
+                value 1000;
+                description "The expected average number of DHCPv6 server bindings";
+                type int;
+            }
+            variable warning-deviation-percent {
+                value 10;
+                description "A deviation from the baseline at which a warning is raised";
+                type int;
+            }
+			rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
