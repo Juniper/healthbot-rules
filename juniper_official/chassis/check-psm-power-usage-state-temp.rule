@@ -6,6 +6,8 @@
  *   1) "system-power-remaining-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 20.
  * 
+ *   2) "psm" is the power module,it can be psm0 or psm1.
+ *      
  */
 healthbot {
     topic chassis {
@@ -36,7 +38,7 @@ healthbot {
              */			
             field psm {
                 sensor components-oc {
-                    where "/components/component/@name =~ /^PSM[0-1]$/";
+                    where "/components/component/@name =~ /{{psm}}/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -161,6 +163,11 @@ healthbot {
                 description "System remaining power threshold percentage";
                 type int;
             }
+            variable psm {
+                value "^PSM[0-1]$";
+                description "Enter PSM to be monitored";
+                type string;
+            }			
             rule-properties {
                 version 1;
                 contributor juniper;

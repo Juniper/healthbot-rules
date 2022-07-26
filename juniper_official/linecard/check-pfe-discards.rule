@@ -8,7 +8,7 @@
  *      'discard-count' for 75s. otherwise color is set to green.
  */
 healthbot {
-    topic linecard {
+    topic fpc {
         rule check-pfe-discards {
              /*
              * Monitors the pfe discards count on PFE. Notifies via the dashboard
@@ -17,10 +17,10 @@ healthbot {
              * 
              */		
             synopsis "Packet forwarding engine hardware discard statistics analyzer";
-            description "Collects packet forwarding engine hardware discard statistics  and notifies when discard count increases";
+            description "Collects packet forwarding engine hardware discard statistics and notifies when discard count increases";
             sensor pfe-sensor-netconf {
-                synopsis "Sensor to collect PFE discard values";
-                description "Collects data from network device netconf rpc using get-pfe-traffic-statistics";
+                synopsis "PFE discard KPI";
+                description "Collects data from  network device netconf rpc using get-pfe-traffic-statistics";
                 iAgent {
                     file evopfeDiscardStats.yml;
                     table pfeDiscardStats;
@@ -108,14 +108,104 @@ healthbot {
                 type integer;
                 description "TCP header error discard count";
             }
+            field bad-route-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$bad-route-discard";
+                    }
+                }
+                type integer;
+                description "Bad route discard rate.";
+            }
+            field bits-to-test-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$bits-to-test-discard";
+                    }
+                }
+                type integer;
+                description "Bits to test discard rate.";
+            }
+            field data-error-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$data-error-discard";
+                    }
+                }
+                type integer;
+                description "Data error discard rate";
+            }
+            field fabric-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$fabric-discard";
+                    }
+                }
+                type integer;
+                description "Fabric discard rate";
+            }
+            field info-cell-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$info-cell-discard";
+                    }
+                }
+                type integer;
+                description "Info cell discard rate";
+            }
+            field invalid-iif-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$invalid-iif-discard";
+                    }
+                }
+                type integer;
+                description "Invalid IIF discard rate.";
+            }
+            field nexthop-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$nexthop-discard";
+                    }
+                }
+                type integer;
+                description "Nexthop discard rate.";
+            }
+            field stack-overflow-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$stack-overflow-discard";
+                    }
+                }
+                type integer;
+                description "Stack overflow discard rate.";
+            }
+            field stack-underflow-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$stack-underflow-discard";
+                    }
+                }
+                type integer;
+                description "Stack underflow discard rate";
+            }
+            field tcp-header-error-discard-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$tcp-header-error-discard";
+                    }
+                }
+                type integer;
+                description "TCP header error discard rate.";
+            }
             /*
             * Anomaly detection logic.
             */			
-            trigger pfe-data-error-discard {
+            trigger data-error-discard {
                 synopsis "PFE data error discards KPI";
                 description "Sets health based on the change in PFE data error discard count";
                 frequency 1.25offset;
-                term data-error-discard-increase {
+                term is-data-error-discard {
                     when {
                         increasing-at-least-by-value "$data-error-discard" {
                             value "$drop-threshold";
@@ -124,11 +214,11 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing data-error-discard count $data-error-discard";
+                            message "Increasing data-error-discard count $data-error-discard at the rate $data-error-discard-rate per minute ";
                         }
                     }
                 }
-                term no-data-error-discard-increase {
+                term Term_2 {
                     then {
                         status {
                             color green;
@@ -150,7 +240,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing bad-route-discard drop count $bad-route-discard";
+                            message "Increasing bad-route-discard drop count $bad-route-discard at the rate $bad-route-discard-rate per minute";
                         }
                     }
                 }
@@ -176,7 +266,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing bits-to-test-discard drop count $bits-to-test-discard";
+                            message "Increasing bits-to-test-discard drop count $bits-to-test-discard at the rate $bits-to-test-discard-rate per minute";
                         }
                     }
                 }
@@ -202,7 +292,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing fabric drop count $fabric-discard";
+                            message "Increasing fabric drop count $fabric-discard at the rate $fabric-discard-rate per minute.";
                         }
                     }
                 }
@@ -228,7 +318,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing info-cell-discard drop count $info-cell-discard";
+                            message "Increasing info-cell-discard drop count $info-cell-discard at the rate $info-cell-discard-rate per minute";
                         }
                     }
                 }
@@ -254,7 +344,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing invalid-iif-discard drop count $invalid-iif-discard";
+                            message "Increasing invalid-iif-discard drop count $invalid-iif-discard at the rate $invalid-iif-discard-rate per minute";
                         }
                     }
                 }
@@ -280,7 +370,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing nexthop-discard drop count $nexthop-discard";
+                            message "Increasing nexthop-discard drop count $nexthop-discard at the rate $nexthop-discard-rate per minute";
                         }
                     }
                 }
@@ -306,7 +396,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing stack-overflow-discard drop count $stack-overflow-discard";
+                            message "Increasing stack-overflow-discard drop count $stack-overflow-discard at the rate $stack-overflow-discard-rate per minute";
                         }
                     }
                 }
@@ -332,7 +422,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing stack-underflow-discard drop count $stack-underflow-discard";
+                            message "Increasing stack-underflow-discard drop count $stack-underflow-discard at the rate $stack-underflow-discard-rate per minute";
                         }
                     }
                 }
@@ -358,7 +448,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Increasing tcp-header-error-discard drop count $tcp-header-error-discard";
+                            message "Increasing tcp-header-error-discard drop count $tcp-header-error-discard at the rate $tcp-header-error-discard-rate per minute";
                         }
                     }
                 }

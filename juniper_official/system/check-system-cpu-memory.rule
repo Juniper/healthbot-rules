@@ -1,5 +1,5 @@
 /*
- * Monitors system cpu, memory and temperature and notifies when anomalies are found.
+ * Monitors system cpu, memory utlilization and notifies when anomalies are found.
  * 
  * Five inputs control detection
  *
@@ -8,42 +8,33 @@
  *      both the routing engines. Use something like '0' to match only
  *      routing engine 0.
  *
- *   2) "re-temperature-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 45 degree Cecilius of 
- *      RE temperature. This rule will set a dashboard color to green
- *      when temperature is below low threshold.
- * 
- *   3) "re-temperature-high-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
- *      temperature. 
- *
- *   4) "memory-buffer-re-high-threshold" is the threshold that causes the
+ *   2) "memory-buffer-re-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 75. 
  * 
- *   5) "re-cpu-high-threshold" is the threshold that causes the
+ *   3) "re-cpu-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 80.
  *
- *   6) "re-cpu-low-threshold" is the threshold that causes the
+ *   4) "re-cpu-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 50.
  * 
  */
 healthbot {
     topic system {
-        rule check-system-cpu-memory-temp {
+        rule check-system-cpu-memory {
             /*
-             * Monitors system cpu, memory and temperature and notifies via dashboard, red color 
+             * Monitors the system cpu, memory utlilization and notifies via dashboard, red color 
              * when threshold is exceeded else green. 
 			 *
              * Use routing-engine as key for rule.
              */		
              keys routing-engine;
-             synopsis "Routing engine CPU analyzer";
-             description "Collects system RE CPU, Memory, System and Temperature statistics periodically and notifies anomalies";
+             synopsis "CPU and Memory analyzer";
+             description "Collects system RE CPU and Memory statistics periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
              */			 
              sensor components-oc {
-                 synopsis "system components open-config sensor definition";
+                 synopsis "system cpu and memory KPI";
                  description "/components open-config sensor to collect telemetry data from network device";
                  open-config {
                      sensor-name /components/;
@@ -54,18 +45,10 @@ healthbot {
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */				 
-             field routing-engine-cpu-temperature {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'CPU Temperature'";
-                     path /components/component/properties/property/state/value;
-                 }
-                 type integer;
-                 description "CPU temperature";
-             }
              field re-cpu-utilization {
                  formula {
                      eval {
-                         expression "( 100 - $re-cpu-utilization-oc )";
+                         expression "( 100 - $re-cpu-utilization-idle )";
                      }
                  }
                  type integer;
@@ -85,7 +68,7 @@ healthbot {
                  type integer;
                  description "RE CPU utilization low threshold";
              }
-             field re-cpu-utilization-oc {
+             field re-cpu-utilization-idle {
                  sensor components-oc {
                      where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
                      path /components/component/properties/property/state/value;
@@ -117,14 +100,6 @@ healthbot {
                  type integer;
                  description "RE system memory buffer low threshold";
              }
-             field routing-engine-temperature {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'RE temperature'";
-                     path /components/component/properties/property/state/value;
-                 }
-                 type integer;
-                 description "RE temperature";
-             }
              field routing-engine {
                  sensor components-oc {
                      where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
@@ -132,20 +107,6 @@ healthbot {
                  }
                  description "RE name to monitor";
              }
-            field high-threshold {
-                constant {
-                    value "{{re-temperature-high-threshold}}";
-                }
-                type integer;
-                description "RE temperature high threshold";
-            }
-            field low-threshold {
-                constant {
-                    value "{{re-temperature-low-threshold}}";
-                }
-                type integer;
-                description "RE temperature low threshold";
-            }
             /*
              * Anomaly detection logic.
              */			
@@ -156,7 +117,7 @@ healthbot {
                  term is-re-cpu-utilization-abnormal {
                      when {
                          greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
-                             time-range 5offset;
+                             time-range 3offset;
                              all;
                          }
                      }
@@ -170,7 +131,7 @@ healthbot {
                  term is-re-cpu-utilization-middle {
                      when {
                          greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
-                             time-range 5offset;
+                             time-range 3offset;
                              all;
                          }
                      }
@@ -197,7 +158,7 @@ healthbot {
                  term is-re-memory-buffer-utilization-abnormal {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
-                             time-range 2offset;
+                             time-range 5offset;
                              all;
                          }
                      }
@@ -211,7 +172,7 @@ healthbot {
                  term is-re-memory-buffer-utilization-middle {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
-                             time-range 2offset;
+                             time-range 5offset;
                              all;
                          }
                      }
@@ -231,100 +192,6 @@ healthbot {
                      }
                  }
              }
-            trigger routing-engine-temperature {
-                synopsis "RE temperature KPI";
-                description "Sets health based increase in RE temperature";
-                frequency 1offset;
-                /*
-                 * Sets color to green when RE temperature
-                 * re-temperature is below low threshold ($low-threshold).
-                 */ 
-                term is-re-temperature-normal {
-                    when {
-                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow and notify anomaly when RE temperature 
-                 * ($routing-engine-temperature) is below high threshold
-                 * ($high-threshold).
-                 */  
-                term is-re-temperature-median {
-                    when {
-                        less-than-or-equal-to "$routing-engine-temperature" "$high-threshold";
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine temperature($routing-engine-temperature degree C) exceed low threshold";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to red and notify anomaly.
-                 */ 
-                term re-temperature-abnormal {
-                    then {
-                        status {
-                            color red;
-                            message "$routing-engine temperature($routing-engine-temperature degree C) exceed high threshold";
-                        }
-                    }
-                }
-            }
-            trigger routing-engine-cpu-temperature {
-                synopsis "RE CPU temperature KPI";
-                description "Sets health based increase in RE CPU temperature";
-                frequency 1offset;
-                /*
-                 * Sets color to green when RE CPU temperature
-                 * re-cpu-temperature is below low threshold ($low-threshold).
-                 */ 
-                term is-temperature-normal {
-                    when {
-                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow and notify anomaly when RE CPU
-                 * temperature ($routing-engine-cpu-temperature) is below high threshold
-                 * ($high-threshold).
-                 */  
-                term is-temperature-median {
-                    when {
-                        less-than "$routing-engine-cpu-temperature" "$high-threshold";
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceed low threshold";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to red and notify anomaly.
-                 */ 
-                term temperature-abnormal {
-                    then {
-                        status {
-                            color red;
-                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceed high threshold";
-                        }
-                    }
-                }
-            }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
@@ -354,17 +221,7 @@ healthbot {
                 description "Routing engine numbers to monitor, regular expression, e.g. '0'";
                 type string;
             }
-            variable re-temperature-high-threshold {
-                value 55;
-                description "RE temperature high threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }
-            variable re-temperature-low-threshold {
-                value 45;
-                description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }		
-             rule-properties {
+            rule-properties {
                  version 1;
                  contributor juniper;
                  category advanced;

@@ -14,17 +14,15 @@
  *      period of less than 180s, it'll turn the color to yellow,
  *      otherwise color is set to green.
  *
- *   3) octets-high-threshold, is the threshold that causes the rule to 
- *      report an anomaly.  By default it's 800000000 octets. This rule will 
+ *   3) traffic-high-threshold, is the threshold that causes the rule to 
+ *      report an anomaly.  By default it's 80. This rule will 
  *      set a dashboard color to red when *all* the input traffic is above 
- *      threshold for 180 seconds period. Use 8000000000 octets for 10G &
- *      80000000000 for 100G interface.
+ *      threshold for 180 seconds period. 
  *
- *   4) octets-low-threshold, is the threshold that causes the rule to
- *      report an anomaly.  By default it's 500000000 octets . This rule will
+ *   4) traffic-low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 50. This rule will
  *      set a dashboard color to yellow when *all* the input traffic is above
  *      threshold for 180 seconds period, otherwise color is set to green.
- *      Use 5000000000 octets for 10G & 50000000000 for 100G interface. 
  *
  *   5) flaps-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
@@ -34,10 +32,10 @@
  *      otherwise color is set to green. 
  */
 healthbot {
-    topic interface {
+    topic interfaces {
         description "Monitors and notify interface statistics i.e. link state, flaps, neighbor state, input & output traffic and errors";
         synopsis "Interface statistics analyzer";
-        rule check-interface-in-out-errors-traffic-state-flaps {
+		rule check-interface-in-out-errors-traffic-state-flaps {
             synopsis "Interface statistics analyzer";
             description "Collects the interface input fields like state,flaps,neighbor state etc periodically and notifies in case of anomalies";
             /*
@@ -45,76 +43,30 @@ healthbot {
              * Notifies via the dashboard colors when the field values increase by
              * more than the threshold values.
              * Use interface name as key for rule.
-             */
+             */			
             keys interface-name;
             /*
              * Sensor configuration to get data from network devices.
-             */
+             */			
             sensor interfaces-oc {
                 synopsis "Interface open-config sensor definition";
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /interfaces/interface/state;
-                    frequency 30s;
+                    frequency 60s;
                 }
             }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */
-            field in-errors-count {
-                sensor interfaces-oc {
-                    path "/interfaces/interface/state/counters/in-errors";
-                    zero-suppression;
-                }
-                type integer;
-                description "Number of in-errors";
-            }
-            field out-errors-count {
-                sensor interfaces-oc {
-                    path "/interfaces/interface/state/counters/out-errors";
-                    zero-suppression;
-                }
-                type integer;
-                description "This field shows interface field's value";
-            }
-            field in-octets-stats-value {
-                sensor interfaces-oc {
-                    path "/interfaces/interface/state/counters/if_in_octets";
-                    zero-suppression;
-                }
-                type integer;
-                description "Interface statistics counter (in-octets) value";
-            }
-            field out-octets-stats-value {
-                sensor interfaces-oc {
-                    path "/interfaces/interface/state/counters/if_out_octets";
-                    zero-suppression;
-                }
-                type integer;
-                description "Interface statistics counter (out-octets) value";
-            }			
-            field interface-name {
-                sensor interfaces-oc {
-                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
-                    path "/interfaces/interface/@name";
-                }
-                type string;
-                description "Interfaces to be monitored";
-            }
+             */			
             field admin-state {
                 sensor interfaces-oc {
+                    where "/interfaces/interface/state/admin-status == UP";
                     path /interfaces/interface/state/admin-status;
                 }
                 type string;
                 description "Interface admin status";
-            }
-            field link-state {
-                sensor interfaces-oc {
-                    path /interfaces/interface/state/oper-status;
-                }
-                type string;
-                description "Interfaces link operator status";
             }
             field flaps {
                 sensor interfaces-oc {
@@ -130,65 +82,213 @@ healthbot {
                 }
                 type integer;
                 description "Flap count increase threshold";
-            }			
+            }
+            field high-threshold {
+                constant {
+                    value "{{traffic-high-threshold}}";
+                }
+                type integer;
+                description "Traffic high threshold";
+            }
+            field in-errors-count {
+                sensor interfaces-oc {
+                    path /interfaces/interface/state/counters/in-errors;
+                    zero-suppression;
+                }
+                type integer;
+                description "Number of in-errors";
+            }
             field in-errors-threshold {
                 constant {
                     value "{{errors-threshold-variable}}";
                 }
                 type integer;
-                description "Input errors count increase threshold";
+                description "In errors count increase threshold";
+            }
+            field in-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-octets";
+                        multiplication-factor 0.000001;
+                    }
+                }
+                type float;
+                description "Derives mbps based (current in-octets - previous in-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+            }
+            field in-octets {
+                sensor interfaces-oc {
+                    path /interfaces/interface/state/counters/if_in_octets;
+                    zero-suppression;
+                }
+                type integer;
+                description "Interface statistics counter (in-octets) value";
+            }
+            field in-util {
+                formula {
+                    eval {
+                        expression "($in-mbps / $speed) * 100";
+                    }
+                }
+                type float;
+                description "Utilization in percentage which derived based on mbps and interface speed";
+            }
+            field interface-name {
+                sensor interfaces-oc {
+                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field link-state {
+                sensor interfaces-oc {
+                    path /interfaces/interface/state/oper-status;
+                }
+                type string;
+                description "Interfaces link operational status";
+            }
+            field low-threshold {
+                constant {
+                    value "{{traffic-low-threshold}}";
+                }
+                type integer;
+                description "Traffic low threshold";
+            }
+            field out-errors-count {
+                sensor interfaces-oc {
+                    path /interfaces/interface/state/counters/out-errors;
+                    zero-suppression;
+                }
+                type integer;
+                description "This field shows interface field's value";
             }
             field out-errors-threshold {
                 constant {
                     value "{{errors-threshold-variable}}";
                 }
                 type integer;
-                description "Output errors count increase threshold";
+                description "Out errors count increase threshold";
             }
-            field high-threshold {
-                constant {
-                    value "{{octets-high-threshold}}";
+            field out-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-octets";
+                        multiplication-factor 0.000001;
+                    }
+                }
+                type float;
+                description "Derives mbps based (current out-octets - previous out-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+            }
+            field out-octets {
+                sensor interfaces-oc {
+                    path /interfaces/interface/state/counters/if_out_octets;
+                    zero-suppression;
                 }
                 type integer;
-                description "Traffic high threshold";
+                description "Interface statistics counter (out-octets) value";
             }
-            field low-threshold {
-                constant {
-                    value "{{octets-low-threshold}}";
+            field out-util {
+                formula {
+                    eval {
+                        expression "($out-mbps / $speed) * 100";
+                    }
+                }
+                type float;
+                description "Utilization in percentage which derived based on mbps and interface speed";
+            }
+            field speed {
+                sensor interfaces-oc {
+                    path /interfaces/interface/state/high-speed;
                 }
                 type integer;
-                description "Traffic low threshold";
-            }			
+                description "Interface speed";
+            }
             /*
              * Anomaly detection logic.
-             */
-            trigger interface-input-errors {
-                synopsis "Interface in-errors kpi";
-                description "Sets health based on the change in in-errors count";
+             */			
+            trigger interface-input-traffic {
+                synopsis "Interface input traffic kpi";
+                description "Sets health based on input traffic exceed threshold";
+                frequency 2offset;
                 /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * interface Input errors ($in-errors-count) count increases for 
-                 * all points in 180 seconds period.
-                 */
-  	         	frequency 2offset;
-                term is-interface-in-errors-abnormal {
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-octets) is
+                 * above high threshold (traffic-high-threshold) for all  
+                 * points in a 180 seconds period.
+                 */				
+                term is-interface-in-traffic-abnormal {
                     when {
-                        increasing-at-least-by-value "$in-errors-count" {
-                            value "$in-errors-threshold";
-                            time-range 6offset;
+                        increasing-at-least-by-value "$in-util" {
+                            value "$high-threshold";
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Input errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
+                            message "$interface-name input traffic:$in-mbps mbps and $in-util % is above high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($in-octets) is
+                 * above low threshold (traffic-low-threshold) for all points 
+                 * in a 180 seconds period.
+                 */					
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$in-util" {
+                            value "$low-threshold";
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name input traffic:$in-mbps mbps and $in-util % is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */				
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name input traffic:$in-mbps mbps and $in-util % is normal";
+                        }
+                    }
+                }
+            }
+            trigger interface-in-errors {
+                synopsis "Interface in-errors kpi";
+                description "Sets health based on the change in in-errors count";
+                frequency 2offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * interface Input errors ($in-errors-count) count increases for 
+                 * all points in 180 seconds period.
+                 */				
+                term is-interface-in-errors-abnormal {
+                    when {
+                        increasing-at-least-by-value "$in-errors-count" {
+                            value "$in-errors-threshold";
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "In errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the increase is at least once.
-                 */
+                 */				
                 term is-interface-in-errors-median {
                     when {
                         increasing-at-least-by-value "$in-errors-count" {
@@ -198,182 +298,58 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$interface-name Input errors($in-errors-count) are intermittent";
+                            message "$interface-name in errors($in-errors-count) are intermittent";
                         }
                     }
-                 }
+                }
                 /*
                  * Defaults color to green.
-                 */
+                 */				
                 term no-interface-in-errors {
                     then {
                         status {
                             color green;
-                            message "$interface-name is stable";
+                            message "$interface-name input error count is normal.";
                         }
                     }
                 }
             }
-            trigger interface-output-errors {
-                synopsis "Interface out-errors kpi";
-                description "Sets health based on the change in out-errors count";
-                /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the interface Output errors ($output-errors-count) count increases
-                 * for all points in 180 seconds period.
-                 */
-	        	frequency 2offset;
-                term is-interface-out-errors-abnormal {
+            trigger interface-link-flaps {
+                synopsis "Link flaps KPI";
+                description "Sets health based on the change in flap count";
+                frequency 1offset;
+                term is-link-flapping-consistently {
                     when {
-                        increasing-at-least-by-value "$out-errors-count" {
-                            value "$out-errors-threshold";
-                            time-range 6offset;
+                        increasing-at-least-by-value "$flaps" {
+                            value "$flaps-threshold";
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Output errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
+                            message "Flaps are increasing continuously on $interface-name, flap count is:$flaps";
                         }
                     }
                 }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the increase is at least once.
-                 */
-                term is-interface-out-errors-median {
+                term is-link-fluctuating {
                     when {
-                        increasing-at-least-by-value "$out-errors-count" {
-                            value "$out-errors-threshold";
+                        increasing-at-least-by-value "$flaps" {
+                            value "$flaps-threshold";
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name Output errors ($out-errors-count) are intermittent";
+                            message "$interface-name flaps($flaps) are intermittent";
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */
-                term no-interface-out-errors {
+                term is-link-stable {
                     then {
                         status {
                             color green;
                             message "$interface-name is stable";
-                        }
-                    }
-                }
-            }
-            trigger input-traffic {
-                synopsis "Interface input traffic kpi";
-                description "Sets health based on input traffic exceed threshold";
-                /*
-                 * Sets color to red and sends out an anomaly notification
-                 * when the interface input traffic ($in-octets-stats-value) is
-                 * abovehigh threshold (in-octets-high-threshold) for all  
-                 * points in a 180 seconds period.
-                 */                
-        		frequency 2offset;
-                term is-interface-in-traffic-abnormal {
-                    when {
-                        increasing-at-least-by-value "$in-octets-stats-value" {
-                            value "$high-threshold";
-                            time-range 6offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name input traffic is above high threshold($high-threshold octets)";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the interface input traffic($in-octets-stats-value) is
-                 * above low threshold (in-octets-low-threshold) for all points 
-                 * in a 180 seconds period.
-                 */   
-                term is-interface-in-traffic-median {
-                    when {
-                        increasing-at-least-by-value "$in-octets-stats-value" {
-                            value "$low-threshold";
-                            time-range 6offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name input traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */                
-                term interface-in-traffic-normal {
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name input traffic:$in-octets-stats-value is normal";
-                        }
-                    }
-                }
-            }
-            trigger output-traffic {
-                synopsis "Interface output traffic kpi";
-                description "Sets health based on output traffic exceed threshold";
-                /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the interface output traffic ($out-octets-stats-value) is
-                 * above high threshold (out-octets-high-threshold) for all
-                 * points in 180 seconds period.
-                 */           
-		        frequency 2offset;
-                term is-interface-stats-abnormal {
-                    when {
-                        increasing-at-least-by-value "$out-octets-stats-value" {
-                            value "$high-threshold";
-                            time-range 6offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name output traffic is above high threshold($high-threshold octets)";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the interface output traffic ($out-octets-stats-value)
-                 * is above low threshold (out-octets-low-threshold) for all
-                 * points in 180 seconds period.
-                 */                   
-                term is-interface-stats-median {
-                    when {
-                        increasing-at-least-by-value "$out-octets-stats-value" {
-                            value "$low-threshold";
-                            time-range 6offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name output traffic is in medium range(>=$low-threshold,<=$high-threshold octets)";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */                 
-                term is-interface-stats-normal {
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name output traffic:$out-octets-stats-value is normal";
                         }
                     }
                 }
@@ -381,19 +357,11 @@ healthbot {
             trigger interface-link-state {
                 synopsis "link state kpi";
                 description "Sets health based on link state";
-                /*
-                 * Skips evaluation for admin down state interfaces
-                 */
                 frequency 2offset;
-                term is-link-admin-down {
-                    when {
-                        matches-with "$admin-state" DOWN;
-                    }
-                }
                 /*
                  * Sets color to red and sends out anomaly notification when 
                  * the interface oper state ($link-state) is down.
-                 */                    
+                 */				
                 term is-link-down {
                     when {
                         matches-with "$admin-state" UP;
@@ -408,7 +376,7 @@ healthbot {
                 }
                 /*
                  * Defaults color to green.
-                 */                
+                 */				
                 term link-up {
                     then {
                         status {
@@ -418,102 +386,146 @@ healthbot {
                     }
                 }
             }
-            trigger interface-link-flaps {
-                synopsis "Link flaps KPI";
-                description "Sets health based on the change in flap count";
-                /*
-                 * Skips evaluation for admin down interfaces
-                 */
-	        	frequency 2offset;
-                term is-link-admin-down {
-                    when {
-                        matches-with "$admin-state" DOWN;
-                    }
-                }
+            trigger interface-out-errors {
+                synopsis "Interface out-errors kpi";
+                description "Sets health based on the change in out-errors count";
+                frequency 2offset;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the interface carrier-transition ($flaps) count increases for
-                 * all points in a 180 seconds period.
-                 */
-                term is-link-flapping-consistently {
+                 * the interface Output errors ($output-errors-count) count increases
+                 * for all points in 180 seconds period.
+                 */				
+                term is-interface-out-errors-abnormal {
                     when {
-                        increasing-at-least-by-value "$flaps" {
-                            value "$flaps-threshold";
-                            time-range 6offset;
+                        increasing-at-least-by-value "$out-errors-count" {
+                            value "$out-errors-threshold";
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "Flaps are increasing continuously on $interface-name, flap count is:$flaps";
+                            message "Out errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the increase is at least once.
-                 */
-                term is-link-fluctuating {
+                 */				
+                term is-interface-out-errors-median {
                     when {
-                        increasing-at-least-by-value "$flaps" {
-                            value "$flaps-threshold";
+                        increasing-at-least-by-value "$out-errors-count" {
+                            value "$out-errors-threshold";
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name flaps($flaps) are intermittent";
+                            message "$interface-name out errors ($out-errors-count) are intermittent";
                         }
                     }
                 }
                 /*
                  * Defaults color to green.
-                 */
-                term is-link-stable {
+                 */				
+                term no-interface-out-errors {
                     then {
                         status {
                             color green;
-                            message "$interface-name is stable";
+                            message "$interface-name output errors count  is normal.";
                         }
                     }
                 }
-            }			
-            /*
-             * Variables with default values. Default values can be changed
-             * while deploying playbook instance.
-             */
+            }
+            trigger interface-out-traffic {
+                synopsis "Interface output traffic kpi";
+                description "Sets health based on output traffic exceed threshold";
+                frequency 2offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface output traffic ($out-octets-stats-value) is
+                 * above high threshold (traffic-high-threshold) for all
+                 * points in 180 seconds period.
+                 */ 				
+                term is-interface-stats-abnormal {
+                    when {
+                        increasing-at-least-by-value "$out-util" {
+                            value "$high-threshold";
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name output traffic:$out-mbps mbps and $out-util % is above high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface output traffic ($out-octets-stats-value)
+                 * is above low threshold (traffic-low-threshold) for all
+                 * points in 180 seconds period.
+                 */				
+                term is-interface-stats-median {
+                    when {
+                        increasing-at-least-by-value "$out-util" {
+                            value "$low-threshold";
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name output traffic:$out-mbps mbps and $out-util % is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */ 				
+                term is-interface-stats-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name output traffic:$out-mbps mbps and $out-util % is normal";
+                        }
+                    }
+                }
+            }
             variable errors-threshold-variable {
                 value 1;
-                description "Interface Input errors threshold: Number of errors increase between metrics, before we report anomaly";
+                description "Interface in errors threshold: Number of errors increase between metrics, before we report anomaly";
                 type int;
-            }
-            variable octets-high-threshold {
-                value 800000000;
-                description "Interface input traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 800000000. Modify default value for 10G is 8000000000 and 100G is 80000000000";
-                type int;
-            }
-            variable octets-low-threshold {
-                value 500000000;
-                description "Interface input traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value for 1G interface is 500000000. Modify default value for 10G is 5000000000 and 100G is 50000000000";
-                type int;
-            }			
-            variable interface-name-variable {
-                value ".*";
-                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
-                type string;
             }
             variable flaps-threshold-variable {
                 value 1;
                 description "Interface flaps threshold: Number of flap increase between metrics, before we report anomaly";
                 type int;
-            }			
+            }
+            variable interface-name-variable {
+                value .*;
+                description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            variable traffic-high-threshold {
+                value 80;
+                description "Interface input traffic high threshold value in percentage";
+                type int;
+            }
+            variable traffic-low-threshold {
+                value 50;
+                description "Interface output traffic high threshold value in percentage";
+                type int;
+            }
             rule-properties {
                 version 1;
                 contributor juniper;
                 category basic;
                 is-scaling-rule {
                     description "Fields: interface-name ; Directly impacted by number of interfaces in each network device";
-                }				
+                }
                 supported-healthbot-version 4.2.0;
                 supported-devices {
                     juniper {
@@ -525,10 +537,13 @@ healthbot {
                                     }
                                 }
                             }
-                        }						
+                        }
                     }
                 }
             }
-        }
+    	}	
     }
-}
+}	
+	
+		
+		
