@@ -1,5 +1,5 @@
 /*
- * Moniters optical temperature and notifies anomalies.Also collects tx/rx power values in db.
+ * Monitors optical temperature and notifies anomalies.Also collects tx/rx power values in db.
  * Five inputs control detection
  * 
  *   1) if-name, is a regular expression that matches the
@@ -21,7 +21,7 @@ healthbot {
         rule check-optical-temp-thresholds {
             /*
              * Collects high and low threshold values for tx and rx in db.
-             * Moniters the temperature and notifies via dashboard if there are 
+             * Monitors the temperature and notifies via dashboard if there are 
              * anomalies.
              * 
              * Use interface name as key for rule.
@@ -74,7 +74,7 @@ healthbot {
                 type string;
                 description "Name of the interface.";
             }
-            field opt-temp {
+            field optical-temp {
                 sensor temperature-thresholds-oc {
                     path /interfaces/interface/optics/module_temp;
                 }
@@ -166,23 +166,23 @@ healthbot {
                 frequency 1.5offset;
                 term greater-than-alarm-threshold {
                     when {
-                        greater-than-or-equal-to "$opt-temp" "$high-alarm-threshold";
+                        greater-than-or-equal-to "$optical-temp" "$high-alarm-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Temperature of the optical module $interface-name , $opt-temp exceeds default alarm threshold $high-alarm-threshold ";
+                            message "Temperature of the optical module $interface-name , $optical-temp exceeds default alarm threshold $high-alarm-threshold ";
                         }
                     }
                 }
                 term greater-than-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$opt-temp" "$high-warning-threshold";
+                        greater-than-or-equal-to "$optical-temp" "$high-warning-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "Temperature of the optical module $interface-name  , $opt-temp exceeds default warning threshold $high-warning-threshold  ";
+                            message "Temperature of the optical module $interface-name  , $optical-temp exceeds default warning threshold $high-warning-threshold  ";
                         }
                     }
                 }
@@ -190,7 +190,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Temperature of the optical module $interface-name $opt-temp is normal.";
+                            message "Temperature of the optical module $interface-name $optical-temp is normal.";
                         }
                     }
                 }

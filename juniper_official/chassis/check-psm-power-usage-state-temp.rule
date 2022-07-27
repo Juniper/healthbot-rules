@@ -1,7 +1,7 @@
 /*
  * Moniters PSM power usage,temperature,state and notifies when anomalies are found.
  * 
- * One inputs control detection
+ * Two inputs control detection
  *
  *   1) "system-power-remaining-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 20.
@@ -13,20 +13,20 @@ healthbot {
     topic chassis {
         rule check-psm-power-usage-state-temp {
             /*
-             * Moniters PSM power usage,temperature,state and notifies via dashboard, red color 
+             * Monitors PSM power usage,temperature,state and notifies via dashboard, red color 
              * when threshold is exceeded else green.
 			 *
              * Use PSM as key for rule.
              */		
             keys psm;
             synopsis "Chassis system power check";
-            description "Collects PSM power usage periodically and notifies anomaly when power usage exceed threshold";
+            description "Collects PSM power usage periodically and notifies anomaly when power usage exceeds threshold";
             /*
              * Sensor configuration to get data from network devices.
              */			
             sensor components-oc {
                 synopsis "Chassis components sensor definition";
-                description "/components open-config sensor to collect telemetry data from network device";
+                description "open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /components/;
                     frequency 60s;
@@ -125,7 +125,7 @@ healthbot {
                     }
                 }
             }
-            trigger system-power-usage {
+            trigger psm-power-usage {
                 synopsis "System power usage KPI";
                 description "Sets health based on increasing system power usage";
                 frequency 1offset;
