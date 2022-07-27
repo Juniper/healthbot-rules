@@ -3,7 +3,7 @@
  * 
  * Two inputs control detection
  *
- *   1) "system-power-remaining-threshold" is the threshold that causes the
+ *   1) "psm-power-remaining-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 20.
  * 
  *   2) "psm" is the power module,it can be psm0 or psm1.
@@ -19,7 +19,7 @@ healthbot {
              * Use PSM as key for rule.
              */		
             keys psm;
-            synopsis "Chassis system power check";
+            synopsis "Chassis psm power check";
             description "Collects PSM power usage periodically and notifies anomaly when power usage exceeds threshold";
             /*
              * Sensor configuration to get data from network devices.
@@ -59,7 +59,7 @@ healthbot {
             }
             field psm-state {
                 sensor components-oc {
-                    where "/components/component/properties/property/@name == ''state'";
+                    where "/components/component/properties/property/@name == 'state'";
                     path /components/component/properties/property/state/value;
                 }
                 type string;
@@ -71,26 +71,26 @@ healthbot {
                 }
                 type string;
             }
-            field system-power-remaining-in-percentage {
+            field psm-power-remaining-in-percentage {
                 formula {
                     eval {
                         expression "( ( $psm-power-capacity-maximum - $psm-power-capacity-usage ) / $psm-power-capacity-maximum ) * 100";
                     }
                 }
                 type integer;
-                description "Stores remaining power for system using UDF";
+                description "Stores remaining power for psm using UDF";
             }
-            field system-power-usage-threshold {
+            field psm-power-usage-threshold {
                 constant {
-                    value "{{system-power-remaining-threshold}}";
+                    value "{{psm-power-remaining-threshold}}";
                 }
                 type integer;
-                description "System power usage threshold";
+                description "psm power usage threshold";
             }
             /*
              * Anomaly detection logic.
              */			
-            trigger psm-online {
+            trigger psm-state {
                 frequency 1offset;
                 term state-is-online {
                     when {
@@ -101,15 +101,20 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$psm is online.";
+                            message "$psm is $psm-state";
                         }
                     }
                 }
                 term state-is-not-online {
+                    when {
+                        matches-with "$psm-state" offline {
+                            ignore-case;
+                        }
+                    }				
                     then {
                         status {
                             color red;
-                            message "$psm is not online.psm state is $psm-state";
+                            message "$psm is $psm-state";
                         }
                     }
                 }
@@ -126,17 +131,17 @@ healthbot {
                 }
             }
             trigger psm-power-usage {
-                synopsis "System power usage KPI";
-                description "Sets health based on increasing system power usage";
+                synopsis "PSM power usage KPI";
+                description "Sets health based on increasing psm power usage";
                 frequency 1offset;
                 term is-power-usage-abnormal {
                     when {
-                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-threshold";
+                        less-than "$psm-power-remaining-in-percentage" "$psm-power-usage-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "System power usage abnormal! only $system-power-remaining-in-percentage % of power remaining for $psm";
+                            message "PSM power usage abnormal! only $psm-power-remaining-in-percentage % of power remaining for $psm";
                         }
                     }
                 }
@@ -149,7 +154,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "System power usage is normal. $system-power-remaining-in-percentage% of power remaining for $psm";
+                            message "PSM power usage is normal. $psm-power-remaining-in-percentage % of power remaining for $psm";
                         }
                     }
                 }
@@ -158,9 +163,9 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */			
-            variable system-power-remaining-threshold {
+            variable psm-power-remaining-threshold {
                 value 20;
-                description "System remaining power threshold percentage";
+                description "psm remaining power threshold percentage";
                 type int;
             }
             variable psm {

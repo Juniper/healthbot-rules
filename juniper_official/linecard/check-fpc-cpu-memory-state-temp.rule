@@ -138,14 +138,14 @@ healthbot {
                     value "{{fpc-heap-high-threshold}}";
                 }
                 type integer;
-                description "FPC heap utilization high threshold";
+                description "FPC heap memory utilization high threshold";
             }
             field heap-low-threshold {
                 constant {
                     value "{{fpc-heap-low-threshold}}";
                 }
                 type integer;
-                description "FPC heap utilization low threshold";
+                description "FPC heap memory utilization low threshold";
             }
             field high-threshold {
                 constant {
@@ -167,7 +167,7 @@ healthbot {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
-                description "FPC state.";
+                description "FPC state";
             }
             field temperature {
                 sensor components-oc {
@@ -186,26 +186,25 @@ healthbot {
                 frequency 2offset;
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * the line card buffer memory utilization ($fpc-memory-buffer)
-                 * exceeds high threshold ($buffer-high-threshold) for all
-                 * points in a 3 minutes period.
+                 * the fpc buffer memory utilization ($fpc-memory-buffer)
+                 * exceeds high threshold ($buffer-high-threshold).
                  */
                 term is-fpc-buffer-memory-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-memory-buffer" "$buffer-high-threshold" {
-                            time-range 6offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$fpc buffer memory utilization($fpc-memory-buffer) exceed high threshold($buffer-high-threshold)";
+                            message "$fpc buffer memory utilization($fpc-memory-buffer) exceeds high threshold($buffer-high-threshold)";
                         }
                     }
                 }
                 /*
                  * Sets color to yellow and sends out an anomaly notification
-                 * when the line card buffer memory utilization
+                 * when the fpc buffer memory utilization
                  * ($fpc-memory-buffer) exceeds low threshold
                  * ($buffer-low-threshold) for all points in a 3 minutes
                  * period.
@@ -213,7 +212,7 @@ healthbot {
                 term is-fpc-buffer-memory-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-memory-buffer" "$buffer-low-threshold" {
-                            time-range 6offset;
+                            time-range 3offset;
                         }
                     }
                     then {
@@ -242,13 +241,13 @@ healthbot {
                 term is-fpc-cpu-utilization-abnormal {
                     when {
                         less-than-or-equal-to "$fpc-utilization-idle" "$low-threshold" {
-                            time-range 6offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$fpc utilization idle ($fpc-utilization-idle) is less than low threshold($low-threshold)";
+                            message "$fpc cpu utilization idle ($fpc-utilization-idle) is less than low threshold($low-threshold)";
                         }
                     }
                 }
@@ -259,7 +258,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$fpc utilization idle ($fpc-utilization-idle) is less than high threshold($high-threshold)";
+                            message "$fpc cpu utilization idle ($fpc-utilization-idle) is less than high threshold($high-threshold)";
                         }
                     }
                 }
@@ -267,7 +266,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$fpc utilization is normal";
+                            message "$fpc cpu utilization idle ($fpc-utilization-idle) is normal";
                         }
                     }
                 }
@@ -288,13 +287,13 @@ healthbot {
                 term is-fpc-heap-memory-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-memory-heap" "$heap-high-threshold" {
-                            time-range 6offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$fpc heap utilization($fpc-memory-heap) exceed high threshold($heap-high-threshold)";
+                            message "$fpc heap memory utilization($fpc-memory-heap) exceed high threshold($heap-high-threshold)";
                         }
                     }
                 }
@@ -307,13 +306,13 @@ healthbot {
                 term is-fpc-heap-memory-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-memory-heap" "$heap-low-threshold" {
-                            time-range 6offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$fpc heap utilization($fpc-memory-heap) exceed low threshold($heap-low-threshold)";
+                            message "$fpc heap memory utilization($fpc-memory-heap) exceed low threshold($heap-low-threshold)";
                         }
                     }
                 }
@@ -324,7 +323,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$fpc heap utilization($fpc-memory-heap) is normal";
+                            message "$fpc heap memory utilization($fpc-memory-heap) is normal";
                         }
                     }
                 }
@@ -372,6 +371,9 @@ healthbot {
                     }
                 }
                 term not-normal {
+                    when {
+                        greater-than-or-equal-to "$temperature" 45;
+                    }				
                     then {
                         status {
                             color red;
