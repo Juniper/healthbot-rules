@@ -46,13 +46,13 @@ healthbot {
              * to the shorter field names used in the rules.
              */				 
              field re-cpu-utilization {
-                 formula {
-                     eval {
-                         expression "( 100 - $re-cpu-utilization-idle )";
-                     }
+                 sensor components-oc {
+                     where "/components/component/properties/property/@name == 'cpu-utilization-total'";
+                     path /components/component/properties/property/state/value;
+                     zero-suppression;
                  }
-                 type integer;
-                 description "Derives used percentage from idle CPU utilization";
+                 type float;
+                 description "Collects RE CPU utilization";
              }
              field re-cpu-utilization-high-threshold {
                  constant {
@@ -67,15 +67,6 @@ healthbot {
                  }
                  type integer;
                  description "RE CPU utilization low threshold";
-             }
-             field re-cpu-utilization-idle {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
-                     path /components/component/properties/property/state/value;
-                     zero-suppression;
-                 }
-                 type integer;
-                 description "RE CPU idle utilization";
              }
              field re-memory-buffer {
                  sensor components-oc {
