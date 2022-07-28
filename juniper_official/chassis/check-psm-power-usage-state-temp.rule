@@ -3,8 +3,8 @@
  * 
  * Two inputs control detection
  *
- *   1) "psm-power-remaining-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 20.
+ *   1) "psm-power-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 80.
  * 
  *   2) "psm" is the power module,it can be psm0 or psm1.
  *      
@@ -36,12 +36,20 @@ healthbot {
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */			
+            field power-dc-output {
+                sensor components-oc {
+                    path /components/component/power-supply/state/output-power;
+                }
+                type integer;
+                description "PSM DC output";
+            }
             field psm {
                 sensor components-oc {
                     where "/components/component/@name =~ /{{psm}}/";
                     path "/components/component/@name";
                 }
                 type string;
+                description "Power supply module";
             }
             field psm-power-capacity-maximum {
                 sensor components-oc {
@@ -49,13 +57,23 @@ healthbot {
                     path /components/component/properties/property/state/value;
                 }
                 type integer;
+                description "PSM maximum power capacity";
             }
-            field psm-power-capacity-usage {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'power-capacity-usage'";
-                    path /components/component/properties/property/state/value;
+            field psm-power-usage {
+                formula {
+                    eval {
+                        expression "( $power-dc-output / $psm-power-capacity-maximum ) * 100";
+                    }
+                }
+                type float;
+                description "Stores % of power usage by PSMs";
+            }
+            field psm-power-usage-threshold {
+                constant {
+                    value "{{psm-power-threshold}}";
                 }
                 type integer;
+                description "psm power usage threshold";
             }
             field psm-state {
                 sensor components-oc {
@@ -63,6 +81,7 @@ healthbot {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
+                description "State of power supply module";
             }
             field psm-temperature {
                 sensor components-oc {
@@ -70,26 +89,40 @@ healthbot {
                     path /components/component/properties/property/state/value;
                 }
                 type string;
-            }
-            field psm-power-remaining-in-percentage {
-                formula {
-                    eval {
-                        expression "( ( $psm-power-capacity-maximum - $psm-power-capacity-usage ) / $psm-power-capacity-maximum ) * 100";
-                    }
-                }
-                type integer;
-                description "Stores remaining power for psm using UDF";
-            }
-            field psm-power-usage-threshold {
-                constant {
-                    value "{{psm-power-remaining-threshold}}";
-                }
-                type integer;
-                description "psm power usage threshold";
+                description "Temperature of power supply module";
             }
             /*
              * Anomaly detection logic.
              */			
+            trigger psm-power-usage {
+                synopsis "PSM power usage KPI";
+                description "Sets health based on increasing psm power usage";
+                frequency 1offset;
+                term is-power-usage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$psm-power-usage" "$psm-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$psm power usage($psm-power-usage) exceeds threshold";
+                        }
+                    }
+                }
+                term power-usage-normal {
+                    when {
+                        does-not-match-with "$psm-state" offline {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$psm power usage($psm-power-usage) is normal";
+                        }
+                    }
+                }
+            }
             trigger psm-state {
                 frequency 1offset;
                 term state-is-online {
@@ -110,7 +143,7 @@ healthbot {
                         matches-with "$psm-state" offline {
                             ignore-case;
                         }
-                    }				
+                    }
                     then {
                         status {
                             color red;
@@ -130,42 +163,13 @@ healthbot {
                     }
                 }
             }
-            trigger psm-power-usage {
-                synopsis "PSM power usage KPI";
-                description "Sets health based on increasing psm power usage";
-                frequency 1offset;
-                term is-power-usage-abnormal {
-                    when {
-                        less-than "$psm-power-remaining-in-percentage" "$psm-power-usage-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "PSM power usage abnormal! only $psm-power-remaining-in-percentage % of power remaining for $psm";
-                        }
-                    }
-                }
-                term power-usage-normal {
-                    when {
-                        matches-with "$psm-state" online {
-                            ignore-case;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "PSM power usage is normal. $psm-power-remaining-in-percentage % of power remaining for $psm";
-                        }
-                    }
-                }
-            }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */			
-            variable psm-power-remaining-threshold {
-                value 20;
-                description "psm remaining power threshold percentage";
+            variable psm-power-threshold {
+                value 80;
+                description "Power supply module usage threshold ";
                 type int;
             }
             variable psm {

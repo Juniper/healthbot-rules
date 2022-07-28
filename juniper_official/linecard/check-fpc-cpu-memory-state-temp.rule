@@ -1,46 +1,36 @@
 /*
  * Detects fpc cpu, memory utilization threshold breaches, state,temperature 
  * and notifies when anomalies are found.
- * Seven inputs control detection
+ * Six inputs control detection
  * 
  *   1) "fpc-slot-no" is a regular expression that matches the fpc
  *      that you would like to monitor.  By default it's '0-20', which matches
  *      FPC 0 to 20 fpc's. Use something like '0-3' to match only specific
  *      FPCs i.e. 0 to 3.
  * 
- *   2) "fpc-buffer-high-threshold" is the threshold that causes the rule to
- *      report an anomaly. By default it's 80% of memory buffer utilization.
- *      This rule will set a dashboard color to red when FPC memory buffer
- *      utilization exceed high threshold 'fpc-buffer-high-threshold' for a
- *      period of 3 minutes.
+ *   2) "memory-high-threshold" is the threshold that causes the rule to
+ *      report an anomaly. By default it's 80%.
+ *      This rule will set a dashboard color to red when FPC memory 
+ *      utilization exceeds high threshold for a period of 3 minutes.
  * 
- *   3) "fpc-buffer-low-threshold" is the threshold that causes the rule to
- *      report an anomaly. By default it's 50% of memory buffer utilization.
- *      This rule will set a dashboard color to yellow when FPC memory buffer
- *      utilization exceed low threshold 'fpc-buffer-low-threshold' for a
- *      period of 3 minutes.
+ *   3) "memory-low-threshold" is the threshold that causes the rule to
+ *      report an anomaly. By default it's 50%.
+ *      This rule will set a dashboard color to yellow when FPC memory
+ *      utilization exceeds low threshold for a period of 3 minutes.
  * 
- *   4) "fpc-heap-high-threshold" is the threshold that causes the rule to
- *      report an anomaly. By default it's 80% of memory heap utilization.
- *      This rule will set a dashboard color to red when FPC memory heap
- *      utilization exceed high threshold 'fpc-heap-high-threshold' for a
- *      period of 3 minutes.
- * 
- *   5) "fpc-heap-low-threshold" is the threshold that causes the rule to
- *      report an anomaly. By default it's 50% of memory heap utilization.
- *      This rule will set a dashboard color to yellow when FPC memory heap
- *      utilization exceed low threshold 'fpc-heap-low-threshold' for a
- *      period of 3 minutes.
- *
- *   6) "fpc-cpu-high-threshold" is the threshold that causes the rule to report
+ *   4) "cpu-high-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 80% of CPU utilization. This rule will set
- *      a dashboard color to red when FPC CPU utilization exceed high threshold
- *      'fpc-cpu-high-threshold' for a period of 3 minutes.
+ *      a dashboard color to red when FPC CPU utilization exceeds high threshold
+ *      for a period of 3 minutes.
  * 
- *   7) "fpc-cpu-low-threshold" is the threshold that causes the rule to report
+ *   5) "cpu-low-threshold" is the threshold that causes the rule to report
  *      an anomaly. By default it's 50% of CPU utilization. This rule will set 
- *      a dashboard color to yellow when RE CPU utilization exceed low 
- *      threshold 'fpc-cpu-low-threshold' for a period of 3 minutes.
+ *      a dashboard color to yellow when FPC CPU utilization exceeds low 
+ *      threshold for a period of 3 minutes.Otherwise color is set to green.
+ *
+ *   6) "temp-threshold" is the threshold that causes the rule to report
+ *      an anomaly. By default it's 55 degree celsius.This rule will set 
+ *      a dashboard color to yellow when temperature exceeds temp-threshold. 
  *      Otherwise color is set to green. 
  */
 healthbot {
@@ -51,9 +41,9 @@ healthbot {
             /*
              * Monitors all the fpc cpu and memory utilization. Notifies via the
              * dashboard colors when the fpc memory and cpu utilization exceed by
-             * {{fpc-buffer-high-threshold}} for every collected metric during a
+             * high-threshold for every collected metric during a
              * 3m time range (red). The color is set to yellow if we see
-             * fpc memory utilization exceed {{fpc-buffer-low-threshold}}
+             * fpc memory utilization exceed low-threshold
              * for every collected metric during a 3m time range. Otherwise 
              * the color is set to green.
              * 
@@ -66,9 +56,6 @@ healthbot {
             keys fpc;
             synopsis "FPC statistics analyzer";
             description "Collects system FPC statistics periodically and notifies anomalies when heap and buffer utilization exceed threshold, checks state and temperature";
-            /*
-             * sensor configuration to get data from network devices
-             */
             sensor components-oc {
                 synopsis "Chassis components sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -78,26 +65,22 @@ healthbot {
                 }
             }
             /*
-             * Fields defined with variables and constant values
-             */
-            field buffer-high-threshold {
+             * Fields defined using sensor paths and constant values
+             */			
+            field cpu-high-threshold {
                 constant {
-                    value "{{fpc-buffer-high-threshold}}";
+                    value "{{cpu-high-threshold}}";
                 }
                 type integer;
-                description "FPC buffer utilization high threshold";
+                description "FPC CPU utilization high threshold";
             }
-            field buffer-low-threshold {
+            field cpu-low-threshold {
                 constant {
-                    value "{{fpc-buffer-low-threshold}}";
+                    value "{{cpu-low-threshold}}";
                 }
                 type integer;
-                description "FPC buffer utilization low threshold";
+                description "FPC CPU utilization low threshold";
             }
-            /*
-             * Fields defined using sensor path. Map the longer sensor names
-             * to the shorter field names used in the rules.
-             */
             field fpc {
                 sensor components-oc {
                     where "/components/component/@name =~ /^FPC{{fpc-slot-no}}$/";
@@ -106,14 +89,13 @@ healthbot {
                 type string;
                 description "FPC slot to monitor";
             }
-            field fpc-utilization-idle {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
-                    path /components/component/properties/property/state/value;
-                    zero-suppression;
+            field fpc-cpu-utilization {
+                formula {
+                    eval {
+                        expression "( 100 - $fpc-utilization-idle )";
+                    }
                 }
                 type integer;
-                description "FPC IDLE CPU utilization";
             }
             field fpc-memory-buffer {
                 sensor components-oc {
@@ -133,33 +115,28 @@ healthbot {
                 type integer;
                 description "FPC heap memory utilization";
             }
-            field heap-high-threshold {
-                constant {
-                    value "{{fpc-heap-high-threshold}}";
+            field fpc-utilization-idle {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'cpu-utilization-idle'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
                 }
                 type integer;
-                description "FPC heap memory utilization high threshold";
+                description "FPC IDLE CPU utilization";
             }
-            field heap-low-threshold {
+            field memory-high-threshold {
                 constant {
-                    value "{{fpc-heap-low-threshold}}";
+                    value "{{memory-high-threshold}}";
                 }
                 type integer;
-                description "FPC heap memory utilization low threshold";
+                description "FPC buffer utilization high threshold";
             }
-            field high-threshold {
+            field memory-low-threshold {
                 constant {
-                    value "{{fpc-cpu-high-threshold}}";
+                    value "{{memory-low-threshold}}";
                 }
                 type integer;
-                description "FPC CPU utilization high threshold";
-            }
-            field low-threshold {
-                constant {
-                    value "{{fpc-cpu-low-threshold}}";
-                }
-                type integer;
-                description "FPC CPU utilization low threshold";
+                description "FPC buffer utilization low threshold";
             }
             field state {
                 sensor components-oc {
@@ -168,6 +145,12 @@ healthbot {
                 }
                 type string;
                 description "FPC state";
+            }
+            field temp-threshold {
+                constant {
+                    value "{{temp-threshold}}";
+                }
+                type integer;
             }
             field temperature {
                 sensor components-oc {
@@ -178,53 +161,38 @@ healthbot {
                 description "Temperature of the line card.";
             }
             /*
-             * Anomaly detection logic of FPC buffer memory check.
-             */
+             * Anomaly detection logic
+             */			
             trigger fpc-buffer-memory-utilization {
                 synopsis "FPC memory utilization KPI";
                 description "Sets health based on increase in fpc buffer memory utilization";
                 frequency 2offset;
-                /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the fpc buffer memory utilization ($fpc-memory-buffer)
-                 * exceeds high threshold ($buffer-high-threshold).
-                 */
                 term is-fpc-buffer-memory-utilization-abnormal {
                     when {
-                        greater-than-or-equal-to "$fpc-memory-buffer" "$buffer-high-threshold" {
+                        greater-than-or-equal-to "$fpc-memory-buffer" "$memory-high-threshold" {
                             time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$fpc buffer memory utilization($fpc-memory-buffer) exceeds high threshold($buffer-high-threshold)";
+                            message "$fpc buffer memory utilization($fpc-memory-buffer) exceeds high threshold($memory-high-threshold)";
                         }
                     }
                 }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the fpc buffer memory utilization
-                 * ($fpc-memory-buffer) exceeds low threshold
-                 * ($buffer-low-threshold) for all points in a 3 minutes
-                 * period.
-                 */
                 term is-fpc-buffer-memory-utilization-median {
                     when {
-                        greater-than-or-equal-to "$fpc-memory-buffer" "$buffer-low-threshold" {
+                        greater-than-or-equal-to "$fpc-memory-buffer" "$memory-low-threshold" {
                             time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$fpc buffer memory utilization($fpc-memory-buffer) exceeds low threshold($buffer-low-threshold)";
+                            message "$fpc buffer memory utilization($fpc-memory-buffer) exceeds low threshold($memory-low-threshold)";
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */
                 term fpc-buffer-memory-utilization-normal {
                     then {
                         status {
@@ -234,31 +202,29 @@ healthbot {
                     }
                 }
             }
-            trigger fpc-idle-cpu-utilization {
+            trigger fpc-cpu-utilization {
                 synopsis "FPC CPU utilization KPI";
                 description "Sets health based on increase in FPC CPU utilization";
                 frequency 2offset;
                 term is-fpc-cpu-utilization-abnormal {
                     when {
-                        less-than-or-equal-to "$fpc-utilization-idle" "$low-threshold" {
-                            time-range 3offset;
-                        }
+                        greater-than-or-equal-to "$fpc-cpu-utilization" "$cpu-high-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$fpc cpu utilization idle ($fpc-utilization-idle) is less than low threshold($low-threshold)";
+                            message "$fpc cpu utilization ($fpc-cpu-utilization) is more than high threshold($cpu-high-threshold)";
                         }
                     }
                 }
                 term is-fpc-cpu-utilization-median {
                     when {
-                        less-than-or-equal-to "$fpc-utilization-idle" "$high-threshold";
+                        greater-than-or-equal-to "$fpc-cpu-utilization" "$cpu-low-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$fpc cpu utilization idle ($fpc-utilization-idle) is less than high threshold($high-threshold)";
+                            message "$fpc cpu utilization ($fpc-cpu-utilization) is more than low threshold($cpu-low-threshold)";
                         }
                     }
                 }
@@ -266,59 +232,41 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$fpc cpu utilization idle ($fpc-utilization-idle) is normal";
+                            message "$fpc cpu utilization ($fpc-cpu-utilization) is normal";
                         }
                     }
                 }
             }
-            /*
-             * Anomaly detection logic of FPC heap memory check.
-             */
             trigger fpc-heap-memory-utilization {
                 synopsis "FPC heap memory utilization KPI";
                 description "Sets health based on increase in fpc heap memory utilization";
                 frequency 2offset;
-                /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the line card heap memory utilization ($fpc-memory-heap)
-                 * exceed high threshold ($heap-high-threshold) for all
-                 * points in a 3 minutes period.
-                 */
                 term is-fpc-heap-memory-utilization-abnormal {
                     when {
-                        greater-than-or-equal-to "$fpc-memory-heap" "$heap-high-threshold" {
+                        greater-than-or-equal-to "$fpc-memory-heap" "$memory-high-threshold" {
                             time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$fpc heap memory utilization($fpc-memory-heap) exceed high threshold($heap-high-threshold)";
+                            message "$fpc heap memory utilization($fpc-memory-heap) exceed high threshold($memory-high-threshold)";
                         }
                     }
                 }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the line card heap memory utilization($fpc-memory-heap)
-                 * exceed low threshold ($heap-low-threshold) for all points
-                 * in a 3 minutes period.
-                 */
                 term is-fpc-heap-memory-utilization-median {
                     when {
-                        greater-than-or-equal-to "$fpc-memory-heap" "$heap-low-threshold" {
+                        greater-than-or-equal-to "$fpc-memory-heap" "$memory-low-threshold" {
                             time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$fpc heap memory utilization($fpc-memory-heap) exceed low threshold($heap-low-threshold)";
+                            message "$fpc heap memory utilization($fpc-memory-heap) exceed low threshold($memory-low-threshold)";
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */
                 term fpc-heap-memory-utilization-abnormal {
                     then {
                         status {
@@ -339,7 +287,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$fpc is not online.";
+                            message "$fpc is $state";
                         }
                     }
                 }
@@ -352,7 +300,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$fpc is online.";
+                            message "$fpc is $state";
                         }
                     }
                 }
@@ -361,23 +309,23 @@ healthbot {
                 frequency 2offset;
                 term is-temperature-normal {
                     when {
-                        less-than "$temperature" 45;
+                        less-than-or-equal-to "$temperature" "$temp-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$fpc temperature \"$temperature\" is normal.";
+                            message "$fpc temperature($temperature degree celsius) is normal";
                         }
                     }
                 }
                 term not-normal {
                     when {
                         greater-than-or-equal-to "$temperature" 45;
-                    }				
+                    }
                     then {
                         status {
                             color red;
-                            message "$fpc temperature \"$temperature\" is not normal.";
+                            message "$fpc temperature($temperature degree celsius) is abnormal";
                         }
                     }
                 }
@@ -385,41 +333,36 @@ healthbot {
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
-             */
-            variable fpc-buffer-high-threshold {
-                value 80;
-                description "FPC buffer utilization high threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }
-            variable fpc-buffer-low-threshold {
-                value 50;
-                description "FPC buffer utilization low threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }
-            variable fpc-cpu-high-threshold {
+             */			
+            variable cpu-high-threshold {
                 value 80;
                 description "FPC CPU utilization high threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable fpc-cpu-low-threshold {
+            variable cpu-low-threshold {
                 value 50;
                 description "FPC CPU utilization low threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }
-            variable fpc-heap-high-threshold {
-                value 80;
-                description "FPC heap utilization high threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }
-            variable fpc-heap-low-threshold {
-                value 50;
-                description "FPC heap utilization low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
             variable fpc-slot-no {
                 value "[0-9]*";
                 description "FPC slot to monitor, regular expression, e.g. '0-3'";
                 type string;
+            }
+            variable memory-high-threshold {
+                value 80;
+                description "FPC buffer utilization high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable memory-low-threshold {
+                value 50;
+                description "FPC buffer utilization low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable temp-threshold {
+                value 55;
+                description "Enter temperature high threshold value in degree Celsius\n";
+                type int;
             }
             rule-properties {
                 version 1;
