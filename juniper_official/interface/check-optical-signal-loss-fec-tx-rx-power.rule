@@ -1,5 +1,5 @@
 /*
- * Detects interface optics signal loss,checks for fec uncorrected errors and moniters
+ * Detects interface optics signal loss,checks for fec uncorrected errors and monitors
  * tx and rx power.
  */
 healthbot {
@@ -19,8 +19,8 @@ healthbot {
              * Sensor configuration to get data from network devices.
              */			
             sensor optical_sensor-oc {
-                synopsis "Interface optics iAgent sensor definition";
-                description "iAgent netconf  rpc/cli command sensor to collects data from network device";
+                synopsis "Interface optics sensor definition";
+                description "Sensor to collects data from network device";
                 open-config {
                     sensor-name /junos/system/linecard/optics/;
                     frequency 60s;
@@ -145,7 +145,7 @@ healthbot {
             /*
              * Anomaly detection logic.
              */			
-            trigger fec-uncorrected {
+            trigger uncorrected-forward-error-correction-errors {
                 frequency 1.5offset;
                 term is-fec-uncorrected-words {
                     when {
@@ -154,12 +154,12 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$interface-name has non-zero FEC uncorrected words";
+                            message "Interface $interface-name has non-zero FEC uncorrected words";
                         }
                     }
                 }
             }
-            trigger rx-loss-of-signal-functionality {
+            trigger interface-rx-loss-of-signal-functionality {
                 frequency 1.5offset;
                 term is-rx-loss-of-signal-functionality-off {
                     when {
@@ -186,7 +186,7 @@ healthbot {
                     }
                 }
             }
-            trigger tx-laser-disabled-alarm {
+            trigger interface-tx-laser-disabled-alarm {
                 frequency 1.5offset;
                 term is-tx-laser-disabled-alarm-off {
                     when {
@@ -213,7 +213,7 @@ healthbot {
                     }
                 }
             }
-            trigger tx-loss-of-signal-functionality {
+            trigger interface-tx-loss-of-signal-functionality {
                 frequency 1.5offset;
                 term is-tx-loss-of-signal-functionality-off {
                     when {
@@ -240,7 +240,7 @@ healthbot {
                     }
                 }
             }
-            trigger optical-rx-high-power {
+            trigger interface-optical-rx-high-power {
                 synopsis "high rx power usage";
                 description "Sets health based on the high rx power usage";
                 frequency 1.5offset;
@@ -277,7 +277,7 @@ healthbot {
                     }
                 }
             }
-            trigger optical-rx-low-power {
+            trigger interface-optical-rx-low-power {
                 synopsis "low rx power usage";
                 description "Sets health based on the low rx power usage";
                 frequency 1.5offset;
@@ -314,7 +314,7 @@ healthbot {
                     }
                 }
             }
-            trigger optical-tx-high-power {
+            trigger interface-optical-tx-high-power {
                 frequency 1.5offset;
                 term above_alarm_threshold {
                     when {
@@ -349,7 +349,7 @@ healthbot {
                     }
                 }
             }
-            trigger optical-tx-low-power {
+            trigger interface-optical-tx-low-power {
                 frequency 1.5offset;
                 term below_alarm_threshold {
                     when {
