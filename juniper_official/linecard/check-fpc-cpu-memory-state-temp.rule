@@ -164,9 +164,12 @@ healthbot {
              * Anomaly detection logic
              */			
             trigger fpc-buffer-memory-utilization {
-                synopsis "FPC memory utilization KPI";
+                synopsis "FPC buffer memory utilization KPI";
                 description "Sets health based on increase in fpc buffer memory utilization";
                 frequency 2offset;
+                /*
+                 * Sets color to red when fpc-memory-buffer is greater-than-or-equal-to memory-high-threshold.
+                 */				
                 term is-fpc-buffer-memory-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-memory-buffer" "$memory-high-threshold" {
@@ -180,6 +183,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when fpc-memory-buffer is greater-than-or-equal-to memory-low-threshold.
+                 */				
                 term is-fpc-buffer-memory-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-memory-buffer" "$memory-low-threshold" {
@@ -193,6 +199,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */				
                 term fpc-buffer-memory-utilization-normal {
                     then {
                         status {
@@ -206,6 +215,9 @@ healthbot {
                 synopsis "FPC CPU utilization KPI";
                 description "Sets health based on increase in FPC CPU utilization";
                 frequency 2offset;
+                /*
+                 * Sets color to red when fpc-cpu-utilization is greater-than-or-equal-to cpu-high-threshold.
+                 */				
                 term is-fpc-cpu-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-cpu-utilization" "$cpu-high-threshold";
@@ -217,6 +229,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when fpc-cpu-utilization is greater-than-or-equal-to cpu-low-threshold.
+                 */				
                 term is-fpc-cpu-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-cpu-utilization" "$cpu-low-threshold";
@@ -228,6 +243,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */				
                 term fpc-cpu-utilization-normal {
                     then {
                         status {
@@ -241,6 +259,9 @@ healthbot {
                 synopsis "FPC heap memory utilization KPI";
                 description "Sets health based on increase in fpc heap memory utilization";
                 frequency 2offset;
+                /*
+                 * Sets color to red when fpc-memory-heap is greater-than-or-equal-to memory-high-threshold.
+                 */				
                 term is-fpc-heap-memory-utilization-abnormal {
                     when {
                         greater-than-or-equal-to "$fpc-memory-heap" "$memory-high-threshold" {
@@ -254,6 +275,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when fpc-memory-heap is greater-than-or-equal-to memory-low-threshold.
+                 */				
                 term is-fpc-heap-memory-utilization-median {
                     when {
                         greater-than-or-equal-to "$fpc-memory-heap" "$memory-low-threshold" {
@@ -267,7 +291,10 @@ healthbot {
                         }
                     }
                 }
-                term fpc-heap-memory-utilization-abnormal {
+                /*
+                 * Defaults color to green.
+                 */				
+                term fpc-heap-memory-utilization-normal {
                     then {
                         status {
                             color green;
@@ -277,7 +304,12 @@ healthbot {
                 }
             }
             trigger fpc-state {
+                synopsis "FPC State kpi";
+                description "Sets health based on FPC State";			
                 frequency 2offset;
+                /*
+                 * Sets color to red when state is not online.
+                 */				
                 term is-not-online {
                     when {
                         does-not-match-with "$state" online {
@@ -291,6 +323,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to green when state is online.
+                 */				
                 term is-online {
                     when {
                         matches-with "$state" online {
@@ -306,7 +341,12 @@ healthbot {
                 }
             }
             trigger fpc-temperature {
+                synopsis "FPC Temperature kpi";
+                description "Sets health based on FPC Temperature";			
                 frequency 2offset;
+                /*
+                 * Sets color to green when temperature is less-than-or-equal-to temp-threshold.
+                 */				
                 term is-temperature-normal {
                     when {
                         less-than-or-equal-to "$temperature" "$temp-threshold";
@@ -318,6 +358,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to red when temperature is-greater-than-or-equal-to 45.
+                 */				
                 term not-normal {
                     when {
                         greater-than-or-equal-to "$temperature" 45;

@@ -1,6 +1,6 @@
 /*
  * Detects routing-engine and CPU temperature threshold breaches and notifies when
- * anomalies are found.
+ * anomalies are found
  * Two inputs control detection
  *
  *
@@ -84,6 +84,10 @@ healthbot {
                 synopsis "RE CPU temperature KPI";
                 description "Sets health based increase in RE CPU temperature";
                 frequency 1offset;
+                /*
+                 * Sets color to green when RE CPU temperature
+                 * is less-than-or-equal-to low threshold ($low-threshold).
+                 */				
                 term is-temperature-normal {
                     when {
                         less-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
@@ -95,6 +99,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when RE CPU temperature
+                 * is less-than high threshold ($high-threshold).
+                 */				
                 term is-temperature-median {
                     when {
                         less-than "$routing-engine-cpu-temperature" "$high-threshold";
@@ -106,6 +114,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to red when RE CPU temperature
+                 * is greater-than high threshold ($high-threshold).
+                 */				
                 term temperature-abnormal {
                     then {
                         status {
@@ -119,6 +131,10 @@ healthbot {
                 synopsis "RE temperature KPI";
                 description "Sets health based increase in RE temperature";
                 frequency 1offset;
+                /*
+                 * Sets color to green when RE temperature
+                 * is less-than-or-equal-to low threshold ($low-threshold).
+                 */				
                 term is-re-temperature-normal {
                     when {
                         less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
@@ -130,6 +146,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when RE temperature
+                 * is less-than-or-equal-to high threshold ($high-threshold).
+                 */				
                 term is-re-temperature-median {
                     when {
                         less-than-or-equal-to "$routing-engine-temperature" "$high-threshold";
@@ -137,15 +157,19 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "re$routing-engine temperature($routing-engine-temperature degree C) exceed low threshold";
+                            message "re$routing-engine temperature($routing-engine-temperature degree C) exceeds low threshold";
                         }
                     }
                 }
+                /*
+                 * Sets color to red when RE temperature
+                 * is greater-than high threshold ($high-threshold).
+                 */				
                 term re-temperature-abnormal {
                     then {
                         status {
                             color red;
-                            message "re$routing-engine temperature($routing-engine-temperature degree C) exceed high threshold";
+                            message "re$routing-engine temperature($routing-engine-temperature degree C) exceeds high threshold";
                         }
                     }
                 }

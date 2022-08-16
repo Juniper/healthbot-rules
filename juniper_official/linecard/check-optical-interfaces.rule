@@ -10,7 +10,7 @@ healthbot {
             keys [ lane-index name ];
             synopsis "KPI for  interface optical degradation";
             description "Monitor the interface optical degradation";
-            sensor optical_sensor {
+            sensor optical-sensor-netconf {
                 synopsis "Interface optics iAgent sensor definition";
                 description "iAgent netconf rpc/cli command sensor to collect data from network device";
                 iAgent {
@@ -23,35 +23,35 @@ healthbot {
              * Fields defined with variables, anomaly thresholds and constant values
              */			
             field lane-index {
-                sensor optical_sensor {
+                sensor optical-sensor-netconf {
                     path lane-index;
                 }
                 type string;
                 description "Interface lane index";
             }
             field name {
-                sensor optical_sensor {
+                sensor optical-sensor-netconf {
                     path name;
                 }
                 type string;
                 description "Interface name";
             }
             field rx-loss-of-signal-alarm {
-                sensor optical_sensor {
+                sensor optical-sensor-netconf {
                     path rx-loss-of-signal-alarm;
                 }
                 type string;
                 description "RX loss of signal alarm";
             }
             field tx-laser-disabled-alarm {
-                sensor optical_sensor {
+                sensor optical-sensor-netconf {
                     path tx-laser-disabled-alarm;
                 }
                 type string;
                 description "tx laster disabled alarm";
             }
             field tx-loss-of-signal-functionality-alarm {
-                sensor optical_sensor {
+                sensor optical-sensor-netconf {
                     path tx-loss-of-signal-functionality-alarm;
                 }
                 type string;
@@ -61,7 +61,13 @@ healthbot {
              * Anomaly detection logic.
              */			
             trigger loss-of-signal-functionality {
+                synopsis "Tx Loss of Signal kpi";
+                description "Sets health based on Tx loss of signal-functionality";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to green when tx-loss-of-signal-functionality is off.
+                 * 
+                 */				
                 term is-tx-loss-of-signal-functionality-off {
                     when {
                         matches-with "$tx-loss-of-signal-functionality-alarm" off {
@@ -75,6 +81,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to red when tx-loss-of-signal-functionality is on.
+                 * 
+                 */				
                 term is-tx-loss-of-signal-functionality-exists {
                     when {
                         exists "$tx-loss-of-signal-functionality-alarm";
@@ -88,7 +98,13 @@ healthbot {
                 }
             }
             trigger tx-laser-disabled-alarm {
+                synopsis "Tx Laser Disabled Alarm kpi";
+                description "Sets health based on Tx laser disabled alarm";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to green when tx-laser-disabled-alarm is off.
+                 * 
+                 */				
                 term is-tx-laser-disabled-alarm-off {
                     when {
                         matches-with "$tx-laser-disabled-alarm" off {
@@ -102,6 +118,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to red when tx-laser-disabled-alarm is on.
+                 * 
+                 */				
                 term is-tx-laser-disabled-alarm-exists {
                     when {
                         exists "$tx-laser-disabled-alarm";

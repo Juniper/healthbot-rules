@@ -164,6 +164,9 @@ healthbot {
                 synopsis "high optical temperature";
                 description "Sets health based on the optical temperature";
                 frequency 1.5offset;
+                /*
+                 * Sets color to red when optical-temperature is greater-than-or-equal-to high-alarm-threshold.
+                 */				
                 term greater-than-alarm-threshold {
                     when {
                         greater-than-or-equal-to "$optical-temp" "$high-alarm-threshold";
@@ -171,10 +174,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Temperature of the optical module $interface-name , $optical-temp exceeds default alarm threshold $high-alarm-threshold ";
+                            message "$interface-name,temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when optical-temperature is greater-than-or-equal-to high-warning-threshold.
+                 */				
                 term greater-than-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optical-temp" "$high-warning-threshold";
@@ -182,10 +188,13 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Temperature of the optical module $interface-name  , $optical-temp exceeds default warning threshold $high-warning-threshold  ";
+                            message "$interface-name,temperature $optical-temp exceeds default warning threshold ($high-warning-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to green when optical-temperature is less than high-warning-threshold.
+                 */				
                 term normal {
                     when {
                         less-than "$optical-temp" "$high-warning-threshold";
@@ -193,7 +202,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Temperature of the optical module $interface-name $optical-temp is normal.";
+                            message "$interface-name, temperature $optical-temp is normal.";
                         }
                     }
                 }

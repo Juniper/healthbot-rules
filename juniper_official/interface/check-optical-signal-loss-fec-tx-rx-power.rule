@@ -1,6 +1,6 @@
 /*
- * Detects interface optics signal loss,checks for fec uncorrected errors and monitors
- * tx and rx power.
+ * Monitor interface optics stats like signal loss, power, and errors and notify anomalies
+ * 
  */
 healthbot {
     topic interfaces {
@@ -147,7 +147,12 @@ healthbot {
              * Anomaly detection logic.
              */			
             trigger uncorrected-forward-error-correction-errors {
+                synopsis "Uncorrected forward error correction errors KPI";
+                description "Sets health based on Uncorrected forward error correction errors";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to red when fec uncorrected is greater than 0.
+                 */				
                 term is-fec-uncorrected-words {
                     when {
                         greater-than "$fec-uncorrected" 0;
@@ -161,7 +166,12 @@ healthbot {
                 }
             }
             trigger interface-rx-loss-of-signal-functionality {
+                synopsis "Interface rx loss of signal functionality KPI";
+                description "Sets health based on Interface rx loss of signal functionality";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to green when loss of signal functionality alarm is off.
+                 */				
                 term is-rx-loss-of-signal-functionality-off {
                     when {
                         matches-with "$rx-loss-of-signal-alarm" false {
@@ -171,24 +181,32 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Interface $interface-name, Lane $lane-index Rx loss of signal functionality alarm is OFF";
+                            message "$interface-name, Lane $lane-index Rx loss of signal functionality alarm is OFF";
                         }
                     }
                 }
+                /*
+                 * Sets color to red when loss of signal functionality alarm is ON.
+                 */				
                 term is-rx-loss-of-signal-functionality-exists {
                     when {
-                        exists "$tx-loss-of-signal-functionality-alarm";
+                        exists "$rx-loss-of-signal-alarm";
                     }
                     then {
                         status {
                             color red;
-                            message "Interface $interface-name, Lane $lane-index Rx loss of signal functionality alarm is ON";
+                            message "$interface-name, Lane $lane-index Rx loss of signal functionality alarm is ON";
                         }
                     }
                 }
             }
             trigger interface-tx-laser-disabled-alarm {
+                synopsis "Interface tx laser disabled alarm KPI";
+                description "Sets health based on Interface tx laser disabled alarm";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to green when tx-laser-disabled-alarm is OFF.
+                 */				
                 term is-tx-laser-disabled-alarm-off {
                     when {
                         matches-with "$tx-laser-disabled-alarm" false {
@@ -198,10 +216,13 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Interface $interface-name, Lane $lane-index Tx laser disabled alarm is OFF";
+                            message "$interface-name, Lane $lane-index Tx laser disabled alarm is OFF";
                         }
                     }
                 }
+                /*
+                 * Sets color to red tx-laser-disabled-alarm is ON.
+                 */				
                 term is-tx-laser-disabled-alarm-exists {
                     when {
                         exists "$tx-laser-disabled-alarm";
@@ -209,13 +230,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Interface $interface-name, Lane $lane-index Tx laser disabled alarm is ON";
+                            message "$interface-name, Lane $lane-index Tx laser disabled alarm is ON";
                         }
                     }
                 }
             }
             trigger interface-tx-loss-of-signal-functionality {
+                synopsis "Interface tx loss of signal functionality KPI";
+                description "Sets health based on Interface tx loss of signal functionality";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to green when tx-loss-of-signal-functionality is OFF.
+                 */				
                 term is-tx-loss-of-signal-functionality-off {
                     when {
                         matches-with "$tx-loss-of-signal-functionality-alarm" false {
@@ -225,10 +251,13 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Interface $interface-name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
+                            message "$interface-name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
                         }
                     }
                 }
+                /*
+                 * Sets color to red when tx-loss-of-signal-functionality is ON.
+                 */				
                 term is-tx-loss-of-signal-functionality-exists {
                     when {
                         exists "$tx-loss-of-signal-functionality-alarm";
@@ -236,15 +265,18 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Interface $interface-name, Lane $lane-index Tx loss of signal functionality alarm is ON";
+                            message "$interface-name, Lane $lane-index Tx loss of signal functionality alarm is ON";
                         }
                     }
                 }
             }
             trigger interface-optical-rx-high-power {
-                synopsis "high rx power usage";
-                description "Sets health based on the high rx power usage";
+                synopsis "Interface optical rx high power KPI";
+                description "Sets health based on Interface optical rx high power";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to red when optics rx power is greater-than-or-equal-to rx-high-alarm-threshold.
+                 */				
                 term above_alarm_threshold {
                     when {
                         greater-than-or-equal-to "$optics-rx-power" "$rx-high-alarm-threshold";
@@ -252,10 +284,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Rx power $optics-rx-power is above alarm threshold $rx-high-alarm-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is above alarm threshold ($rx-high-alarm-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when optics rx power is greater-than-or-equal-to rx-high-warning-threshold.
+                 */				
                 term above_warning_threshold {
                     when {
                         greater-than-or-equal-to "$optics-rx-power" "$rx-high-warning-threshold" {
@@ -265,23 +300,29 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Rx power $optics-rx-power is above warning threshold $rx-high-warning-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is above warning threshold ($rx-high-warning-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to green when optics rx power is normal.
+                 */				
                 term normal {
                     then {
                         status {
                             color green;
-                            message "Rx power $optics-rx-power is normal for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
                         }
                     }
                 }
             }
             trigger interface-optical-rx-low-power {
-                synopsis "low rx power usage";
-                description "Sets health based on the low rx power usage";
+                synopsis "Interface optical rx low power KPI";
+                description "Sets health based on Interface optical rx low power";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to red when optics rx power is less-than-or-equal-to rx-low-alarm-threshold.
+                 */				
                 term below_alarm_threshold {
                     when {
                         less-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
@@ -289,10 +330,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Rx power $optics-rx-power is below alarm threshold $rx-low-alarm-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is below alarm threshold ($rx-low-alarm-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when optics rx power is less-than-or-equal-to rx-low-warning-threshold.
+                 */				
                 term below_warning_threshold {
                     when {
                         less-than-or-equal-to "$optics-rx-power" "$rx-low-warning-threshold" {
@@ -302,21 +346,29 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Rx power $optics-rx-power is below warning threshold $rx-low-warning-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is below warning threshold ($rx-low-warning-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to green when optics rx power is normal.
+                 */				
                 term normal {
                     then {
                         status {
                             color green;
-                            message "Rx power $optics-rx-power is normal for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
                         }
                     }
                 }
             }
             trigger interface-optical-tx-high-power {
+                synopsis "Interface optical tx high power KPI";
+                description "Sets health based on Interface optical tx high power";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to red when optics tx power is greater-than-or-equal-to tx-high-alarm-threshold.
+                 */				
                 term above_alarm_threshold {
                     when {
                         greater-than-or-equal-to "$optics-tx-power" "$tx-high-alarm-threshold";
@@ -324,10 +376,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Tx power $optics-tx-power is above alarm threshold $tx-high-alarm-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when optics tx power is greater-than-or-equal-to tx-high-warning-threshold.
+                 */				
                 term above_warning_threshold {
                     when {
                         greater-than-or-equal-to "$optics-tx-power" "$tx-high-warning-threshold" {
@@ -337,21 +392,29 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Tx power $optics-tx-power is above warning threshold $tx-high-warning-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above warning threshold ($tx-high-warning-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to green when optics tx power is normal.
+                 */				
                 term normal {
                     then {
                         status {
                             color green;
-                            message "Tx power $optics-tx-power is normal for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
                         }
                     }
                 }
             }
             trigger interface-optical-tx-low-power {
+                synopsis "Interface optical tx low power KPI";
+                description "Sets health based on Interface optical tx low power";			
                 frequency 1.5offset;
+                /*
+                 * Sets color to red when optics tx power is less-than-or-equal-to tx-low-alarm-threshold.
+                 */				
                 term below_alarm_threshold {
                     when {
                         less-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
@@ -359,10 +422,13 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Tx power $optics-tx-power is below alarm threshold $tx-low-alarm-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is below alarm threshold ($tx-low-alarm-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to red when optics tx power is less-than-or-equal-to tx-low-warning-threshold.
+                 */					
                 term below_warning_threshold {
                     when {
                         less-than-or-equal-to "$optics-tx-power" "$tx-low-warning-threshold" {
@@ -372,15 +438,18 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Tx power $optics-tx-power is below warning threshold $tx-low-warning-threshold for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is below warning threshold ($tx-low-warning-threshold)";
                         }
                     }
                 }
+                /*
+                 * Sets color to green when optics tx power is normal.
+                 */				
                 term normal {
                     then {
                         status {
                             color green;
-                            message "Tx power $optics-tx-power is normal for interface $interface-name lane $lane-index.";
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
                         }
                     }
                 }

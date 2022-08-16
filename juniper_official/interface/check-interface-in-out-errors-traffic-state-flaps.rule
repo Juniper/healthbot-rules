@@ -1,5 +1,5 @@
 /*
- * Monitors interface fields and notifies when anomalies are found.
+ * Monitors interface KPI's and notifies when anomalies are found.
  * Five inputs control detection
  * 
  *   1) interface-name-variable, is a regular expression that matches the
@@ -318,6 +318,9 @@ healthbot {
                 synopsis "Link flaps KPI";
                 description "Sets health based on the change in flap count";
                 frequency 1offset;
+                /*
+                 * Sets color to red when number of flaps are increasing-at-least-by-value flaps-threshold for 3offset
+                 */				
                 term is-link-flapping-consistently {
                     when {
                         increasing-at-least-by-value "$flaps" {
@@ -332,6 +335,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when number of flaps are increasing-at-least-by-value flaps-threshold
+                 */				
                 term is-link-fluctuating {
                     when {
                         increasing-at-least-by-value "$flaps" {
@@ -345,6 +351,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */				
                 term is-link-stable {
                     then {
                         status {
@@ -433,7 +442,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$interface-name output errors count  is normal.";
+                            message "$interface-name output errors count is normal.";
                         }
                     }
                 }

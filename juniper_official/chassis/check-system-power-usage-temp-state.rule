@@ -60,7 +60,7 @@ healthbot {
                     path /components/component/chassis/properties/property/state/value;
                 }
                 type integer;
-                description "Chassis Ambient temperature.";
+                description "Chassis Ambient temperature";
             }
             field high-threshold {
                 constant {
@@ -114,7 +114,13 @@ healthbot {
              * Anomaly detection logic.
              */			
             trigger chassis-temperature {
+                synopsis "Chassis Temperature KPI";
+                description "Sets health based on Chassis Temperature";			
                 frequency 1offset;
+                /*
+                 * Sets color to green when chassis-temperature is normal.
+                 * 
+                 */				
                 term is-temperature-normal {
                     when {
                         less-than "$chassis-temperature" "$low-threshold";
@@ -126,6 +132,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when chassis-temperature is less than high-threshold.
+                 * 
+                 */				
                 term is-temperature-median {
                     when {
                         less-than "$chassis-temperature" "$high-threshold";
@@ -137,6 +147,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to red when chassis-temperature is more than high-threshold.
+                 * 
+                 */				
                 term temperature-abnormal {
                     when {
                         greater-than "$chassis-temperature" "$high-threshold";
@@ -144,13 +158,19 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "Chassis ambient temperature($chassis-temperature degree celsius) exceeds high threshold.";
+                            message "Chassis ambient temperature($chassis-temperature degree celsius) exceeds high threshold";
                         }
                     }
                 }
             }
             trigger chassis-state {
+                synopsis "Chassis State KPI";
+                description "Sets health based on Chassis State";			
                 frequency 1offset;
+                /*
+                 * Sets color to green when chassis-state is online.
+                 * 
+                 */				
                 term state-is-online {
                     when {
                         matches-with "$chassis-state" Online {
@@ -160,10 +180,14 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "Chassis is Online.";
+                            message "Chassis is Online";
                         }
                     }
                 }
+                /*
+                 * Sets color to red when chassis-state is offline.
+                 * 
+                 */				
                 term state-is-not-online {
                     then {
                         status {
@@ -177,6 +201,10 @@ healthbot {
                 synopsis "System power usage KPI";
                 description "Sets health based on increasing system power usage";
                 frequency 1offset;
+                /*
+                 * Sets color to red when system power remaining is less than system power threshold.
+                 * 
+                 */				
                 term is-power-usage-abnormal {
                     when {
                         less-than "$system-power-remaining-in-percentage" "$system-power-usage-threshold";
@@ -188,6 +216,10 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to green when system power remaining is normal.
+                 * 
+                 */				
                 term power-usage-normal {
                     when {
                         does-not-match-with "$power-system-remaining" Unknown;
