@@ -1,0 +1,154 @@
+healthbot {
+    topic service.subscribers {
+        rule monitor-chassis-scale {
+            synopsis "Monitor subscriber scale according to the limit for the chassis type";
+            description "Monitor subscriber count against an established chassis-type limit";
+            sensor resource-monitor {
+                synopsis "Telemetry for subscriber resource monitoring";
+                description "Telemetry for subscriber resource monitoring";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor;
+                    frequency 30s;
+                }
+            }
+            field chassis-limit {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=generate-subscriber-hardware-limits]/chassis-limit";
+                }
+                type integer;
+                description "The subscriber capacity or limit for this chassis";
+            }
+            field chassis-subscriber-count {
+                sensor resource-monitor {
+                    path /junos/system/subscriber-management/infra/resource-monitor/chassis/current-subscriber-count;
+                }
+                type integer;
+                description "The current number of subscribers on this chassis";
+            }
+            field chassis-subscriber-utilization {
+                formula {
+                    eval {
+                        expression "( $chassis-subscriber-count / $chassis-limit ) * 100";
+                    }
+                }
+                type float;
+                description "Chassis subscriber load";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-utilization}}";
+                }
+                type integer;
+                description "Critical threshold for chassis subscriber utilization";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-utilization}}";
+                }
+                type integer;
+                description "Warning threshold for chassis subscriber utilization";
+            }
+            trigger chassis-subscriber-capacity {
+                synopsis "Monitor subscriber utilization against limits for this chassis type";
+                description "Monitor subscriber utilization against limits for this chassis type";
+                frequency 1.5offset;
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$chassis-subscriber-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Chassis subscriber count is >= red-limit% of max capacity! $chassis-subscriber-utilization % of $chassis-limit.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$chassis-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Chassis subscriber count approaching max capacity. $chassis-subscriber-utilization % of $chassis-limit.";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$chassis-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Chassis subscriber count nominal. $chassis-subscriber-utilization % of $chassis-limit. ";
+                        }
+                    }
+                }
+            }
+            variable critical-utilization {
+                value 90;
+                description "The critical utilization percent";
+                type int;
+            }
+            variable warning-utilization {
+                value 75;
+                description "The warning utilization percent";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

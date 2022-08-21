@@ -1,0 +1,58 @@
+healthbot {
+    topic service.protocols {
+        rule dhcpv6-era {
+            synopsis "Monitors dhcpv6-era statistics ";
+            description "Collects the dhcpv6-era statistics periodically and notifies in case of anomalies";
+            sensor dhcpv6-era-statistics {
+                open-config {
+                    sensor-name /junos/system/subscriber-management/client-protocols/dhcp/v6/global-statistics;
+                    frequency 60s;
+                }
+            }
+            field era-reported-failures {
+                sensor dhcpv6-era-statistics {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v6/global-statistics/era-reported-failures;
+                }
+                type integer;
+                description "Number of era-reported-failures ";
+            }
+            field min-rate-of-increase {
+                constant {
+                    value "{{min-value-of-increase}}";
+                }
+                type integer;
+                description "Minimum value of increase in 3 minutes";
+            }
+            trigger era-reported-failures {
+                frequency 1.5offset;
+                term is-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$era-reported-failures" {
+                            value "$min-rate-of-increase";
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "dhcpv6-era statistics:  era-reported-failures is increasing. Current value : $era-reported-failures";
+                        }
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color green;
+                            message "dhcpv6-era statistics: era-reported-failures is not increasing. Current value : $era-reported-failures";
+                        }
+                    }
+                }
+            }
+            variable min-value-of-increase {
+                value 10;
+                description "Minimum value of increase in 3 minutes";
+                type int;
+            }
+        }
+    }
+}

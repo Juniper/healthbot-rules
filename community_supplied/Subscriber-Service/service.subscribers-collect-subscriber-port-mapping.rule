@@ -1,0 +1,152 @@
+healthbot {
+    topic service.subscribers {
+        rule collect-subscriber-port-mapping {
+            keys [ fpc-number mic-number port-number ];
+            synopsis "Collects subscriber count data per PORT and maps ports & subscribers to PFE's";
+            description "Collects subscriber count data per PORT and maps ports & subscribers to PFE's";
+            function map-port-to-pfe {
+                description "Maps a port to a PFE given the type of FPC";
+                path which_pfe.py;
+                method which_pfe;
+                argument fpc_no;
+                argument fpc_type;
+                argument pic_no;
+                argument port_no;
+            }
+            sensor resource-monitor {
+                synopsis "Telemetry for subscriber resource data";
+                description "Telemetry for subscriber resource data";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor;
+                    frequency 30s;
+                }
+            }
+            field fpc-name {
+                formula {
+                    concatenate {
+                        strings [ FPC "$fpc-number" ];
+                    }
+                }
+				type string;
+                description "A string representing the FPC's position in the chassis";
+            }
+            field fpc-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type string;
+                description "The FPC's positional index (slot) in the chassis";
+            }
+            field fpc-type {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$fpc-name']/fpc-subcomponent-type";
+                }
+                type string;
+                description "The type of this FPC";
+            }
+            field mic-description {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$mic-name']/fpc-subcomponent-type";
+                }
+				type string;
+                description "The type of PIC0";
+            }
+            field mic-name {
+                formula {
+                    concatenate {
+                        strings [ FPC "$fpc-number" :MIC "$mic-number" ];
+                    }
+                }
+                type string;
+                description "A string representing the positional name of PIC with respect to its FPC";
+            }
+            field mic-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/@pic-no";
+                }
+                type string;
+                description "The positional index of this PIC with respect to its FPC";
+            }
+            field pfe-number {
+                formula {
+                    user-defined-function {
+                        function-name map-port-to-pfe;
+                        argument fpc_type "$fpc-type";
+                        argument fpc_no "$fpc-number";
+                        argument pic_no "$mic-number";
+                        argument port_no "$port-number";
+                    }
+                }
+				type string;
+                description "The calculated PFE number for this port on this FPC/PIC";
+            }
+            field port-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/ports/port/@port-no";
+                }
+                type string;
+                description "The positional index of this port with respect to its PIC";
+            }
+            field port-subscriber-count {
+                sensor resource-monitor {
+                    path /junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/ports/port/current-subscriber-count;
+                }
+                type integer;
+                description "The current number of subscribers on this fpc/pic/port";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
