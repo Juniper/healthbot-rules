@@ -32,7 +32,7 @@ healthbot {
             /*
             * Sensor configuration to get data from network devices.
             */			
-            sensor interface-queue {
+            sensor interface-queue-oc {
                 open-config {
                     sensor-name /interfaces/interface/state;
                     frequency 60s;
@@ -49,29 +49,28 @@ healthbot {
                 type integer;
             }
             field interface-name {
-                sensor interface-queue {
+                sensor interface-queue-oc {
                     where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
             }
             field queue_number {
-                sensor interface-queue {
+                sensor interface-queue-oc {
                     where "/interfaces/interface/state/counters/out-queue/@queue-number =~ /{{queuenumbervariable}}/";
                     path "/interfaces/interface/state/counters/out-queue/@queue-number";
-                    zero-suppression;
                 }
                 type string;
             }
             field red-dropped-bytes {
-                sensor interface-queue {
+                sensor interface-queue-oc {
                     path /interfaces/interface/state/counters/out-queue/red-drop-bytes;
                     zero-suppression;
                 }
                 type integer;
             }
             field red-dropped-packets {
-                sensor interface-queue {
+                sensor interface-queue-oc {
                     path /interfaces/interface/state/counters/out-queue/red-drop-pkts;
                     zero-suppression;
                 }
@@ -81,7 +80,12 @@ healthbot {
             * Anomaly detection logic.
             */			
             trigger queue-red-drop-packets {
+                synopsis "Interface queue-red-drop kpi";
+                description "Sets health based on queue red drop packets";			
                 frequency 3offset;
+                /*
+                 * Sets color to red when red-dropped-packets is increasing-at-least-by-value 1.
+                 */				
                 term exceeds_threshold {
                     when {
                         increasing-at-least-by-value "$red-dropped-packets" {
@@ -96,6 +100,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */				
                 term normal {
                     then {
                         status {

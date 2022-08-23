@@ -1,0 +1,170 @@
+/*
+ * Moniters fan state and RPM percentage and notifies when anomalies are found.
+ * 
+ */
+healthbot {
+    topic hardware.chassis {
+        rule check-fan-state-rpm {
+            /*
+             * Moniters fan state and RPM percentage and notifies via dashboard, red color 
+             * when threshold is exceeded else green
+			 *
+             * Use fan-name as key for rule
+             */		
+            keys fan-name;
+            synopsis "Chassis fans health analyzer";
+            description "Collects chassis environment statistics periodically and notifies anomalies when fan status is NOK";
+            /*
+             * Sensor configuration to get data from network devices
+             */			
+            sensor fan-netconf {
+                iAgent {
+                    file fanEVOTable.yml;
+                    table fanEVOTable;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules
+             */			
+            field fan-name {
+                sensor fan-netconf {
+                    path Item;
+                }
+                type string;
+                description "Name of the fan tray and fan number";
+            }
+            field measurement {
+                sensor fan-netconf {
+                    path measurement;
+                }
+                type integer;
+                description "RPM measurement";
+            }
+            field rpm-percent {
+                sensor fan-netconf {
+                    path rpm;
+                }
+                type integer;
+                description "RPM percent";
+            }
+            field status {
+                sensor fan-netconf {
+                    path status;
+                }
+                type string;
+                description "Status of the fan";
+            }
+            /*
+             * Anomaly detection logic
+             */			
+            trigger fan-state {
+                synopsis "Fan State KPI";
+                description "Sets health based on Fan state";			
+                frequency 1offset;
+                /*
+                 * Sets color to green when status is ok.
+                 * 
+                 */				
+                term state-is-ok {
+                    when {
+                        matches-with "$status" ok {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fan-name is in OK state";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when status is not ok.
+                 * 
+                 */				
+                term state-is-not-ok {
+                    then {
+                        status {
+                            color red;
+                            message "$fan-name is not in OK state";
+                        }
+                    }
+                }
+            }
+            trigger rpm-percent {
+                synopsis "Fan RPM KPI";
+                description "Sets health based on Fan RPM percentage";			
+                frequency 1offset;
+                /*
+                 * Sets color to red when RPM is more than 80%.
+                 * 
+                 */				
+                term above-high-threshold {
+                    when {
+                        greater-than "$rpm-percent" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$fan-name RPM percent is $rpm-percent";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when RPM is more than 50%.
+                 * 
+                 */				
+                term above-low-threshold {
+                    when {
+                        greater-than "$rpm-percent" 50;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fan-name RPM percent is $rpm-percent";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when RPM is less than 50%.
+                 * 
+                 */				
+                term normal {
+                    then {
+                        status {
+                            color green;
+                            message "$fan-name RPM percent is $rpm-percent";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }						
+                    }
+                }
+                helper-files other {
+                    list-of-files [ fanEVOTable.yml ];
+                }				
+            }
+        }
+    }
+}	
+	
+		
+		

@@ -7,7 +7,7 @@ healthbot {
         rule system-uptime-evo {
             synopsis "System Uptime KPI";
             description "Monitors the time system was last rebooted";
-            sensor uptime {
+            sensor uptime-netconf {
                 iAgent {
                     file SystemUptime.yml;
                     table SystemUptimeTable;
@@ -18,28 +18,28 @@ healthbot {
              * Fields defined in the yml for which data is collected.
              */			
             field date-rebooted {
-                sensor uptime {
+                sensor uptime-netconf {
                     path date;
                 }
                 type string;
                 description "Date and time when the sytem was rebooted ";
             }
             field date-seconds {
-                sensor uptime {
+                sensor uptime-netconf {
                     path date-time;
                 }
                 type integer;
                 description "Time in seconds when the system was rebooted (epoch)";
             }
             field duration-seconds {
-                sensor uptime {
+                sensor uptime-netconf {
                     path time-length;
                 }
                 type integer;
                 description "Time in seconds since the system was last rebooted";
             }
             field time-rebooted {
-                sensor uptime {
+                sensor uptime-netconf {
                     path time;
                 }
                 type string;
@@ -49,6 +49,8 @@ healthbot {
              * Anomaly detection logic.
              */			
             trigger system-reboot {
+                synopsis "System Uptime kpi";
+                description "Sets health based on system uptime";			
                 frequency 1offset;
                 /*
                  * Sets color to red when the system has been down in the last 5 minutes.

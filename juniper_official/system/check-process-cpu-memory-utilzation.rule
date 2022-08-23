@@ -1,0 +1,225 @@
+/*
+ * Moniters System CPU and Memory Utlization and notifies when anomalies are found.
+ * 
+ */
+healthbot {
+    topic hardware.system {
+        rule check-process-cpu-memory-utilzation {
+            keys [ daemon pid ];
+            synopsis "System processes cpu and memoryanalyzer";
+            description "Collects system process's cpu  and memory utilization periodically and notifies anomalies when  utilization exceeds threshold";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor systemprocess-oc {
+                synopsis "System processes CPU and Memory OC sensor definition";
+                description "Open config sensor to collect data from network device";
+                open-config {
+                    sensor-name /system/processes/process;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field cpu-util-percent {
+                sensor systemprocess-oc {
+                    path /system/processes/process/state/cpu-utilization;
+                }
+                type float;
+                description "Daemon CPU utilization";
+            }
+            field daemon {
+                sensor systemprocess-oc {
+                    path /system/processes/process/state/name;
+                }
+                type string;
+                description "Daemon to be monitored";
+            }
+            field max-threshold {
+                constant {
+                    value "{{process-high-threshold}}";
+                }
+                type integer;
+                description "Daemon high threshold";
+            }
+            field memory-util-percent {
+                sensor systemprocess-oc {
+                    path /system/processes/process/state/memory-utilization;
+                }
+                type float;
+                description "Daemon memory utilization";
+            }
+            field min-threshold {
+                constant {
+                    value "{{process-low-threshold}}";
+                }
+                type integer;
+                description "Daemon low threshold";
+            }
+            field pid {
+                sensor systemprocess-oc {
+                    path /system/processes/process/state/pid;
+                }
+                type string;
+                description "PID to be monitored";
+            }
+            field process-name {
+                constant {
+                    value "{{process-name-input}}";
+                }
+                type string;
+                description "Selected daemon to be monitored";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger processes-cpu-utilization {
+                synopsis "System prcoesses cpu utilization kpi";
+                description "Sets health based on system processes cpu utilization";
+                frequency 1offset;
+                term is-processes-not-found {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                /*
+                 * Sets color to red when cpu-util-percent is greater-than-or-equal-to max-threshold.
+                 */				
+                term is-cpu-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$cpu-util-percent" "$max-threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon cpu utilization:($cpu-util-percent), crossed high threshold($max-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when cpu-util-percent is greater-than-or-equal-to min-threshold.
+                 */				
+                term is-cpu-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$cpu-util-percent" "$min-threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon cpu utilization:($cpu-util-percent), is in middle range";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */				
+                term is-cpu-utilization-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon cpu utilization:($cpu-util-percent), is normal";
+                        }
+                    }
+                }
+            }
+            trigger processes-memory-utilization {
+                synopsis "System prcoesses memory utilization kpi";
+                description "Sets health based on system processes memory utilization";			
+                frequency 1offset;
+                term is-processes-not-found {
+                    when {
+                        does-not-match-with "$daemon" "$process-name";
+                    }
+                }
+                /*
+                 * Sets color to red when memory-util-percent is greater-than-or-equal-to max-threshold.
+                 */				
+                term is-memory-utilization-abnormal {
+                    when {
+                        greater-than-or-equal-to "$memory-util-percent" "$max-threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$daemon memory utilization:($memory-util-percent), crossed max threshold($max-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when memory-util-percent is greater-than-or-equal-to min-threshold.
+                 */				
+                term is-memory-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$memory-util-percent" "$min-threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$daemon memory utilization:($memory-util-percent), crossed min threshold($min-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */				
+                term is-memory-utilization-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$daemon memory utilization:($memory-util-percent), is normal";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable process-high-threshold {
+                value 80;
+                description "Daemon high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable process-low-threshold {
+                value 50;
+                description "Daemon low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable process-name-input {
+                value .*;
+                description "Demon name to monitor, regular regular expression, eg 'rpd|dfwd|dcd'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }						
+                    }
+                }
+            }
+		}
+    }
+}	
+		

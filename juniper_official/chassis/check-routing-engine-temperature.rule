@@ -1,0 +1,232 @@
+/*
+ * Monitors routing-engine temperature and notifies when anomalies are found
+ * 
+ * Three inputs control detection
+ *
+ *   1) "re-slot-no" is a regular expression that matches the routing engine
+ *      that you would like to monitor.  By default it's '0-1', which matches
+ *      both the routing engines. Use something like '0' to match only
+ *      routing engine 0.
+ *
+ *   2) "re-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degree Cecilius of 
+ *      RE temperature. This rule will set a dashboard color to green
+ *      when temperature is below low threshold.
+ * 
+ *   3) "re-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
+ *      temperature. 
+ *
+ */
+healthbot {
+    topic hardware.chassis {
+        rule check-routing-engine-temperature {
+            /*
+             * Monitors the routing-engine temperature and notifies via dashboard, red color 
+             * when threshold is exceeded else green. 
+			 *
+             * Use routing-engine as key for rule.
+             */		
+             keys routing-engine;
+             synopsis "Routing engine temperature";
+             description "Collects system RE Temperature statistics periodically and notifies anomalies";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			 
+             sensor components-oc {
+                 synopsis "routing-engine temperature KPI";
+                 description "open-config sensor to collect telemetry data from network device";
+                 open-config {
+                     sensor-name /components/;
+                     frequency 60s;
+                 }
+             }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */				 
+             field routing-engine-cpu-temperature {
+                 sensor components-oc {
+                     where "/components/component/properties/property/@name == 'CPU Temperature'";
+                     path /components/component/properties/property/state/value;
+                 }
+                 type integer;
+                 description "CPU temperature";
+             }
+             field routing-engine-temperature {
+                 sensor components-oc {
+                     where "/components/component/properties/property/@name == 'RE temperature'";
+                     path /components/component/properties/property/state/value;
+                 }
+                 type integer;
+                 description "RE temperature";
+             }
+             field routing-engine {
+                 sensor components-oc {
+                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
+                     path "/components/component/@name";
+                 }
+                 description "RE name to monitor";
+             }
+            field high-threshold {
+                constant {
+                    value "{{re-temperature-high-threshold}}";
+                }
+                type integer;
+                description "RE temperature high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{re-temperature-low-threshold}}";
+                }
+                type integer;
+                description "RE temperature low threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger routing-engine-temperature {
+                synopsis "RE temperature KPI";
+                description "Sets health based increase in RE temperature";
+                frequency 1offset;
+                /*
+                 * Sets color to green when RE temperature
+                 * re-temperature is below low threshold ($low-threshold).
+                 */ 
+                term is-re-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and notify anomaly when RE temperature 
+                 * ($routing-engine-temperature) is below high threshold
+                 * ($high-threshold).
+                 */  
+                term is-re-temperature-median {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine temperature($routing-engine-temperature degree C) exceeds low threshold";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
+                term re-temperature-abnormal {
+                    when {
+                        greater-than "$routing-engine-temperature" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$routing-engine temperature($routing-engine-temperature degree C) exceeds high threshold";
+                        }
+                    }
+                }
+            }
+            trigger routing-engine-cpu-temperature {
+                synopsis "RE CPU temperature KPI";
+                description "Sets health based increase in RE CPU temperature";
+                frequency 1offset;
+                /*
+                 * Sets color to green when RE CPU temperature
+                 * re-cpu-temperature is below low threshold ($low-threshold).
+                 */ 
+                term is-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and notify anomaly when RE CPU
+                 * temperature ($routing-engine-cpu-temperature) is below high threshold
+                 * ($high-threshold).
+                 */  
+                term is-temperature-median {
+                    when {
+                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds low threshold";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red and notify anomaly.
+                 */ 
+                term temperature-abnormal {
+                    when {
+                        greater-than "$routing-engine-cpu-temperature" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds high threshold";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable re-slot-no {
+                value 0-1;
+                description "Routing engine numbers to monitor, regular expression, e.g. '0'";
+                type string;
+            }
+            variable re-temperature-high-threshold {
+                value 55;
+                description "RE temperature high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable re-temperature-low-threshold {
+                value 45;
+                description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }		
+             rule-properties {
+                 version 1;
+                 contributor juniper;
+                 category advanced;
+                 supported-healthbot-version 4.2.0;
+                 supported-devices {
+                     juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }
+                 helper-files other {
+                     list-of-files system-sensors.py;
+                 }
+            }
+        }
+	}	
+}	
+		

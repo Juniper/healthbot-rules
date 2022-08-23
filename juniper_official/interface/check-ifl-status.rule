@@ -15,7 +15,7 @@ healthbot {
             keys [ interface-name sub-interface-index ];
             synopsis "Sub-interface status check";
             description "Collects ifl stats and notifies in case status is down";
-            sensor interfaces {
+            sensor interfaces-oc {
                 synopsis "Sub Interface open-config sensor definition";
                 description "Sub Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
@@ -24,21 +24,21 @@ healthbot {
                 }
             }
             field ifl-admin-status {
-                sensor interfaces {
+                sensor interfaces-oc {
                     path /interfaces/interface/subinterfaces/subinterface/state/admin-status;
                 }
                 type string;
                 description "Subinterface admin status";
             }
             field ifl-oper-status {
-                sensor interfaces {
+                sensor interfaces-oc {
                     path /interfaces/interface/subinterfaces/subinterface/state/oper-status;
                 }
                 type string;
                 description "Subinterface operational status";
             }
             field interface-name {
-                sensor interfaces {
+                sensor interfaces-oc {
                     where "/interfaces/interface/@name =~ /{{ifd-name}}/";
                     path "/interfaces/interface/@name";
                 }
@@ -46,7 +46,7 @@ healthbot {
                 description "Interfaces to be monitored";
             }
             field sub-interface-index {
-                sensor interfaces {
+                sensor interfaces-oc {
                     where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
                     path "/interfaces/interface/subinterfaces/subinterface/@index";
                 }
@@ -57,6 +57,9 @@ healthbot {
                 synopsis "Sub-interface status check kpi";
                 description "Sets health based on ifl state";
                 frequency 1offset;
+                /*
+                 * Sets color to red when ifl operational status is DOWN.
+                 */				
                 term is-ifl-down {
                     when {
                         matches-with "$ifl-oper-status" DOWN {
@@ -70,6 +73,9 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Defaults color to green.
+                 */				
                 term ifl-up {
                     then {
                         status {

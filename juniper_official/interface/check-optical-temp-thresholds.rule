@@ -1,0 +1,266 @@
+/*
+ * Monitors optical temperature and notifies anomalies.Also collects tx/rx power values in db.
+ * Five inputs control detection
+ * 
+ *   1) if-name, is a regular expression that matches the
+ *      interfaces that you would like to monitor.    By default it's
+ *      '.*', which matches all interfaces. Use something like 'ge.*' to
+ *      match only gigabit ethernet interfaces.
+ * 
+ *   2) rx-high-threshold, Default high threshold in dB of rx power.
+ *
+ *   3) rx-low-threshold, Default low threshold in dB of rx power.
+ *    
+ *   4) tx-high-threshold, Default high threshold in dB of tx power.
+ *
+ *   5) tx-low-threshold, Default low threshold in dB of tx power.
+ *
+ */
+healthbot {
+    topic interfaces {
+        rule check-optical-temp-thresholds {
+            /*
+             * Collects high and low threshold values for tx and rx in db.
+             * Monitors the temperature and notifies via dashboard if there are 
+             * anomalies.
+             * 
+             * Use interface name as key for rule.
+             */		
+            keys interface-name;
+            synopsis "Optical module temperature and thresholds KPI";
+            description "To check if the optical temp is within limit and collect threshold values";
+            function threshold_adjustment {
+                path optics-threshold-adjustment.py;
+                method threshold_adjustment;
+                argument highlow {
+                    mandatory;
+                }
+                argument threshold {
+                    mandatory;
+                }
+            }	
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor temperature-thresholds-oc {
+                open-config {
+                    sensor-name /junos/system/linecard/optics/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field high-alarm-threshold {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/module_temp_high_alarm_threshold;
+                }
+                type integer;
+                description "Default Module temperature high alarm threshold.";
+            }
+            field high-warning-threshold {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/module_temp_high_warning_threshold;
+                }
+                type integer;
+                description "Default Module temperature high warning threshold.";
+            }
+            field interface-name {
+                sensor temperature-thresholds-oc {
+                    where "/interfaces/interface/@name =~ /{{if-name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Name of the interface.";
+            }
+            field optical-temp {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/module_temp;
+                }
+                type integer;
+                description "Temperature of the Optical Module in degrees Centigrade.";
+            }
+            field rx-power-high {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument threshold "$rx-power-high-pre";
+                        argument highlow "{{rx-high-threshold}}";
+                    }
+                }
+                type float;
+                description "Receiver power high alarm threshold";
+            }
+            field rx-power-high-pre {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Receiver power high alarm threshold";
+            }
+            field rx-power-low {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument highlow "{{rx-low-threshold}}";
+                        argument threshold "$rx-power-low-pre";
+                    }
+                }
+                type float;
+                description "Receive low power threshold";
+            }
+            field rx-power-low-pre {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Receive low power threshold";
+            }
+            field tx-power-high {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument threshold "$tx-power-high-pre";
+                        argument highlow "{{tx-high-threshold}}";
+                    }
+                }
+                type float;
+                description "Transmit power high alarm threshold";
+            }
+            field tx-power-high-pre {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Transmit power high alarm threshold";
+            }
+            field tx-power-low {
+                formula {
+                    user-defined-function {
+                        function-name threshold_adjustment;
+                        argument threshold "$tx-power-low-pre";
+                        argument highlow "{{tx-low-threshold}}";
+                    }
+                }
+                type float;
+                description "Transmit low power threshold";
+            }
+            field tx-power-low-pre {
+                sensor temperature-thresholds-oc {
+                    path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
+                    zero-suppression;
+                }
+                type float;
+                description "Transmit low power threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger interface-optical-temperature {
+                synopsis "high optical temperature";
+                description "Sets health based on the optical temperature";
+                frequency 1.5offset;
+                /*
+                 * Sets color to red when optical-temperature is greater-than-or-equal-to high-alarm-threshold.
+                 */				
+                term greater-than-alarm-threshold {
+                    when {
+                        greater-than-or-equal-to "$optical-temp" "$high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name,temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when optical-temperature is greater-than-or-equal-to high-warning-threshold.
+                 */				
+                term greater-than-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optical-temp" "$high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name,temperature $optical-temp exceeds default warning threshold ($high-warning-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when optical-temperature is less than high-warning-threshold.
+                 */				
+                term normal {
+                    when {
+                        less-than "$optical-temp" "$high-warning-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name, temperature $optical-temp is normal.";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable rx-high-threshold {
+                value 10.0;
+                description "Default high threshold in dB if receive threshold is not supported by the optic.";
+                type float;
+            }
+            variable rx-low-threshold {
+                value -39.0;
+                description "Default low threshold in dB if receive threshold is not supported by the optic.";
+                type float;
+            }
+            variable tx-high-threshold {
+                value 10.0;
+                description "Default high threshold in dB if transmit threshold is not supported by the optic.";
+                type float;
+            }
+            variable tx-low-threshold {
+                value -39.0;
+                description "Default low threshold in dB if transmit threshold is not supported by the optic.";
+                type float;
+            }			
+            variable if-name {
+                value .*;
+                description "Name of the interface.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                is-scaling-rule {
+                    description "Fields:interface-name ; Directly impacted by number of interfaces running in each network device";
+                }
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files optics-threshold-adjustment.py;
+                }				
+            }
+        }
+    }
+}	

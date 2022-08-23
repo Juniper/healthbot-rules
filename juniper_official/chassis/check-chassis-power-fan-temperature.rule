@@ -1,6 +1,6 @@
 /*
  * Moniters status of chassis temperature, fan and power and notifies when anomalies
- * are found.
+ * are found
  * Two input controls detection
  * 
  *  1) class-name variable, Name of the class,can be fan,power or temperature
@@ -23,7 +23,7 @@ healthbot {
             /*
              * Sensor configuration to get data from network devices
              */			
-            sensor chassis {
+            sensor chassis-netconf {
                 iAgent {
                     file FanTemperature.yml;
                     table FanTable;
@@ -35,7 +35,7 @@ healthbot {
              * 
              */			
             field class {
-                sensor chassis {
+                sensor chassis-netconf {
                     where "class =~ /{{class-name}}/";
                     path class;
                 }
@@ -43,14 +43,14 @@ healthbot {
                 description "Type of item that is monitored";
             }
             field comment {
-                sensor chassis {
+                sensor chassis-netconf {
                     path comment;
                 }
                 type string;
                 description "RPM  of fan";
             }
             field name {
-                sensor chassis {
+                sensor chassis-netconf {
                     where "name =~ /{{item-name}}/";
                     path name;
                 }
@@ -58,14 +58,14 @@ healthbot {
                 description "Name of the item";
             }
             field status {
-                sensor chassis {
+                sensor chassis-netconf {
                     path status;
                 }
                 type string;
                 description "Status of the monitored item";
             }
             field temperature {
-                sensor chassis {
+                sensor chassis-netconf {
                     path temperature;
                 }
                 type integer;
@@ -75,6 +75,8 @@ healthbot {
              * Anomaly detection logic.
              */			
             trigger power-fan-temperature-status {
+                synopsis "Power,Fan,Chassis KPI";
+                description "Sets health based on status of chassis,power and fan";			
                 frequency 1offset;
                 /*
                  * Sets color to green when status is ok.

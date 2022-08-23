@@ -1,0 +1,225 @@
+/*
+ * Monitors PSM power usage,temperature,state and notifies when anomalies are found
+ * 
+ * Two inputs control detection
+ *
+ *   1) "psm-power-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 80.
+ * 
+ *   2) "psm" is the power module,it can be psm0 or psm1.
+ *      
+ */
+healthbot {
+    topic hardware.chassis {
+        rule check-psm-power-usage-state-temp {
+            /*
+             * Monitors PSM power usage,temperature,state and notifies via dashboard, red color 
+             * when threshold is exceeded else green.
+			 *
+             * Use PSM as key for rule.
+             */		
+            keys psm;
+            synopsis "Chassis psm power check";
+            description "Collects PSM power usage periodically and notifies anomaly when power usage exceeds threshold";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor components-oc {
+                synopsis "Chassis components sensor definition";
+                description "open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field power-dc-output {
+                sensor components-oc {
+                    path /components/component/power-supply/state/output-power;
+                }
+                type integer;
+                description "PSM DC output";
+            }
+            field psm {
+                sensor components-oc {
+                    where "/components/component/@name =~ /{{psm}}/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "Power supply module";
+            }
+            field psm-power-capacity-maximum {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'power-capacity-maximum'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "PSM maximum power capacity";
+            }
+            field psm-power-usage {
+                formula {
+                    eval {
+                        expression "( $power-dc-output / $psm-power-capacity-maximum ) * 100";
+                    }
+                }
+                type float;
+                description "Stores % of power usage by PSMs";
+            }
+            field psm-power-usage-threshold {
+                constant {
+                    value "{{psm-power-threshold}}";
+                }
+                type integer;
+                description "psm power usage threshold";
+            }
+            field psm-state {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "State of power supply module";
+            }
+            field psm-temperature {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'Temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "Temperature of power supply module";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger psm-power-usage {
+                synopsis "PSM power usage KPI";
+                description "Sets health based on increasing psm power usage";
+                frequency 1offset;
+                /*
+                 * Sets color to red when psm-power-usage is greater than psm-power-usage-threshold
+                 * 
+                 */				
+                term is-power-usage-abnormal {
+                    when {
+                        greater-than-or-equal-to "$psm-power-usage" "$psm-power-usage-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$psm power usage($psm-power-usage) exceeds threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when psm-power-usage is normal.
+                 * 
+                 */				
+                term power-usage-normal {
+                    when {
+                        does-not-match-with "$psm-state" offline {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$psm power usage($psm-power-usage) is normal";
+                        }
+                    }
+                }
+            }
+            trigger psm-state {
+                synopsis "PSM State KPI";
+                description "Sets health based on PSM state";			
+                frequency 1offset;
+                /*
+                 * Sets color to green when state is online.
+                 * 
+                 */				
+                term state-is-online {
+                    when {
+                        matches-with "$psm-state" online {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$psm is $psm-state";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when state is offline.
+                 * 
+                 */				
+                term state-is-not-online {
+                    when {
+                        matches-with "$psm-state" offline {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$psm is $psm-state";
+                        }
+                    }
+                }
+            }
+            trigger psm-temperature {
+                synopsis "PSM Temperature KPI";
+                description "Sets health based on PSM Temperature";			
+                frequency 1offset;
+                /*
+                 * Sets color to green and gives information about psm temperature.
+                 * 
+                 */				
+                term Term_1 {
+                    then {
+                        status {
+                            color green;
+                            message "$psm temperature is $psm-temperature";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable psm-power-threshold {
+                value 80;
+                description "Power supply module usage threshold ";
+                type int;
+            }
+            variable psm {
+                value "^PSM[0-1]$";
+                description "Enter PSM to be monitored";
+                type string;
+            }			
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }						
+                    }
+                }
+            }
+        }
+    }
+}	

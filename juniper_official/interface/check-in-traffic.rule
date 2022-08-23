@@ -45,7 +45,7 @@ healthbot {
             /*
              * Sensor configuration to get data from network devices.
              */
-            sensor interfaces {
+            sensor interfaces-oc {
                 synopsis "Interface open-config sensor definition";
                 description "Interfaces open-config sensor to collect telemetry data from network device";
                 open-config {
@@ -58,7 +58,7 @@ healthbot {
              * to the shorter field names used in the rules.
              */
             field in-octets-stats-value {
-                sensor interfaces {
+                sensor interfaces-oc {
                     path "/interfaces/interface/state/counters/{{stats-name}}";
                     zero-suppression;
                 }
@@ -66,7 +66,7 @@ healthbot {
                 description "Interface statistics counter (in-octets) value";
             }
             field interface-name {
-                sensor interfaces {
+                sensor interfaces-oc {
                     where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
                     path "/interfaces/interface/@name";
                 }
@@ -102,7 +102,7 @@ healthbot {
                  * abovehigh threshold (in-octets-high-threshold) for all  
                  * points in a 180 seconds period.
                  */                
-		frequency 2offset;
+	        	frequency 2offset;
                 term is-interface-in-traffic-abnormal {
                     when {
                         increasing-at-least-by-value "$in-octets-stats-value" {
