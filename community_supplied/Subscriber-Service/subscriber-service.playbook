@@ -7,13 +7,47 @@
  * 3) Rule monitor-dhcpv4-server-active-binding-deviation, Monitors deviation of DHCPv4 Server active (bindings in the bound and renew states) bindings.
  * 4) Rule monitor-dhcpv6-server-active-binding-deviation, Monitors deviation of DHCPv6 Server active (bindings in the bound and renew states) bindings.
  * 5) Rule monitor-dhcpv4-relay-active-binding-deviation, Monitors deviation of DHCPv4 Relay active (bindings in the bound, renew and re-binding states) *    bindings.
- * 6) Rule monitor-dhcpv6-relay-active-binding-deviation, Monitors deviation of DHCPv4 Relay active (bindings in the bound, renew and re-binding states) *    bindings.
+ * 6) Rule monitor-dhcpv6-relay-active-binding-deviation, Monitors deviation of DHCPv4 Relay active (bindings in the bound, renew and re-binding states) *    	bindings.			
+ * 7) Rule monitor-dhcpv4-server-delay, Monitors response time delay between the BNG acting as a DHCPv4 Relay and its DHCPv4 servers.
+ * 8) Rule monitor-dhcpv6-server-delay, Monitors response time delay between the BNG acting as a DHCPv6 Relay and its DHCPv6 servers.
+ * 9) Rule monitor-radius-server-delay, Monitors RADIUS server delay from the BNG's perspective against a provided baseline.
+ * 10) Rule collect-chassis-information, Collects salient information about chassis type.
+ * 11) Rule collect-fpc-information, Collects information about MIC types per FPC
+ * 12) Rule collect-subscriber-port-mapping, Collects subscriber count data per PORT and maps ports & subscribers to PFE's.
+ * 13) Rule generate-subscriber-hardware-limits, Generates subscriber capacity limits by hardware component type (FPC, PIC, Port).
+ * 14) Rule monitor-chassis-scale, Monitor subscriber count against an established chassis-type limit.
+ * 15) Rule monitor-fpc-capacity, Monitors subscriber capacity according to the type of FPC.
+ * 16) Rule monitor-pfe-capacity, Monitors PFE subscriber count against established limit
+ * 17) Rule monitor-pic-capacity, Monitor subscriber capacity against established PIC limits.
+ * 18) Rule monitor-subscriber-setup-rate, Monitors the subscriber setup rate against a defined baseline.
+ * 19) Rule dhcpv4-era, Monitors dhcpv4-era statistics 
+ * 20) Rule dhcpv6-era, Monitors dhcpv6-era statistics 
+ * 21) Rule pppoe-era, Monitors pppoe-era statistics 
  */
  
 healthbot {
     playbook subscriber-service {
-        rules [ service.address-pools/monitor-address-pool-utilization service.address-pools/monitor-linked-pool-utilization service.dhcp-server/monitor-dhcpv4-server-active-binding-deviation service.dhcp-server/monitor-dhcpv6-server-active-binding-deviation service.dhcp-relay/monitor-dhcpv4-relay-active-binding-deviation
-		service.dhcp-relay/monitor-dhcpv6-relay-active-binding-deviation ];
+        rules [ service.address-pools/monitor-address-pool-utilization 
+		service.address-pools/monitor-linked-pool-utilization 
+		service.dhcp-server/monitor-dhcpv4-server-active-binding-deviation 
+		service.dhcp-server/monitor-dhcpv6-server-active-binding-deviation 
+		service.dhcp-relay/monitor-dhcpv4-relay-active-binding-deviation
+		service.dhcp-relay/monitor-dhcpv6-relay-active-binding-deviation 
+		service.dhcp-relay/monitor-dhcpv4-server-delay
+		service.dhcp-relay/monitor-dhcpv6-server-delay
+		service.aaa/monitor-radius-server-delay 
+		service.subscribers/collect-chassis-information 
+		service.subscribers/collect-fpc-information 
+		service.subscribers/collect-subscriber-port-mapping 
+		service.subscribers/generate-subscriber-hardware-limits 
+		service.subscribers/monitor-chassis-scale 
+		service.subscribers/monitor-fpc-capacity 
+		service.subscribers/monitor-pfe-capacity  
+		service.subscribers/monitor-pic-capacity 
+		service.subscribers/monitor-subscriber-setup-rate  
+		service.protocols/dhcpv4-era 
+		service.protocols/dhcpv6-era  
+		service.protocols/pppoe-era  ];
 		description "The subscriber-services playbook contains rules for RLI - 52835";
         synopsis "Subscriber services KPI";
     }

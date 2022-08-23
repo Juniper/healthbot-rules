@@ -1,0 +1,85 @@
+healthbot {
+    topic service.subscribers {
+        rule collect-chassis-information {
+            keys component-name;
+            synopsis "Collects salient information about chassis type";
+            description "Collects salient chassis information";
+            sensor component {
+                synopsis "Telemetry for chassis inventory";
+                description "The gNMI component inventory sensor";
+                open-config {
+                    sensor-name /components;
+                    frequency 30s;
+                }
+            }
+            field chassis-description {
+                sensor component {
+                    where "/components/component/@name =~ /^(Chassis)$/";
+                    path /components/component/state/description;
+                }
+                type string;
+                description "The type of chassis if component type is 'Chassis'";
+            }
+            field component-name {
+                sensor component {
+                    path "/components/component/@name";
+                }
+                type string;
+                description "The type of the component.";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,162 @@
+healthbot {
+    topic service.subscribers {
+        rule monitor-fpc-capacity {
+            keys fpc-number;
+            synopsis "Monitor subscriber capacity against FPC-specific limits";
+            description "Monitors subscriber capacity according to the type of FPC";
+            sensor resource-monitor {
+                synopsis "Telemetry for subscriber resource usage.";
+                description "Telemetry for subscriber resource usage.";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor;
+                    frequency 30s;
+                }
+            }
+            field fpc-limit {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=generate-subscriber-hardware-limits]/field[fpc-number='$fpc-number']/fpc-limit";
+                }
+                type integer;
+                description "Max subscriber capacity for this FPC";
+            }
+            field fpc-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type string;
+                description "The positional index of this FPC (slot) with respect to the chassis";
+            }
+            field fpc-subscriber-count {
+                sensor resource-monitor {
+                    path /junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/current-subscriber-count;
+                }
+                type integer;
+                description "The current subscriber load on this FPC";
+            }
+            field fpc-subscriber-utilization {
+                formula {
+                    eval {
+                        expression "( $fpc-subscriber-count / $fpc-limit ) * 100";
+                    }
+                }
+                type float;
+                description "Current subscriber utilization of this FPC";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-utilization}}";
+                }
+                type integer;
+                description "The high thershold for FPC subscriber utilization";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-utilization}}";
+                }
+                type integer;
+                description "The cautionary thershold for FPC subscriber utilization";
+            }
+            trigger fpc-component-capacity {
+                synopsis "Monitor subscriber load per FPC";
+                description "Monitor subscriber load per FPC";
+                frequency 1.5offset;
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$fpc-subscriber-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "FPC Subscriber count is >= $red-limit% of max capacity! $fpc-subscriber-utilization % of $fpc-limit.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$fpc-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "FPC Subscriber count approaching max capacity. $fpc-subscriber-utilization % of $fpc-limit.";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$fpc-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "FPC Subscriber count nominal. $fpc-subscriber-utilization % of $fpc-limit.";
+                        }
+                    }
+                }
+            }
+            variable critical-utilization {
+                value 90;
+                description "The critical utilization percentage";
+                type int;
+            }
+            variable warning-utilization {
+                value 75;
+                description "The cautionary utilization percentage";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

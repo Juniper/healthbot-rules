@@ -1,0 +1,221 @@
+healthbot {
+    topic service.subscribers {
+        rule generate-subscriber-hardware-limits {
+            keys [ fpc-number mic-number port-number ];
+            synopsis "Generated subscriber capacity limit by hardware component type";
+            description "Generates subscriber capacity limits by hardware component type (FPC, PIC, Port).";
+            function lookup-chassis-capacity {
+                description "Performs a static lookup of the subscriber capacity limit by chassis-type";
+                path chassis_cap.py;
+                method chassis_capacity;
+                argument cases {
+                    mandatory;
+                }
+                argument chassis {
+                    mandatory;
+                }
+            }
+            function lookup-fpc-capacity {
+                description "Performs a static lookup of the FPC subscriber capacity according to the fpc_type";
+                path fpc_cap.py;
+                method fpc_capacity;
+                argument cases {
+                    mandatory;
+                }
+                argument fpc_type {
+                    mandatory;
+                }
+            }
+            function lookup-pfe-count {
+                description "Performs a static lookup of the number of PFEs present for a given FPC type";
+                path pfe_count.py;
+                method pfe_count;
+                argument fpc_type;
+            }
+            sensor resource-monitor {
+                synopsis "Telemetry for subscriber resource monitoring";
+                description "Telemetry for subscriber resource monitoring";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor;
+                    frequency 30s;
+                }
+            }
+            field chassis-limit {
+                formula {
+                    user-defined-function {
+                        function-name lookup-chassis-capacity;
+                        argument chassis "$chassis-type";
+                        argument cases "{{chassis-data}}";
+                    }
+                }
+                type integer;
+                description "The subscriber limit for this chassis type";
+            }
+            field chassis-type {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-chassis-information]/field[component-name=\"Chassis\"]/chassis-description";
+                }
+                type string;
+                description "The chassis type";
+            }
+            field fpc-limit {
+                formula {
+                    user-defined-function {
+                        function-name lookup-fpc-capacity;
+                        argument cases "{{fpc-data}}";
+                        argument fpc_type "$fpc-type";
+                    }
+                }
+                type integer;
+                description "The max subscriber capacity of this FPC type";
+            }
+            field fpc-name {
+                formula {
+                    concatenate {
+                        strings [ FPC "$fpc-number" ];
+                    }
+                }
+				type string;
+                description "The positional name of the FPC (e.g. FPC3)";
+            }
+            field fpc-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type string;
+                description "The FPC or slot number";
+            }
+            field fpc-type {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$fpc-name']/fpc-subcomponent-type";
+                }
+                type string;
+                description "The type of this FPC";
+            }
+            field mic-name {
+                formula {
+                    concatenate {
+                        strings [ FPC "$fpc-number" :MIC "$mic-number" ];
+                    }
+                }
+				type string;
+                description "The fully qualified positional name of  PIC (e.g. FPC3:MIC0)";
+            }
+            field mic-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/@pic-no";
+                }
+                type string;
+                description "The PIC number or position within the FPC";
+            }
+            field mic-type {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$mic-name']/fpc-subcomponent-type";
+                }
+				type string;
+                description "The type of MIC in this FPC";
+            }
+            field pfe-count {
+                formula {
+                    user-defined-function {
+                        function-name lookup-pfe-count;
+                        argument fpc_type "$fpc-type";
+                    }
+                }
+				type string;
+                description "The number of PFEs for this FPC type";
+            }
+            field pfe-limit {
+                formula {
+                    eval {
+                        expression " $fpc-limit / $pfe-count";
+                    }
+                }
+                type integer;
+                description "The subscriber capacity of PFEs for this FPC type";
+            }
+            field pic-limit {
+                constant {
+                    value "{{pic-maximum-limit}}";
+                }
+                type integer;
+                description "Max subscriber capacity for this PIC";
+            }
+            field port-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/ports/port/@port-no";
+                }
+                type string;
+                description "The port number or position within the PIC";
+            }
+            variable chassis-data {
+                value "'{\\"VMX\\" : 32000, \\"MX960\\": 512000, \\"MX240\\" : 256000, \\"MX480\\" : 512000, \\"MX2010\\": 512000, \\"MX2020\\" : 512000, \\"MX204\\" : 32000, \\"MX10003\\" : 192000}'";
+                description "Max subscriber capacity for chassis: Use below format to update the data:  '{\\"VMX\\" : 32000, \\"MX960\\": 512000, \\"MX240\\" : 256000, \\"MX480\\" : 512000, \\"MX2010\\": 512000, \\"MX2020\\" : 512000, \\"MX204\\" : 32000, \\"MX10003\\" : 192000}'";
+                type string;
+            }
+            variable fpc-data {
+                value "'{ \\"Virtual FPC\\": 8000, \\"MPCE Type 2 3D\\" : 8000, \\"MPCE Type 2 3D Q\\" : 8000, \\"MPCE Type 2 3D EQ\\": 64000, \\"MPCE Type 3 3D\\" : 64000, \\"MPC2E NG PQ & Flex Q\\" : 64000, \\"MPC2E NG HQoS\\" : 64000, \\"MPC3E NG PQ & Flex Q\\" : 64000, \\"MPC3E NG HQoS\\" : 64000, \\"MPC5E 3D Q 24XGE+6XLGE\\" : 128000,       \\"MPC5E 3D Q 2CGE+4XGE\\" : 128000, \\"MPC7E 3D 40XGE\\" : 64000, \\"MPC7E 3D MRATE-12xQSFPP-XGE-XLGE-CGE\\" : 64000, \\"MPC7E 40x10GE Mezz\\" : 64000,     \\"MPC7E-10G LQ\\" : 64000, \\"MPC7E-MRATE LQ\\" : 64000, \\"MPC7E-10G HMC-2G\\" : 64000, \\"MPC7E-MRATE HMC-2G\\" : 64000, \\"MPC7E-10G HMC-2G LQ\\" : 64000,         \\"MPC7E-MRATE HMC-2G LQ\\" : 64000, \\"MPC Type 2 3D\\" : 8000, \\"MPC Type 2 3D Q\\" : 8000, \\"MPC Type 2 3D EQ\\": 64000, \\"MPC Type 3 3D\\" : 64000,        \\"MPC2 NG PQ & Flex Q\\" : 64000, \\"MPC2 NG HQoS\\" : 64000, \\"MPC3 NG PQ & Flex Q\\" : 64000, \\"MPC3 NG HQoS\\" : 64000, \\"MPC5 3D Q 24XGE+6XLGE\\" : 128000, \\"MPC5 3D Q 2CGE+4XGE\\" : 128000,\\"MPC7 3D 40XGE\\" : 64000, \\"MPC7 3D MRATE-12xQSFPP-XGE-XLGE-CGE\\" : 64000, \\"MPC7 40x10GE Mezz\\" : 64000, \\"MPC7-10G LQ\\" : 64000, \\"MPC7-MRATE LQ\\" : 64000, \\"MPC7-10G HMC-2G\\" : 64000, \\"MPC7-MRATE HMC-2G\\" : 64000, \\"MPC7-10G HMC-2G LQ\\" : 64000, \\"MPC7-MRATE HMC-2G LQ\\" : 64000, \\"MPC8EQ\\" : 128000, \\"LC2103\\" : 96000 }'";
+                description "Max subscriber capacity for fpc: Use below format to update the data: '{ \\"Virtual FPC\\": 8000, \\"MPCE Type 2 3D\\" : 8000, \\"MPCE Type 2 3D Q\\" : 8000, \\"MPCE Type 2 3D EQ\\": 64000, \\"MPCE Type 3 3D\\" : 64000, \\"MPC2E NG PQ & Flex Q\\" : 64000, \\"MPC2E NG HQoS\\" : 64000, \\"MPC3E NG PQ & Flex Q\\" : 64000, \\"MPC3E NG HQoS\\" : 64000, \\"MPC5E 3D Q 24XGE+6XLGE\\" : 128000,       \\"MPC5E 3D Q 2CGE+4XGE\\" : 128000, \\"MPC7E 3D 40XGE\\" : 64000, \\"MPC7E 3D MRATE-12xQSFPP-XGE-XLGE-CGE\\" : 64000, \\"MPC7E 40x10GE Mezz\\" : 64000,     \\"MPC7E-10G LQ\\" : 64000, \\"MPC7E-MRATE LQ\\" : 64000, \\"MPC7E-10G HMC-2G\\" : 64000, \\"MPC7E-MRATE HMC-2G\\" : 64000, \\"MPC7E-10G HMC-2G LQ\\" : 64000,         \\"MPC7E-MRATE HMC-2G LQ\\" : 64000, \\"MPC Type 2 3D\\" : 8000, \\"MPC Type 2 3D Q\\" : 8000, \\"MPC Type 2 3D EQ\\": 64000, \\"MPC Type 3 3D\\" : 64000,        \\"MPC2 NG PQ & Flex Q\\" : 64000, \\"MPC2 NG HQoS\\" : 64000, \\"MPC3 NG PQ & Flex Q\\" : 64000, \\"MPC3 NG HQoS\\" : 64000, \\"MPC5 3D Q 24XGE+6XLGE\\" : 128000, \\"MPC5 3D Q 2CGE+4XGE\\" : 128000,\\"MPC7 3D 40XGE\\" : 64000, \\"MPC7 3D MRATE-12xQSFPP-XGE-XLGE-CGE\\" : 64000, \\"MPC7 40x10GE Mezz\\" : 64000, \\"MPC7-10G LQ\\" : 64000, \\"MPC7-MRATE LQ\\" : 64000, \\"MPC7-10G HMC-2G\\" : 64000, \\"MPC7-MRATE HMC-2G\\" : 64000, \\"MPC7-10G HMC-2G LQ\\" : 64000, \\"MPC7-MRATE HMC-2G LQ\\" : 64000, \\"MPC8EQ\\" : 128000, \\"LC2103\\" : 96000 }'";
+                type string;
+            }
+            variable pic-maximum-limit {
+                value 16000;
+                description "Max subscriber capacity for this PIC";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

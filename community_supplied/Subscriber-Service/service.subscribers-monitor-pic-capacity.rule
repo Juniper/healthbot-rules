@@ -1,0 +1,167 @@
+healthbot {
+    topic service.subscribers {
+        rule monitor-pic-capacity {
+            keys [ fpc-number pic-number ];
+            synopsis "Monitor subscriber capacity per PIC type";
+            description "Monitor subscriber capacity against established PIC limits";
+            sensor resource-monitor {
+                synopsis "Telemetry for subscriber resource usage.";
+                description "Telemetry for subscriber resource usage.";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor;
+                    frequency 30s;
+                }
+            }
+            field fpc-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type string;
+                description "The positional index of this FPC (slot) with respect to the chassis";
+            }
+            field pic-limit {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=generate-subscriber-hardware-limits]/field[fpc-number='$fpc-number' AND mic-number='$pic-number']/pic-limit";
+                }
+                type integer;
+                description "Max subscriber capacity for this PIC";
+            }
+            field pic-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/@pic-no";
+                }
+                type string;
+                description "The positional index of this PIC with respect to the FPC";
+            }
+            field pic-subscriber-count {
+                sensor resource-monitor {
+                    path /junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/current-subscriber-count;
+                }
+                type integer;
+                description "The current subscriber load on this PIC";
+            }
+            field pic-subscriber-utilization {
+                formula {
+                    eval {
+                        expression "( $pic-subscriber-count / $pic-limit ) * 100";
+                    }
+                }
+                type float;
+                description "Current subscriber utilization of this PIC";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-utilization}}";
+                }
+                type integer;
+                description "The threshold above which utilization is at a critical level";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-utilization}}";
+                }
+                type integer;
+                description "The threshold above which utilization is at a cautionary level";
+            }
+            trigger pic-component-capacity {
+                frequency 1.5offset;
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$pic-subscriber-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PIC Subscriber count is >= $red-limit% of max capacity! $pic-subscriber-utilization % of $pic-limit.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$pic-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "PIC Subscriber count approaching max capacity. $pic-subscriber-utilization % of $pic-limit.";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$pic-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PIC Subscriber count nominal. $pic-subscriber-utilization % of $pic-limit.";
+                        }
+                    }
+                }
+            }
+            variable critical-utilization {
+                value 90;
+                description "The critical utilization percentage";
+                type int;
+            }
+            variable warning-utilization {
+                value 75;
+                description "The warning utilization percentage";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
