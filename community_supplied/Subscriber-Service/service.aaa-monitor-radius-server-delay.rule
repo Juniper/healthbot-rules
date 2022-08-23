@@ -1,0 +1,159 @@
+healthbot {
+    topic service.aaa {
+        rule monitor-radius-server-delay {
+            keys server-address;
+            synopsis "Monitors RADIUS server delay";
+            description "Monitors RADIUS server delay from the BNG's perspective against a provided baseline";
+            sensor radius-server-information {
+                synopsis "Telemetry for RADIUS server response-time measurement";
+                description "Telemetry for RADIUS server response-time measurement";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/aaa/radius-servers/radius-server;
+                    frequency 30s;
+                }
+            }
+            field last-round-trip-time {
+                sensor radius-server-information {
+                    path /junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/server-last-rtt;
+                }
+                type integer;
+                description "The last response-time measurement for this RADIUS server";
+            }
+            field learned-delay {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1d;
+                        field-name "$one-min-avg-response";
+                    }
+                }
+                description "A machine-learned baseline of RADIUS delay measurement";
+            }
+            field messages-received {
+                sensor radius-server-information {
+                    path /junos/system/subscriber-management/aaa/radius-servers/radius-server/response-time/one-minute-messages-received;
+                }
+                type integer;
+                description "The number of RADIUS messages received in the measurement interval";
+            }
+            field one-min-avg-response {
+                sensor radius-server-information {
+                    path /junos/system/subscriber-management/aaa/radius-servers/radius-server/response-time/one-minute-average-response-time;
+                }
+                type integer;
+                description "The average respone time or delay measured over a 1 minute interval";
+            }
+            field red-delay {
+                constant {
+                    value "{{critical-server-delay-ms}}";
+                }
+                type integer;
+                description "The delay above which the RADIUS server response time is noteworthy";
+            }
+            field server-address {
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/@server-address";
+                }
+                type string;
+                description "The IP address of the RADIUS server";
+            }
+            trigger radius-server-delay {
+                synopsis "Alert when RADIUS Server delay exceeds the critical threshold";
+                description "Alert when RADIUS Server delay exceeds the critical threshold";
+                frequency 1.5offset;
+                term is-critical {
+                    when {
+                        greater-than "$one-min-avg-response" "$red-delay";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "RADIUS Server Delay exceeds $red-delay ms! Current avg = $one-min-avg-response ms. Check for server overload or network congestion";
+                        }
+                    }
+                }
+                term is-idle {
+                    when {
+                        equal-to "$messages-received" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No messages have been received in measurement interval, last-RTT = $last-round-trip-time ms";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than-or-equal-to "$one-min-avg-response" "$red-delay";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "RADIUS Server Delay is nominal. Current avg = $one-min-avg-response ms";
+                        }
+                    }
+                }
+            }
+            variable critical-server-delay-ms {
+                value 100;
+                description "The server delay threshold in ms above which delay becomes noteworthy or service impacting";
+                type int;
+            }
+			rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,176 @@
+healthbot {
+    topic service.subscribers {
+        rule monitor-subscriber-setup-rate {
+            synopsis "Monitor subscriber setup rate";
+            description "Monitors the subscriber setup rate against a defined baseline";
+            function calculate-absolute-value {
+                description "Calculates an absolute value";
+                path math_functions.py;
+                method absolute;
+                argument value {
+                    mandatory;
+                }
+            }
+            sensor state {
+                synopsis "Session database statistics";
+                description "Session database statistics";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/sdb/statistics/state;
+                    frequency 30s;
+                }
+            }
+            field absolute-rate {
+                formula {
+                    user-defined-function {
+                        function-name calculate-absolute-value;
+                        argument value "$session-rate";
+                    }
+                }
+                type float;
+                description "The unsigned session setup rate";
+            }
+            field active-sessions {
+                sensor state {
+                    path /junos/system/subscriber-management/infra/sdb/statistics/state/active-state-count;
+                }
+                type integer;
+                description "The number of active subscriber sessions";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-rate}}";
+                }
+                type integer;
+                description "The critical threshold value for the session setup rate";
+            }
+            field session-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$active-sessions";
+                    }
+                }
+                type float;
+                description "The current subscriber setup rate";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-rate}}";
+                }
+				type integer;
+                description "The cautionary threshold value for the session setup rate";
+            }
+            trigger session-rate {
+                synopsis "Monitor session setup rate";
+                description "Monitor session setup rate";
+                frequency 1.5offset;
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$absolute-rate" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Subscriber setup rate is $session-rate. Active sessions: $active-sessions";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$absolute-rate" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Subscriber setup rate is $session-rate. Active sessions: $active-sessions";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$absolute-rate" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Subscriber setup rate ($session-rate) is within acceptable levels. Active sessions: $active-sessions";
+                        }
+                    }
+                }
+                term is-flat {
+                    when {
+                        less-than "$absolute-rate" 0.0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Subscriber setup rate is 0.  Active sessions: $active-sessions";
+                        }
+                    }
+                }
+            }
+            variable critical-rate {
+                value 300;
+                description "The high absolute session setup rate";
+                type int;
+            }
+            variable warning-rate {
+                value 100;
+                description "The cautionary absolute session setup rate";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

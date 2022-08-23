@@ -1,0 +1,299 @@
+healthbot {
+    topic service.subscribers {
+        rule monitor-pfe-capacity {
+            keys fpc-number;
+            synopsis "Monitors PFE subscriber count against established limit";
+            description "Monitors PFE subscriber count against established limit";
+            function compute-list-sum {
+                description "Computes the sum of a list/vector";
+                path math_functions.py;
+                method vector_sum;
+                argument vector {
+                    mandatory;
+                }
+            }
+            sensor resource-monitor {
+                synopsis "Telemetry for subscriber resource consumption";
+                description "Telemetry for subscriber resource consumption";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/infra/resource-monitor;
+                    frequency 30s;
+                }
+            }
+            field fpc-number {
+                sensor resource-monitor {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type string;
+                description "FPC's position or slot number";
+            }
+            field pfe-limit {
+                reference {
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=generate-subscriber-hardware-limits]/field[fpc-number='$fpc-number']/pfe-limit";
+                }
+                type integer;
+                description "The max capacity for a PFE for this FPC type";
+            }
+            field pfe0-subscriber-utilization {
+                formula {
+                    eval {
+                        expression "( $pfe0-total-subscribers / $pfe-limit ) * 100";
+                    }
+                }
+                type float;
+                description "PFE0 Subscriber Utilization";
+            }
+            field pfe0-total-subscribers {
+                formula {
+                    user-defined-function {
+                        function-name compute-list-sum;
+                        argument vector "@pfe0-subscriber-counts";
+                    }
+                }
+				type float;
+                description "Count of subscribers associated with PFE0";
+            }
+            field pfe1-subscriber-utilization {
+                formula {
+                    eval {
+                        expression "( $pfe1-total-subscribers / $pfe-limit ) * 100";
+                    }
+                }
+                type float;
+                description "PFE1 Subscriber Utilization";
+            }
+            field pfe1-total-subscribers {
+                formula {
+                    user-defined-function {
+                        function-name compute-list-sum;
+                        argument vector "@pfe1-subscriber-counts";
+                    }
+                }
+				type float;
+                description "Count of subscribers associated with PFE1";
+            }
+            field pfe2-subscriber-utilization {
+                formula {
+                    eval {
+                        expression "( $pfe2-total-subscribers / $pfe-limit ) * 100";
+                    }
+                }
+                type float;
+                description "PFE2 Subscriber Utilization";
+            }
+            field pfe2-total-subscribers {
+                formula {
+                    user-defined-function {
+                        function-name compute-list-sum;
+                        argument vector "@pfe2-subscriber-counts";
+                    }
+                }
+				type float;
+                description "Count of subscribers associated with PFE2";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-utilization}}";
+                }
+                type integer;
+                description "The threshold above which utilization is at a critical level";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-utilization}}";
+                }
+                type integer;
+                description "The threshold above which utilization is at a cautionary level";
+            }
+            trigger pfe0-utilization {
+                synopsis "PFE0 Utilization monitoring against PFE capacity";
+                description "PFE0 Utilization monitoring against PFE capacity";
+                frequency 1.5offset;
+                term is-pfe0-critical {
+                    when {
+                        greater-than-or-equal-to "$pfe0-subscriber-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PFE0 subscriber count is >= $red-limit% of max capacity! $pfe0-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+                term is-pfe0-warning {
+                    when {
+                        greater-than-or-equal-to "$pfe0-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "PFE0 subscriber count approaching max capacity! $pfe0-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+                term is-pfe0-nominal {
+                    when {
+                        less-than "$pfe0-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PFE0 subscriber count is nominal! $pfe0-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+            }
+            trigger pfe1-utilization {
+                synopsis "PFE1 Utilization monitoring against PFE capacity";
+                description "PFE1 Utilization monitoring against PFE capacity";
+                frequency 1.5offset;
+                term is-pfe1-critical {
+                    when {
+                        greater-than-or-equal-to "$pfe1-subscriber-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PFE1 subscriber count is >= $red-limit% of max capacity! $pfe1-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+                term is-pfe1-warning {
+                    when {
+                        greater-than-or-equal-to "$pfe1-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "PFE1 subscriber count approaching max capacity! $pfe1-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+                term is-pfe1-nominal {
+                    when {
+                        less-than "$pfe1-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PFE1 subscriber count is nominal! $pfe1-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+            }
+            trigger pfe2-utilization {
+                synopsis "PFE2 Utilization monitoring against PFE capacity";
+                description "PFE2 Utilization monitoring against PFE capacity";
+                frequency 1.5offset;
+                term is-pfe2-critical {
+                    when {
+                        greater-than-or-equal-to "$pfe2-subscriber-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PFE2 subscriber count is >= $red-limit% of max capacity! $pfe2-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+                term is-pfe2-warning {
+                    when {
+                        greater-than-or-equal-to "$pfe2-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "PFE2 subscriber count approaching max capacity! $pfe2-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+                term is-pfe2-nominal {
+                    when {
+                        less-than "$pfe2-subscriber-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PFE2 subscriber count is nominal! $pfe2-subscriber-utilization % of $pfe-limit.";
+                        }
+                    }
+                }
+            }
+            variable critical-utilization {
+                value 90;
+                description "The critical utilization percentage";
+                type int;
+            }
+            variable warning-utilization {
+                value 75;
+                description "The warning utilization percentage";
+                type int;
+            }
+            vector pfe0-subscriber-counts {
+                path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-subscriber-port-mapping]/field[fpc-number='$fpc-number' AND pfe-number='PFE0']/port-subscriber-count";
+                time-range 1.5offset;
+            }
+            vector pfe1-subscriber-counts {
+                path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-subscriber-port-mapping]/field[fpc-number='$fpc-number' AND pfe-number='PFE1']/port-subscriber-count";
+                time-range 1.5offset;
+            }
+            vector pfe2-subscriber-counts {
+                path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-subscriber-port-mapping]/field[fpc-number='$fpc-number' AND pfe-number='PFE2']/port-subscriber-count";
+                time-range 1.5offset;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

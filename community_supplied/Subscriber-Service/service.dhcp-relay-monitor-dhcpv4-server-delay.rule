@@ -1,0 +1,160 @@
+healthbot {
+    topic service.dhcp-relay {
+        rule monitor-dhcpv4-server-delay {
+            keys [ ri-name server-ip ];
+            synopsis "Monitor delay between a JUNOS BNG DHCPv4 relay and its DHCPv4 servers";
+            description "Monitors response time delay between the BNG acting as a DHCPv4 Relay and its DHCPv4 servers.";
+            sensor dhcpv4-data {
+                synopsis "DHCPv4 telemetry data";
+                description "Telemetry data for DHCPv4 component on the BNG";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/client-protocols/dhcp/v4/;
+                    frequency 30s;
+                }
+            }
+            field learned-delay {
+                formula {
+                    dynamic-threshold {
+                        algorithm k-means;
+                        learning-period 7d;
+                        pattern-periodicity 1d;
+                        field-name "$response-time";
+                    }
+                }
+				type float;
+                description "A machine-learned value for the response time delay to this DHCP server";
+            }
+            field messages-sent {
+                sensor dhcpv4-data {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/relay/servers/server/response-time/one-minute-messages-sent;
+                }
+                type integer;
+                description "The number of DHCP messages sent to this DHCP Server - indicates activity";
+            }
+            field red-delay {
+                constant {
+                    value "{{critical-delay-ms}}";
+                }
+                type integer;
+                description "The delay threshold at which the response between the relay and this server becomes critical";
+            }
+            field response-time {
+                sensor dhcpv4-data {
+                    path /junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/relay/servers/server/response-time/one-minute-average-response-time;
+                }
+                type integer;
+                description "The one-minute average response time between the DHCP Relay and this server";
+            }
+            field ri-name {
+                sensor dhcpv4-data {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/@ri-name";
+                }
+				type string;
+                description "The routing-instance name in the 'default' logical system of this relay instance";
+            }
+            field server-ip {
+                sensor dhcpv4-data {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/relay/servers/server/@server-ip";
+                }
+				type string;
+                description "The IPv4 address of this DHCPv4 Server";
+            }
+            trigger dhcpv4-delay-threshold {
+                synopsis "Check DHCPv4 server health";
+                description "Monitor the health of the DHCP Server association";
+                frequency 1.5offset;
+                term has-exceeded-delay-threshold {
+                    when {
+                        greater-than "$response-time" "$red-delay";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "DHCPv4 Server Delay exceeds $red-delay ms! Current avg = $response-time ms.  Check for server overload or network congestion";
+                        }
+                    }
+                }
+                term is-unutilized {
+                    when {
+                        equal-to "$messages-sent" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No messages have been exchanged with the DHCPv4 server";
+                        }
+                    }
+                }
+                term is-below-delay-threshold {
+                    when {
+                        less-than-or-equal-to "$response-time" "$red-delay";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "DHCPv4 Server Delay is nominal. Current avg = $response-time";
+                        }
+                    }
+                }
+            }
+            variable critical-delay-ms {
+                value 100;
+                description "The response time delay in ms at which system performance may be significantly impacted";
+                type int;
+            }
+			rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
