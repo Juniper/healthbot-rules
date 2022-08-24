@@ -1,0 +1,137 @@
+/*
+ * Monitors LDP session state and notifies anomalies when session state is not operational.
+ *
+ */
+ healthbot {
+    topic mpls {
+        rule check-ldp-session {
+            keys lsr-id;
+            synopsis "LDP state analyzer";
+            description "Collects LDP stats periodically and notifies when LDP session goes down";
+            sensor ldp-oc {
+                open-config {
+                    sensor-name /network-instances/network-instance/mpls/signaling-protocols/ldp/neighbors;
+                    frequency 60s;
+                }
+            }
+            field lsr-id {
+                sensor ldp-oc {
+                    path /network-instances/network-instance/mpls/signaling-protocols/ldp/neighbors/neighbor/state/lsr-id;
+                }
+                type string;
+                description "LSR id to be monitored";
+            }
+            field session-state {
+                sensor ldp-oc {
+                    path /network-instances/network-instance/mpls/signaling-protocols/ldp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "LDP session state";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ldp-session-state {
+                frequency 1offset;
+                /*
+                 * Sets color to red when ldp session state is not operational.
+                 */
+                term is-session-down {
+                    when {
+                        does-not-match-with "$session-state" OPERATIONAL {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "LDP session $lsr-id state is $session-state";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term session-up {
+                    then {
+                        status {
+                            color green;
+                            message "LDP session $lsr-id state is $session-state";
+                        }
+                    }
+                }
+            }
+        	rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                is-scaling-rule {
+                    description "Fields:te-interface ; Directly impacted by number of te-interfaces running in each network device";
+                }
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX2010 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms PTX1000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX5000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,208 @@
+/*
+ * Monitors BGP neighbor status and also detects flaps.
+ *
+ */
+ healthbot {
+    topic routing {
+        rule check-bgp-neighbor-stats {
+            keys peer-address;
+            synopsis "BGP neighbor statistics analyzer";
+            description "Monitors BGP neighbor status and flap count periodically and notifies anomaly";
+            sensor bgp-netconf {
+                synopsis "Netconf sensor definition";
+                iAgent {
+                    file bgp_neighbor.yml;
+                    table bgpNeighborTable;
+                    frequency 60s;
+                }
+            }
+            sensor bgp-oc {
+                synopsis "Open-config sensor definition";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/neighbors;
+                    frequency 60s;
+                }
+            }
+            field flap-count {
+                sensor bgp-netconf {
+                    path flap-count;
+                }
+                sensor bgp-oc {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/established-transitions;
+                    zero-suppression;
+                }
+                type integer;
+                description "Sensor field to store flap count";
+            }
+            field flap-count-threshold {
+                constant {
+                    value "{{flaps-threshold}}";
+                }
+                type integer;
+                description "Flap count increase threshold";
+            }
+            field peer-address {
+                sensor bgp-netconf {
+                    where "peer-address =~ /{{neighbors}}/";
+                    path peer-address;
+                }
+                sensor bgp-oc {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }
+                type string;
+                description "Sensor field to store peer address";
+            }
+            field peer-state {
+                sensor bgp-netconf {
+                    path peer-state;
+                }
+                sensor bgp-oc {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state;
+                }
+                type string;
+                description "Sensor field to peer state";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger bgp-neighbor-flap-count {
+                synopsis "BGP neighbor session flaps KPI";
+                description "Sets health based on increase in bgp neighbor session flaps";
+                frequency 1.5offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the neighbor flap count increases for all points in 3 offset period.
+                 */
+                term is-session-flapping {
+                    when {
+                        increasing-at-least-by-value "$flap-count" {
+                            value "$flap-count-threshold";
+                            time-range 3offset;
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "BGP neighbor($peer-address) session flap-count($flap-count) is abnormal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the neighbor flap count increases.
+                 */
+                term is-session-inconsistent {
+                    when {
+                        increasing-at-least-by-value "$flap-count" {
+                            value "$flap-count-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "BGP neighbor($peer-address) session flap-count($flap-count) is intermittent";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term is-session-stable {
+                    then {
+                        status {
+                            color green;
+                            message "BGP neighbor($peer-address) session flap-count($flap-count) is normal";
+                        }
+                    }
+                }
+            }
+            trigger bgp-neighbor-status {
+                frequency 1.5offset;
+                term neighbor-up {
+                    when {
+                        matches-with "$peer-state" Established {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "BGP neighbor($peer-address) session state is $peer-state";
+                        }
+                    }
+                }
+                term is-neighbor-down {
+                    then {
+                        status {
+                            color red;
+                            message "BGP neighbor($peer-address) session state is $peer-state";
+                        }
+                    }
+                }
+            }
+            variable flaps-threshold {
+                value 1;
+                description "BGP neighbor session flaps threshold: Number of flap increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable neighbors {
+                value .*;
+                description "BGP neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category comprehensive;
+                is-scaling-rule {
+                    description "Fields: peer-address ; Directly impacted by number of bgp neighbors in each network device";
+                }
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    sensors bgp-oc;
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

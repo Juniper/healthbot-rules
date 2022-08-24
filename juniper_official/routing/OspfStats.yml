@@ -1,0 +1,44 @@
+---
+OspfNeighborStatsTable:
+  rpc: get-ospf-neighbor-information
+  args:
+    extensive: !!bool True
+  item: ospf-neighbor
+  key:
+    - interface-name
+    - neighbor-id
+  view: OspfNeighborStatsView
+
+OspfNeighborStatsView:
+  fields:
+    ospf-neighbor-state: ospf-neighbor-state
+    neighbor-address: neighbor-address
+    activity-timer: activity-timer
+    dr-address: dr-address
+    bdr-address: bdr-address
+    neighbor-up-time: neighbor-up-time
+    neighbor-adjacency-time: neighbor-adjacency-time
+
+OspfStatsTable:
+  rpc: get-ospf-statistics-information
+  item: ospf-statistics/packet-statistics[ospf-packet-type="Hello"]
+  key: ospf-packet-type
+  view: OspfStatsView
+
+OspfStatsView:
+  fields:
+    hello-sent: packets-sent
+    hello-received: packets-received
+    hello-sent-5sec: packets-sent-5seconds
+    hello-received-5sec: packets-received-5seconds
+
+OspfIoStatsTable:
+  rpc: get-ospf-io-statistics-information
+  item: ospf-io-statistics
+  key: Null
+  view: ospfioview
+
+ospfioview:
+  fields:
+    packets-read: packets-read
+    ospf-error: ospf-errors/*
