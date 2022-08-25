@@ -1,80 +1,127 @@
 /*
- * Detects rsvp neighbor state changes and notifies anomalies.
+ * Monitors LSP session state and detects lsp flaps.
+ *
  */
  healthbot {
-    topic mpls {
-        rule check-rsvp-neighbor-state {
-            keys neighbor-address;
-            synopsis "RSVP neighbor state analyzer";
-            description "Collects RSVP neighbor stats periodically and notifies when rsvp neighbor state is down";
-            sensor rsvp {
+    topic routing.mpls {
+        rule check-lsp-state {
+            keys lsp-name;
+            synopsis "LSP state analyzer";
+            description "Collects LSP stats periodically and notifies when LSP state is down";
+            sensor lsp {
                 open-config {
-                    sensor-name /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors;
+                    sensor-name /network-instances/network-instance/mpls/lsps;
                     frequency 60s;
                 }
             }
-            field neighbor-address {
-                sensor rsvp {
-                    where "/network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/@address =~ /{{input-rsvp-neighbor}}/";
-                    path "/network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/@address";
+            field lsp-name {
+                sensor lsp {
+                    where "/network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/@name =~ /{{input-lsp-name}}/";
+                    where "/network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/state/admin-status =~ /ADMIN_UP/";
+                    path "/network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/@name";
                 }
                 type string;
-                description "Neighbor address to be monitored";
+                description "LSP name to be monitored";
             }
-            field neighbor-interface {
-                sensor rsvp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/state/detected-interface;
-                    zero-suppression;
-                    data-if-missing {
-                        value node;
+            field oper-status {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/state/oper-status;
+                }
+                type string;
+                description "LSP operation status";
+            }
+            field lsp-state-change-count {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/lsps/constrained-path/tunnels/tunnel/state/counters/state-changes;
+                }
+                type integer;
+                description "Lsp flap count";
+            }            
+            /*
+             * Anomaly detection logic to detect lsp state changes.
+             */
+            trigger lsp-state {
+                frequency 1.5offset;
+                term is-lsp-down {
+                    when {
+                        does-not-match-with "$oper-status" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "MPLS lsp($lsp-name) state is $oper-status";
+                        }
                     }
                 }
-                type string;
-                description "RSVP neighbor detected interface";
-            }
-            field neighbor-state {
-                sensor rsvp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/neighbors/neighbor/state/neighbor-status;
-                }
-                type string;
-                description "RSVP neighbor state";
-            }
-            /*
-             * Anomaly detection logic to detect rsvp neighbor state changes.
-             */
-            trigger rsvp-neighbor-state {
-                frequency 1.5offset;
-                term rsvp-neighbor-state-up {
+                term lsp-up {
                     when {
-                        matches-with "$neighbor-state" UP {
+                        matches-with "$oper-status" UP {
                             ignore-case;
                         }
                     }
                     then {
                         status {
                             color green;
-                            message "RSVP neighbor($neighbor-address) state is $neighbor-state and detected interface is $neighbor-interface";
+                            message "MPLS lsp($lsp-name) state is $oper-status";
+                        }
+                        next;
+                    }
+                }
+            }
+            /*
+             * Anomaly detection logic to detect lsp flaps.
+             */
+            trigger lsp-flaps {
+                frequency 1.5offset;
+                term lsp-stable {
+                    when {
+                        exists "$lsp-name";
+                        increasing-at-most-by-value "$lsp-state-change-count" {
+                            value 0;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "MPLS LSP($lsp-name) flap count is normal";
                         }
                     }
                 }
-                term Term_2 {
+                term is-lsp-flapping {
                     when {
-                        does-not-match-with "$neighbor-state" UP {
-                            ignore-case;
+                        exists "$lsp-name";
+                        increasing-at-least-by-value "$lsp-state-change-count" {
+                            value 1;
+                            time-range 5offset;
                         }
-                        exists "$neighbor-address";
                     }
                     then {
                         status {
                             color red;
-                            message "RSVP neighbor($neighbor-address) state is $neighbor-state and detected interface is $neighbor-interface";
+                            message "MPLS LSP $lsp-name falp count($lsp-state-change-count) is abnormal";
+                        }
+                    }
+                }
+                term is-lsp-flaps-intermittently {
+                    when {
+                        exists "$lsp-name";
+                        increasing-at-least-by-value "$lsp-state-change-count" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "MPLS LSP $lsp-name falp count($lsp-state-change-count) is intermittent";
                         }
                     }
                 }
             }
-            variable input-rsvp-neighbor {
+            variable input-lsp-name {
                 value .*;
-                description "Input RSVP neighbor to monitor, regular expression, eg '192.168.1.1*'";
+                description "LSP names to monitor, regular expression, eg 'LSP-1.*|LSP-A.*'";
                 type string;
             }
             rule-properties {
@@ -82,7 +129,7 @@
                 contributor juniper;
                 category basic;
                 is-scaling-rule {
-                    description "Fields:neighbor-address ; Directly impacted by number of rsvp neighbors running in each network device";
+                    description "Fields:lsp-name ; Directly impacted by number of lsp's running in each network device";
                 }
                 supported-healthbot-version 2.1.0;
                 supported-devices {

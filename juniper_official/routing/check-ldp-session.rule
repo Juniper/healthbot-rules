@@ -3,7 +3,7 @@
  *
  */
  healthbot {
-    topic mpls {
+    topic routing.mpls {
         rule check-ldp-session {
             keys lsr-id;
             synopsis "LDP state analyzer";
@@ -17,6 +17,7 @@
             field lsr-id {
                 sensor ldp-oc {
                     path /network-instances/network-instance/mpls/signaling-protocols/ldp/neighbors/neighbor/state/lsr-id;
+                    where "/network-instances/network-instance/mpls/signaling-protocols/ldp/neighbors/neighbor/state/lsr-id =~ /{{input-lsr-id}}/";
                 }
                 type string;
                 description "LSR id to be monitored";
@@ -60,6 +61,11 @@
                         }
                     }
                 }
+            }
+            variable input-lsr-id {
+                value .*;
+                description "Input LSR ID to monitor, regular expression, eg '192.168.1.1*'";
+                type string;
             }
         	rule-properties {
                 version 1;
