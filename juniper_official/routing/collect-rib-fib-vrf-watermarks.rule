@@ -1,0 +1,46 @@
+/*
+ * Collects RIB, FIB and VRF routes highwater mark numbers for plotting and ML.
+ */
+healthbot {
+    topic routing {
+        rule collect-rib-fib-vrf-watermarks {
+            synopsis "rib-fib-vrf highwater mark collector";
+            description "Collects rib, fib and vrf highwater marks";
+            sensor rib-fib-vrf-netconf {
+                iAgent {
+                    file RibSummaryTable.yml;
+                    table RibFibSummaryTable;
+                    frequency 1m;
+                }
+            }
+            field rt-all-highwatermark {
+                sensor rib-fib-vrf-netconf {
+                    path rt-all-highwatermark;
+                }
+                type integer;
+                description "RIB routes";
+            }
+            field rt-fib-highwatermark {
+                sensor rib-fib-vrf-netconf {
+                    path rt-fib-highwatermark;
+                }
+                type integer;
+                description "FIB routes";
+            }
+            field rt-uniq-highwatermark {
+                sensor rib-fib-vrf-netconf {
+                    path rt-uniq-highwatermark;
+                }
+                type integer;
+                description "RIB unique destination routes";
+            }
+            field rt-vrf-highwatermark {
+                sensor rib-fib-vrf-netconf {
+                    path rt-vrf-highwatermark;
+                }
+                type integer;
+                description "VRF type routing instances routes";
+            }
+        }
+    }
+}
