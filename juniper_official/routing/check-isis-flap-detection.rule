@@ -1,0 +1,176 @@
+/*
+ * Detects ISIS flaps and notifies when anomalies are found.
+ */
+ healthbot {
+    topic routing.isis {
+        rule check-isis-flap-detection {
+            keys interface-name;
+            synopsis "ISIS adjacency flap detector";
+            description "Collects ISIS adjacency state periodically and notify anomaly when flap count increases";
+            sensor isis-netconf {
+                synopsis "ISIS netconf sensor definition";
+                iAgent {
+                    file IsisAdjacencyTable.yml;
+                    table IsisAdjacencyTable;
+                    frequency 60s;
+                }
+            }
+            sensor isis-oc {
+            	synopsis "ISIS open-config sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces;
+                    frequency 60s;
+                }
+            }
+            field flap-threshold {
+                constant {
+                    value "{{flap-threshold}}";
+                }
+                type integer;
+                description "Adjacency flap count";
+            }
+            field interface-name {
+                sensor isis-netconf {
+                    where "interface-name =~ /{{interface-name}}/";
+                    path interface-name;
+                }
+                sensor isis-oc {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+                }
+                type string;
+                description "Isis interface name";
+            }
+            field transition-count {
+                sensor isis-netconf {
+                    path transition-count;
+                    data-if-missing {
+                        value 1;
+                    }
+                }
+                sensor isis-oc {
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/adj-changes;
+                }
+                type integer;
+                description "Isis neighbor flap count";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger isis-adjacency-flap-count {
+                frequency 1offset;
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the isis flaps count increases for all points in 5offset period.
+                 */
+                term is-flap-count-abnormal {
+                    when {
+                        increasing-at-least-by-value "$transition-count" {
+                            value "$flap-threshold";
+                            time-range 5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ISIS neighbor $interface-name flap count($transition-count) is abnormal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the isis flaps count increases.
+                 */
+                term is-flap-count-intermediate {
+                    when {
+                        increasing-at-least-by-value "$transition-count" {
+                            value "$flap-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "ISIS neighbor $interface-name flap count($transition-count) is inconsistent";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term neighbor-stable {
+                    then {
+                        status {
+                            color green;
+                            message "ISIS neighbor $interface-name flap count($transition-count) is normal";
+                        }
+                    }
+                }
+            }
+            variable flap-threshold {
+                value 1;
+                description "Enter flap count threshold value in number";
+                type int;
+            }
+            variable interface-name {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.* ";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    sensors isis-oc;
+                    juniper {
+                        operating-system junos {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

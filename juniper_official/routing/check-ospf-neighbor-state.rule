@@ -1,0 +1,161 @@
+/*
+ * Monitors OSPF neighbor status and notifies when state is not full.
+ */
+ healthbot {
+    topic routing.ospf {
+        rule check-ospf-neighbor-state {
+            keys [ interface-name neighbor-id ];
+            synopsis "OSPF session state analyzer";
+            description "Monitors the OPSF neighbor states";
+            sensor ospf-neighbor-netconf {
+                synopsis "OSPF netcinf sensor definition";
+                description "Netconfig rpc get-ospf-neighbor-information iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file OspfStats.yml;
+                    table OspfNeighborStatsTable;
+                    frequency 60s;
+                }
+            }
+            field dr-address {
+                sensor ospf-neighbor-netconf {
+                    path dr-address;
+                }
+                type string;
+                description "Ospf DR ID";
+            }
+            field interface-name {
+                sensor ospf-neighbor-netconf {
+                    where "interface-name =~ /{{ospf-interface-name}}/";
+                    path interface-name;
+                }
+                type string;
+                description "Ospf interface name";
+            }
+            field neighbor-address {
+                sensor ospf-neighbor-netconf {
+                    path neighbor-address;
+                }
+                type string;
+                description "Ospf neighbor address";
+            }
+            field neighbor-id {
+                sensor ospf-neighbor-netconf {
+                    where "neighbor-id =~ /{{ospf-neighbor-id}}/";
+                    path neighbor-id;
+                }
+                type string;
+                description "Ospf neighbor ID";
+            }
+            field ospf-neighbor-state {
+                sensor ospf-neighbor-netconf {
+                    path ospf-neighbor-state;
+                }
+                type string;
+                description "Ospf neighbor state";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ospf-neighbor-state {
+                synopsis "ospf neigbor state kpi";
+                description "Sets health based on ospf neighbor state";
+                frequency 1offset;
+                /*
+                 * Sets color to green when ospf neighbor state is full
+                 */
+                term is-neighbor-state-full {
+                    when {
+                        matches-with "$ospf-neighbor-state" Full;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF neighbor $neighbor-address state is $ospf-neighbor-state";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to red.
+                 */
+                term ospf-neighbor-state-notfull {
+                    then {
+                        status {
+                            color red;
+                            message "OSPF neighbor $neighbor-address state is $ospf-neighbor-state";
+                        }
+                    }
+                }
+            }
+            variable ospf-interface-name {
+                value .*;
+                description "Enter Ospf interface names to be monitored in the form of regex e.g. ge-0/0/0.1|xe-1/1/1.0";
+                type string;
+            }
+            variable ospf-neighbor-id {
+                value .*;
+                description "Enter ospf neighbor id to be monitored in the form of regex e.g. 192.168.1.1|172.16.1.1";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category basic;
+                is-scaling-rule {
+                    description "Fields:[ interface-name neighbor-id ] ; Directly impacted by number of interfaces and ospf neighbors running in each network device";
+                }
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files OspfStats.yml;
+                }
+            }
+        }
+    }
+}

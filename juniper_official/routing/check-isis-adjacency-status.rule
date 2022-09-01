@@ -1,0 +1,167 @@
+/*
+ * Monitors ISIS adjacency status and notifies when state is down.
+ */
+ healthbot {
+    topic routing.isis {
+        rule check-isis-adjacency-status {
+            keys [ interface-name level system-name ];
+            synopsis "ISIS lan adjacency statistics analyser";
+            description "Collects ISIS adjacency state periodically and notify anomaly when state is down";
+            sensor isis-netconf {
+                synopsis "ISIS netconf sensor definition";
+                iAgent {
+                    file IsisAdjacencyTable.yml;
+                    table IsisAdjacencyTable;
+                    frequency 60s;
+                }
+            }
+            sensor isis-oc {
+            	synopsis "ISIS open-config sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces;
+                    frequency 60s;
+                }
+            }
+            field adjacency-state {
+                sensor isis-netconf {
+                    path adjacency-state;
+                }
+                sensor isis-oc {
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-state;
+                }
+                type string;
+                description "Isis neighbor state";
+            }
+            field interface-name {
+                sensor isis-netconf {
+                    where "interface-name =~ /{{interface-name}}/";
+                    path interface-name;
+                }
+                sensor isis-oc {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+                }
+                type string;
+                description "Isis interface name";
+            }
+            field level {
+                sensor isis-netconf {
+                    path level;
+                }
+                sensor isis-oc {
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number";
+                }
+                type string;
+                description "Isis level as string due to rule key";
+            }
+            field system-name {
+                sensor isis-netconf {
+                    path system-name;
+                }
+                sensor isis-oc {
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id";
+                }
+                type string;
+                description "Isis router name";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger isis-adjacency-state {
+                frequency 1offset;
+                /*
+                 * Sets color to green when the adjacency state is up.
+                 */
+                term adjacency-state-up {
+                    when {
+                        matches-with "$adjacency-state" up {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "ISIS neighbor $system-name:$interface-name:level$level state is $adjacency-state";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when the adjacency state is not up.
+                 */
+                term is-adjacency-down {
+                    when {
+                        does-not-match-with "$adjacency-state" up {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ISIS neighbor $system-name:$interface-name:level$level state is $adjacency-state";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value .*;
+                description "Enter interface name in regex i.e. ge-.* ";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    sensors isis-oc;
+                    juniper {
+                        operating-system junos {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

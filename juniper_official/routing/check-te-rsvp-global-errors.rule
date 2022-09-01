@@ -1,0 +1,481 @@
+/*
+ * Detects rsvp-te global errors and notifies anomalies.
+ */
+ healthbot {
+    topic routing.mpls {
+        rule check-te-rsvp-global-errors {
+            keys instance-name;
+            synopsis "RSVP TE global statistics analyzer";
+            description "Collects RSVP TE global error statistics periodically and notifies when error count increases";
+            sensor lsp {
+                open-config {
+                    sensor-name /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state;
+                    frequency 60s;
+                }
+            }
+            field authentication-fail {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/authentication-fail;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Authentication fail error count";
+            }
+            field bad-checksum {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-checksum;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Bad checksum error count";
+            }
+            field bad-packet-format {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-packet-format;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Bad packet format error count";
+            }
+            field bad-packet-length {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-packet-length;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Bad packet length error count";
+            }
+            field bad-packet-version {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-packet-version;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Bad packet version error count";
+            }
+            field in-path-error-messages {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/in-path-error-messages;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "In path messages error count";
+            }
+            field in-reservation-error-messages {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/in-reservation-error-messages;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "In reservation messages error count";
+            }
+            field instance-name {
+                sensor lsp {
+                    path "/network-instances/network-instance/@instance-name";
+                }
+                type string;
+                description "Instance name to monitor";
+            }
+            field message-out-of-order {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/message-out-of-order;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Out of order messages error count";
+            }
+            field out-path-error-messages {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/out-path-error-messages;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Out of path error count";
+            }
+            field out-reservation-error-messages {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/out-reservation-error-messages;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Out reservation error count";
+            }
+            field received-nack {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/received-nack;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Received no acknowledgement error count";
+            }
+            field recv-pkt-disabled-intf {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/recv-pkt-disabled-intf;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Received packet disable error count";
+            }
+            field send-failure {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/send-failure;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Send failure error count";
+            }
+            field state-timeout {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/state-timeout;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "State timeout error count";
+            }
+            field unknown-ack {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-ack;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Unknown acknowledgement error count";
+            }
+            field unknown-nack {
+                sensor lsp {
+                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-nack;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Unknown no acknowledgement error count";
+            }
+            /*
+             * Anomaly detection logic to detect rsvp-te global errors.
+             */
+            trigger rsvp-te-global-errors {
+                frequency 3offset;
+                term is-authentication-fail {
+                    when {
+                        increasing-at-least-by-value "$authentication-fail" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Authentication failure error count($authentication-fail)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-bad-checksum {
+                    when {
+                        increasing-at-least-by-value "$bad-checksum" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Bad checksum error count($bad-checksum)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-bad-packet-format {
+                    when {
+                        increasing-at-least-by-value "$bad-packet-format" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Bad packet format error count($bad-packet-format)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-bad-packet-length {
+                    when {
+                        increasing-at-least-by-value "$bad-packet-length" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Bad packet length error count($bad-packet-length)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-bad-packet-version {
+                    when {
+                        increasing-at-least-by-value "$bad-packet-version" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Bad packet version error count($bad-packet-version)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-in-path-error-messages {
+                    when {
+                        increasing-at-least-by-value "$in-path-error-messages" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "In path error messages count($in-path-error-messages)increasing";
+                        }
+                        next;
+                    }
+                }
+                term in-reservation-error-messages {
+                    when {
+                        increasing-at-least-by-value "$in-reservation-error-messages" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "In reservation error messages count($in-reservation-error-messages)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-message-out-of-order {
+                    when {
+                        increasing-at-least-by-value "$message-out-of-order" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Message out of order error count($message-out-of-order)increasing";
+                        }
+                        next;
+                    }
+                }
+                term out-path-error-messages {
+                    when {
+                        increasing-at-least-by-value "$out-path-error-messages" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Out path error messages count($out-path-error-messages)increasing";
+                        }
+                        next;
+                    }
+                }
+                term out-reservation-error-messages {
+                    when {
+                        increasing-at-least-by-value "$out-reservation-error-messages" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Out reservation error messages count($out-reservation-error-messages)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-received-nack {
+                    when {
+                        increasing-at-least-by-value "$received-nack" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Received nack error count($received-nack)increasing";
+                        }
+                        next;
+                    }
+                }
+                term recv-pkt-disabled-intf {
+                    when {
+                        increasing-at-least-by-value "$recv-pkt-disabled-intf" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Recv-pkt-disabled-intf error count($recv-pkt-disabled-intf)increasing";
+                        }
+                        next;
+                    }
+                }
+                term send-failure {
+                    when {
+                        increasing-at-least-by-value "$send-failure" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Send failure error count($send-failure)increasing";
+                        }
+                        next;
+                    }
+                }
+                term is-state-timeout {
+                    when {
+                        increasing-at-least-by-value "$state-timeout" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "State timeout error count($state-timeout)increasing";
+                        }
+                    }
+                }
+                term no-rsvp-te-global-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global error count is normal";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                is-scaling-rule {
+                    description "Fields:instance-name ; Directly impacted by number of routing instances running in each network device";
+                }
+                supported-healthbot-version 2.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX2010 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms PTX1000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX5000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
