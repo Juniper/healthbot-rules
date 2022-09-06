@@ -1,0 +1,107 @@
+/*
+ * Detects chassis alarms and notifies when anomalies are found
+ *  
+ */
+ healthbot {
+    topic hardware.chassis {
+        rule check-no-alarms {
+            synopsis "Chassis alarms detector";
+            description "Refers rule chassis.alarms/check-chassis-alarms and shows system as healthy if no active alarms";
+            rule-frequency 65s;
+            field alarm-description {
+                reference {
+                    path "/topic[topic-name=chassis.alarms]/rule[rule-name=check-chassis-alarms]/alarm-description";
+                    data-if-missing {
+                        value No-active-alarms;
+                    }
+                    time-range 65s;
+                }
+                type string;
+                description "Chassis or System alarm description";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger chassis-alarms {
+                frequency 65s;
+                /*
+                 * Sets color to green when there are no active alarms
+                 */				
+                term no-active-alarms {
+                    when {
+                        matches-with "$alarm-description" No-active-alarms;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No active alarms";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 3.1.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }			
+        }
+    }
+}

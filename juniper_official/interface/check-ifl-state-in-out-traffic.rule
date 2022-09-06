@@ -1,0 +1,425 @@
+/*
+ * Monitors sub interface state and input/output traffic,it notifies when anomalies are found.
+ * Six inputs control detection
+ *
+ *   1) ifd-name, is a regular expression that matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'ge.*' to match only gigabit
+ *      ethernet interfaces. 
+ *
+ *   2) ifl-no, is a regular expression that matches the IFL index number that
+ *      you would like to monitor.  By default it's '.*', which matches all
+ *      interfaces. Use something like '0-10*' to match only 0 to 10 IFLs.
+ *
+ *   3) in-stats-name, is a regular expression that matches the sub interface KPI
+ *      statistics counter name that you would like to monitor. By default it's
+ *      in-octets, Use proper counter name something like 'in-pkts' or
+ *      "in-unicast-pkts" or "in-multicast-pkts" etc.
+ *
+ *   4) out-stats-name, is a regular expression that matches the sub interface KPI
+ *      statistics counter name that you would like to monitor. By default it's
+ *      in-octets, Use proper counter name something like 'out-pkts' or
+ *      "out-unicast-pkts" or "out-multicast-pkts" etc.
+ * 
+ *   5) octets-high-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 80000000 octets (80 MB). This rule
+ *      will set a dashboard color to red when *all* the input traffic is above
+ *      threshold for 60 seconds period. 
+ *
+ *   6) octets-low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 50000000 (50 MB)octets . This rule
+ *      will set a dashboard color to yellow when *all* the input traffic is
+ *      above threshold for 60 seconds period, otherwise color is set to green.
+ *
+ */
+healthbot {
+    topic interfaces {
+        rule check-ifl-state-in-out-traffic {
+            synopsis "Sub Interface input traffic analyzer.";
+            description "Collects input/output traffic (in-octets/out-octets) periodically and notifies in case of traffic is above threshold";
+            /*
+             * Monitors the interface state and input/output traffic.Notifies via the dashboard
+             * colors when the traffic is above {{octets-high-threshold}}
+             * for every collected metric during a 60s time range (red).
+             * The color is set to yellow when the traffic is above
+             * {{octets-low-threshold}} for every collected metric during
+             * a 60s. Otherwise the color is set to green.
+			 * If ifl operational state is down red alarm is shown else it is green. 
+             *
+             * Use interface and sub-interface name as keys for rule.
+             */
+            keys [interface-name sub-interface-index];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces-oc {
+                synopsis "Sub Interface open-config sensor definition";
+                description "Sub Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/interface/subinterfaces/subinterface/state;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field in-octets-stats-value {
+                sensor interfaces-oc {
+                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{in-stats-name}}";
+                    zero-suppression;
+                }
+                type integer;
+                description "Sub Interface statistics counter (in-octets) value.";
+            }
+            field out-octets-stats-value {
+                sensor interfaces-oc {
+                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{out-stats-name}}";
+                    zero-suppression;
+                }
+                type integer;
+                description "Sub Interface statistics counter (out-octets) value.";
+            }			
+            field interface-name {
+                sensor interfaces-oc {
+                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field sub-interface-index {
+                sensor interfaces-oc {
+                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
+                    path "/interfaces/interface/subinterfaces/subinterface/@index";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field ifl-admin-status {
+                sensor interfaces-oc {
+                    path /interfaces/interface/subinterfaces/subinterface/state/admin-status;
+                }
+                type string;
+                description "Subinterface admin status";
+            }
+            field ifl-oper-status {
+                sensor interfaces-oc {
+                    path /interfaces/interface/subinterfaces/subinterface/state/oper-status;
+                }
+                type string;
+                description "Subinterface operational status";
+            }			
+            /*
+             * Fields defined with variables and constant values
+             */
+            field high-threshold {
+                constant {
+                    value "{{octets-high-threshold}}";
+                }
+                type integer;
+                description "Traffic high threshold.";
+            }
+            field low-threshold {
+                constant {
+                    value "{{octets-low-threshold}}";
+                }
+                type integer;
+                description "Traffic low threshold.";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ifl-input-traffic {
+                synopsis "Sub-Interface input traffic kpi";
+                description "Sets health based on input traffic exceeding threshold";
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-octets-stats-value) is
+                 * above high threshold (in-octets-high-threshold) continuosly for
+                 * 4 offset time-range
+                 */
+                frequency 2offset;
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$in-octets-stats-value" {
+                            value "$high-threshold";
+                            time-range 4offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name.$sub-interface-index input traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($in-octets-stats-value) is
+                 * above low threshold (in-octets-low-threshold) continuosly for
+                 * 4 offset time-range
+                 */
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$in-octets-stats-value" {
+                            value "$low-threshold";
+                            time-range 4offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name.$sub-interface-index input traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term interface-in-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name.$sub-interface-index input traffic:$in-octets-stats-value is normal";
+                        }
+                    }
+                }
+            }
+            trigger ifl-output-traffic {
+                synopsis "Sub Interface output traffic kpi";
+                description "Sets health based on output traffic exceed threshold.";
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface output traffic ($out-octets-stats-value) is
+                 * above high threshold (out-octets-high-threshold) continuosly for
+                 * 4 offset time-range
+                 */
+                frequency 2offset;
+                term is-interface-out-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$out-octets-stats-value" {
+                            value "$high-threshold";
+                            time-range 4offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name.$sub-interface-index output traffic is above high threshold($high-threshold octets)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface output traffic($out-octets-stats-value) is
+                 * above low threshold (out-octets-low-threshold) continuosly for
+                 * 4 offset time-range
+                 */
+                term is-interface-out-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$out-octets-stats-value" {
+                            value "$low-threshold";
+                            time-range 4offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name.$sub-interface-index output traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */
+                term interface-out-traffic-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name.$sub-interface-index output traffic:$out-octets-stats-value is normal";
+                        }
+                    }
+                }
+            }
+            trigger ifl-status {
+                synopsis "Sub-interface status check kpi";
+                description "Sets health based on ifl state";
+                frequency 1offset;
+                /*
+                 * Sets dashboard color to red when sub-interface operational state is down
+                 */				
+                term is-ifl-down {
+                    when {
+                        matches-with "$ifl-oper-status" DOWN {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name.$sub-interface-index status $ifl-oper-status";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green.
+                 */				
+                term ifl-up {
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name.$sub-interface-index status $ifl-oper-status";
+                        }
+                    }
+                }
+            }			
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */
+            variable octets-high-threshold {
+                value 80000000;
+                description "Sub Interface input traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 80000000 octets (80 MB)";
+                type int;
+            }
+            variable octets-low-threshold {
+                value 50000000;
+                description "Sub Interface input traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 50000000 octets (50 MB)";
+                type int;
+            }
+            variable in-stats-name {
+                value in-octets;
+                description "Sub Interface input traffic counter name";
+                type string;
+            }
+            variable out-stats-name {
+                value out-octets;
+                description "Sub Interface output traffic counter name";
+                type string;
+            }			
+            variable ifd-name {
+                value ".*";
+                description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            variable ifl-no {
+                value ".*";
+                description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                is-scaling-rule {
+                    description "Fields:[ interface-name sub-interface-index ]; Directly impacted by number of interfaces and sub-interfaces in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX240 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX150 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products PTX {
+                                platforms PTX5000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX1000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products QFX {
+                                platforms QFX10000 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms QFX5200 {
+                                    releases 17.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5100 {
+                                    releases 18.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms QFX5120-48Y {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products EX {
+                                platforms EX9200 {
+                                    releases 17.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                                platforms EX4650 {
+                                    releases 18.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms EX4600 {
+                                    releases 18.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }
+        }
+    }
+}
