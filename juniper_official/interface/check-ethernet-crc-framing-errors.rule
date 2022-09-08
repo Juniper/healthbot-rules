@@ -1,8 +1,8 @@
 /*
- * Monitors Cyclic Redundancy,In-Fragment and Jabber frames errors and notifies when anomalies are found
+ * Monitors CRC,In-Fragment and Jabber frames errors and notifies when anomalies are found
  * Two inputs control detection
  *
- *   1) interface-name-variable, matches the interfaces
+ *   1) interface-name, matches the interfaces
  *      that you would like to monitor.  By default it's '.*', which matches
  *      all interfaces. Use something like 'ge.*' to match only gigabit
  *      ethernet interfaces. 
@@ -19,7 +19,7 @@ healthbot {
              * Monitors CRC,In-Fragment and Jabber frame errors and notifies via dashboard, red color 
              * when threshold is exceeded else green
 			 *
-             * Use interface-name-variable as key for rule.
+             * Use interface-name as key for rule.
              */
             keys interface-name;
             synopsis "Ethernet CRC and Frames Error KPI's";
@@ -64,7 +64,7 @@ healthbot {
             }
             field interface-name {
                 sensor interface-sensor-oc {
-                    where "/interfaces/interface/@name =~ /{{interface-name-variable}}/";
+                    where "/interfaces/interface/@name =~ /{{interface-name}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -186,7 +186,7 @@ healthbot {
                 description "Discard threshold: Number of discards increase between metrics, before we report anomaly";
                 type int;
             }
-            variable interface-name-variable {
+            variable interface-name {
                 value .*;
                 description "Interfaces to be monitored";
                 type string;
@@ -212,6 +212,7 @@ healthbot {
             }
 		}
     }
-}	
+}
+
 
 			 

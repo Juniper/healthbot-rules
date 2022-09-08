@@ -1,8 +1,8 @@
 /*
  * Monitors sub interface state and input/output traffic,it notifies when anomalies are found.
- * Six inputs control detection
+ * Four inputs control detection
  *
- *   1) ifd-name, is a regular expression that matches the interfaces
+ *   1) interface-name, is a regular expression that matches the interfaces
  *      that you would like to monitor.  By default it's '.*', which matches
  *      all interfaces. Use something like 'ge.*' to match only gigabit
  *      ethernet interfaces. 
@@ -11,25 +11,16 @@
  *      you would like to monitor.  By default it's '.*', which matches all
  *      interfaces. Use something like '0-10*' to match only 0 to 10 IFLs.
  *
- *   3) in-stats-name, is a regular expression that matches the sub interface KPI
- *      statistics counter name that you would like to monitor. By default it's
- *      in-octets, Use proper counter name something like 'in-pkts' or
- *      "in-unicast-pkts" or "in-multicast-pkts" etc.
- *
- *   4) out-stats-name, is a regular expression that matches the sub interface KPI
- *      statistics counter name that you would like to monitor. By default it's
- *      in-octets, Use proper counter name something like 'out-pkts' or
- *      "out-unicast-pkts" or "out-multicast-pkts" etc.
  * 
- *   5) octets-high-threshold, is the threshold that causes the rule to
- *      report an anomaly.  By default it's 80000000 octets (80 MB). This rule
- *      will set a dashboard color to red when *all* the input traffic is above
- *      threshold for 60 seconds period. 
+ *   3) high-threshold, is the threshold that causes the rule to 
+ *      report an anomaly.  By default it's 80. This rule will 
+ *      set a dashboard color to red when *all* the input traffic is above 
+ *      threshold for 180 seconds period. 
  *
- *   6) octets-low-threshold, is the threshold that causes the rule to
- *      report an anomaly.  By default it's 50000000 (50 MB)octets . This rule
- *      will set a dashboard color to yellow when *all* the input traffic is
- *      above threshold for 60 seconds period, otherwise color is set to green.
+ *   4) low-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 50. This rule will
+ *      set a dashboard color to yellow when *all* the input traffic is above
+ *      threshold for 180 seconds period, otherwise color is set to green.
  *
  */
 healthbot {
@@ -39,10 +30,10 @@ healthbot {
             description "Collects input/output traffic (in-octets/out-octets) periodically and notifies in case of traffic is above threshold";
             /*
              * Monitors the interface state and input/output traffic.Notifies via the dashboard
-             * colors when the traffic is above {{octets-high-threshold}}
+             * colors when the traffic is above {{high-threshold}}
              * for every collected metric during a 60s time range (red).
              * The color is set to yellow when the traffic is above
-             * {{octets-low-threshold}} for every collected metric during
+             * {{low-threshold}} for every collected metric during
              * a 60s. Otherwise the color is set to green.
 			 * If ifl operational state is down red alarm is shown else it is green. 
              *
@@ -64,17 +55,17 @@ healthbot {
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */
-            field in-octets-stats-value {
+            field in-octets {
                 sensor interfaces-oc {
-                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{in-stats-name}}";
+                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/in-octets";
                     zero-suppression;
                 }
                 type integer;
                 description "Sub Interface statistics counter (in-octets) value.";
             }
-            field out-octets-stats-value {
+            field out-octets {
                 sensor interfaces-oc {
-                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/{{out-stats-name}}";
+                    path "/interfaces/interface/subinterfaces/subinterface/state/counters/out-octets";
                     zero-suppression;
                 }
                 type integer;
@@ -82,7 +73,7 @@ healthbot {
             }			
             field interface-name {
                 sensor interfaces-oc {
-                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
+                    where "/interfaces/interface/@name =~ /{{interface-name}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
@@ -109,20 +100,56 @@ healthbot {
                 }
                 type string;
                 description "Subinterface operational status";
+            }
+            field in-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-octets";
+                        multiplication-factor 0.000001;
+                    }
+                }
+                type float;
+            field in-util {
+                formula {
+                    eval {
+                        expression "($in-mbps / $speed) * 100";
+                    }
+                }
+                type float;
+                description "Utilization in percentage which derived based on mbps and interface speed";
+            }
+            field out-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-octets";
+                        multiplication-factor 0.000001;
+                    }
+                }
+                type float;
+                description "Derives mbps based (current out-octets - previous out-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+            }
+            field out-util {
+                formula {
+                    eval {
+                        expression "($out-mbps / $speed) * 100";
+                    }
+                }
+                type float;
+                description "Utilization in percentage which derived based on mbps and interface speed";
             }			
             /*
              * Fields defined with variables and constant values
              */
             field high-threshold {
                 constant {
-                    value "{{octets-high-threshold}}";
+                    value "{{high-threshold}}";
                 }
                 type integer;
                 description "Traffic high threshold.";
             }
             field low-threshold {
                 constant {
-                    value "{{octets-low-threshold}}";
+                    value "{{low-threshold}}";
                 }
                 type integer;
                 description "Traffic low threshold.";
@@ -142,15 +169,15 @@ healthbot {
                 frequency 2offset;
                 term is-interface-in-traffic-abnormal {
                     when {
-                        increasing-at-least-by-value "$in-octets-stats-value" {
+                        increasing-at-least-by-value "$in-util" {
                             value "$high-threshold";
-                            time-range 4offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name.$sub-interface-index input traffic is above high threshold($high-threshold octets)";
+                            message "$interface-name.$sub-interface-index input traffic:$in-mbps mbps and $in-util % is above high threshold";
                         }
                     }
                 }
@@ -160,17 +187,18 @@ healthbot {
                  * above low threshold (in-octets-low-threshold) continuosly for
                  * 4 offset time-range
                  */
+
                 term is-interface-in-traffic-median {
                     when {
-                        increasing-at-least-by-value "$in-octets-stats-value" {
+                        increasing-at-least-by-value "$in-util" {
                             value "$low-threshold";
-                            time-range 4offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name.$sub-interface-index input traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                            message "$interface-name.$sub-interface-index input traffic:$in-mbps mbps and $in-util % is in medium range)";
                         }
                     }
                 }
@@ -181,7 +209,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$interface-name.$sub-interface-index input traffic:$in-octets-stats-value is normal";
+                            message "$interface-name.$sub-interface-index input traffic:$in-mbps mbps and $in-util % is normal";
                         }
                     }
                 }
@@ -196,17 +224,17 @@ healthbot {
                  * 4 offset time-range
                  */
                 frequency 2offset;
-                term is-interface-out-traffic-abnormal {
+                term is-interface-stats-abnormal {
                     when {
-                        increasing-at-least-by-value "$out-octets-stats-value" {
+                        increasing-at-least-by-value "$out-util" {
                             value "$high-threshold";
-                            time-range 4offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name.$sub-interface-index output traffic is above high threshold($high-threshold octets)";
+                            message "$interface-name.$sub-interface-index output traffic:$out-mbps mbps and $out-util % is above high threshold";
                         }
                     }
                 }
@@ -216,28 +244,28 @@ healthbot {
                  * above low threshold (out-octets-low-threshold) continuosly for
                  * 4 offset time-range
                  */
-                term is-interface-out-traffic-median {
+                term is-interface-stats-median {
                     when {
-                        increasing-at-least-by-value "$out-octets-stats-value" {
+                        increasing-at-least-by-value "$out-util" {
                             value "$low-threshold";
-                            time-range 4offset;
+                            time-range 3offset;
                         }
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name.$sub-interface-index output traffic is in medium range(>=$low-threshold,<=$high-threshold  octets)";
+                            message "$interface-name.$sub-interface-index output traffic:$out-mbps mbps and $out-util % is in medium range";
                         }
                     }
                 }
                 /*
                  * Defaults color to green.
                  */
-                term interface-out-traffic-normal {
+                term is-interface-stats-normal {
                     then {
                         status {
                             color green;
-                            message "$interface-name.$sub-interface-index output traffic:$out-octets-stats-value is normal";
+                            message "$interface-name.$sub-interface-index output traffic:$out-mbps mbps and $out-util % is normal";
                         }
                     }
                 }
@@ -278,27 +306,17 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable octets-high-threshold {
-                value 80000000;
-                description "Sub Interface input traffic high threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 80000000 octets (80 MB)";
+            variable high-threshold {
+                value 80;
+                description "Interface input traffic high threshold value in percentage";
                 type int;
             }
-            variable octets-low-threshold {
-                value 50000000;
-                description "Sub Interface input traffic low threshold value in octets. Traffic rate of increase between metrics, before we report anomaly. Default value is 50000000 octets (50 MB)";
+            variable low-threshold {
+                value 50;
+                description "Interface output traffic high threshold value in percentage";
                 type int;
-            }
-            variable in-stats-name {
-                value in-octets;
-                description "Sub Interface input traffic counter name";
-                type string;
-            }
-            variable out-stats-name {
-                value out-octets;
-                description "Sub Interface output traffic counter name";
-                type string;
-            }			
-            variable ifd-name {
+            }			 
+            variable interface-name {
                 value ".*";
                 description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
                 type string;
