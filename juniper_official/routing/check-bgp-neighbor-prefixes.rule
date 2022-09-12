@@ -13,7 +13,7 @@
                 iAgent {
                     file bgp_neighbor.yml;
                     table bgpNeighborTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             sensor bgp-oc {
@@ -67,6 +67,99 @@
                 type integer;
                 description "Neighbor received prefixes";
             }
+            field advertised-route-count-threshold {
+                constant {
+                    value "{{max-advertised-route-count-threshold}}";
+                }
+                type integer;
+                description "Advertised routes count increase threshold";
+            }
+            field received-route-count-threshold {
+                constant {
+                    value "{{max-received-route-count-threshold}}";
+                }
+                type integer;
+                description "Received routes count increase threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger advertised-routes {
+                synopsis "BGP max advertised routes KPI";
+                description "Sets health based on increase in advertised routes on neighbor session";
+                frequency 1offset;
+                /*
+                 * Sets color to green when advertised-routes is less than or equal to threshold
+                 */				
+                term route-count-normal {
+                    when {
+                        less-than-or-equal-to "$advertised-routes" "$advertised-route-count-threshold";
+                    }	
+                    then {
+                        status {                    
+                            color green;
+                            message "Advertised route count($advertised-routes) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when advertised-routes is greater than threshold
+                 */				
+                term above-static-threshold {
+                    when {
+                        greater-than-or-equal-to "$advertised-routes" "$advertised-route-count-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Advertised route count($advertised-routes) exceed static threshold";
+                        }
+                    }
+                }
+            }
+            trigger received-routes {
+                synopsis "BGP max received routes KPI";
+                description "Sets health based on increase in received routes on neighbor session";
+                frequency 1offset;
+                /*
+                 * Sets color to green when received-routes is less than or equal to threshold
+                 */				
+                term route-count-normal {
+                    when {
+                        less-than-or-equal-to "$received-routes" "$received-route-count-threshold";
+                    }	
+                    then {
+                        status {                    
+                            color green;
+                            message "Received route count($received-routes) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when received-routes is greater than threshold
+                 */				
+                term above-static-threshold {
+                    when {
+                        greater-than-or-equal-to "$received-routes" "$received-route-count-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Received route count($received-routes) exceed static threshold";
+                        }
+                    }
+                }
+            }
+            variable max-received-route-count-threshold {
+                value 10000;
+                description "BGP neighbor session received routes threshold: Number of received route count increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable max-advertised-route-count-threshold {
+                value 10000;
+                description "BGP neighbor session advertised routes threshold: Number of advertised route count increase between metrics, before we report anomaly";
+                type int;
+            }			
             variable address-table-var {
                 value .*;
                 description "Address table specific routes, regular expression, e.g. 'IPV4_UNICAST'";

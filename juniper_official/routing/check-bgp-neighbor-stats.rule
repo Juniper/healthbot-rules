@@ -13,7 +13,7 @@
                 iAgent {
                     file bgp_neighbor.yml;
                     table bgpNeighborTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             sensor bgp-oc {
@@ -66,26 +66,21 @@
             /*
              * Anomaly detection logic.
              */
-            trigger bgp-neighbor-flap-count {
+            trigger bgp-neighbor-flap {
                 synopsis "BGP neighbor session flaps KPI";
                 description "Sets health based on increase in bgp neighbor session flaps";
                 frequency 1.5offset;
                 /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the neighbor flap count increases for all points in 3 offset period.
+                 * Sets color to green when flap count is not increasing
                  */
-                term is-session-flapping {
+                term is-session-stable {
                     when {
-                        increasing-at-least-by-value "$flap-count" {
-                            value "$flap-count-threshold";
-                            time-range 3offset;
-                            all;
-                        }
-                    }
+                        matches-with-previous "$flap-count";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "BGP neighbor($peer-address) session flap-count($flap-count) is abnormal";
+                            color green;
+                            message "BGP neighbor($peer-address) session flap-count($flap-count) is normal";
                         }
                     }
                 }
@@ -107,13 +102,21 @@
                     }
                 }
                 /*
-                 * Defaults color to green.
+                 * Sets color to red and sends out an anomaly notification when
+                 * the neighbor flap count increases for all points in 3 offset period.
                  */
-                term is-session-stable {
+                term is-session-flapping {
+                    when {
+                        increasing-at-least-by-value "$flap-count" {
+                            value "$flap-count-threshold";
+                            time-range 3offset;
+                            all;
+                        }
+                    }
                     then {
                         status {
-                            color green;
-                            message "BGP neighbor($peer-address) session flap-count($flap-count) is normal";
+                            color red;
+                            message "BGP neighbor($peer-address) session flap-count($flap-count) is abnormal";
                         }
                     }
                 }

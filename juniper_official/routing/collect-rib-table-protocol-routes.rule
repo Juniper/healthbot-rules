@@ -46,6 +46,45 @@
                 type string;
                 description "Route-table to monitor";
             }
+            field threshold {
+                constant {
+                    value "{{route-count-threshold}}";
+                }
+                type integer;
+                description "Route count static threshold";
+            }
+            trigger protocol-routes-count {
+                frequency 1offset;
+                term protocol-route-count-ok {
+                    when {
+                        less-than-or-equal-to "$protocol-total-route-count" "$threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count)is normal";
+                        }
+                    }
+                }
+                term above-static-threshold {
+                    when {
+                        greater-than "$protocol-total-route-count" "$threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count) is abnormal";
+                        }
+                    }
+                }
+            }
+            variable route-count-threshold {
+                value 10000;
+                description "Route table's route-count threshold";
+                type int;
+            }			
             variable route-protocol-name {
                 value .+;
                 description "Route table specific routes, regular expression, e.g. 'BGP|RSVP|IS-ISI'";
