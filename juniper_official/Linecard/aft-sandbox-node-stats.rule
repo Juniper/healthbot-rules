@@ -1,0 +1,77 @@
+/*
+ * Rule to get all the node error stats from aft sandbox
+ * Upstream application will use these stats to find anomaly
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule aft-sandbox-node-stats {
+            keys [ fpc-name aft-node ];
+            synopsis "Aft sandbox node error stats";
+            description "Rule to fetch aft server sandbox node error stats";
+            sensor aft-sb-node-stats {
+                synopsis "Aft sandbox node stats definition";
+                description "Netconf igent command show sandbox stats to collect telemetry data from network device";
+                iAgent {
+                    file aft-sandbox-stats.yml;
+                    table SandboxStatsTable;
+                    frequency 180s;
+                }
+            }
+            field aft-node {
+                sensor aft-sb-node-stats {
+                    path aft-node;
+                }
+                type string;
+                description "Aft node name";
+            }
+            field node-bind-fail {
+                sensor aft-sb-node-stats {
+                    path node-bind-fail;
+                }
+                type integer;
+                description "Node add failure count";
+            }
+            field node-create-fail {
+                sensor aft-sb-node-stats {
+                    path node-create-fail;
+                }
+                type integer;
+                description "Node create failure count";
+            }
+            field node-out-of-order {
+                sensor aft-sb-node-stats {
+                    path node-out-of-order;
+                }
+                type integer;
+                description "Node out of order count";
+            }
+            field fpc-name {
+                sensor aft-sb-node-stats {
+                    path target;
+                }
+                type string;
+                description "FPC number";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+			        sensors aft-sb-node-stats;
+                                platforms PTX1008 {
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
