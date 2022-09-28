@@ -1,7 +1,7 @@
 healthbot {
     topic service.subscribers {
         rule collect-subscriber-port-mapping {
-            keys [ fpc-number mic-number port-number ];
+            keys [ fpc-number pic-number port-number ];
             synopsis "Collects subscriber count data per PORT and maps ports & subscribers to PFE's";
             description "Collects subscriber count data per PORT and maps ports & subscribers to PFE's";
             function map-port-to-pfe {
@@ -44,23 +44,23 @@ healthbot {
                 type string;
                 description "The type of this FPC";
             }
-            field mic-description {
+            field pic-description {
                 reference {
-                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$mic-name']/fpc-subcomponent-type";
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$pic-name']/fpc-subcomponent-type";
                 }
 				type string;
                 description "The type of PIC";
             }
-            field mic-name {
+            field pic-name {
                 formula {
                     concatenate {
-                        strings [ FPC "$fpc-number" :MIC "$mic-number" ];
+                        strings [ FPC "$fpc-number" :MIC "$pic-number" ];
                     }
                 }
                 type string;
                 description "A string representing the positional name of PIC with respect to its FPC";
             }
-            field mic-number {
+            field pic-number {
                 sensor resource-monitor {
                     path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/@pic-no";
                 }
@@ -73,7 +73,7 @@ healthbot {
                         function-name map-port-to-pfe;
                         argument fpc_type "$fpc-type";
                         argument fpc_no "$fpc-number";
-                        argument pic_no "$mic-number";
+                        argument pic_no "$pic-number";
                         argument port_no "$port-number";
                     }
                 }

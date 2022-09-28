@@ -1,7 +1,7 @@
 healthbot {
     topic service.subscribers {
         rule generate-subscriber-hardware-limits {
-            keys [ fpc-number mic-number port-number ];
+            keys [ fpc-number pic-number port-number ];
             synopsis "Generated subscriber capacity limit by hardware component type";
             description "Generates subscriber capacity limits by hardware component type (FPC, PIC, Port).";
             function lookup-chassis-capacity {
@@ -92,28 +92,28 @@ healthbot {
                 type string;
                 description "The type of this FPC";
             }
-            field mic-name {
+            field pic-name {
                 formula {
                     concatenate {
-                        strings [ FPC "$fpc-number" :MIC "$mic-number" ];
+                        strings [ FPC "$fpc-number" :MIC "$pic-number" ];
                     }
                 }
 				type string;
                 description "The fully qualified positional name of  PIC (e.g. FPC3:MIC0)";
             }
-            field mic-number {
+            field pic-number {
                 sensor resource-monitor {
                     path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/pics/pic/@pic-no";
                 }
                 type string;
                 description "The PIC number or position within the FPC";
             }
-            field mic-type {
+            field pic-type {
                 reference {
-                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$mic-name']/fpc-subcomponent-type";
+                    path "/topic[topic-name='service.subscribers']/rule[rule-name=collect-fpc-information]/field[component-name='$pic-name']/fpc-subcomponent-type";
                 }
 				type string;
-                description "The type of MIC in this FPC";
+                description "The type of PIC in this FPC";
             }
             field pfe-count {
                 formula {
