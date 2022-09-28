@@ -1,0 +1,105 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule flownh-decode {
+            keys [ flowNH instance proto target ];
+            description "Verify if the flow NH is correctly configured for jflow for the respective protocol family";
+            sensor decodeFlowNH {
+                iAgent {
+                    file jflow_flow_decode.yml;
+                    table decodeFlowNH;
+                    frequency 60s;
+                }
+            }
+            field flowNH {
+                sensor decodeFlowNH {
+                    path flowNH;
+                }
+                type string;
+            }
+            field instance {
+                sensor decodeFlowNH {
+                    path instance;
+                }
+                type string;
+            }
+            field proto {
+                sensor decodeFlowNH {
+                    path proto;
+                }
+                type string;
+            }
+            field protocol_sib {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=sib]/field[proto='$proto']/proto";
+                }
+                type string;
+            }
+            field target {
+                sensor decodeFlowNH {
+                    path target;
+                }
+                type string;
+            }
+            trigger invalid-flowNH {
+                frequency 60s;
+                term invalid {
+                    when {
+                        matches-with "$invalid" Unknown;
+                        exists "$flowNH";
+                        exists "$invalid";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$proto):Invalid flow NH configured for protocol family $proto";
+                        }
+                    }
+                }
+            }
+            trigger valid-flowNH {
+                frequency 60s;
+                term ipv4 {
+                    when {
+                        matches-with "$proto" 0;
+                        matches-with "$flownh" JFlow;
+                        exists "$flowNH";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv4): The flowNH configured for protocol IPv4 is valid";
+                        }
+                    }
+                }
+                term ipv6 {
+                    when {
+                        matches-with "$proto" 1;
+                        matches-with "$flownh" JFlow;
+                        exists "$flowNH";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv6): The flowNH configured for protocol IPv6 is valid";
+                        }
+                    }
+                }
+                term mpls {
+                    when {
+                        matches-with "$proto" 3;
+                        matches-with "$flownh" JFlow;
+                        exists "$flowNH";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:MPLS): The flowNH configured for protocol MPLS is valid";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

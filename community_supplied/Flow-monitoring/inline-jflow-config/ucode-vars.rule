@@ -1,0 +1,298 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.stats {
+replace:
+        rule ucode-vars {
+            keys [ instance target ];
+            sensor ucode-vars {
+                iAgent {
+                    file jflow_ucode_vars.yml;
+                    table ucodeVars;
+                    frequency 60s;
+                }
+            }
+            field instance {
+                sensor ucode-vars {
+                    path instance;
+                }
+                type string;
+            }
+            field target {
+                sensor ucode-vars {
+                    path target;
+                }
+                type string;
+            }
+            trigger buffer_overflow_mpls {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$num_of_buff_overflow_mpls" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The buffer overflow count for MPLS is $num_of_buff_overflow_mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The buffer overflow count for mpls is $num_of_buff_overflow_mpls";
+                        }
+                    }
+                }
+            }
+            trigger buffer_overflow_v4 {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$num_of_buff_overflow_v4" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The buffer overflow count for ipv4 is $num_of_buff_overflow_v4";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The buffer overflow count for ipv4 is $num_of_buff_overflow_v4";
+                        }
+                    }
+                }
+            }
+            trigger buffer_overflow_v6 {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$num_of_buff_overflow_v6" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The buffer overflow count for ipv6 is $num_of_buff_overflow_v6";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The buffer overflow count for ipv6 is $num_of_buff_overflow_v6";
+                        }
+                    }
+                }
+            }
+            trigger export_ager_demux_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$export_ager_demux_cnt" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The export aggregated demux count is $export_ager_demux_cnt";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The export aggregated demux count is $export_ager_demux_cnt";
+                        }
+                    }
+                }
+            }
+            trigger flow_agger_demux_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_agger_demux_cnt" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow aggregation demux count is $flow_agger_demux_cnt";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The flow aggregation demux count is $flow_agger_demux_cnt";
+                        }
+                    }
+                }
+            }
+            trigger flow_delete_failures {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_delete_failures" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The flow deferred delete failures are: $flow_delete_failures";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow deferred delete failures are: $flow_delete_failures";
+                        }
+                    }
+                }
+            }
+            trigger flow_hit_error_cnt_mpls {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$flow_hit_error_cnt_mpls" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The Max flow hit error count for MPLS is $flow_hit_error_cnt_mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The Max flow hit error count is $flow_hit_error_cnt_v4";
+                        }
+                    }
+                }
+            }
+            trigger flow_hit_error_cnt_total {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$flow_hit_error_cnt_total" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): TheTotal Max flow hit error count is $flow_hit_error_cnt_total";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): TheTotal Max flow hit error count is $flow_hit_error_cnt_total";
+                        }
+                    }
+                }
+            }
+            trigger flow_hit_error_cnt_v4 {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$flow_hit_error_cnt_v4" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The Max flow hit error count for IPv4 is $flow_hit_error_cnt_v4";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The Max flow hit error count for IPv4 is $flow_hit_error_cnt_v4";
+                        }
+                    }
+                }
+            }
+            trigger flow_hit_error_cnt_v6 {
+                frequency 60s;
+                term valid {
+                    when {
+                        equal-to "$flow_hit_error_cnt_v6" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The Max flow hit error count for IPv6 is $flow_hit_error_cnt_v6";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The Max flow hit error count for IPv6 is $flow_hit_error_cnt_v6";
+                        }
+                    }
+                }
+            }
+            trigger flow_null_ring_buff {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_null_ring_buff" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The Flow Null ring buffer is $flow_null_ring_buff";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The Flow Null ring buffer is $flow_null_ring_buff";
+                        }
+                    }
+                }
+            }
+            trigger jflow_thread_run_cnt_t1 {
+                frequency 60s;
+                term jflow_thread_run_cnt_t1 {
+                    when {
+                        exists "$jflow_thread_run_cnt_t1";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): jflow_thread_run_cnt_t1: $jflow_thread_run_cnt_t1";
+                        }
+                    }
+                }
+            }
+            trigger jflow_thread_run_cnt_t2 {
+                frequency 60s;
+                term valid {
+                    when {
+                        exists "$jflow_thread_run_cnt_t2";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): jflow_thread_run_cnt_t2: $jflow_thread_run_cnt_t2";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
