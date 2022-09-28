@@ -12,7 +12,7 @@
                 iAgent {
                     file IsisAdjacencyTable.yml;
                     table IsisAdjacencyTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             sensor isis-oc {
@@ -58,23 +58,19 @@
             /*
              * Anomaly detection logic.
              */
-            trigger isis-adjacency-flap-count {
+            trigger isis-adjacency-flap {
                 frequency 1offset;
                 /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the isis flaps count increases for all points in 5offset period.
+                 * Sets color to green when flap count is not increasing
                  */
-                term is-flap-count-abnormal {
+                term neighbor-stable {
                     when {
-                        increasing-at-least-by-value "$transition-count" {
-                            value "$flap-threshold";
-                            time-range 5offset;
-                        }
-                    }
+                        matches-with-previous "$transition-count";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "ISIS neighbor $interface-name flap count($transition-count) is abnormal";
+                            color green;
+                            message "ISIS neighbor $interface-name flap count($transition-count) is normal";
                         }
                     }
                 }
@@ -96,13 +92,20 @@
                     }
                 }
                 /*
-                 * Defaults color to green.
+                 * Sets color to red and sends out an anomaly notification when
+                 * the isis flaps count increases for all points in 5offset period.
                  */
-                term neighbor-stable {
+                term is-flap-count-abnormal {
+                    when {
+                        increasing-at-least-by-value "$transition-count" {
+                            value "$flap-threshold";
+                            time-range 5offset;
+                        }
+                    }
                     then {
                         status {
-                            color green;
-                            message "ISIS neighbor $interface-name flap count($transition-count) is normal";
+                            color red;
+                            message "ISIS neighbor $interface-name flap count($transition-count) is abnormal";
                         }
                     }
                 }
@@ -168,6 +171,15 @@
                                 }
                             }
                         }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
             }

@@ -59,6 +59,54 @@
                 type integer;
                 description "Table total route count";
             }
+            field threshold {
+                constant {
+                    value "{{route-count-threshold}}";
+                }
+                type integer;
+                description "Route count static threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger route-table-total-routes-count {
+                frequency 1offset;
+                /*
+                 * Sets color to green when route-count is less-than-or-equal-to than threshold
+                 */				
+                term route-count-normal {
+                    when {
+                        less-than-or-equal-to "$table-total-route-count" "$threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Route table($table-name) total route count($table-total-route-count) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when route-count is greater than threshold for 3offset
+                 */				
+                term is-route-count-abnormal {
+                    when {
+                        greater-than "$table-total-route-count" "$threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Route table($table-name) total route count($table-total-route-count) is abnormal";
+                        }
+                    }
+                }
+            }
+            variable route-count-threshold {
+                value 10000;
+                description "Route table's route-count threshold";
+                type int;
+            }			
             variable route-table-name {
                 value .+;
                 description "Route table specific routes, regular expression, e.g. 'inet.0|inet6.0|vpn_1.inet6.0'";
@@ -118,6 +166,15 @@
                                 }
                             }
                         }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
                 helper-files other {

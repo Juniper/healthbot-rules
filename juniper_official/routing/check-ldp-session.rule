@@ -35,6 +35,22 @@
             trigger ldp-session-state {
                 frequency 1offset;
                 /*
+                 * Sets color to green when the session state is operational.
+                 */
+                term session-up {
+                    when {
+                        matches-with "$session-state" OPERATIONAL {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "LDP session $lsr-id state is $session-state";
+                        }
+                    }
+                }				
+                /*
                  * Sets color to red when ldp session state is not operational.
                  */
                 term is-session-down {
@@ -46,17 +62,6 @@
                     then {
                         status {
                             color red;
-                            message "LDP session $lsr-id state is $session-state";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */
-                term session-up {
-                    then {
-                        status {
-                            color green;
                             message "LDP session $lsr-id state is $session-state";
                         }
                     }
@@ -135,6 +140,15 @@
                                 }
                             }
                         }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
             }

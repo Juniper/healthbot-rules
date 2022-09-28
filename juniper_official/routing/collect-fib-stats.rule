@@ -13,7 +13,7 @@
                 iAgent {
                     file fib.yml;
                     table FibSummaryTable;
-                    frequency 1m;
+                    frequency 3m;
                 }
             }
             field address-family {
@@ -47,6 +47,54 @@
                 type string;
                 description "Route table name to be monitored";
             }
+            field threshold {
+                constant {
+                    value "{{route-count-threshold}}";
+                }
+                type integer;
+                description "Route count static threshold";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger fib-route-count {
+                frequency 1offset;
+                /*
+                 * Sets color to green when route-count is less-than-or-equal-to than threshold
+                 */				
+                term route-count-normal {
+                    when {
+                        less-than-or-equal-to "$table-total-route-count" "$threshold";
+                    }	
+                    then {
+                        status {                    
+                            color green;
+                            message "Route count of $table-name of $address-family of $route-table-type is ($fib-route-count) normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when route-count is greater than threshold for 3offset
+                 */				
+                term is-route-count-abnormal {
+                    when {
+                        greater-than-or-equal-to "$fib-route-count" "$threshold" {
+                            time-range 3offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Route count of $table-name of $address-family of $route-table-type is ($fib-route-count) abnormal";
+                        }
+                    }
+                }
+            }			
+            variable route-count-threshold {
+                value 10000;
+                description "Forwarding table's each protocol's route count threshold";
+                type int;
+            } 			
             variable route-address-family {
                 value .+;
                 description "address-family names to monitor, regular expression, eg 'Internet|Internet6|MPLS|VPLS'";
@@ -116,6 +164,15 @@
                                 }
                             }
                         }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
                 helper-files other {

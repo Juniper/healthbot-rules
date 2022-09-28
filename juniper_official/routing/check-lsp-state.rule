@@ -42,19 +42,6 @@
              */
             trigger lsp-state {
                 frequency 1.5offset;
-                term is-lsp-down {
-                    when {
-                        does-not-match-with "$oper-status" UP {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "MPLS lsp($lsp-name) state is $oper-status";
-                        }
-                    }
-                }
                 term lsp-up {
                     when {
                         matches-with "$oper-status" UP {
@@ -67,6 +54,19 @@
                             message "MPLS lsp($lsp-name) state is $oper-status";
                         }
                         next;
+                    }
+                }				
+                term is-lsp-down {
+                    when {
+                        does-not-match-with "$oper-status" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "MPLS lsp($lsp-name) state is $oper-status";
+                        }
                     }
                 }
             }
@@ -192,6 +192,15 @@
                                 }
                             }
                         }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
             }
