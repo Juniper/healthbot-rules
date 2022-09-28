@@ -1,0 +1,173 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule sib {
+            keys [ instance proto s_inst_name target ];
+            description "fetch the entries configured in the SIB";
+            sensor sib {
+                iAgent {
+                    file jflow_sib_table.yml;
+                    table SIBTable;
+                    frequency 60s;
+                }
+            }
+            field flowNH {
+                sensor sib {
+                    path FlowNH;
+                }
+                type string;
+            }
+            field inet {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name='$s_inst_name']/family_inet";
+                }
+                type string;
+            }
+            field inet6 {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name='$s_inst_name']/family_inet6";
+                }
+                type string;
+            }
+            field inst_name {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name=$s_inst_name]/name";
+                }
+                type string;
+            }
+            field instance {
+                sensor sib {
+                    path instance;
+                }
+                type string;
+            }
+            field ipv4_proto {
+                sensor sib {
+                    path ipv4_proto;
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field ipv6_proto {
+                sensor sib {
+                    path ipv6_proto;
+                    data-if-missing {
+                        value None;
+                    }
+                }
+                type string;
+            }
+            field mpls {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fwd-config]/field[name='$s_inst_name']/family_mpls";
+                }
+                type string;
+            }
+            field mpls_proto {
+                sensor sib {
+                    path mpls_proto;
+                }
+                type string;
+            }
+            field proto {
+                sensor sib {
+                    path proto;
+                }
+                type string;
+            }
+            field s_inst_name {
+                sensor sib {
+                    path s_inst_name;
+                }
+                type string;
+            }
+            field target {
+                sensor sib {
+                    path target;
+                }
+                type string;
+            }
+            trigger SIB-inet-family {
+                frequency 100s;
+                term valid_v4 {
+                    when {
+                        equal-to "$proto" 0;
+                        matches-with "$inet" inet;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target: $s_inst_name:IPv4): protocol family $inet is configured on fpc $ipv4_proto $inet $inet6 $mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        equal-to "$proto" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target: $s_inst_name:IPv4): Protocol Family IPv4 should not be configured on the fpc proto $proto $inet $inet6 $mpls";
+                        }
+                    }
+                }
+            }
+            trigger SIB-inet6-family {
+                frequency 100s;
+                term valid {
+                    when {
+                        equal-to "$proto" 1;
+                        matches-with "$inet6" inet6;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target: $s_inst_name:IPv6): Protocol family $inet6 is configured on the fpc.";
+                        }
+                    }
+                }
+                term Term_2 {
+                    when {
+                        equal-to "$proto" 1;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target: $s_inst_name:IPv6): Protocol Family IPv6 should not be configured on the fpc.";
+                        }
+                    }
+                }
+            }
+            trigger SIB-mpls-family {
+                frequency 100s;
+                term valid {
+                    when {
+                        equal-to "$proto" 3;
+                        matches-with "$mpls" mpls;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:$s_inst_name:MPLS):Protocol family $mpls is configured on the fpc $inet $inet6 $mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        equal-to "$proto" 3;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target: $s_inst_name:MPLS): Protocol Family MPLS should not be configured on the fpc";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

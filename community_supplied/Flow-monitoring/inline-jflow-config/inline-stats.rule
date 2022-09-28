@@ -1,0 +1,452 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.stats {
+replace:
+        rule inline-stats {
+            keys [ instance target temp_type ];
+            sensor inline-stats {
+                iAgent {
+                    file jflow_stats.yml;
+                    table sampleJflowStats;
+                    frequency 30s;
+                }
+            }
+            field instance {
+                sensor inline-stats {
+                    path instance;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field target {
+                sensor inline-stats {
+                    path target;
+                }
+                type string;
+            }
+            field temp_type {
+                sensor inline-stats {
+                    path temp_type;
+                }
+                type string;
+            }
+            trigger active_flows {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$active_flows" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The number of active flows are: $active_flows";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The number of active flows are: $active_flows";
+                        }
+                    }
+                }
+            }
+            trigger active_timedout_flows {
+                frequency 60s;
+                term valid {
+                    when {
+                        increasing-at-least-by-value "$active_timedout_flows" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): Active Timed out flows are: $active_timedout_flows";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): Active Timed out flows are: $active_timedout_flows";
+                        }
+                    }
+                }
+            }
+            trigger ager_cleanup_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than-or-equal-to "$ager_cleanup_cnt" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The aggregated cleanup count is $ager_cleanup_cnt";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The aggregated cleanup count is $ager_cleanup_cnt";
+                        }
+                    }
+                }
+            }
+            trigger as_lookup_err {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than-or-equal-to "$as_lookup_err" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The AS lookup errors are: $as_lookup_err";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The AS lookup errors are: $as_lookup_err";
+                        }
+                    }
+                }
+            }
+            trigger deleted_flows {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$deleted_flows" 0;
+                        min-rate-of-increase "$deleted_flows" {
+                            rate 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): Deleted Flows are: $deleted_flows";
+                        }
+                    }
+                }
+                term no-del {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): Deleted Flows are: $deleted_flows";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): Deleted Flows are: $deleted_flows";
+                        }
+                    }
+                }
+            }
+            trigger exported_pkt_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$exported_pkt_cnt" 0;
+                        increasing-at-least-by-value "$exported_pkt_cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow exported packet count are: $exported_pkt_cnt";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The flow exported packet count are: $exported_pkt_cnt";
+                        }
+                    }
+                }
+            }
+            trigger flow_byte_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        increasing-at-least-by-value "$flow_byte_cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): Flow byte Count : $flow_byte_cnt";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): Flow byte Count : $flow_byte_cnt";
+                        }
+                    }
+                }
+            }
+            trigger flow_del_err {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_del_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The flow delete errors are: $flow_del_err";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow delete errors are: $flow_del_err";
+                        }
+                    }
+                }
+            }
+            trigger flow_del_sec_err {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_del_sec_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The flow delete sec err are: $flow_del_sec_err";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow delete sec err are: $flow_del_sec_err";
+                        }
+                    }
+                }
+            }
+            trigger flow_exported_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_exported_cnt" 0;
+                        increasing-at-least-by-value "$flow_exported_cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The exported flow count is:  $flow_exported_cnt";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The exported flow count is:  $flow_exported_cnt";
+                        }
+                    }
+                }
+            }
+            trigger flow_insert_err {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_insert_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The flow insert errors are: $flow_insert_err";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow insert errors are: $flow_insert_err";
+                        }
+                    }
+                }
+            }
+            trigger flow_insert_policer_drop {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_insert_policer_drop" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow insert policer drops are $flow_insert_policer_drop";
+                        }
+                    }
+                }
+                term no_inc {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow insert policer drops are $flow_insert_policer_drop";
+                        }
+                    }
+                }
+            }
+            trigger flow_insert_sec_err {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$flow_insert_sec_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The flow insert sec err are : $flow_insert_sec_err";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow insert sec err are : $flow_insert_sec_err";
+                        }
+                    }
+                }
+            }
+            trigger flow_pkt_cnt {
+                frequency 60s;
+                term valid {
+                    when {
+                        increasing-at-least-by-value "$flow_pkt_cnt" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): flow pkt count : $flow_pkt_cnt";
+                        }
+                    }
+                }
+                term normal {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): flow pkt count : $flow_pkt_cnt";
+                        }
+                    }
+                }
+            }
+            trigger flow_update_skipped {
+                frequency 60s;
+                term invalid {
+                    when {
+                        greater-than "$flow_update_skipped" 0;
+                        greater-than-or-equal-to "$flow_update_skipped" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): Flow update skipped: $flow_update_skipped";
+                        }
+                    }
+                }
+            }
+            trigger inactive_timedout_flows {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than-or-equal-to "$inactive_timedout_flows" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The inactive timed out flows are : $inactive_timedout_flows";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The inactive timed out flows are : $inactive_timedout_flows";
+                        }
+                    }
+                }
+            }
+            trigger inserted_flows {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than "$inserted_flows" 0;
+                        increasing-at-least-by-value "$inserted_flows" {
+                            value 1;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The inserted flows are : $inserted_flows";
+                        }
+                    }
+                }
+                term no-flow {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The inserted flows are : $inserted_flows";
+                        }
+                    }
+                }
+            }
+            trigger rr_lookup_err {
+                frequency 60s;
+                term valid {
+                    when {
+                        greater-than-or-equal-to "$rr_lookup_err" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The RR lookup errors are : $rr_lookup_err";
+                        }
+                    }
+                }
+                term no-inc {
+                    then {
+                        status {
+                            color yellow;
+                            message "($target): The RR lookup errors are : $rr_lookup_err";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

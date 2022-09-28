@@ -1,0 +1,99 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule check-fpc {
+            keys [ fpc_number sample_instance_name target ];
+            synopsis "Checks if the sampling instance and table sizes are configured for the fpc";
+            description "Checks if the sampling instance and table sizes are configured for the fpc";
+            function check_fpc_binding {
+                description "Checks if the correct sampling instance is binded to the fpc";
+                path jflow_fpc_binding_check.py;
+                method check_fpc;
+                argument cfg_inst_name {
+                    mandatory;
+                }
+                argument fpc_num {
+                    mandatory;
+                }
+                argument target {
+                    mandatory;
+                }
+                argument vty_inst_name {
+                    mandatory;
+                }
+            }
+            sensor check-fpc {
+                iAgent {
+                    file jflow_fpc_binding.yml;
+                    table fpc-check;
+                    frequency 60s;
+                    target " ";
+                }
+            }
+            field check-binding {
+                formula {
+                    user-defined-function {
+                        function-name check_fpc_binding;
+                        argument target "$target";
+                        argument fpc_num "$fpc_number";
+                        argument cfg_inst_name "$inst_name";
+                        argument vty_inst_name "$sample_instance_name";
+                    }
+                }
+                type string;
+            }
+            field fpc_number {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$sample_instance_name']/fpc_number";
+                }
+                type string;
+            }
+            field inst_name {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/field[sample_inst_name='$sample_instance_name']/sample_inst_name";
+                }
+                type string;
+            }
+            field sample_instance_name {
+                sensor check-fpc {
+                    path sample_instance_name;
+                }
+                type string;
+            }
+            field target {
+                sensor check-fpc {
+                    path target;
+                }
+                type string;
+            }
+            trigger sampleing-instance-check {
+                frequency 60s;
+                term valid-binding {
+                    when {
+                        user-defined-function check_fpc_binding {
+                            argument target "$target";
+                            argument fpc_num "$fpc_number";
+                            argument cfg_inst_name "$inst_name";
+                            argument vty_inst_name "$sample_instance_name";
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The sampling instance ($sample_instance_name) is binded to  $target.";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): Invalid sampling instance $sample_instance_name binded to the fpc $target. the sampling instance binded should be $inst_name.";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

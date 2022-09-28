@@ -1,0 +1,390 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule master-rec {
+            keys [ instance target ];
+            synopsis "Verifies base pointers for data structures and jflow specific flags";
+            description "Displays the master record entry details for jflow  per fpc per pfe instance.";
+            sensor master {
+                iAgent {
+                    file jflow_master_rec.yml;
+                    table MasterRec;
+                    frequency 60s;
+                }
+            }
+            field extended_flow_memory {
+                reference {
+                    path "/topic[topic-name=sampled.config]/rule[rule-name=fpc-config]/extended_flow_mem";
+                }
+                type string;
+            }
+            field instance {
+                sensor master {
+                    path instance;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+            }
+            field target {
+                sensor master {
+                    path target;
+                }
+                type string;
+            }
+            trigger master-rec-boot-time {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$boot_time" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): boot time is $boot_time";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): boot time cannot be 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-coll-tbl-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$coll_tbl_base" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The collector table base is $coll_tbl_base";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): the collector table base is $coll_tbl_base";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-current-time {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$current_time" 0x000000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): the current time is $current_time";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): the current time cannot be 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-extn-tbl-id {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$extn_tbl_id" 0x0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): extension table id is $extn_tbl_id";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): extension table id is 0x0. (disabled)";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-flow-act-timeout {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$flow_act_timeout" 0x0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The flow active timeout is $flow_act_timeout (enabled)";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): the flow active timeout  flag is 0x0. (disabled)";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-inst-tbl-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$inst_tbl_base" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The instance table base is $inst_tbl_base";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The instance table base is $inst_tbl_base";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-jflow-record-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$jflow_record_base" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): Jflow record base is $jflow_record_base";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): Jflow record base is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-route-record-ktree-ptr-mpls {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$route_record_ktree_ptr_mpls" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The MPLS RT route record ktree pointer is $route_record_ktree_ptr_mpls";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The MPLS RT route record ktree pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rt-record-ktree-ptr-v4 {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rt_record_ktree_ptr_v4" 0x00000000 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The ipv4 RT record ktree pointer is $rt_record_ktree_ptr_v4";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The ipv4 RT record ktree pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rt-record-ktree-ptr-v6 {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rt_record_ktree_ptr_v6" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The ipv6 RT record ktree pointer is $rt_record_ktree_ptr_v6";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The ipv6 RT record ktree pointer is $rt_record_ktree_ptr_v6";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rtt-ktree-desc-v4-ptr {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rtt_ktree_desc_v4_ptr" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): RTT ktree desc v4 pointer is $rtt_ktree_desc_v4_ptr";
+                        }
+                    }
+                }
+                term ivalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): RTT ktree desc v4 pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-rtt-ktree-desc-v6-ptr {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$rtt_ktree_desc_v6_ptr" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): RTT ktree desc v6 pointer is $rtt_ktree_desc_v6_ptr";
+                        }
+                    }
+                }
+                term Term_2 {
+                    then {
+                        status {
+                            color red;
+                            message "($target): RTT ktree desc v6 pointer is 0x00000000";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-sideband-flow-tbl-base {
+                frequency 60s;
+                term valid {
+                    when {
+                        matches-with "$extended_flow_memory" use-extended-flow-memory;
+                        does-not-match-with "$sideband_flow_tbl_bsae" 0x00000000 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): sideband_flow_tbl_bsae: $sideband_flow_tbl_bsae";
+                        }
+                    }
+                }
+                term invalid {
+                    when {
+                        matches-with "$extended_flow_memory" use-extended-flow-memory;
+                        matches-with "$sideband_flow_tbl_bsae" 0x00000000;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): The sideband flow table base is 0x00000000";
+                        }
+                    }
+                }
+                term valid_ext {
+                    when {
+                        matches-with " $sideband_flow_tbl_bsae" 0x00000000;
+                        does-not-match-with "$extended_flow_memory" use-extended-flow-memory;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The sideband flow table size is zero as extended table is not used.";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-tod-nanosec {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$tod_nanosec" 0x0000000000000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): The TOD in nano sec is $tod_nanosec";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): The TOD in nano sec is 0";
+                        }
+                    }
+                }
+            }
+            trigger master-rec-tod-wallclock {
+                frequency 60s;
+                term valid {
+                    when {
+                        does-not-match-with "$tod_wallclock" 0x0000000000000000;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): TOD Wallclock is $tod_wallclock";
+                        }
+                    }
+                }
+                term invalid {
+                    then {
+                        status {
+                            color red;
+                            message "($target): TOD Wallclock is 0x0000000000000000";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
