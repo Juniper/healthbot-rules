@@ -28,6 +28,13 @@
                 type integer;
                 description "Ospf IO packet read count";
             }
+            field error-threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "Packet error threshold";
+            }			
             /*
              * Anomaly detection logic.
              */
@@ -56,7 +63,7 @@
                 term is-ospf-error-increasing {
                     when {
                         increasing-at-least-by-value "$ospf-error" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -78,6 +85,11 @@
                     }
                 }
             }
+            variable error-threshold {
+                value 1;
+                type int;
+                description "Packet error threshold: Increase between metrics, before we report anomaly";
+            }			
             rule-properties {
                 version 2;
                 contributor juniper;
