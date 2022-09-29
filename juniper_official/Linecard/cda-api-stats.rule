@@ -1,0 +1,63 @@
+/*
+ * Rule to get CDA Server RPC failure stats
+ * Upstream application will use these stats to find anomaly
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-cda-api-stats {
+            keys [ fpc-name cda-api ];
+            synopsis "Cda Server API Stats";
+            description "Rule to fetch Cda Server API Stats from PFE";
+            sensor cda-api-stats {
+                iAgent {
+                    file cda-api-stats.yml;
+                    table CdaServerStatsTable;
+                    frequency 180s;
+                }
+		synopsis "Definition of Cda Server API Stats";
+                description "Netconf igent command show cda statistics server api to collect telemetry data from network device";
+            }
+            field cda-api {
+                sensor cda-api-stats {
+                    path cda-api;
+                }
+                type string;
+                description "CDA API Name";
+            }
+            field fail {
+                sensor cda-api-stats {
+                    path fail;
+                }
+                type integer;
+                description "CDA API failure count";
+            }
+            field fpc-name {
+                sensor cda-api-stats {
+                    path target;
+                }
+                type string;
+                description "FPC Number";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms PTX1008 {
+                                    sensors cda-api-stats;
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

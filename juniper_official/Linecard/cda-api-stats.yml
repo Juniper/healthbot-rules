@@ -1,0 +1,27 @@
+---
+CdaServerStatsTable:
+  command: show cda statistics server api
+  target: Null
+  view: cdaServerStatsTableView
+cdaServerStatsTableView:
+  fields:
+    apis: CdaApis
+    summary-apis: SummaryCdaApis
+CdaApis:
+  key: cda-api
+  title: '|                API NAME                 |       CALLS      |   RATE   |       FAIL       |   RATE   |      ASYNC       |   RATE   |'
+  view: CdaApiView
+CdaApiView:
+  regex:
+    cda-api: '\|\s+(\w+)\s+\|\s+'
+    calls: '(\d+)\s+\|\s+\d+\s+\|\s+'
+    fail: '(\d+)\s+\|\s+\d+\s+\|\s+'
+    async: '(\d+).*'
+SummaryCdaApis:
+  key: summary-name
+  title: 'Aggreagte Server Statistics'
+  view: SummaryCdaApisView
+SummaryCdaApisView:
+  regex:
+    summary-name: '(\w+)\s+:\s'
+    summary-value: (\d+).*
