@@ -196,6 +196,13 @@
                 type integer;
                 description "Unknown no acknowledgement error count";
             }
+            field error-threshold {
+                constant {
+                    value "{{error-threshold}}";
+                }
+                type integer;
+                description "Packet error threshold";
+            }			
             /*
              * Anomaly detection logic to detect rsvp-te global errors.
              */
@@ -204,7 +211,7 @@
                 term is-authentication-fail {
                     when {
                         increasing-at-least-by-value "$authentication-fail" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -218,7 +225,7 @@
                 term is-bad-checksum {
                     when {
                         increasing-at-least-by-value "$bad-checksum" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -232,7 +239,7 @@
                 term is-bad-packet-format {
                     when {
                         increasing-at-least-by-value "$bad-packet-format" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -246,7 +253,7 @@
                 term is-bad-packet-length {
                     when {
                         increasing-at-least-by-value "$bad-packet-length" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -260,7 +267,7 @@
                 term is-bad-packet-version {
                     when {
                         increasing-at-least-by-value "$bad-packet-version" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -274,7 +281,7 @@
                 term is-in-path-error-messages {
                     when {
                         increasing-at-least-by-value "$in-path-error-messages" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -288,7 +295,7 @@
                 term in-reservation-error-messages {
                     when {
                         increasing-at-least-by-value "$in-reservation-error-messages" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -302,7 +309,7 @@
                 term is-message-out-of-order {
                     when {
                         increasing-at-least-by-value "$message-out-of-order" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -316,7 +323,7 @@
                 term out-path-error-messages {
                     when {
                         increasing-at-least-by-value "$out-path-error-messages" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -330,7 +337,7 @@
                 term out-reservation-error-messages {
                     when {
                         increasing-at-least-by-value "$out-reservation-error-messages" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -344,7 +351,7 @@
                 term is-received-nack {
                     when {
                         increasing-at-least-by-value "$received-nack" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -358,7 +365,7 @@
                 term recv-pkt-disabled-intf {
                     when {
                         increasing-at-least-by-value "$recv-pkt-disabled-intf" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -372,7 +379,7 @@
                 term send-failure {
                     when {
                         increasing-at-least-by-value "$send-failure" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -386,7 +393,7 @@
                 term is-state-timeout {
                     when {
                         increasing-at-least-by-value "$state-timeout" {
-                            value 1;
+                            value "$error-threshold";
                         }
                     }
                     then {
@@ -405,6 +412,11 @@
                     }
                 }
             }
+            variable error-threshold {
+                value 1;
+                type int;
+                description "Packet error threshold: Increase between metrics, before we report anomaly";
+            }			
             rule-properties {
                 version 1;
                 contributor juniper;
