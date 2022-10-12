@@ -1,0 +1,304 @@
+/*
+ * Check interface errors like FEC corrected/Uncorrected, framing, input/output CRC errors
+ * Two inputs control detection
+ *
+ *   1) interface-name, matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'ge.*' to match only gigabit
+ *      ethernet interfaces. 
+ *
+ *   2) discard-count, usef to check if the error count is increasing.
+ *      By default it's 1. 
+ * 
+ */
+healthbot {
+    topic interfaces {
+        rule check-interface-fec-crc-framing-errors {
+            /*
+             * Monitors CRC,Framing and FEC errors and notifies via dashboard, red color 
+             * when threshold is exceeded else green
+			 *
+             * Use interface-name as key for rule.
+             */		
+            keys interface-name;
+            synopsis "Interface Errors  KPI's";
+            description "Check interface stats like FEC corrected/Uncorrected, framing, input CRC errors";
+            /*
+             * Sensor configuration to get data from network devices.
+             */			
+            sensor errorinfo-netconf {
+                iAgent {
+                    file interface-error-details.yml;
+                    table intfaceStats;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field drop-threshold {
+                constant {
+                    value "{{discard-count}}";
+                }
+                type integer;
+                description "Drop count increase threshold";
+            }
+            field fec-corrected {
+                sensor errorinfo-netconf {
+                    path fec_corr_err;
+                }
+                type integer;
+                description "Checks for FEC Corrected errors";
+            }
+            field fec-uncorrected {
+                sensor errorinfo-netconf {
+                    path fec_uncorr_err;
+                }
+                type integer;
+                description "Checks for FEC Un-Corrected errors";
+            }
+            field framing-errors {
+                sensor errorinfo-netconf {
+                    path framing_errors;
+                }
+                type integer;
+                description "Checks for Framing errors";
+            }
+            field optical-fec-corrected {
+                sensor errorinfo-netconf {
+                    path optical_fec_corr_err;
+                    zero-suppression;
+                }
+                type integer;
+                description "Checks for FEC Un-Corrected errors";
+            }			
+            field input-crc-errors {
+                sensor errorinfo-netconf {
+                    path input-crc-errors;
+                }
+                type string;
+                description "Checks for input CRC errors";
+            }
+            field interface-name {
+                sensor errorinfo-netconf {
+                    where "name =~ /{{interface-name}}/";
+                    path name;
+                }
+                type string;
+                description "Name of the interface";
+            }
+            field output-crc-errors {
+                sensor errorinfo-netconf {
+                    path output-crc-errors;
+                }
+                type integer;
+                description "Checks for output CRC errors";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger fec-corrected-errors {
+                frequency 1offset;
+                /*
+                 * Sets color to green when the fec-corrected-errors count is not increasing
+                 */				
+                term fec-corrected-errors-not-increasing {
+                    when {
+                        matches-with-previous "$fec-corrected";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "fec-corrected-errors $fec-corrected on $interface-name has not increased";
+                        }
+                    }
+                }				
+                /*
+                 * Sets color to red when the fec-corrected-errors count is increasing at least by drop threshold value
+                 */				
+                term fec-corrected-errors-increasing {
+                    when {
+                        increasing-at-least-by-value "$fec-corrected" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "fec-corrected-errors $fec-corrected on $interface-name has increased";
+                        }
+                    }
+                }
+            }
+            trigger fec-uncorrected-errors {
+                frequency 1offset;
+                /*
+                 * Sets color to green when the fec-uncorrected-errors count is not increasing
+                 */				
+                term fec-uncorrected-errors-not-increasing {
+                    when {
+                        matches-with-previous "$fec-uncorrected";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "fec-uncorrected-errors $fec-uncorrected on $interface-name has not increased";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when the fec-uncorrected-errors count is increasing at least by drop threshold value
+                 */				
+                term fec-uncorrected-errors-increasing {
+                    when {
+                        increasing-at-least-by-value "$fec-uncorrected" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "fec-uncorrected-errors $fec-uncorrected on $interface-name has increased";
+                        }
+                    }
+                }				
+            }
+            trigger framing-errors {
+                frequency 1offset;
+                /*
+                 * Defaults color to green.
+                 */
+                /*
+                 * Sets color to green when the framing-errors count is not increasing
+                 */				 
+                term framing-errors-not-increasing {
+                    when {
+                        matches-with-previous "$framing-errors";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "framing-errors $framing-errors on $interface-name has not increased";
+                        }
+                    }
+                }				
+                /*
+                 * Sets color to red when the framing-errors count is increasing at least by drop threshold value
+                 */				
+                term framing-errors-increasing {
+                    when {
+                        increasing-at-least-by-value "$framing-errors" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "framing-errors $framing-errors on $interface-name has increased";
+                        }
+                    }
+                }
+            }
+            trigger input-crc-errors {
+                frequency 1offset;
+                /*
+                 * Sets color to green when the input-crc-errors count is not increasing
+                 */				
+                term input-crc-error-not-increasing {
+                    when {
+                        matches-with-previous "$input-crc-errors";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Input CRC Error \"$input-crc-errors\" on $interface-name has not increased";
+                        }
+                    }
+                }				
+                /*
+                 * Sets color to red when the input-crc-errors count is increasing at least by drop threshold value
+                 */				
+                term input-crc-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$input-crc-errors" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Input CRC Error \"$input-crc-errors\" on $interface-name has increased";
+                        }
+                    }
+                }
+            }
+            trigger output-crc-errors {
+                frequency 1offset;
+                /*
+                 * Sets color to green when the output-crc-errors count is not increasing
+                 */				 
+                term output-crc-error-not-increasing {
+                    when {
+                        matches-with-previous "$output-crc-errors";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Output CRC Error \"$output-crc-errors\" on $interface-name has not increased";
+                        }
+                    }
+                }				
+                /*
+                 * Sets color to red when the output-crc-errors count is increasing at least by drop threshold value
+                 */				
+                term output-crc-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$output-crc-errors" {
+                            value "$drop-threshold";
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Output CRC Error \"$output-crc-errors\" on $interface-name has increased";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable discard-count {
+                value 1;
+                description "Discard threshold: Number of discards increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable interface-name {
+                value .*;
+                description "Name of the interface ex : et-0/0/0";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }						
+                    }
+                }
+            }			
+        }
+    }
+}

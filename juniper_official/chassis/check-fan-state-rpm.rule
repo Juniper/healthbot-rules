@@ -1,12 +1,17 @@
 /*
- * Moniters fan state and RPM percentage and notifies when anomalies are found.
- * 
+ * Monitors fan state and RPM percentage and notifies when anomalies are found.
+ * 2 Variables :
+ *
+ *   1) high-threshold, defaults to 80% 
+ *
+ *   2) low-threshold, defaults to 50%
+ *      
  */
 healthbot {
     topic hardware.chassis {
         rule check-fan-state-rpm {
             /*
-             * Moniters fan state and RPM percentage and notifies via dashboard, red color 
+             * Monitors fan state and RPM percentage and notifies via dashboard, red color 
              * when threshold is exceeded else green
 			 *
              * Use fan-name as key for rule
@@ -56,6 +61,20 @@ healthbot {
                 type string;
                 description "Status of the fan";
             }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold}}";
+                }
+                type integer;
+                description "RPM high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{low-threshold}}";
+                }
+                type integer;
+                description "RPM low threshold";
+            }			
             /*
              * Anomaly detection logic
              */			
@@ -103,7 +122,7 @@ healthbot {
                  */				
                 term above-high-threshold {
                     when {
-                        greater-than "$rpm-percent" 80;
+                        greater-than "$rpm-percent" "$high-threshold";
                     }
                     then {
                         status {
@@ -118,7 +137,7 @@ healthbot {
                  */				
                 term above-low-threshold {
                     when {
-                        greater-than "$rpm-percent" 50;
+                        greater-than "$rpm-percent" "$low-threshold";
                     }
                     then {
                         status {
@@ -140,6 +159,16 @@ healthbot {
                     }
                 }
             }
+            variable high-threshold {
+                value 80;
+                description "RPM high threshold";
+                type int;
+            }
+            variable low-threshold {
+                value 50;
+                description "RPM low threshold";
+                type int;
+            }			
             rule-properties {
                 version 1;
                 contributor juniper;
