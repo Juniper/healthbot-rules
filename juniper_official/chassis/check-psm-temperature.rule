@@ -3,17 +3,17 @@
  * 
  * Three inputs control detection
  *
- *   1) "psm-high-threshold" is the threshold that causes the
+ *   1) "psm-temperature-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55.
  * 
- *   2) "psm-low-threshold" is the threshold that causes the
+ *   2) "psm-temperature-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45.
  *
  *   3) "psm" is the power module,it can be psm0 or psm1.
  *      
  */
 healthbot {
-    topic chassis {
+    topic hardware.chassis {
         rule check-psm-temperature {
             /*
              * Monitors PSM power temperature and notifies via dashboard,green when  
@@ -32,7 +32,7 @@ healthbot {
                 iAgent {
                     file psm-table.yml;
                     table PSMTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             /*
@@ -46,16 +46,16 @@ healthbot {
                 type string;
                 description "Power supply module";
             }
-            field psm-high-threshold {
+            field psm-temperature-high-threshold {
                 constant {
-                    value "{{psm-high-threshold}}";
+                    value "{{psm-temperature-high-threshold}}";
                 }
                 type integer;
                 description "PSM high threshold";
             }
-            field psm-low-threshold {
+            field psm-temperature-low-threshold {
                 constant {
-                    value "{{psm-low-threshold}}";
+                    value "{{psm-temperature-low-threshold}}";
                 }
                 type integer;
                 description "PSM low threshold";
@@ -78,7 +78,7 @@ healthbot {
                  */				
                 term normal-temperature {
                     when {
-                        less-than "$temperature" "$psm-low-threshold";
+                        less-than "$temperature" "$psm-temperature-low-threshold";
                     }
                     then {
                         status {
@@ -93,7 +93,7 @@ healthbot {
                  */				
                 term temperature-exceeds-low-threshold {
                     when {
-                        greater-than-or-equal-to "$temperature" "$psm-low-threshold";
+                        greater-than-or-equal-to "$temperature" "$psm-temperature-low-threshold";
                     }
                     then {
                         status {
@@ -108,7 +108,7 @@ healthbot {
                  */				
                 term temperature-exceeds-high-threshold {
                     when {
-                        greater-than-or-equal-to "$temperature" "$psm-high-threshold";
+                        greater-than-or-equal-to "$temperature" "$psm-temperature-high-threshold";
                     }
                     then {
                         status {
@@ -122,17 +122,12 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */			
-            variable psm {
-                value "^PSM[0-1]$";
-                description "Enter PSM to be monitored";
-                type string;
-            }
-            variable psm-high-threshold {
+            variable psm-temperature-high-threshold {
                 value 55;
                 description "PSM high threshold temperature";
                 type int;
             }
-            variable psm-low-threshold {
+            variable psm-temperature-low-threshold {
                 value 45;
                 description "PSM low threshold temperature";
                 type int;
