@@ -164,9 +164,8 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to yellow and notify anomaly when RE CPU
+                 * Sets color to read and notify anomaly when RE CPU
                  * temperature ($routing-engine-cpu-temperature) is below lower threshold or higher than the upper threshold
-                 * ($high-threshold).
                  */  
                 term temperature-abnormal {
                     when {
@@ -174,8 +173,23 @@ healthbot {
                     }
                     then {
                         status {
-                            color yellow;
+                            color red;
                             message "$routing-engine CPU temperature($routing-engine-cpu-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-cpu-temperature-anomaly-lower and $routing-engine-cpu-temperature-anomaly-upper)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to read and notify anomaly when RE CPU
+                 * temperature ($routing-engine-cpu-temperature) is below lower threshold or higher than the upper threshold
+                 */
+                term temperature-unknown {
+                    when {
+                        less-than "$routing-engine-cpu-temperature-anomaly" 0;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Received status code: $routing-engine-cpu-temperature-anomaly";
                         }
                     }
                 }
