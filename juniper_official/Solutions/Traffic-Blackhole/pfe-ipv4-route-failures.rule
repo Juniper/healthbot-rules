@@ -1,0 +1,63 @@
+/*
+ * Rule to get pfe IPv4 route failures in evo-aftman
+ * Upstream application will use these stats to find anomaly
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-ipv4-route-failure {
+            keys [ fpc-name ipv4-name ];
+            synopsis "PFE route failures in evo-aftman";
+            description "Rule to fetch PFE IPv4 route failures in evo-aftman";
+            sensor ipv4-route-failures {
+		synopsis "Definition to get PFE route failures in evo-aftman";
+                description "Netconf igent command show route management statistics to collect telemetry data from network device";
+                iAgent {
+                    file pfe-route-failures.yml;
+                    table RouteFailureStatsTable;
+                    frequency 180s;
+                }
+            }
+            field ipv4-name {
+                sensor ipv4-route-failures {
+                    path ipv4-name;
+                }
+                type string;
+                description "IPv4 operation name";
+            }
+            field ipv4-fail {
+                sensor ipv4-route-failures {
+                    path ipv4-fail;
+                }
+                type integer;
+                description "IPv4 fail operation count";
+            }
+            field fpc-name {
+                sensor ipv4-route-failures {
+                    path target;
+                }
+                type string;
+                description "FPC number";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms PTX10008 {
+                                    sensors ipv4-route-failures;
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
