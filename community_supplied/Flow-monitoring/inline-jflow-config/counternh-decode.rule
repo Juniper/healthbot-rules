@@ -1,0 +1,122 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.config {
+replace:
+        rule counternh-decode {
+            keys [ counterNH instance target ];
+            description "Verify if the counter NH is correctly configured for jflow for the respective protocol family";
+            sensor CounterNHDecode {
+                iAgent {
+                    file jflow_counternh_decode.yml;
+                    table decodeCounterNH;
+                    frequency 60s;
+                }
+            }
+            field caddr {
+                sensor CounterNHDecode {
+                    path caddr;
+                }
+                type string;
+            }
+            field counterNH {
+                sensor CounterNHDecode {
+                    path NH;
+                }
+                type string;
+            }
+            field instance {
+                sensor CounterNHDecode {
+                    path instance;
+                }
+                type string;
+            }
+            field nxt_hop {
+                sensor CounterNHDecode {
+                    path nxt_hop;
+                    data-if-missing {
+                        value NULL;
+                    }
+                }
+                type string;
+            }
+            field proto {
+                sensor CounterNHDecode {
+                    path proto;
+                }
+                type string;
+            }
+            field protocol_sib {
+                reference {
+                    path "/topic[topic-name=jflow.config]/rule[rule-name=sib]/field[proto='$protocol']/proto";
+                }
+                type string;
+            }
+            field target {
+                sensor CounterNHDecode {
+                    path target;
+                }
+                type string;
+            }
+            trigger invalid-counterNH {
+                frequency 60s;
+                term invalid {
+                    when {
+                        matches-with "$invalid" Unknown;
+                        exists "$counterNH";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target:$proto): Invalid Counter NH for Protocol $proto";
+                        }
+                    }
+                }
+            }
+            trigger valid-counterNH {
+                frequency 60s;
+                term ipv4 {
+                    when {
+                        matches-with "$proto" 0;
+                        exists "$caddr";
+                        exists "$counterNH";
+                        exists "$nxt_hop";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv4): SIB table Counter NH is valid for IPv4.";
+                        }
+                    }
+                }
+                term ipv6 {
+                    when {
+                        matches-with "$proto" 1;
+                        exists "$caddr";
+                        exists "$counterNH";
+                        exists "$nxt_hop";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:IPv6): SIB table Counter NH is valid for IPv6.";
+                        }
+                    }
+                }
+                term mpls {
+                    when {
+                        matches-with "$proto" 3;
+                        exists "$caddr";
+                        exists "$counterNH";
+                        exists "$nxt_hop";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target:MPLS): SIB table Counter NH is valid for MPLS.";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

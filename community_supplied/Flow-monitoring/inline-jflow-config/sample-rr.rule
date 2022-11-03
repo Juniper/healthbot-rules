@@ -1,0 +1,426 @@
+## Last changed: 2021-02-15 04:42:59 UTC
+healthbot {
+    topic jflow.stats {
+replace:
+        rule sample-rr {
+            keys target;
+            sensor sample-rr {
+                iAgent {
+                    file jflow_sample_rr.yml;
+                    table sampleRR;
+                    frequency 60s;
+                }
+            }
+            field target {
+                sensor sample-rr {
+                    path target;
+                }
+                type string;
+            }
+            trigger as_add_failure {
+                frequency 60s;
+                term as_add_failure {
+                    when {
+                        greater-than "$as_add_failure" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): as_add_failure : $as_add_failure.";
+                        }
+                    }
+                }
+            }
+            trigger as_del_err {
+                frequency 60s;
+                term as_del_err {
+                    when {
+                        greater-than "$as_del_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): as_del_err: $as_del_err";
+                        }
+                    }
+                }
+            }
+            trigger as_limit_exceed {
+                frequency 60s;
+                term as_limit_exceed {
+                    when {
+                        greater-than "$as_limit_exceed" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): as_limit_exceed: $as_limit_exceed";
+                        }
+                    }
+                }
+            }
+            trigger as_not_found {
+                frequency 60s;
+                term as_not_found {
+                    when {
+                        greater-than "$as_not_found" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): as_not_found: $as_not_found";
+                        }
+                    }
+                }
+            }
+            trigger as_reserved_idx {
+                frequency 60s;
+                term as_reserved_idx {
+                    when {
+                        greater-than "$as_reserved_idx" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): as_reserved_idx: $as_reserved_idx";
+                        }
+                    }
+                }
+            }
+            trigger eg_add_failure {
+                frequency 60s;
+                term eg_add_failure {
+                    when {
+                        greater-than "$eg_add_failure" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): eg_add_failure: $eg_add_failure";
+                        }
+                    }
+                }
+            }
+            trigger eg_info_tbkl_err {
+                frequency 60s;
+                term eg_info_tbkl_err {
+                    when {
+                        greater-than "$eg_info_tbkl_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): eg_info_tbkl_err: $eg_info_tbkl_err";
+                        }
+                    }
+                }
+            }
+            trigger ifl_tbl_err {
+                frequency 60s;
+                term error {
+                    when {
+                        greater-than "$ifl_tbl_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "IFL table error: $ifl_tbl_err";
+                        }
+                    }
+                }
+            }
+            trigger nh_add_fail {
+                frequency 60s;
+                term nh_add_fail {
+                    when {
+                        greater-than "$nh_add_fail" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): nh_add_fail:$nh_add_fail";
+                        }
+                    }
+                }
+            }
+            trigger nh_del_fail {
+                frequency 60s;
+                term nh_del_fail {
+                    when {
+                        greater-than "$nh_del_fail" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): nh_del_fail: $nh_del_fail";
+                        }
+                    }
+                }
+            }
+            trigger nh_limit_exceed {
+                frequency 60s;
+                term nh_limit_exceed {
+                    when {
+                        greater-than "$nh_limit_exceed" 0 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): nh_limit_exceed: $nh_limit_exceed";
+                        }
+                    }
+                }
+            }
+            trigger nh_lkp_fail_mpls {
+                frequency 60s;
+                term nh_lkp_fail_mpls {
+                    when {
+                        greater-than "$nh_lkp_fail_mpls" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): nh_lkp_fail_mpls: $nh_lkp_fail_mpls";
+                        }
+                    }
+                }
+            }
+            trigger nh_lkp_fail_v4 {
+                frequency 60s;
+                term nh_lkp_fail_v4 {
+                    when {
+                        greater-than "$nh_lkp_fail_v4" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): nh_lkp_fail_v4: $nh_lkp_fail_v4";
+                        }
+                    }
+                }
+            }
+            trigger nh_lkp_fail_v6 {
+                frequency 60s;
+                term nh_lkp_fail_v6 {
+                    when {
+                        greater-than "$nh_lkp_fail_v6" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($target): nh_lkp_fail_v6: $nh_lkp_fail_v6";
+                        }
+                    }
+                }
+            }
+            trigger nh_reserved {
+                frequency 60s;
+                term nh_reserved {
+                    when {
+                        greater-than "$nh_reserved" 0 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): nh_reserved: $nh_reserved";
+                        }
+                    }
+                }
+            }
+            trigger route_entry_lkp_fail_mpls {
+                frequency 60s;
+                term route_entry_lkp_fail_mpls {
+                    when {
+                        greater-than "$route_entry_lkp_fail_mpls" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_entry_lkp_fail_mpls: $route_entry_lkp_fail_mpls";
+                        }
+                    }
+                }
+            }
+            trigger route_entry_lkp_fail_v4 {
+                frequency 60s;
+                term route_entry_lkp_fail_v4 {
+                    when {
+                        greater-than "$route_entry_lkp_fail_v4" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_entry_lkp_fail_v4: $route_entry_lkp_fail_v4";
+                        }
+                    }
+                }
+            }
+            trigger route_entry_lkp_fail_v6 {
+                frequency 60s;
+                term route_entry_lkp_fail_v6 {
+                    when {
+                        greater-than "$route_entry_lkp_fail_v6" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_entry_lkp_fail_v6: $route_entry_lkp_fail_v6";
+                        }
+                    }
+                }
+            }
+            trigger route_prefix_len_fail_v4 {
+                frequency 60s;
+                term route_prefix_len_fail_v4 {
+                    when {
+                        greater-than "$route_prefix_len_fail_v4" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_prefix_len_fail_v4: $route_prefix_len_fail_v4";
+                        }
+                    }
+                }
+            }
+            trigger route_prefix_len_fail_v6 {
+                frequency 60s;
+                term route_prefix_len_fail_v6 {
+                    when {
+                        greater-than "$route_prefix_len_fail_v6" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_prefix_len_fail_v6: $route_prefix_len_fail_v6";
+                        }
+                    }
+                }
+            }
+            trigger route_rec_chip_add_err_v4 {
+                frequency 60s;
+                term route_rec_chip_add_err_v4 {
+                    when {
+                        greater-than "$route_rec_chip_add_err_v4" 0 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_rec_chip_add_err_v4: $route_rec_chip_add_err_v4";
+                        }
+                    }
+                }
+            }
+            trigger route_rec_chip_add_err_v6 {
+                frequency 60s;
+                term route_rec_chip_add_err_v6 {
+                    when {
+                        greater-than "$route_rec_chip_add_err_v6" 0 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_rec_chip_add_err_v6: $route_rec_chip_add_err_v6";
+                        }
+                    }
+                }
+            }
+            trigger route_rec_chip_del_err_v4 {
+                frequency 60s;
+                term route_rec_chip_del_err_v4 {
+                    when {
+                        greater-than "$route_rec_chip_del_err_v4" 0 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_rec_chip_del_err_v4: $route_rec_chip_del_err_v4";
+                        }
+                    }
+                }
+            }
+            trigger route_rec_chip_del_err_v6 {
+                frequency 60s;
+                term route_rec_chip_del_err_v6 {
+                    when {
+                        greater-than "$route_rec_chip_del_err_v6" 0 {
+                            all;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): route_rec_chip_del_err_v6: $route_rec_chip_del_err_v6";
+                        }
+                    }
+                }
+            }
+            trigger v6_egress_update_fail {
+                frequency 60s;
+                term v6_egress_update_fail {
+                    when {
+                        greater-than "$v6_egress_update_fail" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): v6_egress_update_fail: $v6_egress_update_fail";
+                        }
+                    }
+                }
+            }
+            trigger vrf_limit_exceed_v4 {
+                frequency 60s;
+                term vrf_limit_exceed_v4 {
+                    when {
+                        greater-than "$vrf_limit_exceed_v4" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): vrf limit for v4 excedded: $vrf_limit_exceed_v4";
+                        }
+                    }
+                }
+            }
+            trigger vrf_limit_exceed_v6 {
+                frequency 60s;
+                term vrf_limit_exceed_v6 {
+                    when {
+                        greater-than "$vrf_limit_exceed_v6" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): vrf_limit_exceed_v6: $vrf_limit_exceed_v6";
+                        }
+                    }
+                }
+            }
+            trigger vrf_tbl_err {
+                frequency 60s;
+                term vrf_tbl_err {
+                    when {
+                        greater-than "$vrf_tbl_err" 0;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($target): vrf_tbl_error: $vrf_tbl_err";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
