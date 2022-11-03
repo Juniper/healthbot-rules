@@ -97,6 +97,15 @@ healthbot {
                 }
                 type integer;
             }
+            field fpc-cpu-utilization-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$fpc-cpu-utilization";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on fpc-cpu-utilization field";
+            }
             field fpc-memory-buffer {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
@@ -105,6 +114,15 @@ healthbot {
                 }
                 type integer;
                 description "FPC buffer memory utilization";
+            }
+            field fpc-memory-buffer-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$fpc-memory-buffer";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on fpc-memory-buffer field";
             }
             field fpc-memory-heap {
                 sensor components-oc {
@@ -160,6 +178,15 @@ healthbot {
                 type float;
                 description "Temperature of the line card.";
             }
+            field temperature-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$temperature";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on temperature field";
+            }
             /*
              * Anomaly detection logic
              */			
@@ -200,9 +227,28 @@ healthbot {
                     }
                 }
                 /*
-                 * Defaults color to green.
+                 * Sets color to yellow when fpc-memory-buffer utilization is below low threshold ($low-threshold)
+                 * and the fpc-memory-buffer value is anomalous.
+                 */ 
+                term is-fpc-memory-buffer-anomalous {
+                    when {
+                        less-than-or-equal-to "$fpc-memory-buffer" "$low-threshold";
+                        equal-to "$fpc-memory-buffer-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc buffer memory utilization($fpc-memory-buffer) is not between the acceptable range of ($fpc-memory-buffer-anomaly-lower and $fpc-memory-buffer-anomaly-upper)";
+                        }
+                    }
+                }
+                /*
+                 * Defaults color to green when its less than low-threshold and fpc-memory-buffer value is not anomalous
                  */				
                 term fpc-buffer-memory-utilization-normal {
+                    when {
+                        equal-to "$fpc-memory-buffer-anomaly" 0;
+                    }	
                     then {
                         status {
                             color green;
@@ -243,10 +289,29 @@ healthbot {
                         }
                     }
                 }
+                *
+                * Sets color to yellow when fpc-cpu-utilization utilization is below low threshold ($low-threshold)
+                * and the fpc-cpu-utilization value is anomalous.
+                */ 
+                term is-fpc-cpu-utilization-anomalous {
+                    when {
+                        less-than-or-equal-to "$fpc-cpu-utilization" "$low-threshold";
+                        equal-to "$fpc-cpu-utilization-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc cpu utilization($fpc-cpu-utilization) is not between the acceptable range of ($fpc-cpu-utilization-anomaly-lower and $fpc-cpu-utilization-anomaly-upper)";
+                        }
+                    }
+                }
                 /*
-                 * Defaults color to green.
+                 * Defaults color to green when fpc-cpu-utilization is below low-threshold and not anomalous
                  */				
                 term fpc-cpu-utilization-normal {
+                    when {
+                        equal-to "$fpc-cpu-utilization-anomaly" 0;
+                    }	
                     then {
                         status {
                             color green;
@@ -345,16 +410,34 @@ healthbot {
                 description "Sets health based on FPC Temperature";			
                 frequency 2offset;
                 /*
-                 * Sets color to green when temperature is less-than-or-equal-to temp-threshold.
-                 */				
+                 * Sets color to green when FPC temperature is below low threshold ($low-threshold)
+                 * and the temperature value is not anomalous.
+                 */ 
                 term is-temperature-normal {
                     when {
                         less-than-or-equal-to "$temperature" "$temp-threshold";
+                        equal-to "$temperature-anomaly" 0;
                     }
                     then {
                         status {
                             color green;
                             message "$fpc temperature($temperature degree celsius) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when FPC temperature is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-temperature-anomalous {
+                    when {
+                        less-than-or-equal-to "$temperature" "$low-threshold";
+                        equal-to "$emperature-anomaly" 1;
+                    }t
+                    then {
+                        status {
+                            color yellow;
+                            message "$fpc temperature($temperature degree C) is not between the acceptable range of ($temperature-anomaly-lower and $temperature-anomaly-upper)";
                         }
                     }
                 }
