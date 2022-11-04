@@ -1,38 +1,38 @@
 /*
- * Rule to get pfe IPv6 route failures in evo-aftman
+ * Rule to get pfe nexthop failures from evo-aftman
  * Upstream application will use these stats to find anomaly
  */
 healthbot {
     topic linecard.blackhole {
-        rule pfe-ipv6-route-failure {
-            keys [ fpc-name ipv6-name ];
-            synopsis "PFE route failures in evo-aftman";
-            description "Rule to fetch PFE IPv6 route failures in evo-aftman";
-            sensor ipv6-route-failures {
-		synopsis "Definition to get PFE route failures in evo-aftman";
-                description "Netconf igent command show route management statistics to collect telemetry data from network device";
+        rule pfe-nh-failures {
+            keys [ fpc-name pfe-nh-type-name ];
+            synopsis "PFE Nexthop failures from evo-aftman";
+            description "Rule to fetch nexthop failures from PFE evo-aftman";
+            sensor nh-failures {
+		synopsis "Definition to get PFE Nexthop failures from evo-aftman";
+                description "Netconf igent command show nh management to collect telemetry data from network device";
                 iAgent {
-                    file pfe-route-failures.yml;
-                    table RouteFailureStatsTable;
+                    file pfe-nh-failures.yml;
+                    table NhFailureStatsTable;
                     frequency 180s;
                 }
             }
-            field ipv6-name {
-                sensor ipv6-route-failures {
-                    path ipv6-name;
+            field pfe-nh-type-name {
+                sensor nh-failures {
+                    path pfe-nh-type-name;
                 }
                 type string;
-                description "IPv6 opearation name";
+                description "Nexthop name";
             }
-            field ipv6-fail {
-                sensor ipv6-route-failures {
-                    path ipv6-fail;
+            field pfe-nh-type-fail {
+                sensor nh-failures {
+                    path pfe-nh-type-fail;
                 }
                 type integer;
-                description "IPv6 fail opearation count";
+                description "Nexthop failure count";
             }
             field fpc-name {
-                sensor ipv6-route-failures {
+                sensor nh-failures {
                     path target;
                 }
                 type string;
@@ -47,8 +47,8 @@ healthbot {
                     juniper {
                         operating-system junos {
                             products PTX {
-                                platforms PTX1008 {
-                                    sensors ipv6-route-failures;
+                                platforms PTX10008 {
+                                    sensors nh-failures;
                                     releases 22.2R1 {
                                         release-support min-supported-release;
                                     }
