@@ -1,42 +1,42 @@
 /*
- * Rule to get pfe nexthop failures from evo-aftman
+ * Rule to get CDA Server RPC failure stats
  * Upstream application will use these stats to find anomaly
  */
 healthbot {
     topic linecard.blackhole {
-        rule pfe-nh-failures {
-            keys [ fpc-name pfe-nh-type-name ];
-            synopsis "PFE Nexthop failures from evo-aftman";
-            description "Rule to fetch nexthop failures from PFE evo-aftman";
-            sensor nh-failures {
-		synopsis "Definition to get PFE Nexthop failures from evo-aftman";
-                description "Netconf igent command show nh management to collect telemetry data from network device";
+        rule pfe-cda-api-stats {
+            keys [ fpc-name cda-api ];
+            synopsis "Cda Server API Stats";
+            description "Rule to fetch Cda Server API Stats from PFE";
+            sensor cda-api-stats {
                 iAgent {
-                    file pfe-nh-failures.yml;
-                    table NhFailureStatsTable;
+                    file cda-api-stats.yml;
+                    table CdaServerStatsTable;
                     frequency 180s;
                 }
+		synopsis "Definition of Cda Server API Stats";
+                description "Netconf igent command show cda statistics server api to collect telemetry data from network device";
             }
-            field pfe-nh-type-name {
-                sensor nh-failures {
-                    path pfe-nh-type-name;
+            field cda-api {
+                sensor cda-api-stats {
+                    path cda-api;
                 }
                 type string;
-                description "Nexthop name";
+                description "CDA API Name";
             }
-            field pfe-nh-type-fail {
-                sensor nh-failures {
-                    path pfe-nh-type-fail;
+            field fail {
+                sensor cda-api-stats {
+                    path fail;
                 }
                 type integer;
-                description "Nexthop failure count";
+                description "CDA API failure count";
             }
             field fpc-name {
-                sensor nh-failures {
+                sensor cda-api-stats {
                     path target;
                 }
                 type string;
-                description "FPC number";
+                description "FPC Number";
             }
             rule-properties {
                 version 1;
@@ -47,8 +47,8 @@ healthbot {
                     juniper {
                         operating-system junos {
                             products PTX {
-                                platforms PTX1008 {
-                                    sensors nh-failures;
+                                platforms PTX10008 {
+                                    sensors cda-api-stats;
                                     releases 22.2R1 {
                                         release-support min-supported-release;
                                     }

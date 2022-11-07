@@ -1,38 +1,38 @@
 /*
- * Rule to get pfe nexthop failures from BQ layer
+ * Rule to get pfe IPv4 route failures in evo-aftman
  * Upstream application will use these stats to find anomaly
  */
 healthbot {
     topic linecard.blackhole {
-        rule pfe-bq-nh-failures {
-            keys [ fpc-name bq-nh-type-name ];
-            synopsis "PFE Nexthop failures from BQ layer";
-            description "Rule to fetch BQ nexthop failures from PFE";
-            sensor bq-nh-failures {
-		synopsis "Definition of PFE Nexthop failures from BQ layer sensor";
-                description "Netconf igent command show nh management to collect telemetry data from network device";
+        rule pfe-ipv4-route-failure {
+            keys [ fpc-name ipv4-name ];
+            synopsis "PFE route failures in evo-aftman";
+            description "Rule to fetch PFE IPv4 route failures in evo-aftman";
+            sensor ipv4-route-failures {
+		synopsis "Definition to get PFE route failures in evo-aftman";
+                description "Netconf igent command show route management statistics to collect telemetry data from network device";
                 iAgent {
-                    file pfe-nh-failures.yml;
-                    table NhFailureStatsTable;
+                    file pfe-route-failures.yml;
+                    table RouteFailureStatsTable;
                     frequency 180s;
                 }
             }
-            field bq-nh-type-name {
-                sensor bq-nh-failures {
-                    path bq-nh-type-name;
+            field ipv4-name {
+                sensor ipv4-route-failures {
+                    path ipv4-name;
                 }
                 type string;
-                description "Nexthop name";
+                description "IPv4 operation name";
             }
-            field bq-nh-type-fail {
-                sensor bq-nh-failures {
-                    path bq-nh-type-fail;
+            field ipv4-fail {
+                sensor ipv4-route-failures {
+                    path ipv4-fail;
                 }
                 type integer;
-                description "Nexthop failure count";
+                description "IPv4 fail operation count";
             }
             field fpc-name {
-                sensor bq-nh-failures {
+                sensor ipv4-route-failures {
                     path target;
                 }
                 type string;
@@ -47,8 +47,8 @@ healthbot {
                     juniper {
                         operating-system junos {
                             products PTX {
-                                platforms PTX1008 {
-                                    sensors bq-nh-failures;
+                                platforms PTX10008 {
+                                    sensors ipv4-route-failures;
                                     releases 22.2R1 {
                                         release-support min-supported-release;
                                     }
