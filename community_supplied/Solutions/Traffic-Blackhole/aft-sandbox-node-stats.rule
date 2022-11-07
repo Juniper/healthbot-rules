@@ -1,15 +1,15 @@
 /*
- * Rule to get all the entry error stats from aft sandbox
- * Upstream application will use these stats to find anomaly
+ * Rule to get all the node error stats from aft sandbox
+ * Upstream application will use these stats to find anomaly.
  */
 healthbot {
     topic linecard.blackhole {
-        rule aft-sandbox-entry-stats {
-            keys [ fpc-name aft-entry ];
-            synopsis "Aft sandbox entry error stats";
-            description "Rule to fetch aft server sandbox entry error stats";
-            sensor aft-sb-entry-stats {
-                synopsis "Aft sandbox stats entry definition";
+        rule aft-sandbox-node-stats {
+            keys [ fpc-name aft-node ];
+            synopsis "Aft sandbox node error stats";
+            description "Rule to fetch aft server sandbox node error stats";
+            sensor aft-sb-node-stats {
+                synopsis "Aft sandbox node stats definition";
                 description "Netconf igent command show sandbox stats to collect telemetry data from network device";
                 iAgent {
                     file aft-sandbox-stats.yml;
@@ -17,36 +17,36 @@ healthbot {
                     frequency 180s;
                 }
             }
-            field aft-entry {
-                sensor aft-sb-entry-stats {
-                    path aft-entry;
+            field aft-node {
+                sensor aft-sb-node-stats {
+                    path aft-node;
                 }
                 type string;
-                description "Aft entry name";
+                description "Aft node name";
             }
-            field entry-add-fail {
-                sensor aft-sb-entry-stats {
-                    path entry-add-fail;
+            field node-bind-fail {
+                sensor aft-sb-node-stats {
+                    path node-bind-fail;
                 }
                 type integer;
-                description "Entry add failure count";
+                description "Node add failure count";
             }
-            field entry-create-fail {
-                sensor aft-sb-entry-stats {
-                    path entry-create-fail;
+            field node-create-fail {
+                sensor aft-sb-node-stats {
+                    path node-create-fail;
                 }
                 type integer;
-                description "Entry create failure count";
+                description "Node create failure count";
             }
-            field entry-out-of-order {
-                sensor aft-sb-entry-stats {
-                    path entry-out-of-order;
+            field node-out-of-order {
+                sensor aft-sb-node-stats {
+                    path node-out-of-order;
                 }
                 type integer;
-                description "Entry out of order count";
+                description "Node out of order count";
             }
             field fpc-name {
-                sensor aft-sb-entry-stats {
+                sensor aft-sb-node-stats {
                     path target;
                 }
                 type string;
@@ -61,8 +61,8 @@ healthbot {
                     juniper {
                         operating-system junos {
                             products PTX {
-                                platforms PTX1008 {
-                                    sensors aft-sb-entry-stats;
+			        sensors aft-sb-node-stats;
+                                platforms PTX10008 {
                                     releases 22.2R1 {
                                         release-support min-supported-release;
                                     }
