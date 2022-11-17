@@ -1,0 +1,286 @@
+/*
+ * Rule to get all the pipe stats(ASIC drops) stats
+ * Upstream application will use these stats to find anomaly
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-pipe-stats {
+            keys fpc-name;
+            synopsis "PFE ASIC drops";
+            description "PFE ASIC drops from interface, fabric, lookup, host and Queuing blocks";
+            sensor pipestats {
+		synopsis "PFE ASIC drops definition";
+		description "GNMI based telemetry which collects ASIC drops from interface, fabric, lookup, host and Queuing blocks";
+                open-config {
+                    sensor-name /components/component/integrated-circuit/pipeline-counters;
+                    frequency 180s;
+                }
+            }
+            field fabric-block-fabric-aggregate {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/fabric-aggregate;
+                }
+                type unsigned-integer;
+                description "Fabric aggregate drops";
+            }
+            field fabric-block-in-high-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/in-high-priority;
+                }
+                type unsigned-integer;
+                description "Fabric input high priority drops";
+            }
+            field fabric-block-in-low-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/in-low-priority;
+                }
+                type unsigned-integer;
+                description "Fabric input low priority drops";
+            }
+            field fabric-block-lost-packets {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/lost-packets;
+                }
+                type unsigned-integer;
+                description "Fabric lost packets count";
+            }
+            field fabric-block-out-high-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/out-high-priority;
+                }
+                type unsigned-integer;
+                description "Fabric output high priority drops";
+            }
+            field fabric-block-out-low-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/out-low-priority;
+                }
+                type unsigned-integer;
+                description "Fabric output low priority drops";
+            }
+            field fabric-block-oversubscription {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/fabric-block/state/oversubscription;
+                }
+                type unsigned-integer;
+                description "Fabric oversubscription drops";
+            }
+            field fpc-name {
+                sensor pipestats {
+                    path "/components/component/@name";
+                }
+                type string;
+		description "FPC name";
+            }
+            field host-interface-block-fragment-punt {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/fragment-punt;
+                }
+                type unsigned-integer;
+                description "Exceptioned fragmented packet count";
+            }
+            field host-interface-block-host-aggregate {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/host-aggregate;
+                }
+                type unsigned-integer;
+                description "Host aggregate drops";
+            }
+            field host-interface-block-in-high-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/in-high-priority;
+                }
+                type unsigned-integer;
+                description "Host input high priority drops";
+            }
+            field host-interface-block-in-low-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/in-low-priority;
+                }
+                type unsigned-integer;
+                description "Host input low priority drops";
+            }
+            field host-interface-block-lost-packets {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/lost-packets;
+                }
+                type unsigned-integer;
+                description "Host lost packets";
+            }
+            field host-interface-block-out-high-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/out-high-priority;
+                }
+                type unsigned-integer;
+                description "Host output high priority drops";
+            }
+            field host-interface-block-out-low-priority {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/out-low-priority;
+                }
+                type unsigned-integer;
+                description "Host output low priority drops";
+            }
+            field host-interface-block-oversubscription {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/oversubscription;
+                }
+                type unsigned-integer;
+                description "Host oversubscription drops";
+            }
+            field host-interface-block-rate-limit {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/host-interface-block/state/rate-limit;
+                }
+                type unsigned-integer;
+                description "Host exceptioned rate limited drops";
+            }
+            field interface-block-in-drops {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/interface-block/state/in-drops;
+                }
+                type unsigned-integer;
+                description "Interface input drops";
+            }
+            field interface-block-out-drops {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/interface-block/state/out-drops;
+                }
+                type unsigned-integer;
+                description "Interface output drops";
+            }
+            field interface-block-oversubscription {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/interface-block/state/oversubscription;
+                }
+                type unsigned-integer;
+                description "Interface Oversubscription drops";
+            }
+            field lookup-block-acl-drops {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/acl-drops;
+                }
+                type unsigned-integer;
+                description "Lookup firewall/acl drops";
+            }
+            field lookup-block-forwarding-policy {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/forwarding-policy;
+                }
+                type unsigned-integer;
+                description "Lookup forwarding policy drops";
+            }
+            field lookup-block-fragment-total-drops {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/fragment-total-drops;
+                }
+                type unsigned-integer;
+                description "Lookup fragment packet drops";
+            }
+            field lookup-block-incorrect-rate-limit {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/rate-limit;
+                }
+                description "Lookup incorrect rate limit drops";
+                type unsigned-integer;
+            }
+            field lookup-block-incorrect-software-state {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/incorrect-software-state;
+                }
+                type unsigned-integer;
+                description "Lookup drops due to inconsistent software state";
+            }
+            field lookup-block-invalid-packet {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/invalid-packet;
+                }
+                type unsigned-integer;
+                description "Lookup invalid packet drops";
+            }
+            field lookup-block-lookup-aggregate {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/lookup-aggregate;
+                }
+                type unsigned-integer;
+                description "Lookup aggregate drops";
+            }
+            field lookup-block-no-label {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/no-label;
+                }
+                type unsigned-integer;
+                description "Lookup no mpls label drops";
+            }
+            field lookup-block-no-nexthop {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/no-nexthop;
+                }
+                type unsigned-integer;
+                description "Lookup no nexthop drops";
+            }
+            field lookup-block-no-route {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/no-route;
+                }
+                type unsigned-integer;
+                description "Lookup no route drops";
+            }
+            field lookup-block-oversubscription {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/lookup-block/state/oversubscription;
+                }
+                type unsigned-integer;
+                description "Lookup oversubscription drops";
+            }
+            field queueing-block-incorrect-state {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/queueing-block/state/incorrect-state;
+                }
+                type unsigned-integer;
+                description "Queueing block incorrect state drops";
+            }
+            field queueing-block-lookup-queue {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/queueing-block/state/lookup-queue;
+                }
+                type unsigned-integer;
+                description "Queueing lookup queue drops";
+            }
+            field queueing-block-memory-limit {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/queueing-block/state/memory-limit;
+                }
+                type unsigned-integer;
+                description "Queueing memory limit drops";
+            }
+            field queueing-block-oversubscription {
+                sensor pipestats {
+                    path /components/component/integrated-circuit/pipeline-counters/drop/queueing-block/state/oversubscription;
+                }
+                type unsigned-integer;
+                description "Queueing oversubscription drops";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+			    sensors pfe-pipe-stats;
+                            products PTX {
+                                platforms PTX10008 {
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

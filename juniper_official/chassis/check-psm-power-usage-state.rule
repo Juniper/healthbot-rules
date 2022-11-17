@@ -1,5 +1,5 @@
 /*
- * Monitors PSM power usage,temperature,state and notifies when anomalies are found
+ * Monitors PSM power usage,state and notifies when anomalies are found
  * 
  * Two inputs control detection
  *
@@ -11,9 +11,9 @@
  */
 healthbot {
     topic hardware.chassis {
-        rule check-psm-power-usage-state-temp {
+        rule check-psm-power-usage-state {
             /*
-             * Monitors PSM power usage,temperature,state and notifies via dashboard, red color 
+             * Monitors PSM power usage,state and notifies via dashboard, red color 
              * when threshold is exceeded else green.
 			 *
              * Use PSM as key for rule.
@@ -82,14 +82,6 @@ healthbot {
                 }
                 type string;
                 description "State of power supply module";
-            }
-            field psm-temperature {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'Temperature'";
-                    path /components/component/properties/property/state/value;
-                }
-                type string;
-                description "Temperature of power supply module";
             }
             /*
              * Anomaly detection logic.
@@ -166,23 +158,6 @@ healthbot {
                         status {
                             color red;
                             message "$psm is $psm-state";
-                        }
-                    }
-                }
-            }
-            trigger psm-temperature {
-                synopsis "PSM Temperature KPI";
-                description "Sets health based on PSM Temperature";			
-                frequency 1offset;
-                /*
-                 * Sets color to green and gives information about psm temperature.
-                 * 
-                 */				
-                term Term_1 {
-                    then {
-                        status {
-                            color green;
-                            message "$psm temperature is $psm-temperature";
                         }
                     }
                 }

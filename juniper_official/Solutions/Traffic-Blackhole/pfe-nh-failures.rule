@@ -1,0 +1,63 @@
+/*
+ * Rule to get pfe nexthop failures from evo-aftman
+ * Upstream application will use these stats to find anomaly
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-nh-failures {
+            keys [ fpc-name pfe-nh-type-name ];
+            synopsis "PFE Nexthop failures from evo-aftman";
+            description "Rule to fetch nexthop failures from PFE evo-aftman";
+            sensor nh-failures {
+		synopsis "Definition to get PFE Nexthop failures from evo-aftman";
+                description "Netconf igent command show nh management to collect telemetry data from network device";
+                iAgent {
+                    file pfe-nh-failures.yml;
+                    table NhFailureStatsTable;
+                    frequency 180s;
+                }
+            }
+            field pfe-nh-type-name {
+                sensor nh-failures {
+                    path pfe-nh-type-name;
+                }
+                type string;
+                description "Nexthop name";
+            }
+            field pfe-nh-type-fail {
+                sensor nh-failures {
+                    path pfe-nh-type-fail;
+                }
+                type integer;
+                description "Nexthop failure count";
+            }
+            field fpc-name {
+                sensor nh-failures {
+                    path target;
+                }
+                type string;
+                description "FPC number";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms PTX10008 {
+                                    sensors nh-failures;
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
