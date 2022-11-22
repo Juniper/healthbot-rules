@@ -9,12 +9,12 @@
  *      routing engine 0.
  *
  *   2) "re-temperature-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 45 degree Cecilius of 
+ *      rule to report an anomaly. By default it's 45 degree Celcius of 
  *      RE temperature. This rule will set a dashboard color to green
  *      when temperature is below low threshold.
  * 
  *   3) "re-temperature-high-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 55 degree Cecilius of RE 
+ *      rule to report an anomaly. By default it's 55 degree Celcius of RE 
  *      temperature. 
  *
  */
@@ -37,10 +37,16 @@ healthbot {
                  synopsis "routing-engine temperature KPI";
                  description "open-config sensor to collect telemetry data from network device";
                  open-config {
-                     sensor-name /components/;
+                     sensor-name /components/component;
                      frequency 60s;
                  }
              }
+             sensor components-oc-others {
+                 open-config {
+                     sensor-name /components/;
+                     frequency 60s;
+                 }
+             }			 
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -50,6 +56,10 @@ healthbot {
                      where "/components/component/properties/property/@name == 'CPU Temperature'";
                      path /components/component/properties/property/state/value;
                  }
+                 sensor components-oc-others {
+                     where "/components/component/properties/property/@name == 'CPU Temperature'";
+                     path /components/component/properties/property/state/value;
+                 }				 
                  type integer;
                  description "CPU temperature";
              }
@@ -58,6 +68,10 @@ healthbot {
                      where "/components/component/properties/property/@name == 'RE temperature'";
                      path /components/component/properties/property/state/value;
                  }
+                 sensor components-oc-others {
+                     where "/components/component/properties/property/@name == 'temperature'";
+                     path /components/component/properties/property/state/value;
+                 }				 
                  type integer;
                  description "RE temperature";
              }
@@ -66,6 +80,10 @@ healthbot {
                      where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
                      path "/components/component/@name";
                  }
+                 sensor components-oc-others {
+                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
+                     path "/components/component/@name";
+                 }				 
                  description "RE name to monitor";
              }
             field high-threshold {
@@ -208,25 +226,40 @@ healthbot {
                  version 1;
                  contributor juniper;
                  category advanced;
-                 supported-healthbot-version 4.2.0;
+                 supported-healthbot-version 4.3.0;
                  supported-devices {
                      juniper {
                          operating-system junosEvolved {
                              products ACX {
-                                 platforms All {
-                                     releases 22.3R1 {
-                                         release-support min-supported-release;
-                                     }
-                                 }
+                                platforms ACX7024 {
+                                    sensors components-oc;
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7509 {
+                                    sensors components-oc-others;
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7908 {
+                                    sensors components-oc-others;
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7100 {
+                                    sensors components-oc-others;
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
                              }
                          }
                      }
                  }
-                 helper-files other {
-                     list-of-files system-sensors.py;
-                 }
             }
         }
-	}	
+	}
 }	
-		
