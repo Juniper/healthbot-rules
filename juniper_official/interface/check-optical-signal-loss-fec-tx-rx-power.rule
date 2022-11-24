@@ -151,6 +151,20 @@ healthbot {
                 description "Sets health based on Uncorrected forward error correction errors";			
                 frequency 1.5offset;
                 /*
+                 * Sets color to green when fec uncorrected count is 0
+                 */				
+                term no-fec-uncorrected-words {
+                    when {
+                        equal-to "$fec-uncorrected" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $interface-name has no FEC uncorrected words";
+                        }
+                    }
+                }				
+                /*
                  * Sets color to red when fec uncorrected is greater than 0.
                  */				
                 term is-fec-uncorrected-words {
@@ -275,16 +289,16 @@ healthbot {
                 description "Sets health based on Interface optical rx high power";			
                 frequency 1.5offset;
                 /*
-                 * Sets color to red when optics rx power is greater-than-or-equal-to rx-high-alarm-threshold.
+                 * Sets color to green when optics rx power is normal.
                  */				
-                term above_alarm_threshold {
+                term normal {
                     when {
-                        greater-than-or-equal-to "$optics-rx-power" "$rx-high-alarm-threshold";
-                    }
+                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is above alarm threshold ($rx-high-alarm-threshold)";
+                            color green;
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
                         }
                     }
                 }
@@ -305,32 +319,35 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to green when optics rx power is normal.
+                 * Sets color to red when optics rx power is greater-than-or-equal-to rx-high-alarm-threshold.
                  */				
-                term normal {
+                term above_alarm_threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx-power" "$rx-high-alarm-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
+                            color red;
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is above alarm threshold ($rx-high-alarm-threshold)";
                         }
                     }
-                }
+                }				
             }
             trigger interface-optical-rx-low-power {
                 synopsis "Interface optical rx low power KPI";
                 description "Sets health based on Interface optical rx low power";			
                 frequency 1.5offset;
                 /*
-                 * Sets color to red when optics rx power is less-than-or-equal-to rx-low-alarm-threshold.
+                 * Sets color to green when optics rx power is normal.
                  */				
-                term below_alarm_threshold {
+                term normal {
                     when {
-                        less-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
-                    }
+                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is below alarm threshold ($rx-low-alarm-threshold)";
+                            color green;
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
                         }
                     }
                 }
@@ -351,32 +368,35 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to green when optics rx power is normal.
+                 * Sets color to red when optics rx power is less-than-or-equal-to rx-low-alarm-threshold.
                  */				
-                term normal {
+                term below_alarm_threshold {
+                    when {
+                        less-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
+                            color red;
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is below alarm threshold ($rx-low-alarm-threshold)";
                         }
                     }
-                }
+                }				
             }
             trigger interface-optical-tx-high-power {
                 synopsis "Interface optical tx high power KPI";
                 description "Sets health based on Interface optical tx high power";			
                 frequency 1.5offset;
                 /*
-                 * Sets color to red when optics tx power is greater-than-or-equal-to tx-high-alarm-threshold.
+                 * Sets color to green when optics tx power is normal
                  */				
-                term above_alarm_threshold {
+                term normal {
                     when {
-                        greater-than-or-equal-to "$optics-tx-power" "$tx-high-alarm-threshold";
-                    }
+                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
+                            color green;
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
                         }
                     }
                 }
@@ -397,32 +417,35 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to green when optics tx power is normal.
+                 * Sets color to red when optics tx power is greater-than-or-equal-to tx-high-alarm-threshold.
                  */				
-                term normal {
+                term above_alarm_threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-tx-power" "$tx-high-alarm-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
+                            color red;
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
                         }
                     }
-                }
+                }				
             }
             trigger interface-optical-tx-low-power {
                 synopsis "Interface optical tx low power KPI";
                 description "Sets health based on Interface optical tx low power";			
                 frequency 1.5offset;
                 /*
-                 * Sets color to red when optics tx power is less-than-or-equal-to tx-low-alarm-threshold.
+                 * Sets color to green when optics tx power is normal.
                  */				
-                term below_alarm_threshold {
+                term normal {
                     when {
-                        less-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
-                    }
+                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is below alarm threshold ($tx-low-alarm-threshold)";
+                            color green;
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
                         }
                     }
                 }
@@ -443,16 +466,19 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to green when optics tx power is normal.
+                 * Sets color to red when optics tx power is less-than-or-equal-to tx-low-alarm-threshold.
                  */				
-                term normal {
+                term below_alarm_threshold {
+                    when {
+                        less-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
+                            color red;
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is below alarm threshold ($tx-low-alarm-threshold)";
                         }
                     }
-                }
+                }				
             }
             variable interface-name {
                 value .*;
