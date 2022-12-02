@@ -1,0 +1,77 @@
+/*
+ * Rule to get pfe reroute events.
+ * Upstream application will use these stats to find anomaly.
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-reroute-events {
+            keys fpc-name;
+            synopsis "PFE Reroute events";
+            description "Rule to fetch PFE Reroute events";
+            sensor reroute-events {
+                iAgent {
+                    file pfe-reroute.yml;
+                    table PfeRerouteStatsTable;
+                    frequency 180s;
+                }
+		synopsis "Definition of PFE reroute events";
+                description "Netconf igent command show pfe statistics reroute to collect telemetry data from network device";
+            }
+            field event {
+                sensor reroute-events {
+                    path event;
+                }
+                type string;
+                description "Event name";
+            }
+            field id {
+                sensor reroute-events {
+                    path id;
+                }
+                type integer;
+                description "Event id";
+            }
+            field status {
+                sensor reroute-events {
+                    path status;
+                }
+                type string;
+                description "Event status(Up/Down)";
+            }
+            field timestamp {
+                sensor reroute-events {
+                    path timestamp;
+                }
+                type string;
+                description "Event timestamp";
+            }
+            field fpc-name {
+                sensor reroute-events {
+                    path target;
+                }
+                type string;
+                description "FPC number";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms PTX10008 {
+                                    sensors reroute-events;
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,63 @@
+/*
+ * Rule to get pfe mpls route failures in evo-aftman
+ * Upstream application will use these stats to find anomaly
+ */
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-mpls-route-failure {
+            keys [ fpc-name mpls-name ];
+            synopsis "PFE mpls route failures in evo-aftman";
+            description "Rule to fetch PFE mpls route failures in evo-aftman";
+            sensor mpls-route-failures {
+		synopsis "Definition to get PFE mpls route failures in evo-aftman";
+                description "Netconf igent command show route management statistics to collect telemetry data from network device";
+                iAgent {
+                    file pfe-route-failures.yml;
+                    table RouteFailureStatsTable;
+                    frequency 180s;
+                }
+            }
+            field mpls-name {
+                sensor mpls-route-failures {
+                    path mpls-name;
+                }
+                type string;
+                description "mpls operation name";
+            }
+            field mpls-fail {
+                sensor mpls-route-failures {
+                    path mpls-fail;
+                }
+                type integer;
+                description "mpls fail operation count";
+            }
+            field fpc-name {
+                sensor mpls-route-failures {
+                    path target;
+                }
+                type string;
+                description "FPC number";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products PTX {
+                                platforms PTX10008 {
+                                    sensors mpls-route-failures;
+                                    releases 22.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
