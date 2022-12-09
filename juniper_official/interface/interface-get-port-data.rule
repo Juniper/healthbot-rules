@@ -1,0 +1,69 @@
+/*
+ * Get the port information like port name, description and the part number
+ */
+healthbot {
+    topic interfaces {
+        rule get-port-data {
+            keys port-name;
+            synopsis "Port Data Collector";
+            description "Collects port information from the device";
+            sensor components {
+                synopsis "system components open-config sensor definition";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
+            field description {
+                sensor components {
+                    path /components/component/state/description;
+                }
+                type string;
+            }
+            field part-number {
+                sensor components {
+                    path /components/component/state/part-no;
+                    data-if-missing {
+                        value UNCONNECTED;
+                    }
+                }
+                type string;
+                description "part number of port";
+            }
+            field port-name {
+                sensor components {
+                    where "/components/component/@name =~ /^FPC\d+:PIC\d+:PORT\d+$/";
+                    path "/components/component/@name";
+                }
+                description "port name";
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
