@@ -107,7 +107,54 @@ healthbot {
                 synopsis "RE temperature KPI";
                 description "Sets health based increase in RE temperature";
                 frequency 1offset;
-                
+                /*
+                 * Sets color to green when RE temperature
+                 * re-temperature is below low threshold ($low-threshold).
+                 */ 
+                term is-re-temperature-normal {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                        less-than-or-equal-to "$routing-engine-cpu-temperature-anomaly" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-re-temperature-anomalous {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                        equal-to "$routing-engine-temperature-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU temperature($routing-engine-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-temperature-anomaly-lower-boundary and $routing-engine-temperature-anomaly-upper-boundary)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and notify anomaly when RE temperature 
+                 * ($routing-engine-temperature) is below high threshold
+                 * ($high-threshold).
+                 */  
+                term is-re-temperature-median {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine temperature($routing-engine-temperature degree C) exceeds low threshold";
+                        }
+                    }
+                }
                 /*
                  * Defaults color to red and notify anomaly.
                  */ 
@@ -119,52 +166,6 @@ healthbot {
                         status {
                             color red;
                             message "$routing-engine temperature($routing-engine-temperature degree C) exceeds high threshold";
-                        }
-                    }
-                }
-
-                /*
-                 * Sets color to yellow and notify anomaly when RE temperature 
-                 * ($routing-engine-temperature) is below high threshold
-                 * ($high-threshold) but above low threshold ($low-threshold).
-                 */  
-                
-                term is-re-temperature-median {
-                    when {
-                        greater-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine temperature($routing-engine-temperature degree C) exceeds low threshold";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
-                 * and the temperature value is anomalous.
-                 */ 
-                term is-re-temperature-anomalous {
-                    when {
-                        equal-to "$routing-engine-temperature-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU temperature($routing-engine-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-temperature-anomaly-lower-boundary and $routing-engine-temperature-anomaly-upper-boundary)";
-                        }
-                    }
-                }
-
-                /*
-                 * Sets color to green when RE temperature re-temperature is below low threshold ($low-threshold)
-                 * and the temperature value is not anomalous.
-                 */ 
-                term is-re-temperature-normal {
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
                         }
                     }
                 }
