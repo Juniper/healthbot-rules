@@ -1,0 +1,98 @@
+healthbot {
+    topic service.dynamic-iflset-queue-statistics {
+        rule collect-meta-data {
+            keys container-id;
+            synopsis "Collects interface set meta-data";
+            description "Collects meta-data on each container ID for information like interface set name, and type";
+            sensor meta-data {
+                synopsis "Interface-set meta-data";
+                description "Interface-set meta-data correlates interface-set indices with interface-set name, etc.";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/dynamic-interfaces/interface-sets/meta-data;
+                    frequency 300s;
+                }
+            }
+            field container-id {
+                sensor meta-data {
+                    path "/junos/system/subscriber-management/dynamic-interfaces/interface-sets/meta-data/interface-set/@container-id";
+                }
+                type string;
+                description "The interface set index or identifier";
+            }
+            field device-name {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/meta-data/interface-set/device-name;
+                }
+                type string;
+                description "The underlying device name for this interface-set";
+            }
+            field interface-set-name {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/meta-data/interface-set/interface-set-name;
+                }
+                type string;
+                description "The name of the interface-set or container";
+            }
+            field interface-set-type {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/meta-data/interface-set/interface-set-type;
+                }
+                type string;
+                description "The enumerated type (svlan, tagged, ifd, etc.) of the interface-set";
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
