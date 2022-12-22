@@ -27,47 +27,47 @@ healthbot {
 			 *
              * Use routing-engine as key for rule.
              */		
-             keys routing-engine;
-             synopsis "Routing engine temperature";
-             description "Collects system RE Temperature statistics periodically and notifies anomalies";
+            keys routing-engine;
+            synopsis "Routing engine temperature";
+            description "Collects system RE Temperature statistics periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
              */			 
-             sensor components-oc {
-                 synopsis "routing-engine temperature KPI";
-                 description "open-config sensor to collect telemetry data from network device";
-                 open-config {
-                     sensor-name /components/;
-                     frequency 60s;
-                 }
-             }
+            sensor components-oc {
+                synopsis "routing-engine temperature KPI";
+                description "open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */				 
-             field routing-engine-cpu-temperature {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'CPU Temperature'";
-                     path /components/component/properties/property/state/value;
-                 }
-                 type integer;
-                 description "CPU temperature";
-             }
-             field routing-engine-temperature {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'RE temperature'";
-                     path /components/component/properties/property/state/value;
-                 }
-                 type integer;
-                 description "RE temperature";
-             }
-             field routing-engine {
-                 sensor components-oc {
-                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
-                     path "/components/component/@name";
-                 }
-                 description "RE name to monitor";
-             }
+            field routing-engine-cpu-temperature {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'CPU Temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "CPU temperature";
+            }
+            field routing-engine-temperature {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'RE temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                type integer;
+                description "RE temperature";
+            }
+            field routing-engine {
+                sensor components-oc {
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
+                    path "/components/component/@name";
+                }
+                description "RE name to monitor";
+            }
             field high-threshold {
                 constant {
                     value "{{re-temperature-high-threshold}}";
@@ -81,6 +81,24 @@ healthbot {
                 }
                 type integer;
                 description "RE temperature low threshold";
+            }
+            field routing-engine-cpu-temperature-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$routing-engine-cpu-temperature";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on routing engine CPU temperature field";
+            }
+            field routing-engine-temperature-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$routing-engine-temperature";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on routing engine temperature field";
             }
             /*
              * Anomaly detection logic.
@@ -96,11 +114,28 @@ healthbot {
                 term is-re-temperature-normal {
                     when {
                         less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                        less-than-or-equal-to "$routing-engine-cpu-temperature-anomaly" 0;
                     }
                     then {
                         status {
                             color green;
                             message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-re-temperature-anomalous {
+                    when {
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                        equal-to "$routing-engine-temperature-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU temperature($routing-engine-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-temperature-anomaly-lower-boundary and $routing-engine-temperature-anomaly-upper-boundary)";
                         }
                     }
                 }
@@ -140,37 +175,6 @@ healthbot {
                 description "Sets health based increase in RE CPU temperature";
                 frequency 1offset;
                 /*
-                 * Sets color to green when RE CPU temperature
-                 * re-cpu-temperature is below low threshold ($low-threshold).
-                 */ 
-                term is-temperature-normal {
-                    when {
-                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow and notify anomaly when RE CPU
-                 * temperature ($routing-engine-cpu-temperature) is below high threshold
-                 * ($high-threshold).
-                 */  
-                term is-temperature-median {
-                    when {
-                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$high-threshold";
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds low threshold";
-                        }
-                    }
-                }
-                /*
                  * Defaults color to red and notify anomaly.
                  */ 
                 term temperature-abnormal {
@@ -181,6 +185,49 @@ healthbot {
                         status {
                             color red;
                             message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow and notify anomaly when RE CPU
+                 * temperature ($routing-engine-cpu-temperature) is below high threshold
+                 * ($high-threshold) but above low threshold ($low-threshold).
+                 */  
+                term is-temperature-median {
+                    when {
+                        greater-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds low threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-re-temperature-anomalous {
+                    when {
+                        equal-to "$routing-engine-cpu-temperature-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-cpu-temperature-anomaly-lower-boundary and $routing-engine-cpu-temperature-anomaly-upper-boundary)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is not anomalous.
+                 */ 
+                term is-re-temperature-normal {
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine temperature($routing-engine-cpu-temperature degree C) is normal";
                         }
                     }
                 }
@@ -204,29 +251,28 @@ healthbot {
                 description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }		
-             rule-properties {
-                 version 1;
-                 contributor juniper;
-                 category advanced;
-                 supported-healthbot-version 4.2.0;
-                 supported-devices {
-                     juniper {
-                         operating-system junosEvolved {
-                             products ACX {
-                                 platforms All {
-                                     releases 22.3R1 {
-                                         release-support min-supported-release;
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                 }
-                 helper-files other {
-                     list-of-files system-sensors.py;
-                 }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files system-sensors.py;
+                }
             }
         }
 	}	
-}	
-		
+}
