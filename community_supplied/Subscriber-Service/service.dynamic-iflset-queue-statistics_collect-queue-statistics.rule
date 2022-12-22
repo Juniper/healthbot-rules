@@ -1,0 +1,125 @@
+healthbot {
+    topic service.dynamic-iflset-queue-statistics {
+        rule collect-queue-statistics {
+            keys [ container-id fpc-no queue-no ];
+            synopsis "Collects queue-statistics per queue per FPC for dynamic interface-sets";
+            description "Collects statistics on transmitted and dropped data per FPC per queue for configured interface set container-id";
+            sensor queue-stats {
+                synopsis "The data sensor for dynamic interface-set queue statistics";
+                description "The data sensor for dynamic interface-set queue statistics";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics;
+                    frequency 300s;
+                }
+            }
+            field container-id {
+                sensor queue-stats {
+                    where "/junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/@container-id == /{{filter-container-id}}/";
+                    path "/junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/@container-id";
+                }
+                type string;
+                description "The interface set index or identifier";
+            }
+            field dropped-bytes {
+                sensor queue-stats {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/fpcs/fpc/queues/queue/dropped-bytes;
+                }
+                type integer;
+                description "The number of octets that were discarded from this queue";
+            }
+            field dropped-packets {
+                sensor queue-stats {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/fpcs/fpc/queues/queue/dropped-packets;
+                }
+                type integer;
+                description "The number of packets that were discarded from this queue";
+            }
+            field fpc-no {
+                sensor queue-stats {
+                    path "/junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/fpcs/fpc/@slot";
+                }
+                type string;
+                description "The positional FPC index or slot number of the FPC contributing queue statistics to this interface-set";
+            }
+            field queue-no {
+                sensor queue-stats {
+                    path "/junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/fpcs/fpc/queues/queue/@queue-no";
+                }
+                type string;
+                description "The queue index (0-7)";
+            }
+            field transmitted-bytes {
+                sensor queue-stats {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/fpcs/fpc/queues/queue/transmitted-bytes;
+                }
+                type integer;
+                description "The number of octets enqueued to this queue";
+            }
+            field transmitted-packets {
+                sensor queue-stats {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interface-sets/queue-statistics/interface-set/fpcs/fpc/queues/queue/transmitted-packets;
+                }
+                type integer;
+                description "The number of packets enqueued to this queue";
+            }
+            variable filter-container-id {
+                value .*;
+                description "The interface set index or identifier";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
