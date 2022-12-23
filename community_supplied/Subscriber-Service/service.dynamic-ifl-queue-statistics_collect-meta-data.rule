@@ -1,0 +1,139 @@
+healthbot {
+    topic service.dynamic-ifl-queue-statistics {
+        rule collect-meta-data {
+            keys session-id;
+            synopsis "Collects interface meta-data";
+            description "Collects meta-data on each session ID for information like interface-name, interface-index..";
+            sensor meta-data {
+                synopsis "Interface-set meta-data";
+                description "Interface-set meta-data correlates interface-set indices with interface-set name, etc.";
+                open-config {
+                    sensor-name /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data;
+                    frequency 300s;
+                }
+            }
+            field cvlan-tag {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/cvlan-tag;
+                }
+                type string;
+                description "The innermost VLAN tag value associated with this interface or interface-set";
+            }
+            field interface-index {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/interface-index;
+                }
+                type string;
+                description "The flow identifier for this interface.";
+            }
+            field interface-name {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/interface-name;
+                }
+                type string;
+                description "The name of the associated interface";
+            }
+            field profile-name {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/profile-name;
+                }
+                type string;
+                description "The name of the client profile used to create this interface";
+            }
+            field session-id {
+                sensor meta-data {
+                    where "/junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/@sid == /{{filter-session-id}}/";
+                    path "/junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/@sid";
+                }
+                type string;
+                description "The session-id of the interface.";
+            }
+            field session-type {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/session-type;
+                }
+                type string;
+                description "The type of client session (e.g VLAN, DHCP, PPPOE, etc.";
+            }
+            field svlan-tag {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/svlan-tag;
+                }
+                type string;
+                description "The outermost VLAN tag value associated with this interface or interface-set";
+            }
+            field underlying-interface-name {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/underlying-interface-name;
+                }
+                type string;
+                description "The name of the associated underlying interface";
+            }
+            field user-name {
+                sensor meta-data {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/meta-data/interface/user-name;
+                }
+                type string;
+                description "The login name for this interface/session.";
+            }
+            variable filter-session-id {
+                value .*;
+                description "session-id to monitor queue-rate";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

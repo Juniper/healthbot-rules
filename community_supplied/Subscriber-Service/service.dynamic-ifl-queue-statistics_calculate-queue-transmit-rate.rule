@@ -1,0 +1,196 @@
+healthbot {
+    topic service.dynamic-ifl-queue-statistics {
+        rule calculate-queue-transmit-rate {
+            keys session-id;
+            synopsis "Calculates and compares interface transmit-rate with respect to their tier limits per given session-id";
+            description "Calculates and compares interface transmit-rate with respect to their tier limits per given session-id";
+            field-aggregation-time-range 280s;
+            sensor queue-stats {
+                open-config {
+                    sensor-name /junos/system/subscriber-management/dynamic-interfaces/interfaces/queue-statistics;
+                    frequency 300s;
+                }
+            }
+            field expected-rate {
+                constant {
+                    value "{{max-queue-transmit-rate-bytes-per-second}}";
+                }
+                type integer;
+                description "The ceiling for the queue transmit rate for session-id";
+            }
+            field rate-utilization {
+                formula {
+                    eval {
+                        expression "( $transmit-rate / $expected-rate ) * 100";
+                    }
+                }
+                type float;
+                description "The percent utilization of the transmit rate for this session-id";
+            }
+            field red-limit {
+                constant {
+                    value "{{critical-utilization}}";
+                }
+                type integer;
+                description "The critical utilization level for interface transmit rate";
+            }
+            field session-id {
+                sensor queue-stats {
+                    where "/junos/system/subscriber-management/dynamic-interfaces/interfaces/queue-statistics/interface/@sid == /{{filter-session-id}}/";
+                    path "/junos/system/subscriber-management/dynamic-interfaces/interfaces/queue-statistics/interface/@sid";
+                }
+                type string;
+                description "The session-id of the interface.";
+            }
+            field total-transmitted-bytes {
+                formula {
+                    sum {
+                        field-name "$transmitted-bytes";
+                        time-range 280s;
+                    }
+                }
+                type integer;
+                description "The sum of transmitted bytes for session-id";
+            }
+            field transmit-rate {
+                formula {
+                    rate-of-change {
+                        field-name "$total-transmitted-bytes";
+                    }
+                }
+                type float;
+                description "The transmit rate for all queues on this interface. ";
+            }
+            field transmitted-bytes {
+                sensor queue-stats {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/queue-statistics/interface/fpcs/fpc/queues/queue/transmitted-bytes;
+                }
+                type integer;
+                description "The number of octets enqueued to this queue";
+            }
+            field transmitted-packets {
+                sensor queue-stats {
+                    path /junos/system/subscriber-management/dynamic-interfaces/interfaces/queue-statistics/interface/fpcs/fpc/queues/queue/transmitted-packets;
+                }
+                type integer;
+                description "The number of packets enqueued to this queue";
+            }
+            field yellow-limit {
+                constant {
+                    value "{{warning-utilization}}";
+                }
+                type integer;
+                description "The cautionary utilization level for interface transmit rate";
+            }
+            trigger queue-transmit-rate-utilization {
+                frequency 1offset;
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$rate-utilization" "$red-limit";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Rate utilization is above $red-limit % ! rate utilization: $rate-utilization, rate: $transmit-rate";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than-or-equal-to "$rate-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Rate utilization is above $yellow-limit % but below $red-limit %. rate utilization: $rate-utilization, rate: $transmit-rate ";
+                        }
+                    }
+                }
+                term is-nominal {
+                    when {
+                        less-than "$rate-utilization" "$yellow-limit";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Rate-utilization is below $yellow-limit %. rate utilization: $rate-utilization, rate: $transmit-rate";
+                        }
+                    }
+                }
+            }
+            variable critical-utilization {
+                value 80;
+                description "The operator supplied critical utilization threshold";
+                type int;
+            }
+            variable filter-session-id {
+                value .*;
+                description "session-id to monitor queue-rate";
+                type string;
+            }
+            variable max-queue-transmit-rate-bytes-per-second {
+                value 1024;
+                description "The operator supplied ceiling for an interface transmit rate in bytes/second. Default value 1024 bytes";
+                type int;
+            }
+            variable warning-utilization {
+                value 50;
+                description "The operator supplied warning utilization threshold";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
