@@ -1,0 +1,185 @@
+/*
+ * Monitors NTP synchronization status and notifies when anomalies are found.
+ * 
+ * One input control detection :
+ *
+ *   1) status-info,shows NTP synchronization information.
+ *      Can be sync_ntp,sync_alarm or sync_unspec.
+ *
+ */
+healthbot {
+    topic hardware.system {
+        rule check-ntp-synchronization-status {
+            /*
+             * Monitors NTP Synchronization. 
+             */
+            synopsis "NTP Sync KPI";
+            description "Monitors NTP Status";
+            sensor ntp-status {
+                iAgent {
+                    file ntpStatusTable.yml;
+                    table ntpStatusTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field clock-jitter {
+                sensor ntp-status {
+                    path clk-jitter;
+                }                       
+                type float;
+                description "Indicates the magnitude of jitter, in milliseconds, between several time queries.";
+            }
+            field offset {
+                sensor ntp-status {
+                    path offset;
+                }
+                type float;
+                description "Current estimated offset of the peer, in milliseconds. Indicates the time difference between the reference clock and the local clock.";
+            }
+            field peer {
+                sensor ntp-status {
+                    path peer;
+                }
+                type integer;
+                description "An identification number of the peer in use";
+            }
+            field precision {
+                sensor ntp-status {
+                    path precision;
+                }
+                type string;
+                description "The precision of the peer clock, how precisely the frequency and time can be maintained with this particular timekeeping system.";
+            }
+            field reference-id {
+                sensor ntp-status {
+                    path refid;
+                }
+                type string;
+                description "Reference identifier of the remote peer. If the reference identifier is not known, this field shows a value of 0.0.0.0.";
+            }
+            field reference-time {
+                sensor ntp-status {
+                    path reftime;
+                }
+                type string;
+                description "The local time, in timestamp format, when the local clock was last updated. If the local clock has never been synchronized, the value is zero.";
+            }
+            field root-delay {
+                sensor ntp-status {
+                    path rootdelay;
+                }
+                type float;
+                description "The total roundtrip delay to the primary reference source, in seconds.";
+            }
+            field root-dispersion {
+                sensor ntp-status {
+                    path rootdisp;
+                }
+                type float;
+                description "The maximum error relative to the primary reference source, in seconds.";
+            }
+            field status-info {
+                sensor ntp-status {
+                    where "statusinfo =~ /{{status-info}}/";
+                    path statusinfo;
+                }
+                type string;
+                description "Indicates the current synchronization source, in this case, an NTP server. Other options include sync_alarm and sync_unspec, both indicating that the router has not been synched.";
+            }                           
+            field stratum {
+                sensor ntp-status {
+                    path stratum;
+                }
+                type integer;
+                description "The stratum of the peer server. ";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ntp-sync {
+                frequency 1offset;
+                /*
+                 * Sets color to red when reference-id is INIT
+                 */
+                term is-sync-unspec {
+                    when {
+                        matches-with "$reference-id" INIT {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "NTP is in sync-unspec";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when reference-id is LOCAL(0)
+                 */
+                term is-sync-local {
+                    when {              
+                        matches-with "$reference-id" "LOCAL\(0\)" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "NTP state is sync local";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when reference-id by default
+                 */
+                term is-in-sync {
+                    then {
+                        status {
+                            color green;
+                            message "NTP State is in sync with $reference-id";
+                        }
+                    }
+                }
+            }
+            variable status-info {
+                value .*;
+                description "Default is .*sync_ntp.*, Can also specify variable as .*sync_alarm.* or .*sync_unspec.*";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms ptx10001-36mr {
+                                    releases 23.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files ntpStatusTable.yml;
+                }
+            }
+        }
+    }
+}	
