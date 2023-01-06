@@ -1,0 +1,156 @@
+/*
+ * Get the physical interface ingress and egress bps and pps.
+ *
+ */
+healthbot {
+    topic interfaces {
+        rule check-physical-interface-traffic {
+            keys if-name;
+            synopsis "Physical interface stats";
+            description "This rule collects physical interface stats";
+            sensor ifd {
+                native-gpb {
+                    sensor-name jnpr_interface_ext;
+                    port 4000;
+                }
+            }
+
+            field egress-stats-if-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$egress-stats-if-octets";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+            }
+            field egress-stats-if-octets {
+                sensor ifd {
+                    path interface_stats.egress_stats.if_octets;
+                }
+                type float;
+            }
+
+            field egress-stats-if-pkts {
+                sensor ifd {
+                    path interface_stats.egress_stats.if_pkts;
+                }
+                type float;
+            }
+            field egress-stats-if-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$egress-stats-if-pkts";
+                    }
+                }
+                type integer;
+            }
+
+            field elapsed-time {
+                formula {
+                    elapsed-time {
+                        field-name "$egress-stats-if-octets";
+                    }
+                }
+                type integer;
+            }
+            field if-name {
+                sensor ifd {
+                    path interface_stats.if_name;
+                    where "$egress-stats-if-bps >= 0";
+                    where "$ingress-stats-if-bps >= 0";
+                }
+                description "Physical interface name";
+            }
+
+            field ingress-stats-if-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$ingress-stats-if-octets";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+            }
+            field ingress-stats-if-octets {
+                sensor ifd {
+                    path interface_stats.ingress_stats.if_octets;
+                }
+                type float;
+            }
+
+            field ingress-stats-if-pkts {
+                sensor ifd {
+                    path interface_stats.ingress_stats.if_pkts;
+                }
+                type float;
+            }
+            field ingress-stats-if-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$ingress-stats-if-pkts";
+                    }
+                }
+                type integer;
+            }
+
+            field stats_received_count {
+                formula {
+                    count {
+                        field-name "$if-name";
+                        time-range 60s;
+                    }
+                }
+                type integer;
+            }
+            trigger ifd-stats-collection {
+                frequency 60s;
+                term no-ifd-stats-received {
+                    when {
+                        less-than-or-equal-to "$stats_received_count" 0 {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Physical interface traffic statistics not received in the last 60 seconds";
+                        }
+                    }
+                }
+                term ifd-stats-received {
+                    when {
+                        greater-than-or-equal-to "$stats_received_count" 1 {
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Physical interface traffic statistics received in the last 60 seconds";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
