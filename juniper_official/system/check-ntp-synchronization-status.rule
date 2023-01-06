@@ -1,5 +1,5 @@
 /*
- * Monitors NTP status and notifies when anomalies are found.
+ * Monitors NTP synchronization status and notifies when anomalies are found.
  * 
  * One input control detection :
  *
@@ -25,11 +25,11 @@ healthbot {
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */			
+             */
             field clock-jitter {
                 sensor ntp-status {
                     path clk-jitter;
-                }
+                }                       
                 type float;
                 description "Indicates the magnitude of jitter, in milliseconds, between several time queries.";
             }
@@ -89,7 +89,7 @@ healthbot {
                 }
                 type string;
                 description "Indicates the current synchronization source, in this case, an NTP server. Other options include sync_alarm and sync_unspec, both indicating that the router has not been synched.";
-            }
+            }                           
             field stratum {
                 sensor ntp-status {
                     path stratum;
@@ -99,12 +99,12 @@ healthbot {
             }
             /*
              * Anomaly detection logic.
-             */			
+             */
             trigger ntp-sync {
                 frequency 1offset;
                 /*
                  * Sets color to red when reference-id is INIT
-                 */				
+                 */
                 term is-sync-unspec {
                     when {
                         matches-with "$reference-id" INIT {
@@ -120,9 +120,9 @@ healthbot {
                 }
                 /*
                  * Sets color to yellow when reference-id is LOCAL(0)
-                 */				
+                 */
                 term is-sync-local {
-                    when {
+                    when {              
                         matches-with "$reference-id" "LOCAL\(0\)" {
                             ignore-case;
                         }
@@ -136,7 +136,7 @@ healthbot {
                 }
                 /*
                  * Sets color to green when reference-id by default
-                 */				
+                 */
                 term is-in-sync {
                     then {
                         status {
@@ -180,6 +180,6 @@ healthbot {
                     list-of-files ntpStatusTable.yml;
                 }
             }
-		}
+        }
     }
 }	
