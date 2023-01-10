@@ -151,19 +151,30 @@ healthbot {
                 description "Sets health based on Uncorrected forward error correction errors";			
                 frequency 1.5offset;
                 /*
-                 * Sets color to red when fec uncorrected is greater than 0.
+                 * Sets color to green when fec uncorrected error is equal to 0
                  */				
-                term is-fec-uncorrected-words {
+                term no-fec-uncorrected-errors {
                     when {
-                        greater-than "$fec-uncorrected" 0;
+                        equal-to "$fec-uncorrected" 0;
                     }
                     then {
                         status {
-                            color red;
-                            message "Interface $interface-name has non-zero FEC uncorrected words";
+                            color green;
+                            message "Interface $interface-name has no FEC uncorrected errors";
                         }
                     }
                 }
+                /*
+                 * Sets color to red when fec uncorrected error is greater than 0.
+                 */				
+                term fec-uncorrected-errors-present {
+                    then {
+                        status {
+                            color red;
+                            message "Interface $interface-name has non-zero FEC uncorrected errors";
+                        }
+                    }
+    }
             }
             trigger interface-rx-loss-of-signal-functionality {
                 synopsis "Interface rx loss of signal functionality KPI";
