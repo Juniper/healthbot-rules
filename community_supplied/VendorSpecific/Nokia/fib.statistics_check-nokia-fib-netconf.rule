@@ -1,0 +1,112 @@
+healthbot {
+    topic fib.statistics {
+        rule check-nokia-fib-netconf {
+            keys slot;
+            synopsis "Router FIB analyzer";
+            description "Monitors the Router FIB threshold";
+            sensor fib {
+                iAgent {
+                    file NokiaFibOccupancyRateTable.yml;
+                    table NokiaFibOccupancyRateTable;
+                    frequency 10m;
+                }
+            }
+            field high-threshold {
+                constant {
+                    value "{{occupancy-usage-high-threshold}}";
+                }
+                type float;
+                description "Occupancy high threshold";
+            }
+            field installed {
+                sensor fib {
+                    path installed;
+                }
+                type string;
+                description Installed;
+            }
+            field low-threshold {
+                constant {
+                    value "{{occupancy-usage-low-threshold}}";
+                }
+                type float;
+                description "Occupancy low threshold";
+            }
+            field occupancy {
+                sensor fib {
+                    path occupancy;
+                }
+                type float;
+                description "Occupancy percentage";
+            }
+            field slot {
+                sensor fib {
+                    path slot;
+                }
+                type string;
+                description Slot;
+            }
+            field suppressed {
+                sensor fib {
+                    path suppressed;
+                }
+                type string;
+                description "Suppressed by FIB";
+            }
+            trigger fib-statistics {
+                frequency 10m;
+                term is-above-major-threshold {
+                    when {
+                        greater-than-or-equal-to "$occupancy" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "($occupancy)% occupancy of slot($slot) is above ($high-threshold)";
+                        }
+                    }
+                }
+                term normal {
+                    when {
+                        less-than "$occupancy" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "($occupancy)% occupancy of slot($slot) is normal ";
+                        }
+                    }
+                }
+                term is-between-lower-upper-threshold {
+                    then {
+                        status {
+                            color yellow;
+                            message "($occupancy)% occupancy of slot($slot) is in middle range(>=$low-threshold, <=$high-threshold)";
+                        }
+                    }
+                }
+            }
+            variable occupancy-usage-high-threshold {
+                value 5.0;
+                description "Occupancy high threshold: exceed used % threshold, before we report anomaly";
+                type float;
+            }
+            variable occupancy-usage-low-threshold {
+                value 4.0;
+                description "Occupancy low threshold: exceed used % threshold, before we report anomaly";
+                type float;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor alcatel {
+                        vendor-name alcatel;
+                        operating-system sros;
+                    }
+                }
+                helper-files other {
+                    list-of-files NokiaFibOccupancyRateTable.yml;
+                }
+            }
+        }
+    }
+}
