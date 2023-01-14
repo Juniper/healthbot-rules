@@ -1,0 +1,196 @@
+healthbot {
+    topic rpm {
+        rule probe-results {
+            synopsis "RPM probe results via custom OC sensor";
+            description "RPM probe results via custom OC sensor";
+            rule-frequency 5s;
+            function cumm_pkt_loss_from_db {
+                path cumm-pkt-loss-from-db.py;
+                method cumm_pkt_loss_from_db;
+                argument owner {
+                    mandatory;
+                }
+                argument test_name {
+                    mandatory;
+                }
+            }
+            function delta {
+                description "Calculate deltas";
+                path subtract.py;
+                method subtract;
+                argument subtract {
+                    mandatory;
+                }
+                argument subtract_from {
+                    mandatory;
+                }
+            }
+            function percent {
+                path used-percentage.py;
+                method used_percentage;
+                argument total_online_time {
+                    mandatory;
+                }
+                argument total_time {
+                    mandatory;
+                }
+            }
+            function sla_1y {
+                path sla.py;
+                method sla_1y;
+                argument total_online_time {
+                    mandatory;
+                }
+            }
+            sensor rpm_oc {
+                open-config {
+                    sensor-name /probe-results/;
+                    frequency 5s;
+                }
+            }
+            field avg_delay {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/avg-delay;
+                }
+                type integer;
+                description "Average delay of the test";
+            }
+            field cumulative_outage_time_sec_1y {
+                formula {
+                    user-defined-function {
+                        function-name delta;
+                        argument subtract_from 31536000;
+                        argument subtract "$cumulative_packet_loss_1y";
+                    }
+                }
+                type integer;
+                description "Total time offline over a period of 1 year";
+            }
+            field cumulative_packet_loss_1y {
+                formula {
+                    user-defined-function {
+                        function-name cumm_pkt_loss_from_db;
+                        argument owner "$owner";
+                        argument test_name "$test_name";
+                    }
+                }
+                type integer;
+            }
+            field current_sla_1y {
+                formula {
+                    user-defined-function {
+                        function-name sla_1y;
+                        argument total_online_time "$cumulative_outage_time_sec_1y";
+                    }
+                }
+                type float;
+            }
+            field jitter_delay {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/jitter-delay;
+                }
+                type integer;
+                description "Jitter delay of the tests";
+            }
+            field last_test_time {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/last-test-time;
+                }
+                type string;
+                description "Time of the execution of the last test";
+            }
+            field max_delay {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/max-delay;
+                }
+                type integer;
+                description "Maximum delay of the tests";
+            }
+            field min_delay {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/min-delay;
+                }
+                type integer;
+                description "Minimum delay of the test";
+            }
+            field owner {
+                sensor rpm_oc {
+                    path "/probe-results/probe-test-results/@owner";
+                }
+                type string;
+                description "Source of the RPM probe test";
+            }
+            field packet_loss {
+                formula {
+                    user-defined-function {
+                        function-name delta;
+                        argument subtract_from "$probes_sent";
+                        argument subtract "$probe_responses";
+                    }
+                }
+                type integer;
+                description "Packet loss of this test";
+            }
+            field probe_responses {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/probe-responses;
+                }
+                type integer;
+            }
+            field probe_results_type {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/probe-results-type;
+                }
+                type string;
+                description "Probe results type";
+            }
+            field probes_sent {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/probes-sent;
+                }
+                type integer;
+                description "Number of test probes sent";
+            }
+            field samples {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/samples;
+                }
+                type integer;
+                description "Number of samples";
+            }
+            field stddev_delay {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/stddev-delay;
+                }
+                type integer;
+                description "Standard deviation of the delay";
+            }
+            field sum_delay {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/sum-delay;
+                }
+                type integer;
+            }
+            field target_address {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/target-address;
+                }
+                type string;
+            }
+            field test_name {
+                sensor rpm_oc {
+                    path "/probe-results/probe-test-results/@test-name";
+                }
+                type string;
+                description "Target of the RPM probe test";
+            }
+            field test_size {
+                sensor rpm_oc {
+                    path /probe-results/probe-test-results/test-size;
+                }
+                type integer;
+                description "Number of probes per test";
+            }
+        }
+    }
+}
