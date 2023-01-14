@@ -1,0 +1,67 @@
+healthbot {
+    topic vprn-instances {
+        rule check-total-vprn {
+            keys serviceid;
+            description "Check all VPRN Services";
+            sensor vprn-service {
+                iAgent {
+                    file NokiaServiceUsingVPRNTable.yml;
+                    table NokiaServiceUsingVPRNTable;
+                    frequency 10m;
+                }
+            }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold}}";
+                }
+                type float;
+            }
+            field matching-services {
+                sensor vprn-service {
+                    path matching-services;
+                }
+                type float;
+                description "Count of all VPRN service";
+            }
+            field serviceid {
+                sensor vprn-service {
+                    path serviceid;
+                }
+                type string;
+                description ServiceID;
+            }
+            field type {
+                sensor vprn-service {
+                    path type;
+                }
+                type string;
+            }
+            trigger vprn-instances-scale {
+                frequency 10m;
+                term if-count-increase-threshold {
+                    when {
+                        greater-than "$matching-services" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "All Matching VPRN Services are $matching-services and exceeding the threshold";
+                        }
+                    }
+                }
+                term normal-count {
+                    then {
+                        status {
+                            color green;
+                            message "All Matching VPRN Services are $matching-services in total";
+                        }
+                    }
+                }
+            }
+            variable high-threshold {
+                value 1000.0;
+                type float;
+            }
+        }
+    }
+}

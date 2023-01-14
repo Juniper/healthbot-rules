@@ -1,0 +1,24 @@
+Value SERVICE_ID (\S+)
+Value Type (\S+)
+Value ADMIN_STATE (Up|Down)
+Value OPER_STATE (Up|Down)
+Value Customer_ID (\d+)
+Value Service_Name (\S+)
+Value Matching_Services (\d+)
+
+Start
+  ^=+
+  ^Services\s.+
+  ^ServiceId\s+Type\s+Adm\s+Opr\s+CustomerId\s+Service\sName\s*$$ -> VPRN
+  ^\s*$$
+  ^. -> Error
+
+VPRN
+  ^-+
+  ^${SERVICE_ID}\s+${Type}\s+${ADMIN_STATE}\s+${OPER_STATE}\s+${Customer_ID}\s+${Service_Name}
+  ^-+
+  ^Matching\s+Services\s+:\s+${Matching_Services} -> Record
+  ^\s*$$
+  ^=+ -> Done
+
+Done
