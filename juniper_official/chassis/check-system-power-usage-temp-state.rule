@@ -9,7 +9,10 @@
  *   2) "chassis-temperature-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degrees. 
  * 
- *   3) "system-power-remaining-threshold" is the threshold that causes the
+ *   3) "system-power-remaining-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 50.
+ * 
+ *   4) "system-power-remaining-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 20.
  * 
  */
@@ -103,12 +106,19 @@ healthbot {
                 type integer;
                 description "Stores remaining power for system using UDF";
             }
-            field system-power-usage-threshold {
+            field system-power-usage-high-threshold {
                 constant {
-                    value "{{system-power-remaining-threshold}}";
+                    value "{{system-power-remaining-high-threshold}}";
                 }
                 type integer;
-                description "System power usage threshold";
+                description "System power usage high threshold";
+            }
+            field system-power-usage-low-threshold {
+                constant {
+                    value "{{system-power-remaining-low-threshold}}";
+                }
+                type integer;
+                description "System power usage low threshold";
             }
             /*
              * Anomaly detection logic.
@@ -202,32 +212,48 @@ healthbot {
                 description "Sets health based on increasing system power usage";
                 frequency 1offset;
                 /*
-                 * Sets color to red when system power remaining is less than system power threshold.
-                 * 
-                 */				
-                term is-power-usage-abnormal {
-                    when {
-                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "System power usage abnormal! only $system-power-remaining-in-percentage % of power remaining";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to green when system power remaining is normal.
+                 * Sets color to green when system power remaining is more than system power high threshold
                  * 
                  */				
                 term power-usage-normal {
                     when {
-                        does-not-match-with "$power-system-remaining" Unknown;
+                        greater-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "System power usage is normal. $system-power-remaining-in-percentage % of power remaining";
+                            message "System power remaining is $system-power-remaining-in-percentage %";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when system power remaining is less than system power high threshold
+                 * 
+                 */				
+                term is-power-remaining-less-than-high-threshold {
+                    when {
+                        greater-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
+                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "System power remaining is $system-power-remaining-in-percentage %";
+                        }
+                    }
+                }	
+                /*
+                 * Sets color to red when system power remaining is less than system power low threshold
+                 * 
+                 */				
+                term is-power-remaining-less-than-low-threshold {
+                    when {
+                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "System power remaining is $system-power-remaining-in-percentage %";
                         }
                     }
                 }
@@ -246,9 +272,14 @@ healthbot {
                 description "Chassis temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
-            variable system-power-remaining-threshold {
+            variable system-power-remaining-high-threshold {
+                value 50;
+                description "System remaining power high threshold percentage";
+                type int;
+            }
+            variable system-power-remaining-low-threshold {
                 value 20;
-                description "System remaining power threshold percentage";
+                description "System remaining power low threshold percentage";
                 type int;
             }
             rule-properties {

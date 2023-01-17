@@ -70,34 +70,6 @@ healthbot {
                 description "Sets health based on the optical temperature";
                 frequency 1.5offset;
                 /*
-                 * Sets color to red when optical-temperature is greater-than-or-equal-to high-alarm-threshold.
-                 */				
-                term greater-than-alarm-threshold {
-                    when {
-                        greater-than-or-equal-to "$optical-temp" "$high-alarm-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name,temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when optical-temperature is greater-than-or-equal-to high-warning-threshold.
-                 */				
-                term greater-than-warning-threshold {
-                    when {
-                        greater-than-or-equal-to "$optical-temp" "$high-warning-threshold";
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name,temperature $optical-temp exceeds default warning threshold ($high-warning-threshold)";
-                        }
-                    }
-                }
-                /*
                  * Sets color to green when optical-temperature is less than high-warning-threshold.
                  */				
                 term normal {
@@ -110,7 +82,36 @@ healthbot {
                             message "$interface-name, temperature $optical-temp is normal.";
                         }
                     }
+                }				
+                /*
+                 * Sets color to yellow when optical-temperature is greater-than-or-equal-to high-warning-threshold.
+                 */				
+                term greater-than-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optical-temp" "$high-warning-threshold";
+						less-than "$optical-temp" "$high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name,temperature $optical-temp exceeds default warning threshold ($high-warning-threshold)";
+                        }
+                    }
                 }
+                /*
+                 * Sets color to red when optical-temperature is greater-than-or-equal-to high-alarm-threshold.
+                 */				
+                term greater-than-alarm-threshold {
+                    when {
+                        greater-than-or-equal-to "$optical-temp" "$high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name,temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
+                        }
+                    }
+                }				
             }
             /*
              * Variables with default values. Default values can be changed

@@ -24,7 +24,7 @@ healthbot {
                 iAgent {
                     file evopfeDiscardStats.yml;
                     table pfeDiscardStats;
-                    frequency 180s;
+                    frequency 60s;
                 }
             }
             /*
@@ -206,6 +206,20 @@ healthbot {
                 description "Sets health based on the change in PFE data error discard count";
                 frequency 1.25offset;
                 /*
+                 * Sets color to green when data-error-discard is same as previous value.
+                 */				
+                term no-data-error-discard {
+                    when {
+                        matches-with-previous "$data-error-discard";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Data-error-discard count $data-error-discard";
+                        }
+                    }
+                }
+                /*
                  * Sets color to red when data-error-discard is increasing-at-least-by-value drop-threshold.
                  */				
                 term is-data-error-discard {
@@ -221,22 +235,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term Term_2 {
-                    then {
-                        status {
-                            color green;
-                            message "Data-error-discard count $data-error-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-bad-route-discard {
                 synopsis "PFE bad route discards KPI";
                 description "Sets health based on the change in PFE bad route discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when bad-route-discard is same as previous value.
+                 */				
+                term no-bad-route-discard {
+                    when {
+                        matches-with-previous "$bad-route-discard";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "bad-route-discard count $bad-route-discard";
+                        }
+                    }
+                }
                 /*
                  * Sets color to red when bad-route-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -253,22 +270,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-bad-route-discard {
-                    then {
-                        status {
-                            color green;
-                            message "bad-route-discard count $bad-route-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-bits-to-test-discard {
                 synopsis "PFE bits to test discards KPI";
                 description "Sets health based on the change in PFE bits to test discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when bits-to-test-discard is same as previous value.
+                 */
+                term no-bits-to-test-discard {
+                    when {
+                        matches-with-previous "$bits-to-test-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Bits-to-test-discard count $bits-to-test-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when bits-to-test-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -285,22 +305,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-bits-to-test-discard {
-                    then {
-                        status {
-                            color green;
-                            message "Bits-to-test-discard count $bits-to-test-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-fabric-discards {
                 synopsis "PFE fabric discards KPI";
                 description "Sets health based on the change in PFE fabric discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when fabric-discard is same as previous value.
+                 */
+                term no-fabric-drop {
+                    when {
+                        matches-with-previous "$fabric-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Fabric drop count $fabric-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when fabric-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -317,22 +340,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-fabric-drop {
-                    then {
-                        status {
-                            color green;
-                            message "Fabric drop count $fabric-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-info-cell-discard {
                 synopsis "PFE info cell discards KPI";
                 description "Sets health based on the change in PFE info cell discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when info-cell-discard is same as previous value.
+                 */
+                term no-info-cell-discard {
+                    when {
+                        matches-with-previous "$info-cell-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "info-cell-discard count $info-cell-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when info-cell-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -349,22 +375,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-info-cell-discard {
-                    then {
-                        status {
-                            color green;
-                            message "info-cell-discard count $info-cell-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-invalid-iif-discard {
                 synopsis "PFE invalid IIF discards KPI";
                 description "Sets health based on the change in PFE invalid IIF discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when invalid-iif-discard is same as previous value.
+                 */
+                term no-invalid-iif-discard {
+                    when {
+                        matches-with-previous "$invalid-iif-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "invalid-iif-discard count $invalid-iif-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when invalid-iif-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -381,22 +410,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-invalid-iif-discard {
-                    then {
-                        status {
-                            color green;
-                            message "invalid-iif-discard count $invalid-iif-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-nexthop-discard {
                 synopsis "PFE nexthop discards KPI";
                 description "Sets health based on the change in PFE nexthop discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when nexthop-discard is same as previous value.
+                 */
+                term no-nexthop-discard {
+                    when {
+                        matches-with-previous "$nexthop-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "nexthop-discard count $nexthop-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when nexthop-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -413,22 +445,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-nexthop-discard {
-                    then {
-                        status {
-                            color green;
-                            message "nexthop-discard count $nexthop-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-stack-overflow-discard {
                 synopsis "PFE stack overflow discards KPI";
                 description "Sets health based on the change in PFE stack overflow discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when stack-overflow-discard is same as previous value.
+                 */
+                term no-stack-overflow-discard {
+                    when {
+                        matches-with-previous "$stack-overflow-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Stack-overflow-discard count $stack-overflow-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when stack-overflow-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -445,22 +480,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-stack-overflow-discard {
-                    then {
-                        status {
-                            color green;
-                            message "Stack-overflow-discard count $stack-overflow-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-stack-underflow-discard {
                 synopsis "PFE stack underflow discards KPI";
                 description "Sets health based on the change in PFE stack underflow discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when stack-underflow-discard is same as previous value.
+                 */
+                term no-stack-underflow-discard {
+                    when {
+                        matches-with-previous "$stack-underflow-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Stack-underflow-discard count $stack-underflow-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when stack-underflow-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -477,22 +515,25 @@ healthbot {
                         }
                     }
                 }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-stack-underflow-discard {
-                    then {
-                        status {
-                            color green;
-                            message "Stack-underflow-discard count $stack-underflow-discard";
-                        }
-                    }
-                }
             }
             trigger pfe-tcp-header-error-discard {
                 synopsis "PFE TCP header error discards KPI";
                 description "Sets health based on the change in PFE TCP header error discard count";
                 frequency 1.25offset;
+                /*
+                 * Sets color to green when tcp-header-error-discard is same as previous value.
+                 */
+                term no-tcp-header-error-discard {
+                    when {
+                        matches-with-previous "$tcp-header-error-discard";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "Tcp-header-error-discard count $tcp-header-error-discard";
+                        }
+                    }
+                }				 
                 /*
                  * Sets color to red when tcp-header-error-discard is increasing-at-least-by-value drop-threshold.
                  */				
@@ -506,17 +547,6 @@ healthbot {
                         status {
                             color red;
                             message "Increasing tcp-header-error-discard drop count $tcp-header-error-discard at the rate $tcp-header-error-discard-rate per minute";
-                        }
-                    }
-                }
-                /*
-                 * Defaults color to green.
-                 */				
-                term no-tcp-header-error-discard {
-                    then {
-                        status {
-                            color green;
-                            message "Tcp-header-error-discard count $tcp-header-error-discard";
                         }
                     }
                 }
@@ -550,4 +580,4 @@ healthbot {
             }
         }
     }
-}	
+}

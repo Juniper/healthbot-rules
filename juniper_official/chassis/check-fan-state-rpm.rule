@@ -144,17 +144,17 @@ healthbot {
                 description "Sets health based on Fan RPM percentage";			
                 frequency 1offset;
                 /*
-                 * Sets color to red when RPM is more than 80%.
+                 * Sets color to green when RPM is less than 50%.
                  * 
                  */				
-                term above-high-threshold {
+                term normal {
                     when {
-                        greater-than "$rpm-percent" "$high-threshold";
-                    }
+                        less-than-or-equal-to "$rpm-percent" "$low-threshold";
+                    }				
                     then {
                         status {
-                            color red;
-                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than $rpm-high-threshold";
+                            color green;
+                            message "$fan-name RPM percent $rpm-percent" is normal;
                         }
                     }
                 }
@@ -165,7 +165,8 @@ healthbot {
                 term above-low-threshold {
                     when {
                         greater-than "$rpm-percent" "$low-threshold";
-                    }
+                        less-than-or-equal-to "$rpm-percent" "$high-threshold";
+                    }				
                     then {
                         status {
                             color yellow;
@@ -187,20 +188,23 @@ healthbot {
                             message "$fan-name RPM percent($rpm-percent%) is not between the acceptable range of ($rpm-percent-anomaly-lower-boundary and $rpm-percent-anomaly-upper-boundary)";
                         }
                     }
-                }
+                }				
                 /*
-                 * Sets color to green when RPM is less than 50% and is not anomalous.
+                 * Sets color to red when RPM is more than 80%.
                  * 
                  */				
-                term normal {
+                term above-high-threshold {
+                    when {
+                        greater-than "$rpm-percent" "$high-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$fan-name RPM percent is $rpm-percent";
+                            color red;
+                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than $rpm-high-threshold";
                         }
                     }
                 }
-            }
+            }				
             variable high-threshold {
                 value 80;
                 description "RPM high threshold";
