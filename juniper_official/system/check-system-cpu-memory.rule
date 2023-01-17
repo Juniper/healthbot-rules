@@ -29,84 +29,102 @@ healthbot {
 			 *
              * Use routing-engine as key for rule.
              */		
-             keys routing-engine;
-             synopsis "CPU and Memory analyzer";
-             description "Collects system RE CPU and Memory statistics periodically and notifies anomalies";
+            keys routing-engine;
+            synopsis "CPU and Memory analyzer";
+            description "Collects system RE CPU and Memory statistics periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
              */			 
-             sensor components-oc {
-                 synopsis "system cpu and memory KPI";
-                 description "/components open-config sensor to collect telemetry data from network device";
-                 open-config {
-                     sensor-name /components/;
-                     frequency 60s;
-                 }
-             }
+            sensor components-oc {
+                synopsis "system cpu and memory KPI";
+                description "/components open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /components/;
+                    frequency 60s;
+                }
+            }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
              */				 
-             field re-cpu-utilization {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'cpu-utilization-total'";
-                     path /components/component/properties/property/state/value;
-                     zero-suppression;
-                 }
-                 type float;
-                 description "Collects RE CPU utilization";
-             }
-             field re-cpu-utilization-high-threshold {
-                 constant {
-                     value "{{re-cpu-high-threshold}}";
-                 }
-                 type integer;
-                 description "RE CPU utilization high threshold";
-             }
-             field re-cpu-utilization-low-threshold {
-                 constant {
-                     value "{{re-cpu-low-threshold}}";
-                 }
-                 type integer;
-                 description "RE CPU utilization low threshold";
-             }
-             field re-memory-buffer {
-                 sensor components-oc {
-                     where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
-                     path /components/component/properties/property/state/value;
-                     zero-suppression;
-                 }
-                 type integer;
-                 description "RE system memory buffer value";
-             }
-             field re-memory-buffer-high-threshold {
-                 constant {
-                     value "{{memory-buffer-re-high-threshold}}";
-                 }
-                 type integer;
-                 description "RE system memory buffer high threshold";
-             }
-             field re-memory-buffer-low-threshold {
-                 constant {
-                     value "{{memory-buffer-re-low-threshold}}";
-                 }
-                 type integer;
-                 description "RE system memory buffer low threshold";
-             }
-             field routing-engine {
-                 sensor components-oc {
-                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
-                     path "/components/component/@name";
-                 }
-                 description "RE name to monitor";
-             }
+            field re-cpu-utilization {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'cpu-utilization-total'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
+                }
+                type float;
+                description "Collects RE CPU utilization";
+            }
+            field re-cpu-utilization-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$re-cpu-utilization";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on re-cpu-utilization field";
+            }
+            field re-cpu-utilization-high-threshold {
+                constant {
+                    value "{{re-cpu-high-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization high threshold";
+            }
+            field re-cpu-utilization-low-threshold {
+                constant {
+                    value "{{re-cpu-low-threshold}}";
+                }
+                type integer;
+                description "RE CPU utilization low threshold";
+            }
+            field re-memory-buffer {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
+                }
+                type integer;
+                description "RE system memory buffer value";
+            }
+            field re-memory-buffer-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$re-memory-buffer";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on re-memory-buffer field";
+            }
+            field re-memory-buffer-high-threshold {
+                constant {
+                    value "{{memory-buffer-re-high-threshold}}";
+                }
+                type integer;
+                description "RE system memory buffer high threshold";
+            }
+            field re-memory-buffer-low-threshold {
+                constant {
+                    value "{{memory-buffer-re-low-threshold}}";
+                }
+                type integer;
+                description "RE system memory buffer low threshold";
+            }
+            field routing-engine {
+                sensor components-oc {
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$/";
+                    path "/components/component/@name";
+                }
+                description "RE name to monitor";
+            }
             /*
-             * Anomaly detection logic.
-             */			
-             trigger routing-engine-cpu-utilization {
-                 synopsis "Routing engine CPU KPI";
-                 description "Sets health based on increase in RE CPU utilization";
-                 frequency 1offset;
+            * Anomaly detection logic.
+            */			
+            trigger routing-engine-cpu-utilization {
+                synopsis "Routing engine CPU KPI";
+                description "Sets health based on increase in RE CPU utilization";
+                frequency 1offset;
                 /*
                  * Sets color to green when re-cpu utilization is less-than re-cpu-utilization-low-threshold
                  */				 
@@ -122,22 +140,41 @@ healthbot {
                      }
                  }				 
                 /*
-                 * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
-                 */				 
-                 term is-re-cpu-utilization-middle {
-                     when {
-                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
-                             time-range 3offset;
-                             all;
-                         }
-                     }
-                     then {
-                         status {
-                             color yellow;
-                             message "$routing-engine CPU utilization($re-cpu-utilization) in medium range";
-                         }
-                     }
-                 }
+                * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
+                */				 
+                term is-re-cpu-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                        less-than "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
+                            time-range 3offset;
+                        }
+						
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU utilization($re-cpu-utilization) in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when re-cpu utilization is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-re-cpu-utilization-anomalous {
+                    when {
+                        equal-to "$re-cpu-utilization-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU utilization($re-cpu-utilization%) is not between the acceptable range of ($re-cpu-utilization-anomaly-lower-boundary and $re-cpu-utilization-anomaly-upper-boundary)";
+                        }
+                    }
+                }
                 /*
                  * Sets color to red when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-high-threshold
                  */				 
@@ -156,10 +193,10 @@ healthbot {
                      }
                  }				 
              }
-             trigger routing-engine-memory-buffer-utilization {
-                 synopsis "RE system memory buffer utilization kpi";
-                 description "Sets health based on increase in system memory buffer utilization";
-                 frequency 1offset;
+            trigger routing-engine-memory-buffer-utilization {
+                synopsis "RE system memory buffer utilization kpi";
+                description "Sets health based on increase in system memory buffer utilization";
+                frequency 1offset;
                 /*
                  * Sets color to green when re-memory-buffer utilization is less-than re-memory-buffer-low-threshold
                  */				 
@@ -177,20 +214,38 @@ healthbot {
                 /*
                  * Sets color to yellow when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-low-threshold
                  */				 
-                 term is-re-memory-buffer-utilization-middle {
-                     when {
-                         greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
-                             time-range 3offset;
-                             all;
-                         }
-                     }
-                     then {
-                         status {
-                             color yellow;
-                             message "$routing-engine memory buffer utilization($re-memory-buffer) is in middle range(>=$re-memory-buffer-low-threshold, <=$re-memory-buffer-high-threshold)";
-                         }
-                     }
-                 }
+                term is-re-memory-buffer-utilization-middle {
+                    when {
+                        greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
+                            time-range 3offset;
+                            all;
+                        }
+                        less-than "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
+                            time-range 3offset;
+                        }						
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine memory buffer utilization($re-memory-buffer) is in middle range(>=$re-memory-buffer-low-threshold, <=$re-memory-buffer-high-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when re-memory-buffer utilization is below low threshold ($low-threshold)
+                 * and the re-memory-buffer value is anomalous.
+                 */ 
+                term is-re-memory-buffer-anomalous {
+                    when {
+                        equal-to "$re-memory-buffer-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine CPU utilization($re-memory-buffer%) is not between the acceptable range of ($re-memory-buffer-anomaly-lower-boundary and $re-memory-buffer-anomaly-upper-boundary)";
+                        }
+                    }
+                }
                 /*
                  * Sets color to red when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-high-threshold
                  */				 
@@ -239,28 +294,24 @@ healthbot {
                 type string;
             }
             rule-properties {
-                 version 1;
-                 contributor juniper;
-                 category advanced;
-                 supported-healthbot-version 4.2.0;
-                 supported-devices {
-                     juniper {
-                         operating-system junosEvolved {
-                             products ACX {
-                                 platforms All {
-                                     releases 22.3R1 {
-                                         release-support min-supported-release;
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                 }
-                 helper-files other {
-                     list-of-files system-sensors.py;
-                 }
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-	}	
+	  }	
 }	
-		

@@ -26,7 +26,7 @@ healthbot {
                 iAgent {
                     file fanEVOTable.yml;
                     table fanEVOTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             /*
@@ -53,6 +53,15 @@ healthbot {
                 }
                 type integer;
                 description "RPM percent";
+            }
+            field rpm-percent-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$rpm-percent";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on rpm-percent field";
             }
             field status {
                 sensor fan-netconf {
@@ -166,6 +175,21 @@ healthbot {
                     }
                 }
                 /*
+                 * Sets color to yellow when RPM percent is below low threshold ($low-threshold)
+                 * and the rpm-percent value is anomalous.
+                 */ 
+                term is-rpm-percent-anomalous {
+                    when {
+                        equal-to "$rpm-percent-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$fan-name RPM percent($rpm-percent%) is not between the acceptable range of ($rpm-percent-anomaly-lower-boundary and $rpm-percent-anomaly-upper-boundary)";
+                        }
+                    }
+                }
+                /*
                  * Sets color to red when RPM is more than 80%.
                  * 
                  */				
@@ -198,15 +222,15 @@ healthbot {
                 supported-healthbot-version 4.2.0;
                 supported-devices {
                     juniper {
-                         operating-system junosEvolved {
-                             products ACX {
-                                 platforms All {
-                                     releases 22.3R1 {
-                                         release-support min-supported-release;
-                                     }
-                                 }
-                             }
-                         }						
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
                 helper-files other {

@@ -1,501 +1,264 @@
 /*
- * Monitor interface optics stats like signal loss, power, and errors and notify anomalies
+ * Monitors routing-engine temperature and notifies when anomalies are found
  * 
+ * Three inputs control detection
+ *
+ *   1) "re-slot-no" is a regular expression that matches the routing engine
+ *      that you would like to monitor.  By default it's '0-1', which matches
+ *      both the routing engines. Use something like '0' to match only
+ *      routing engine 0.
+ *
+ *   2) "re-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45 degree Celcius of 
+ *      RE temperature. This rule will set a dashboard color to green
+ *      when temperature is below low threshold.
+ * 
+ *   3) "re-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55 degree Celcius of RE 
+ *      temperature. 
+ *
  */
 healthbot {
-    topic interfaces {
-        rule check-optical-signal-loss-fec-tx-rx-power {
+    topic hardware.chassis {
+        rule check-routing-engine-temperature {
             /*
-             * Checks for tx and rx signal loss and notifies via dashboard ,red color 
-             * when there is no signal else green. 
-             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
-             * threshold values and notifies by displaying green,yellow and red alarms.
-             * Use interface-name as key for the rule.
+             * Monitors the routing-engine temperature and notifies via dashboard, red color 
+             * when threshold is exceeded else green. 
+			 *
+             * Use routing-engine as key for rule.
              */		
-            keys interface-name;
-            synopsis "KPI for  interface optical degradation";
-            description "Monitor the interface optical degradation";
+            keys routing-engine;
+            synopsis "Routing engine temperature";
+            description "Collects system RE Temperature statistics periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
-             */			
-            sensor optical-sensor-oc {
-                synopsis "Interface optics sensor definition";
-                description "Sensor to collects data from network device";
-                open-config {
-                    sensor-name /junos/system/linecard/optics/;
-                    frequency 60s;
-                }
-            }
+             */			 
+             sensor components-oc {
+                 synopsis "routing-engine temperature KPI";
+                 description "open-config sensor to collect telemetry data from network device";
+                 open-config {
+                     sensor-name /components/component;
+                     frequency 60s;
+                 }
+             }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */			
-            field fec-uncorrected {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/lanediags/lane/media_fec_uncorr_blocks;
+             */				 
+             field routing-engine-cpu-temperature {
+                 sensor components-oc {
+                     where "/components/component/properties/property/@name == 'CPU Temperature'";
+                     path /components/component/properties/property/state/value;
+                 }
+                 type integer;
+                 description "CPU temperature";
+             }
+             field routing-engine-temperature {
+                 sensor components-oc {
+                     where "/components/component/properties/property/@name == 'temperature'";
+                     path /components/component/properties/property/state/value;
+                 }
+                 type integer;
+                 description "RE temperature";
+             }
+             field routing-engine {
+                 sensor components-oc {
+                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$/";
+                     path "/components/component/@name";
+                 }
+                 description "RE name to monitor";
+             }
+            field high-threshold {
+                constant {
+                    value "{{re-temperature-high-threshold}}";
                 }
                 type integer;
-                description "Number of code blocks received that could not be corrected. A non-zero value equals packet loss";
+                description "RE temperature high threshold";
             }
-            field lane-index {
-                sensor optical-sensor-oc {
-                    path "/interfaces/interface/optics/lanediags/lane/@number";
+            field low-threshold {
+                constant {
+                    value "{{re-temperature-low-threshold}}";
                 }
-                type string;
-                description "Interface lane index";
+                type integer;
+                description "RE temperature low threshold";
             }
-            field interface-name {
-                sensor optical-sensor-oc {
-                    where "/interfaces/interface/@name =~ /{{interface-name}}/";
-                    path "/interfaces/interface/@name";
+            field routing-engine-cpu-temperature-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$routing-engine-cpu-temperature";
+                    }
                 }
-                type string;
-                description "Interface name";
+                type integer;
+                description "JAIML anomaly detection on routing engine CPU temperature field";
             }
-            field rx-loss-of-signal-alarm {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/lanediags/lane/lane_rx_loss_of_signal_alarm;
+            field routing-engine-temperature-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$routing-engine-temperature";
+                    }
                 }
-                type string;
-                description "RX loss of signal alarm";
-            }
-            field tx-laser-disabled-alarm {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/lanediags/lane/lane_tx_laser_disabled_alarm;
-                }
-                type string;
-                description "tx laster disabled alarm";
-            }
-            field tx-loss-of-signal-functionality-alarm {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/lanediags/lane/lane_tx_loss_of_signal_alarm;
-                }
-                type string;
-                description "tx loss of signal functionality alarm";
-            }
-            field rx-high-alarm-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
-                }
-                type float;
-                description "Default rx power high alarm threshold.";
-            }
-            field rx-high-warning-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_rx_power_high_warning_threshold_dbm;
-                }
-                type float;
-                description "Default rx power high warning threshold.";
-            }
-            field rx-low-alarm-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
-                }
-                type float;
-                description "Default rx power low alarm threshold.";
-            }
-            field rx-low-warning-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_rx_power_low_warning_threshold_dbm;
-                }
-                type float;
-                description "Default rx power low warning threshold.";
-            }
-            field optics-rx-power {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/lanediags/lane/lane_laser_receiver_power_dbm;
-                }
-                type float;
-                description "rx power level of the optical module.";
-            }
-            field optics-tx-power {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/lanediags/lane/lane_laser_output_power_dbm;
-                }
-                type float;
-                description "output power level of the optical module.";
-            }
-            field tx-high-alarm-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
-                }
-                type float;
-                description "Default tx power high alarm threshold.";
-            }
-            field tx-high-warning-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_output_power_high_warning_threshold_dbm;
-                }
-                type float;
-                description "Default tx power high warning threshold.";
-            }
-            field tx-low-alarm-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
-                }
-                type float;
-                description "Default tx power low alarm threshold.";
-            }
-            field tx-low-warning-threshold {
-                sensor optical-sensor-oc {
-                    path /interfaces/interface/optics/laser_output_power_low_warning_threshold_dbm;
-                }
-                type float;
-                description "Default tx power low warning threshold.";
+                type integer;
+                description "JAIML anomaly detection on routing engine temperature field";
             }
             /*
              * Anomaly detection logic.
              */			
-            trigger uncorrected-forward-error-correction-errors {
-                synopsis "Uncorrected forward error correction errors KPI";
-                description "Sets health based on Uncorrected forward error correction errors";			
-                frequency 1.5offset;
+            trigger routing-engine-temperature {
+                synopsis "RE temperature KPI";
+                description "Sets health based increase in RE temperature";
+                frequency 1offset;
                 /*
-                 * Sets color to green when fec uncorrected count is 0
-                 */				
-                term no-fec-uncorrected-words {
+                 * Sets color to green when RE temperature
+                 * re-temperature is below low threshold ($low-threshold).
+                 */ 
+                term is-re-temperature-normal {
                     when {
-                        equal-to "$fec-uncorrected" 0;
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                        less-than-or-equal-to "$routing-engine-cpu-temperature-anomaly" 0;
                     }
                     then {
                         status {
                             color green;
-                            message "Interface $interface-name has no FEC uncorrected words";
-                        }
-                    }
-                }				
-                /*
-                 * Sets color to red when fec uncorrected is greater than 0.
-                 */				
-                term is-fec-uncorrected-words {
-                    when {
-                        greater-than "$fec-uncorrected" 0;
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Interface $interface-name has non-zero FEC uncorrected words";
-                        }
-                    }
-                }
-            }
-            trigger interface-rx-loss-of-signal-functionality {
-                synopsis "Interface rx loss of signal functionality KPI";
-                description "Sets health based on Interface rx loss of signal functionality";			
-                frequency 1.5offset;
-                /*
-                 * Sets color to green when loss of signal functionality alarm is off.
-                 */				
-                term is-rx-loss-of-signal-functionality-off {
-                    when {
-                        matches-with "$rx-loss-of-signal-alarm" false {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name, Lane $lane-index Rx loss of signal functionality alarm is OFF";
+                            message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
                         }
                     }
                 }
                 /*
-                 * Sets color to red when loss of signal functionality alarm is ON.
-                 */				
-                term is-rx-loss-of-signal-functionality-exists {
+                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-re-temperature-anomalous {
                     when {
-                        exists "$rx-loss-of-signal-alarm";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name, Lane $lane-index Rx loss of signal functionality alarm is ON";
-                        }
-                    }
-                }
-            }
-            trigger interface-tx-laser-disabled-alarm {
-                synopsis "Interface tx laser disabled alarm KPI";
-                description "Sets health based on Interface tx laser disabled alarm";			
-                frequency 1.5offset;
-                /*
-                 * Sets color to green when tx-laser-disabled-alarm is OFF.
-                 */				
-                term is-tx-laser-disabled-alarm-off {
-                    when {
-                        matches-with "$tx-laser-disabled-alarm" false {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name, Lane $lane-index Tx laser disabled alarm is OFF";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red tx-laser-disabled-alarm is ON.
-                 */				
-                term is-tx-laser-disabled-alarm-exists {
-                    when {
-                        exists "$tx-laser-disabled-alarm";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name, Lane $lane-index Tx laser disabled alarm is ON";
-                        }
-                    }
-                }
-            }
-            trigger interface-tx-loss-of-signal-functionality {
-                synopsis "Interface tx loss of signal functionality KPI";
-                description "Sets health based on Interface tx loss of signal functionality";			
-                frequency 1.5offset;
-                /*
-                 * Sets color to green when tx-loss-of-signal-functionality is OFF.
-                 */				
-                term is-tx-loss-of-signal-functionality-off {
-                    when {
-                        matches-with "$tx-loss-of-signal-functionality-alarm" false {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name, Lane $lane-index Tx loss of signal functionality alarm is OFF";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red when tx-loss-of-signal-functionality is ON.
-                 */				
-                term is-tx-loss-of-signal-functionality-exists {
-                    when {
-                        exists "$tx-loss-of-signal-functionality-alarm";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name, Lane $lane-index Tx loss of signal functionality alarm is ON";
-                        }
-                    }
-                }
-            }
-            trigger interface-optical-rx-high-power {
-                synopsis "Interface optical rx high power KPI";
-                description "Sets health based on Interface optical rx high power";			
-                frequency 1.5offset;
-                /*
-                 * Sets color to green when optics rx power is normal.
-                 */				
-                term normal {
-                    when {
-                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when optics rx power is greater-than-or-equal-to rx-high-warning-threshold.
-                 */				
-                term above_warning_threshold {
-                    when {
-                        greater-than-or-equal-to "$optics-rx-power" "$rx-high-warning-threshold" {
-                            time-range 2offset;
-                        }
+                        less-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
+                        equal-to "$routing-engine-temperature-anomaly" 1;
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is above warning threshold ($rx-high-warning-threshold)";
+                            message "$routing-engine CPU temperature($routing-engine-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-temperature-anomaly-lower-boundary and $routing-engine-temperature-anomaly-upper-boundary)";
                         }
                     }
                 }
                 /*
-                 * Sets color to red when optics rx power is greater-than-or-equal-to rx-high-alarm-threshold.
-                 */				
-                term above_alarm_threshold {
+                 * Sets color to yellow and notify anomaly when RE temperature 
+                 * ($routing-engine-temperature) is below high threshold
+                 * ($high-threshold).
+                 */  
+                term is-re-temperature-median {
                     when {
-                        greater-than-or-equal-to "$optics-rx-power" "$rx-high-alarm-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is above alarm threshold ($rx-high-alarm-threshold)";
-                        }
-                    }
-                }				
-            }
-            trigger interface-optical-rx-low-power {
-                synopsis "Interface optical rx low power KPI";
-                description "Sets health based on Interface optical rx low power";			
-                frequency 1.5offset;
-                /*
-                 * Sets color to green when optics rx power is normal.
-                 */				
-                term normal {
-                    when {
-                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when optics rx power is less-than-or-equal-to rx-low-warning-threshold.
-                 */				
-                term below_warning_threshold {
-                    when {
-                        less-than-or-equal-to "$optics-rx-power" "$rx-low-warning-threshold" {
-                            time-range 2offset;
-                        }
+                        less-than-or-equal-to "$routing-engine-temperature" "$high-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is below warning threshold ($rx-low-warning-threshold)";
+                            message "$routing-engine temperature($routing-engine-temperature degree C) exceeds low threshold";
                         }
                     }
                 }
                 /*
-                 * Sets color to red when optics rx power is less-than-or-equal-to rx-low-alarm-threshold.
-                 */				
-                term below_alarm_threshold {
+                 * Defaults color to red and notify anomaly.
+                 */ 
+                term re-temperature-abnormal {
                     when {
-                        less-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
+                        greater-than "$routing-engine-temperature" "$high-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is below alarm threshold ($rx-low-alarm-threshold)";
+                            message "$routing-engine temperature($routing-engine-temperature degree C) exceeds high threshold";
                         }
                     }
-                }				
+                }
             }
-            trigger interface-optical-tx-high-power {
-                synopsis "Interface optical tx high power KPI";
-                description "Sets health based on Interface optical tx high power";			
-                frequency 1.5offset;
+            trigger routing-engine-cpu-temperature {
+                synopsis "RE CPU temperature KPI";
+                description "Sets health based increase in RE CPU temperature";
+                frequency 1offset;
                 /*
-                 * Sets color to green when optics tx power is normal
-                 */				
-                term normal {
+                 * Sets color to green when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is not anomalous.
+                 */ 
+                term is-re-temperature-normal {
                     when {
-                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
-                    }				
+                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
+                    }                
                     then {
                         status {
                             color green;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
+                            message "$routing-engine temperature($routing-engine-cpu-temperature degree C) is normal";
                         }
                     }
                 }
                 /*
-                 * Sets color to yellow when optics tx power is greater-than-or-equal-to tx-high-warning-threshold.
-                 */				
-                term above_warning_threshold {
+                 * Sets color to yellow and notify anomaly when RE CPU
+                 * temperature ($routing-engine-cpu-temperature) is below high threshold
+                 * ($high-threshold) but above low threshold ($low-threshold).
+                 */  
+                term is-temperature-median {
                     when {
-                        greater-than-or-equal-to "$optics-tx-power" "$tx-high-warning-threshold" {
-                            time-range 2offset;
-                        }
+                        less-than-or-equal-to "$routing-engine-cpu-temperature" "$high-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above warning threshold ($tx-high-warning-threshold)";
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds low threshold";
                         }
                     }
                 }
                 /*
-                 * Sets color to red when optics tx power is greater-than-or-equal-to tx-high-alarm-threshold.
-                 */				
-                term above_alarm_threshold {
+                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
+                 * and the temperature value is anomalous.
+                 */ 
+                term is-re-temperature-anomalous {
                     when {
-                        greater-than-or-equal-to "$optics-tx-power" "$tx-high-alarm-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
-                        }
-                    }
-                }				
-            }
-            trigger interface-optical-tx-low-power {
-                synopsis "Interface optical tx low power KPI";
-                description "Sets health based on Interface optical tx low power";			
-                frequency 1.5offset;
-                /*
-                 * Sets color to green when optics tx power is normal.
-                 */				
-                term normal {
-                    when {
-                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red when optics tx power is less-than-or-equal-to tx-low-warning-threshold.
-                 */					
-                term below_warning_threshold {
-                    when {
-                        less-than-or-equal-to "$optics-tx-power" "$tx-low-warning-threshold" {
-                            time-range 2offset;
-                        }
+                        equal-to "$routing-engine-cpu-temperature-anomaly" 1;
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is below warning threshold ($tx-low-warning-threshold)";
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature-anomaly degree C) is not between the acceptable range of ($routing-engine-cpu-temperature-anomaly-lower-boundary and $routing-engine-cpu-temperature-anomaly-upper-boundary)";
                         }
                     }
                 }
                 /*
-                 * Sets color to red when optics tx power is less-than-or-equal-to tx-low-alarm-threshold.
-                 */				
-                term below_alarm_threshold {
+                 * Defaults color to red and notify anomaly.
+                 */ 
+                term temperature-abnormal {
                     when {
-                        less-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
+                        greater-than "$routing-engine-cpu-temperature" "$high-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is below alarm threshold ($tx-low-alarm-threshold)";
+                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) exceeds high threshold";
                         }
                     }
-                }				
+                }                
             }
-            variable interface-name {
-                value .*;
-                description "Name of the interface.";
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable re-slot-no {
+                value 0-1;
+                description "Routing engine numbers to monitor, regular expression, e.g. '0'";
                 type string;
             }
+            variable re-temperature-high-threshold {
+                value 55;
+                description "RE temperature high threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable re-temperature-low-threshold {
+                value 45;
+                description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
+                type int;
+            }		
             rule-properties {
                 version 1;
                 contributor juniper;
-                category comprehensive;
-                is-scaling-rule {
-                    description "Fields:interface-name ; Directly impacted by number of interfaces running in each network device";
-                }
+                category advanced;
                 supported-healthbot-version 4.2.0;
-                catalogue {
-                    tier 1;
-                }
                 supported-devices {
                     juniper {
                         operating-system junosEvolved {
@@ -506,10 +269,11 @@ healthbot {
                                     }
                                 }
                             }
-                        }
-                    }
+                    	}
+                    }	
                 }
             }
         }
-    }
-}	
+	  }	
+}
+
