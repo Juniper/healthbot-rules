@@ -14,90 +14,90 @@
  *
  */
 healthbot {
-    topic hardware.chassis {
-        rule check-routing-engine-inlet-temperature {
-            /*
-             * Monitors the routing-engine inlet temperature  
-			 *
-             * Use routing-engine as key for rule.
-             */		
-            keys [ routing-engine routing-engine-inlet-name ];
-            synopsis "Routing engine temperature";
-            description "Collects system RE inlet Temperature statistics periodically";
-            /*
-             * Sensor configuration to get data from network devices.
-             */			 
-            sensor components-oc {
-                synopsis "routing-engine inlet temperature KPI";
-                description "open-config sensor to collect telemetry data from network device";
-                open-config {
-                    sensor-name /components/component;
-                    frequency 60s;
-                }
-            }           			 
-            field routing-engine-inlet-name {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name =~ /{{re-inlet-name}}/";
-                    path "/components/component/properties/property/@name";
-                }
-                type string;
-                description "Inlet name";
-            }						 
-            field routing-engine-inlet-temperature {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name =~ /{{re-inlet-name}}/";
-                    path /components/component/properties/property/state/value;
-                }
-                type integer;
-                description "Inlet temperature";
+   topic hardware.chassis {
+      rule check - routing - engine - inlet - temperature {
+         /*
+          * Monitors the routing-engine inlet temperature  
+          *
+          * Use routing-engine as key for rule.
+          */
+         keys[routing - engine routing - engine - inlet - name];
+         synopsis "Routing engine temperature";
+         description "Collects system RE inlet Temperature statistics periodically";
+         /*
+          * Sensor configuration to get data from network devices.
+          */
+         sensor components - oc {
+            synopsis "routing-engine inlet temperature KPI";
+            description "open-config sensor to collect telemetry data from network device";
+            open - config {
+               sensor - name / components / component;
+               frequency 60 s;
             }
-            field routing-engine {
-                sensor components-oc {
-                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
-                    path "/components/component/@name";
-                }
-                description "RE name to monitor";
+         }
+         field routing - engine - inlet - name {
+            sensor components - oc {
+               where "/components/component/properties/property/@name =~ /{{re-inlet-name}}/";
+               path "/components/component/properties/property/@name";
             }
-            /*
-             * Variables with default values. Default values can be changed
-             * while deploying playbook instance.
-             */			
-            variable re-slot-no {
-                value 0-1;
-                description "Routing engine numbers to monitor, regular expression, e.g. '0'";
-                type string;
+            type string;
+            description "Inlet name";
+         }
+         field routing - engine - inlet - temperature {
+            sensor components - oc {
+               where "/components/component/properties/property/@name =~ /{{re-inlet-name}}/";
+               path / components / component / properties / property / state / value;
             }
-            variable re-inlet-name {
-                value .*Inlet.*;
-                description "RE for the inlet name";
-                type string;
-            }		
-            rule-properties {
-                version 1;
-                contributor juniper;
-                category advanced;
-                supported-healthbot-version 4.2.0;
-                supported-devices {
-                    juniper {
-                        operating-system junosEvolved {
-                            products ACX {
-                                platforms All {
-                                    releases 22.3R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-							products PTX {
-                                platforms ptx10001-36mr {
-                                    releases 23.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
+            type integer;
+            description "Inlet temperature";
+         }
+         field routing - engine {
+            sensor components - oc {
+               where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
+               path "/components/component/@name";
+            }
+            description "RE name to monitor";
+         }
+         /*
+          * Variables with default values. Default values can be changed
+          * while deploying playbook instance.
+          */
+         variable re - slot - no {
+            value 0 - 1;
+            description "Routing engine numbers to monitor, regular expression, e.g. '0'";
+            type string;
+         }
+         variable re - inlet - name {
+            value.*Inlet.*;
+            description "RE for the inlet name";
+            type string;
+         }
+         rule - properties {
+            version 1;
+            contributor juniper;
+            category advanced;
+            supported - healthbot - version 4.2 .0;
+            supported - devices {
+               juniper {
+                  operating - system junosEvolved {
+                     products ACX {
+                        platforms All {
+                           releases 22.3 R1 {
+                              release - support min - supported - release;
+                           }
                         }
-                    }
-                }
+                     }
+                     products PTX {
+                        platforms ptx10001 - 36 mr {
+                           releases 23.1 R1 {
+                              release - support min - supported - release;
+                           }
+                        }
+                     }
+                  }
+               }
             }
-        }
-	}	
+         }
+      }
+   }
 }
