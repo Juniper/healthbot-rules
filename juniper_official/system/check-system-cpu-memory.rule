@@ -39,7 +39,7 @@ healthbot {
                 synopsis "system cpu and memory KPI";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
-                    sensor-name /components/;
+                    sensor-name /components/component;
                     frequency 60s;
                 }
             }
@@ -113,52 +113,52 @@ healthbot {
             }
             field routing-engine {
                 sensor components-oc {
-                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]*$/";
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$/";
                     path "/components/component/@name";
                 }
                 description "RE name to monitor";
             }
             /*
             * Anomaly detection logic.
-            */			
-            trigger routing-engine-cpu-utilization {
-                synopsis "Routing engine CPU KPI";
-                description "Sets health based on increase in RE CPU utilization";
-                frequency 1offset;
+            */
+             trigger routing-engine-cpu-utilization {
+                 synopsis "Routing engine CPU KPI";
+                 description "Sets health based on increase in RE CPU utilization";
+                 frequency 1offset;
                 /*
-                * Sets color to red when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-high-threshold
-                */				 
-                term is-re-cpu-utilization-abnormal {
-                    when {
-                        greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$routing-engine CPU utilization($re-cpu-utilization) exceeds high threshold($re-cpu-utilization-high-threshold)";
-                        }
-                    }
-                }
+                 * Sets color to green when re-cpu utilization is less-than re-cpu-utilization-low-threshold
+                 */				 
+                 term re-cpu-utilization-normal {
+                     when {
+                         less-than "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
+                     }				 
+                     then {
+                         status {
+                             color green;
+                             message "$routing-engine CPU utilization($re-cpu-utilization) is normal";
+                         }
+                     }
+                 }				 
                 /*
-                * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
-                */				 
-                term is-re-cpu-utilization-middle {
-                    when {
-                        greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU utilization($re-cpu-utilization) in medium range";
-                        }
-                    }
-                }
+                 * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
+                 */				 
+                 term is-re-cpu-utilization-middle {
+                     when {
+                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
+                             time-range 3offset;
+                             all;
+                         }
+                         less-than "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
+                             time-range 3offset;
+                         }						 
+                     }
+                     then {
+                         status {
+                             color yellow;
+                             message "$routing-engine CPU utilization($re-cpu-utilization) in medium range";
+                         }
+                     }
+                 }
                 /*
                  * Sets color to yellow when re-cpu utilization is below low threshold ($low-threshold)
                  * and the temperature value is anomalous.
@@ -173,58 +173,63 @@ healthbot {
                             message "$routing-engine CPU utilization($re-cpu-utilization%) is not between the acceptable range of ($re-cpu-utilization-anomaly-lower-boundary and $re-cpu-utilization-anomaly-upper-boundary)";
                         }
                     }
-                }
+                }				 
                 /*
-                 * Sets color to green when re-cpu utilization is less-than re-cpu-utilization-low-threshold
-                 * and the re-cpu-utilization value is not anomalous
+                 * Sets color to red when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-high-threshold
                  */				 
-                term re-cpu-utilization-normal {				 
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine CPU utilization($re-cpu-utilization) is normal";
-                        }
-                    }
-                }
-            }
-            trigger routing-engine-memory-buffer-utilization {
-                synopsis "RE system memory buffer utilization kpi";
-                description "Sets health based on increase in system memory buffer utilization";
-                frequency 1offset;
+                 term is-re-cpu-utilization-abnormal {
+                     when {
+                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
+                             time-range 3offset;
+                             all;
+                         }
+                     }
+                     then {
+                         status {
+                             color red;
+                             message "$routing-engine CPU utilization($re-cpu-utilization) exceeds high threshold($re-cpu-utilization-high-threshold)";
+                         }
+                     }
+                 }				 
+             }
+             trigger routing-engine-memory-buffer-utilization {
+                 synopsis "RE system memory buffer utilization kpi";
+                 description "Sets health based on increase in system memory buffer utilization";
+                 frequency 1offset;
                 /*
-                 * Sets color to red when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-high-threshold
+                 * Sets color to green when re-memory-buffer utilization is less-than re-memory-buffer-low-threshold
                  */				 
-                term is-re-memory-buffer-utilization-abnormal {
-                    when {
-                        greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$routing-engine memory buffer utilization($re-memory-buffer) exceed high threshold($re-memory-buffer-high-threshold)";
-                        }
-                    }
-                }
+                 term is-re-memory-buffer-utilization-normal {
+                     when {
+                         less-than "$re-memory-buffer" "$re-memory-buffer-low-threshold";
+                     }				 
+                     then {
+                         status {
+                             color green;
+                             message "$routing-engine memory buffer utilization($re-memory-buffer) is normal";
+                         }
+                     }
+                 }				 
                 /*
                  * Sets color to yellow when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-low-threshold
                  */				 
-                term is-re-memory-buffer-utilization-middle {
-                    when {
-                        greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
-                            time-range 3offset;
-                            all;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine memory buffer utilization($re-memory-buffer) is in middle range(>=$re-memory-buffer-low-threshold, <=$re-memory-buffer-high-threshold)";
-                        }
-                    }
-                }
+                 term is-re-memory-buffer-utilization-middle {
+                     when {
+                         greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
+                             time-range 3offset;
+                             all;
+                         }
+                         less-than "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
+                             time-range 3offset;
+                         }						 
+                     }
+                     then {
+                         status {
+                             color yellow;
+                             message "$routing-engine memory buffer utilization($re-memory-buffer) is in middle range(>=$re-memory-buffer-low-threshold, <=$re-memory-buffer-high-threshold)";
+                         }
+                     }
+                 }
                 /*
                  * Sets color to yellow when re-memory-buffer utilization is below low threshold ($low-threshold)
                  * and the re-memory-buffer value is anomalous.
@@ -239,20 +244,25 @@ healthbot {
                             message "$routing-engine CPU utilization($re-memory-buffer%) is not between the acceptable range of ($re-memory-buffer-anomaly-lower-boundary and $re-memory-buffer-anomaly-upper-boundary)";
                         }
                     }
-                }
+                }				 
                 /*
-                 * Sets color to green when re-memory-buffer utilization is less-than re-memory-buffer-low-threshold
-                 * and the re-memory-buffer value is not anomalous
+                 * Sets color to red when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-high-threshold
                  */				 
-                term is-re-memory-buffer-utilization-normal {				 
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine memory buffer utilization($re-memory-buffer) is normal";
-                        }
-                    }
-                }
-            }
+                 term is-re-memory-buffer-utilization-abnormal {
+                     when {
+                         greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
+                             time-range 3offset;
+                             all;
+                         }
+                     }
+                     then {
+                         status {
+                             color red;
+                             message "$routing-engine memory buffer utilization($re-memory-buffer) exceed high threshold($re-memory-buffer-high-threshold)";
+                         }
+                     }
+                 }				 
+             }			 
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
@@ -299,9 +309,6 @@ healthbot {
                             }
                         }
                     }
-                }
-                helper-files other {
-                    list-of-files system-sensors.py;
                 }
             }
         }
