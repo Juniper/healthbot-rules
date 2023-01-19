@@ -121,7 +121,6 @@ healthbot {
                  */				
                 term is-power-usage-exceeds-low-threshold {
                     when {
-                        greater-than-or-equal-to "$psm-power-usage" "$psm-power-usage-low-threshold";
                         less-than "$psm-power-usage" "$psm-power-usage-high-threshold";
                     }
                     then {
@@ -169,15 +168,10 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red when state is offline.
+                 * Sets color to red when state is not online.
                  * 
                  */				
                 term state-is-not-online {
-                    when {
-                        matches-with "$psm-state" offline {
-                            ignore-case;
-                        }
-                    }
                     then {
                         status {
                             color red;
@@ -186,23 +180,6 @@ healthbot {
                         next;						
                     }
                 }
-                /*
-                 * Sets color to red when state is faulty.
-                 * 
-                 */				
-                term state-is-failed {
-                    when {
-                        matches-with "$psm-state" fault {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$psm is $psm-state";
-                        }
-                    }
-                }				
             }
             /*
              * Variables with default values. Default values can be changed
