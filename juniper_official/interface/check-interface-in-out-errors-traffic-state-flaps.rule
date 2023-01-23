@@ -215,7 +215,7 @@ healthbot {
                  */				
                 term interface-in-traffic-normal {
                     when {
-                        matches-with-previous "$in-util";
+                        less-than-or-equal-to "$in-util" "$low-threshold";
                     }				
                     then {
                         status {
@@ -232,9 +232,9 @@ healthbot {
                  */					
                 term is-interface-in-traffic-median {
                     when {
-                        increasing-at-least-by-value "$in-util" {
-                            value "$low-threshold";
+                        less-than-or-equal-to "$in-util" "$high-threshold" {
                             time-range 3offset;
+                            any;
                         }
                     }
                     then {
@@ -252,8 +252,7 @@ healthbot {
                  */				
                 term is-interface-in-traffic-abnormal {
                     when {
-                        increasing-at-least-by-value "$in-util" {
-                            value "$high-threshold";
+                        greater-than "$in-util" "$high-threshold" {
                             time-range 3offset;
                         }
                     }
@@ -383,7 +382,6 @@ healthbot {
                  */				
                 term link-up {
                     when {
-                        matches-with "$admin-state" UP;
                         matches-with "$link-state" UP;
                     }				
                     then {
@@ -399,7 +397,6 @@ healthbot {
                  */				
                 term is-link-down {
                     when {
-                        matches-with "$admin-state" UP;
                         matches-with "$link-state" DOWN;
                     }
                     then {
@@ -474,7 +471,7 @@ healthbot {
                  */ 				
                 term is-interface-stats-normal {
                     when {
-                        matches-with-previous "$out-util";
+                        less-than-or-equal-to "$out-util" "$low-threshold";
                     }				
                     then {
                         status {
@@ -491,9 +488,9 @@ healthbot {
                  */				
                 term is-interface-stats-median {
                     when {
-                        increasing-at-least-by-value "$out-util" {
-                            value "$low-threshold";
+                        less-than-or-equal-to "$out-util" "$high-threshold" {
                             time-range 3offset;
+                            any;
                         }
                     }
                     then {
@@ -511,8 +508,7 @@ healthbot {
                  */ 				
                 term is-interface-stats-abnormal {
                     when {
-                        increasing-at-least-by-value "$out-util" {
-                            value "$high-threshold";
+                        greater-than "$out-util" "$high-threshold" {
                             time-range 3offset;
                         }
                     }
