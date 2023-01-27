@@ -413,11 +413,11 @@ healthbot {
                 description "Sets health based on FPC Temperature";
                 frequency 2offset;
                 /*
-                 * Sets color to green when temperature is less-than-or-equal-to temp-low-threshold.
+                 * Sets color to green when temperature is less-than low threshold ($temp-low-threshold)
                  */				
                 term is-temperature-normal {
                     when {
-                        less-than-or-equal-to "$temperature" "$temp-low-threshold";
+                        less-than "$temperature" "$temp-low-threshold";
                         less-than-or-equal-to "$temperature-anomaly" 0;
                     }                               
                     then {
@@ -433,7 +433,7 @@ healthbot {
                  */ 
                 term is-temperature-anomalous {
                     when {
-                        less-than-or-equal-to "$temperature" "$temp-low-threshold";
+                        less-than "$temperature" "$temp-low-threshold";
                         equal-to "$temperature-anomaly" 1;
                     }
                     then {
@@ -445,11 +445,29 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to yellow when temperature is-greater temp-low-threshold .
+                 * Sets color to green when FPC temperature is below low threshold ($temp-low-threshold)
+                 * 
+                 */				
+                term is-temperature-less-than-low-threshold {
+                    when {
+                        less-than "$temperature" "$temp-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$fpc temperature($temperature degree celsius) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when FPC temperature is greater than or equal to low threshold ($temp-low-threshold)
+				 * and less than high threshold ($temp-high-threshold)
+                 * 
                  */				
                 term is-temperature-exceeds-low-threshold {
                     when {
-                        greater-than "$temperature" "$temp-low-threshold";
+                        greater-than-or-equal-to "$temperature" "$temp-low-threshold";
+                        less-than "$temperature" "$temp-high-threshold";
                     }
                     then {
                         status {
@@ -459,12 +477,10 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red when temperature is-greater-than-or-equal-to temp-high-threshold .
+                 * Sets color to yellow when FPC temperature is greater than high threshold
+                 * 
                  */				
                 term is-temperature-exceeds-high-threshold {
-                    when {
-                        greater-than-or-equal-to "$temperature" "$temp-high-threshold";
-                    }
                     then {
                         status {
                             color red;
