@@ -215,7 +215,7 @@ healthbot {
                  */				
                 term interface-in-traffic-normal {
                     when {
-                        matches-with-previous "$in-util";
+                        less-than "$in-util" "$low-threshold";
                     }				
                     then {
                         status {
@@ -232,9 +232,13 @@ healthbot {
                  */					
                 term is-interface-in-traffic-median {
                     when {
-                        increasing-at-least-by-value "$in-util" {
-                            value "$low-threshold";
+                        greater-than-or-equal-to "$in-util" "$low-threshold" {
                             time-range 3offset;
+                            any;
+                        }
+                        less-than "$in-util" "$high-threshold" {
+                            time-range 3offset;
+                            any;
                         }
                     }
                     then {
@@ -251,12 +255,6 @@ healthbot {
                  * points in a 180 seconds period.
                  */				
                 term is-interface-in-traffic-abnormal {
-                    when {
-                        increasing-at-least-by-value "$in-util" {
-                            value "$high-threshold";
-                            time-range 3offset;
-                        }
-                    }
                     then {
                         status {
                             color red;
@@ -474,7 +472,7 @@ healthbot {
                  */ 				
                 term is-interface-stats-normal {
                     when {
-                        matches-with-previous "$out-util";
+                        less-than "$out-util" "$low-threshold";
                     }				
                     then {
                         status {
@@ -491,9 +489,13 @@ healthbot {
                  */				
                 term is-interface-stats-median {
                     when {
-                        increasing-at-least-by-value "$out-util" {
-                            value "$low-threshold";
+                        greater-than-or-equal-to "$out-util" "$low-threshold" {
                             time-range 3offset;
+                            any;
+                        }
+                        less-than "$out-util" "$high-threshold" {
+                            time-range 3offset;
+                            any;
                         }
                     }
                     then {
@@ -510,12 +512,6 @@ healthbot {
                  * points in 180 seconds period.
                  */ 				
                 term is-interface-stats-abnormal {
-                    when {
-                        increasing-at-least-by-value "$out-util" {
-                            value "$high-threshold";
-                            time-range 3offset;
-                        }
-                    }
                     then {
                         status {
                             color red;
