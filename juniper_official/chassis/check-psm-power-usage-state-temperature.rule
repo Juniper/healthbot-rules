@@ -8,11 +8,14 @@
  *   2) "psm-power-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 50.
  *   3) "psm" is the power module,it can be psm0 or psm1.
- *      
+ *   4) "psm-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55.
+ *   5) "psm-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 44.      
  */
 healthbot {
     topic hardware.chassis {
-        rule check-psm-power-usage-state {
+        rule check-psm-power-usage-state-temperature {
             /*
              * Monitors PSM power usage,state and notifies via dashboard, red color 
              * when threshold is exceeded else green.
@@ -82,6 +85,20 @@ healthbot {
                 type integer;
                 description "psm power usage low threshold";
             }
+            field psm-temperature-high-threshold {
+                constant {
+                    value "{{psm-temperature-high-threshold}}";
+                }
+                type integer;
+                description "PSM temperature high threshold";
+            }
+            field psm-temperature-low-threshold {
+                constant {
+                    value "{{psm-temperature-low-threshold}}";
+                }
+                type integer;
+                description "PSM temperature low threshold";
+            }			
             field psm-state {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == 'state'";
@@ -90,6 +107,22 @@ healthbot {
                 type string;
                 description "State of power supply module";
             }
+            field psm-temperature-degrees {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == Temperature";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+            }
+            field psm-temperature {
+                formula {
+                    capture-groups {
+                        field-name "$psm-temperature-degrees";
+                        pattern "\d+";
+                    }
+                }
+                type integer;
+            }			
             /*
              * Anomaly detection logic.
              */			
@@ -204,6 +237,53 @@ healthbot {
                     }
                 }				
             }
+            trigger psm-temperature {
+                frequency 1offset;
+                /*
+                 * Sets color to green when psm-temperature is lesser than psm-temperature-low-threshold
+                 * 
+                 */				
+                term temperature-is-normal {
+                    when {
+                        less-than "$psm-temperature" "$psm-temperature-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$psm temperature ($psm-temperature) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when psm-temperature is lesser than psm-temperature-high-threshold and 
+                 * greater-than-or-equal-to psm-temperature-high-threshold			 
+                 * 
+                 */				
+                term temperature-exceeds-low-threshold {
+                    when {
+                        greater-than-or-equal-to "$psm-temperature" "$psm-temperature-low-threshold";
+                        less-than "$psm-temperature" "$psm-temperature-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$psm temperature ($psm-temperature) is in the mid-range ($psm-temperature-high-threshold < $psm-temperature >= $psm-temperature-low-threshold)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when psm-temperature is exceeds psm-temperature-high-threshold
+                 * 
+                 */				
+                term temperature-exceeds-high-threshold {
+                    then {
+                        status {
+                            color red;
+                            message "$psm temperature ($psm-temperature) is exceeding high threshold ($psm-temperature-high-threshold)";
+                        }
+                    }
+                }
+            }			
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
@@ -223,6 +303,16 @@ healthbot {
                 description "Power supply module usage low threshold ";
                 type int;
             }
+            variable psm-temperature-high-threshold {
+                value 55;
+                description "Default PSM high threshold is 55 degree celsius";
+                type int;
+            }
+            variable psm-temperature-low-threshold {
+                value 45;
+                description "Default PSM low threshold is 45 degree celsius";
+                type int;
+            }			
             rule-properties {
                 version 1;
                 contributor juniper;
