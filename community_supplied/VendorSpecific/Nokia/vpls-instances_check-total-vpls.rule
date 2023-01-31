@@ -1,0 +1,70 @@
+healthbot {
+    topic vpls-instances {
+        rule check-total-vpls {
+            keys serviceid;
+            description "Check all VPLS Services";
+            sensor vpls-service {
+                iAgent {
+                    file NokiaServiceUsingVPLSTable.yml;
+                    table NokiaServiceUsingVPLSTable;
+                    frequency 10m;
+                }
+            }
+            field high-threshold {
+                constant {
+                    value "{{high-threshold}}";
+                }
+                type float;
+            }
+            field matching-services {
+                sensor vpls-service {
+                    path matching-services;
+                }
+                type float;
+                description "Count of all VPLS service";
+            }
+            field serviceid {
+                sensor vpls-service {
+                    path serviceid;
+                }
+                type string;
+                description ServiceID;
+            }
+            field type {
+                sensor vpls-service {
+                    path type;
+                }
+                type string;
+            }
+            trigger vpls-instances-scale {
+                frequency 10m;
+                term if-count-increase-threshold {
+                    when {
+                        greater-than "$matching-services" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "All Matching VPLS Services are $matching-services and exceeding the threshold";
+                        }
+                    }
+                }
+                term normal-count {
+                    when {
+                        less-than "$matching-services" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "All Matching VPLS Services are $matching-services in total";
+                        }
+                    }
+                }
+            }
+            variable high-threshold {
+                value 5000.0;
+                type float;
+            }
+        }
+    }
+}
