@@ -153,7 +153,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "Chassis ambient temperature($chassis-temperature degree celsius) exceeds low threshold";
+                            message "Chassis ambient temperature($chassis-temperature degree celsius) exceeds high threshold";
                         }
                     }
                 }
@@ -162,13 +162,10 @@ healthbot {
                  * 
                  */				
                 term temperature-abnormal {
-                    when {
-                        greater-than "$chassis-temperature" "$high-threshold";
-                    }				
                     then {
                         status {
                             color red;
-                            message "Chassis ambient temperature($chassis-temperature degree celsius) exceeds high threshold";
+                            message "Chassis ambient temperature($chassis-temperature degree celsius) exceeds critical threshold";
                         }
                     }
                 }
@@ -217,7 +214,7 @@ healthbot {
                  */				
                 term power-usage-normal {
                     when {
-                        greater-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
+                        greater-than "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
                     }
                     then {
                         status {
@@ -232,8 +229,8 @@ healthbot {
                  */				
                 term is-power-remaining-less-than-high-threshold {
                     when {
-                        greater-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
-                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
+                        greater-than "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
+                        less-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
                     }
                     then {
                         status {
@@ -248,7 +245,7 @@ healthbot {
                  */				
                 term is-power-remaining-less-than-low-threshold {
                     when {
-                        less-than "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
+                        less-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
                     }
                     then {
                         status {
