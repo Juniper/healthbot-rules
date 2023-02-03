@@ -24,8 +24,8 @@ healthbot {
              */			
             sensor fan-netconf {
                 iAgent {
-                    file fanEVOTable.yml;
-                    table fanEVOTable;
+                    file fanTable.yml;
+                    table fanTable;
                     frequency 180s;
                 }
             }
@@ -35,24 +35,52 @@ healthbot {
              */			
             field fan-name {
                 sensor fan-netconf {
-                    path Item;
+                    path name;
                 }
                 type string;
                 description "Name of the fan tray and fan number";
             }
-            field measurement {
+            field measurements {
                 sensor fan-netconf {
                     path measurement;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }					
+                }
+                type string;
+                description "RPM String Value";				
+            }			
+            field measurement {
+                formula {
+                    capture-groups {
+                        field-name "$measurements";
+                        pattern "\d+";
+                    }
                 }
                 type integer;
-                description "RPM measurement";
+                description "RPM Value";				
             }
-            field rpm-percent {
+            field rpm-percents {
                 sensor fan-netconf {
                     path rpm;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+                description "RPM string percentage";
+            }			
+            field rpm-percent {
+                formula {
+                    capture-groups {
+                        field-name "$rpm-percents";
+                        pattern "\d+";
+                    }
                 }
                 type integer;
-                description "RPM percent";
+                description "RPM percentage";
             }
             field rpm-percent-anomaly {
                 formula {
@@ -186,7 +214,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$$fan-name RPM percent($rpm-percent) is normal";
+                            message "$fan-name RPM percent($rpm-percent) is normal";
                         }
                     }
                 }				
@@ -248,7 +276,7 @@ healthbot {
                     }
                 }
                 helper-files other {
-                    list-of-files [ fanEVOTable.yml ];
+                    list-of-files [ fanTable.yml ];
                 }				
             }
         }
