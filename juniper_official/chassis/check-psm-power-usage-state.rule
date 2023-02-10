@@ -15,16 +15,16 @@
  */
 healthbot {
     topic hardware.chassis {
-        rule check-psm-power-usage-state-temperature {
+        rule check-psm-power-usage-state {
             /*
-             * Monitors PSM power usage,state and notifies via dashboard, red color 
+             * Monitors PSM power usage,state,temperature and notifies via dashboard, red color 
              * when threshold is exceeded else green.
 			 *
              * Use PSM as key for rule.
              */		
             keys psm;
             synopsis "Chassis psm power check";
-            description "Collects PSM power usage periodically and notifies anomaly when power usage exceeds threshold";
+            description "Collects PSM power properties periodically and notifies anomaly when exceeds threshold";
             /*
              * Sensor configuration to get data from network devices.
              */			
@@ -202,15 +202,10 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red when state is offline.
+                 * Sets color to red when state is not online
                  * 
                  */				
                 term state-is-not-online {
-                    when {
-                        matches-with "$psm-state" offline {
-                            ignore-case;
-                        }
-                    }
                     then {
                         status {
                             color red;
@@ -219,23 +214,6 @@ healthbot {
                         next;						
                     }
                 }
-                /*
-                 * Sets color to red when state is faulty.
-                 * 
-                 */				
-                term state-is-failed {
-                    when {
-                        matches-with "$psm-state" fault {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$psm is $psm-state";
-                        }
-                    }
-                }				
             }
             trigger psm-temperature {
                 frequency 1offset;
@@ -317,7 +295,7 @@ healthbot {
                 version 1;
                 contributor juniper;
                 category basic;
-                supported-healthbot-version 4.2.0;
+                supported-healthbot-version 4.3.0;
                 supported-devices {
                     juniper {
                         operating-system junosEvolved {

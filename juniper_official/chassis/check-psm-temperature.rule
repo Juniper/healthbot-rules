@@ -1,0 +1,156 @@
+/*
+ * Monitors PSM temperature and notifies when anomalies are found
+ * 
+ * Two inputs control detection
+ *
+ *   1) "psm-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55.
+ * 
+ *   2) "psm-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 45.
+ *
+ *      
+ */
+healthbot {
+    topic hardware.chassis {
+        rule check-psm-temperature {
+            /*
+             * Monitors PSM power temperature and notifies via dashboard,green when  
+             * temperature is less than low threshold, yellow when exceeds low threshold
+			 * and red when it exceeds high threshold.
+			 *
+             * Use PSM as key for rule.
+             */
+            keys psm;
+            synopsis "PSM Temperature KPI";
+            description "Collects PSM temperature and checks for anomaly";
+            /*
+             * Sensor configuration to get data from network devices.
+             */				
+            sensor psm-temperature-netconf {
+                iAgent {
+                    file psm-table.yml;
+                    table PSMTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */			
+            field psm {
+                sensor psm-temperature-netconf {
+                    path name;
+                }
+                type string;
+                description "Power supply module";
+            }
+            field psm-temperature-high-threshold {
+                constant {
+                    value "{{psm-temperature-high-threshold}}";
+                }
+                type integer;
+                description "PSM high threshold";
+            }
+            field psm-temperature-low-threshold {
+                constant {
+                    value "{{psm-temperature-low-threshold}}";
+                }
+                type integer;
+                description "PSM low threshold";
+            }
+            field temperature {
+                sensor psm-temperature-netconf {
+                    path temperature;
+                }
+                type integer;
+                description "Temperature of power supply module";
+            }
+            /*
+             * Anomaly detection logic.
+             */			
+            trigger psm-temperature {
+                frequency 1offset;
+                /*
+                 * Sets color to green when the psm temperature is less than low threshold
+                 * 
+                 */				
+                term normal-temperature {
+                    when {
+                        less-than "$temperature" "$psm-temperature-low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$psm temperature $temperature is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when psm temperature is more than-or-equal-to low threshold
+                 * 
+                 */				
+                term temperature-exceeds-low-threshold {
+                    when {
+                        greater-than-or-equal-to "$temperature" "$psm-temperature-low-threshold";
+                        less-than "$temperature" "$psm-temperature-high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$psm temperature $temperature is exceeding high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red when psm temperature is more than-or-equal-to high threshold
+                 * 
+                 */				
+                term temperature-exceeds-high-threshold {
+                    when {
+                        greater-than-or-equal-to "$temperature" "$psm-temperature-high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$psm temperature $temperature is exceeding critical threshold";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be changed
+             * while deploying playbook instance.
+             */			
+            variable psm-temperature-high-threshold {
+                value 55;
+                description "PSM high threshold temperature";
+                type int;
+            }
+            variable psm-temperature-low-threshold {
+                value 45;
+                description "PSM low threshold temperature";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 4.3.0;
+                supported-devices {
+                    juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }						
+                    }
+                }
+            }
+		}
+    }
+}
