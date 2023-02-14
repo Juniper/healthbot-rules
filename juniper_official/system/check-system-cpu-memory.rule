@@ -131,6 +131,7 @@ healthbot {
                  term re-cpu-utilization-normal {
                      when {
                          less-than "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
+                         less-than-or-equal-to "$re-cpu-utilization-anomaly" 0;
                      }				 
                      then {
                          status {
@@ -138,34 +139,16 @@ healthbot {
                              message "$routing-engine CPU utilization($re-cpu-utilization) is normal";
                          }
                      }
-                 }				 
-                /*
-                 * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
-                 */				 
-                 term is-re-cpu-utilization-middle {
-                     when {
-                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
-                             time-range 3offset;
-                             all;
-                         }
-                         less-than "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
-                             time-range 3offset;
-                         }						 
-                     }
-                     then {
-                         status {
-                             color yellow;
-                             message "$routing-engine CPU utilization($re-cpu-utilization) in medium range";
-                         }
-                     }
-                 }
-                /*
+                 }	
+                 /*
                  * Sets color to yellow when re-cpu utilization is below low threshold ($low-threshold)
                  * and the temperature value is anomalous.
                  */ 
                 term is-re-cpu-utilization-anomalous {
                     when {
+                        less-than "$re-cpu-utilization" "$low-threshold";
                         equal-to "$re-cpu-utilization-anomaly" 1;
+                        
                     }
                     then {
                         status {
@@ -173,7 +156,44 @@ healthbot {
                             message "$routing-engine CPU utilization($re-cpu-utilization%) is not between the acceptable range of ($re-cpu-utilization-anomaly-lower-boundary and $re-cpu-utilization-anomaly-upper-boundary)";
                         }
                     }
-                }				 
+                }		
+                /*
+                 * Sets color to green when re-cpu utilization is less-than re-cpu-utilization-low-threshold
+                 * 
+                 */				
+                term is-re-cpu-utilization-less-than-low-threshold {
+                    when {
+                        less-than "$re-cpu-utilization" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine CPU utilization($re-cpu-utilization) is normal";
+                        }
+                    }
+                }			 
+                /*
+                 * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
+                 */				 
+                 term is-re-cpu-utilization-middle {
+                     when {
+                         greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold" {
+                             time-range 3offset;
+                             any;
+                         }
+                         less-than "$re-cpu-utilization" "$re-cpu-utilization-high-threshold" {
+                             time-range 3offset;
+                             any;
+                         }						 
+                     }
+                     then {
+                         status {
+                             color yellow;
+                             message "$routing-engine CPU utilization($re-cpu-utilization) is greater than or equal to high threshold ($re-cpu-utilization-low-threshold)";
+                         }
+                     }
+                 }
+                			 
                 /*
                  * Sets color to red when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-high-threshold
                  */				 
@@ -187,7 +207,7 @@ healthbot {
                      then {
                          status {
                              color red;
-                             message "$routing-engine CPU utilization($re-cpu-utilization) exceeds high threshold($re-cpu-utilization-high-threshold)";
+                             message "$routing-engine CPU utilization($re-cpu-utilization) exceeds critical threshold($re-cpu-utilization-high-threshold)";
                          }
                      }
                  }				 
@@ -202,6 +222,7 @@ healthbot {
                  term is-re-memory-buffer-utilization-normal {
                      when {
                          less-than "$re-memory-buffer" "$re-memory-buffer-low-threshold";
+                         less-than-or-equal-to "re-memory-buffer-anomaly" 0;
                      }				 
                      then {
                          status {
@@ -209,7 +230,38 @@ healthbot {
                              message "$routing-engine memory buffer utilization($re-memory-buffer) is normal";
                          }
                      }
-                 }				 
+                 }	
+                 /*
+                 * Sets color to yellow when re-memory-buffer utilization is below low threshold ($low-threshold)
+                 * and the re-memory-buffer value is anomalous.
+                 */ 
+                term is-re-memory-buffer-anomalous {
+                    when {
+                        less-than "$re-memory-buffer" "$low-threshold";
+                        equal-to "$re-memory-buffer-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$routing-engine memory buffer utilization($re-memory-buffer%) is not between the acceptable range of ($re-memory-buffer-anomaly-lower-boundary and $re-memory-buffer-anomaly-upper-boundary)";
+                        }
+                    }
+                }	
+                /*
+                 * Sets color to green when re-memory-buffer utilization is below low threshold ($low-threshold)
+                 * 
+                 */				
+                term is-re-memory-buffer-utilization-less-than-low-threshold {
+                    when {
+                        less-than "$re-memory-buffer" "$low-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$routing-engine memory buffer utilization($re-memory-buffer) is normal";
+                        }
+                    }
+                }			 
                 /*
                  * Sets color to yellow when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-low-threshold
                  */				 
@@ -217,34 +269,21 @@ healthbot {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold" {
                              time-range 3offset;
-                             all;
+                             any;
                          }
                          less-than "$re-memory-buffer" "$re-memory-buffer-high-threshold" {
                              time-range 3offset;
+                             any;
                          }						 
                      }
                      then {
                          status {
                              color yellow;
-                             message "$routing-engine memory buffer utilization($re-memory-buffer) is in middle range(>=$re-memory-buffer-low-threshold, <=$re-memory-buffer-high-threshold)";
+                             message "$routing-engine memory buffer utilization($re-memory-buffer) is greater than or equal to high threshold($re-memory-buffer-low-threshold)";
                          }
                      }
                  }
-                /*
-                 * Sets color to yellow when re-memory-buffer utilization is below low threshold ($low-threshold)
-                 * and the re-memory-buffer value is anomalous.
-                 */ 
-                term is-re-memory-buffer-anomalous {
-                    when {
-                        equal-to "$re-memory-buffer-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU utilization($re-memory-buffer%) is not between the acceptable range of ($re-memory-buffer-anomaly-lower-boundary and $re-memory-buffer-anomaly-upper-boundary)";
-                        }
-                    }
-                }				 
+                			 
                 /*
                  * Sets color to red when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-high-threshold
                  */				 
@@ -258,7 +297,7 @@ healthbot {
                      then {
                          status {
                              color red;
-                             message "$routing-engine memory buffer utilization($re-memory-buffer) exceed high threshold($re-memory-buffer-high-threshold)";
+                             message "$routing-engine memory buffer utilization($re-memory-buffer) exceed critical threshold($re-memory-buffer-high-threshold)";
                          }
                      }
                  }				 
