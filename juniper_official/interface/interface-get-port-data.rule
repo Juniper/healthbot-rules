@@ -7,36 +7,39 @@ healthbot {
             keys port-name;
             synopsis "Port Data Collector";
             description "Collects port information from the device";
-            sensor components {
+            sensor components-oc {
                 synopsis "system components open-config sensor definition";
                 description "/components open-config sensor to collect telemetry data from network device";
                 open-config {
-                    sensor-name /components/;
+                    sensor-name /components/component/;
                     frequency 60s;
                 }
             }
             field description {
-                sensor components {
+                sensor components-oc {
                     path /components/component/state/description;
                 }
                 type string;
             }
             field part-number {
-                sensor components {
+                sensor components-oc {
+					where "/components/component/state/part-no =~ /^{{non-empty-part-number}}$/";
                     path /components/component/state/part-no;
-                    data-if-missing {
-                        value UNCONNECTED;
-                    }
                 }
                 type string;
                 description "part number of port";
             }
             field port-name {
-                sensor components {
+                sensor components-oc {
                     where "/components/component/@name =~ /^FPC\d+:PIC\d+:PORT\d+$/";
                     path "/components/component/@name";
                 }
                 description "port name";
+            }
+			variable non-empty-part-number {
+                value .+;
+                description "A valid part number";
+                type string;
             }
             rule-properties {
                 version 2;
