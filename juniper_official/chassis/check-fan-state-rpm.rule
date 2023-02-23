@@ -129,6 +129,24 @@ healthbot {
                 }
                 type float;
                 description "RPM low threshold measurement";
+            }
+            field rpm-high-threshold-int {
+                formula {
+                    eval {
+                        expression "$measurement * $high-threshold / $rpm-percent";
+                    }
+                }
+                type integer;
+                description "RPM High threshold measurement";
+            }
+            field rpm-low-threshold-int {
+                formula {
+                    eval {
+                        expression "$measurement * $low-threshold / $rpm-percent";
+                    }
+                }
+                type integer;
+                description "RPM low threshold measurement";
             }			
             /*
              * Anomaly detection logic
@@ -230,7 +248,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to high threshold $rpm-low-threshold";
+                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to high threshold $rpm-low-threshold-int";
                         }
                     }
                 }
@@ -242,7 +260,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to critical threshold $rpm-high-threshold";
+                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to critical threshold $rpm-high-threshold-int";
                         }
                     }
                 }
