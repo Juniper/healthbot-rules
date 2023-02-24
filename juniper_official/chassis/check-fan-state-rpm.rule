@@ -35,24 +35,52 @@ healthbot {
              */			
             field fan-name {
                 sensor fan-netconf {
-                    path Item;
+                    path name;
                 }
                 type string;
                 description "Name of the fan tray and fan number";
             }
-            field measurement {
+            field measurements {
                 sensor fan-netconf {
                     path measurement;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }					
+                }
+                type string;
+                description "RPM String Value";				
+            }			
+            field measurement {
+                formula {
+                    capture-groups {
+                        field-name "$measurements";
+                        pattern "\d+";
+                    }
                 }
                 type integer;
-                description "RPM measurement";
+                description "RPM Value";				
             }
-            field rpm-percent {
+            field rpm-percents {
                 sensor fan-netconf {
                     path rpm;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type string;
+                description "RPM string percentage";
+            }			
+            field rpm-percent {
+                formula {
+                    capture-groups {
+                        field-name "$rpm-percents";
+                        pattern "\d+";
+                    }
                 }
                 type integer;
-                description "RPM percent";
+                description "RPM percentage";
             }
             field rpm-percent-anomaly {
                 formula {
@@ -100,6 +128,24 @@ healthbot {
                     }
                 }
                 type float;
+                description "RPM low threshold measurement";
+            }
+            field critical-rpm-threshold {
+                formula {
+                    eval {
+                        expression "$measurement * $high-threshold / $rpm-percent";
+                    }
+                }
+                type integer;
+                description "RPM High threshold measurement";
+            }
+            field high-rpm-threshold {
+                formula {
+                    eval {
+                        expression "$measurement * $low-threshold / $rpm-percent";
+                    }
+                }
+                type integer;
                 description "RPM low threshold measurement";
             }			
             /*
@@ -150,7 +196,7 @@ healthbot {
                 term normal {
                     when {
                         less-than "$rpm-percent" "$low-threshold";
-                        less-than-or-equal-to "$rpm-percent-anomaly" 0;						
+                        less-than-or-equal-to "$rpm-percent-anomaly" 0;
                     }				
                     then {
                         status {
@@ -186,7 +232,7 @@ healthbot {
                     then {
                         status {
                             color green;
-                            message "$$fan-name RPM percent($rpm-percent) is normal";
+                            message "$fan-name RPM percent($rpm-percent) is normal";
                         }
                     }
                 }				
@@ -202,7 +248,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to $rpm-low-threshold";
+                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to high threshold $high-rpm-threshold";
                         }
                     }
                 }
@@ -214,7 +260,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to $rpm-high-threshold";
+                            message "$fan-name RPM percent $rpm-percent($measurement RPM) is greater than or equal to critical threshold $critical-rpm-threshold";
                         }
                     }
                 }
@@ -233,7 +279,7 @@ healthbot {
                 version 1;
                 contributor juniper;
                 category basic;
-                supported-healthbot-version 4.2.0;
+                supported-healthbot-version 4.3.0;
                 supported-devices {
                     juniper {
                         operating-system junosEvolved {
