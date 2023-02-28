@@ -63,7 +63,7 @@ healthbot {
             }
             field routing-engine {
                 sensor components-oc {
-                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$/";
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$|^RE[{{re-slot-no}}]$/";
                     path "/components/component/@name";
                 }
                 description "RE name to monitor";
@@ -257,6 +257,9 @@ healthbot {
                  * Defaults color to red and notify anomaly.
                  */ 
                 term temperature-abnormal {
+                    when {
+                        greater-than-or-equal-to "$routing-engine-cpu-temperature" "$high-threshold";
+                    }				
                     then {
                         status {
                             color red;
