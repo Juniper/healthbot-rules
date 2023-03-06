@@ -82,15 +82,15 @@ healthbot {
                 type integer;
                 description "RPM percentage";
             }
-            field rpm-percent-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$rpm-percent";
-                    }
-                }
-                type integer;
-                description "JAIML anomaly detection on rpm-percent field";
-            }
+            # field rpm-percent-anomaly {
+            #     formula {
+            #         jaiml-anomaly-detection {
+            #             field-name "$rpm-percent";
+            #         }
+            #     }
+            #     type integer;
+            #     description "JAIML anomaly detection on rpm-percent field";
+            # }
             field status {
                 sensor fan-netconf {
                     path status;
@@ -177,6 +177,11 @@ healthbot {
                  * 
                  */				
                 term state-is-not-ok {
+                    when {
+                        does-not-match-with "$status" ok {
+                            ignore-case;
+                        }
+                    }
                     then {
                         status {
                             color red;
@@ -209,18 +214,18 @@ healthbot {
                  * Sets color to yellow when RPM is below low threshold ($low-threshold)
                  * and the RPM value is anomalous.
                  */ 				
-                term is-rpm-percent-anomalous {
-                    when {
-                        less-than "$rpm-percent" "$low-threshold";
-                        equal-to "$rpm-percent-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$fan-name RPM percent($rpm-percent%) is not between the acceptable range of ($rpm-percent-anomaly-lower-boundary and $rpm-percent-anomaly-upper-boundary)";
-                        }
-                    }
-                }
+                # term is-rpm-percent-anomalous {
+                #     when {
+                #         less-than "$rpm-percent" "$low-threshold";
+                #         equal-to "$rpm-percent-anomaly" 1;
+                #     }
+                #     then {
+                #         status {
+                #             color yellow;
+                #             message "$fan-name RPM percent($rpm-percent%) is not between the acceptable range of ($rpm-percent-anomaly-lower-boundary and $rpm-percent-anomaly-upper-boundary)";
+                #         }
+                #     }
+                # }
                 /*
                  * Sets color to green when RPM is below low threshold ($low-threshold)
                  * 
@@ -257,6 +262,9 @@ healthbot {
                  * 
                  */				
                 term above-high-threshold {
+                    when {
+                        greater-than-or-equal-to "$rpm-percent" "$high-threshold";
+                    }
                     then {
                         status {
                             color red;
