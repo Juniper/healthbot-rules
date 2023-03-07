@@ -63,6 +63,17 @@
                 synopsis "ospf hello received statistics kpi";
                 description "Sets health based on ospf hello received statistics";
                 frequency 1offset;
+                term is-ospf-hello-receive-not-increasing {
+                    when {
+                        matches-with-previous "$hello-received-5sec";
+                        }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF receive module not functioning, hello receive count($hello-received) not increasing";
+                        }
+                    }
+                }
                 term is-ospf-hello-receive-increasing {
                     when {
                         increasing-at-least-by-value "$hello-received-5sec" {
@@ -76,21 +87,22 @@
                         }
                     }
                 }
-                term is-ospf-hello-receive-not-increasing {
-                    when {
-                        matches-with-previous "$hello-received-5sec";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "OSPF receive module not functioning, hello receive count($hello-received) not increasing";
-                        }
-                    }
-                }
+            } 
             trigger ospf-hello-sent {
                 synopsis "ospf hello sent statistics kpi";
                 description "Sets health based on ospf hello sent statistics";
                 frequency 1offset;
+                term is-ospf-hello-sent-not-increasing {
+                    when {
+                        matches-with-previous "$hello-sent";
+                        }
+                    then {
+                        status {
+                            color red;
+                            message "OSPF send module not functioning, hello send count($hello-sent) not increasing";
+                        }
+                    }
+                }
                 term is-ospf-hello-sent-increasing {
                     when {
                         increasing-at-least-by-value "$hello-sent" {
@@ -101,18 +113,6 @@
                         status {
                             color green;
                             message "OSPF send module is functioning, hello send count($hello-sent) increasing";
-                        }
-                    }
-                }
-                term is-ospf-hello-sent-not-increasing {
-                    when {
-                         matches-with-previous "$hello-sent";
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "OSPF send module not functioning, hello send count($hello-sent) not increasing";
                         }
                     }
                 }
