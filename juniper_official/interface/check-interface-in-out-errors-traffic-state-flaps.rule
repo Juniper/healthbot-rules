@@ -223,32 +223,12 @@ healthbot {
                             message "$interface-name input traffic:$in-mbps mbps and $in-util % is normal";
                         }
                     }
-                }		
-                /*
-                 * Sets color to red and sends out an anomaly notification
-                 * when the interface input traffic ($in-util) is
-                 * above high threshold (high-threshold) for all  
-                 * points in a 180 seconds period.
-                 */				
-                term is-interface-in-traffic-abnormal {
-                    when {
-                        increasing-at-least-by-value "$in-util" {
-                            value "$high-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name input traffic:$in-mbps mbps and $in-util % is above high threshold";
-                        }
-                    }
-                }						
+                }							
                 /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface input traffic($in-util) is
                  * above low threshold (low-threshold) for all points 
-                 * in a 180 seconds period.
+                 * in a 2.5offset period.
                  */					
                 term is-interface-in-traffic-median {
                     when {
@@ -264,6 +244,26 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-util) is
+                 * above high threshold (high-threshold) for all  
+                 * points in a 2.5offset period.
+                 */				
+                term is-interface-in-traffic-abnormal {
+                    when {
+                        increasing-at-least-by-value "$in-util" {
+                            value "$high-threshold";
+                            time-range 2.5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name input traffic:$in-mbps mbps and $in-util % is above high threshold";
+                        }
+                    }
+                }	
             }    
             trigger interface-input-errors {
                 synopsis "Interface input-errors kpi";
@@ -286,7 +286,7 @@ healthbot {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * interface Input errors ($in-errors-count) count increases for 
-                 * all points in 180 seconds period.
+                 * all points in 2.5offset period.
                  */				
                 term is-interface-in-errors-abnormal {
                     when {
@@ -340,7 +340,7 @@ healthbot {
                     }
                 }				
                 /*
-                 * Sets color to red when number of flaps are increasing-at-least-by-value flaps-threshold for 3offset
+                 * Sets color to red when number of flaps are increasing-at-least-by-value flaps-threshold for 2.5offset
                  */				
                 term is-link-flapping-consistently {
                     when {
@@ -431,7 +431,7 @@ healthbot {
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * the interface Output errors ($output-errors-count) count increases
-                 * for all points in 180 seconds period.
+                 * for all points in 2.5offset period.
                  */				
                 term is-interface-out-errors-abnormal {
                     when {
@@ -484,30 +484,10 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the interface output traffic ($out-util) is
-                 * above high threshold (high-threshold) for all
-                 * points in 180 seconds period.
-                 */ 				
-                term is-interface-stats-abnormal {
-                    when {
-                        increasing-at-least-by-value "$out-util" {
-                            value "$high-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name output traffic:$out-mbps mbps and $out-util % is above high threshold";
-                        }
-                    }
-                }	
-                /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface output traffic ($out-util)
                  * is above low threshold (low-threshold) for all
-                 * points in 180 seconds period.
+                 * points in 2.5offset period.
                  */				
                 term is-interface-stats-median {
                     when {
@@ -522,7 +502,27 @@ healthbot {
                             message "$interface-name output traffic:$out-mbps mbps and $out-util % is in medium range";
                         }
                     }
-                }			
+                }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface output traffic ($out-util) is
+                 * above high threshold (high-threshold) for all
+                 * points in 2.5offset period.
+                 */ 				
+                term is-interface-stats-abnormal {
+                    when {
+                        increasing-at-least-by-value "$out-util" {
+                            value "$high-threshold";
+                            time-range 2.5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name output traffic:$out-mbps mbps and $out-util % is above high threshold";
+                        }
+                    }
+                }				
             }
             variable errors-threshold-variable {
                 value 1;
