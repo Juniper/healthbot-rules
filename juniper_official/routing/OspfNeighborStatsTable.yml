@@ -1,0 +1,50 @@
+---
+OspfNeighborStatsTable:
+  rpc: get-ospf-neighbor-information
+  args:
+    extensive: !!bool True
+  item: ospf-neighbor
+  key:
+    - interface-name
+    - neighbor-id
+  view: OspfNeighborStatsView
+
+OspfNeighborStatsView:
+  fields:
+    ospf-neighbor-state: ospf-neighbor-state
+    neighbor-address: neighbor-address
+    activity-timer: activity-timer
+    dr-address: dr-address
+    bdr-address: bdr-address
+    neighbor-up-time: neighbor-up-time
+    neighbor-adjacency-time: neighbor-adjacency-time
+
+xslt: "<xsl:stylesheet version=\"1.0\"
+ xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"
+ xmlns:ns=\"some:ns\">
+ <xsl:output omit-xml-declaration=\"yes\" indent=\"yes\"/>
+ <xsl:strip-space elements=\"*\"/>
+ <ns:WhiteList>
+      <name>interface-name</name>
+      <name>neighbor-id</name>
+      <name>ospf-neighbor-state</name>
+      <name>neighbor-address</name>
+      <name>dr-address</name>
+      <name>bdr-address</name>
+ </ns:WhiteList>
+ <ns:blacklist>
+      <name>neighbor-up-time</name>
+      <name>neighbor-adjacency-time</name>
+ </ns:blacklist>
+ <xsl:template match=\"node()|@*\">
+      <xsl:copy>
+             <xsl:apply-templates select=\"node()|@*\"/>
+      </xsl:copy>
+ </xsl:template>
+ <xsl:template match=
+  \"*[not(descendant-or-self::*[name()=document('')/*/ns:WhiteList/*]) or (self::*[name()=document('')/*/ns:blacklist/*])]\"/>
+ </xsl:stylesheet>"	
+
+	
+
+	
