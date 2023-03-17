@@ -24,26 +24,12 @@
                 type integer;
                 description "Ospf hello packets received";
             }
-            field hello-received-5sec {
-                sensor ospf-statistics-netconf {
-                    path hello-received-5sec;
-                }
-                type integer;
-                description "Ospf hello packets received in last 5 seconds";
-            }
             field hello-sent {
                 sensor ospf-statistics-netconf {
                     path hello-sent;
                 }
                 type integer;
                 description "Ospf hello packets sent";
-            }
-            field hello-sent-5sec {
-                sensor ospf-statistics-netconf {
-                    path hello-sent-5sec;
-                }
-                type integer;
-                description "Ospf hello packets sent in last 5 second";
             }
             field ospf-packet-type {
                 sensor ospf-statistics-netconf {
@@ -65,24 +51,26 @@
                 frequency 1offset;
                 term is-ospf-hello-receive-increasing {
                     when {
-                        increasing-at-least-by-value "$hello-received-5sec" {
+                        increasing-at-least-by-value "$hello-received" {
                             value "$hello-count-threshold";
-                            time-range 5offset;
-                            any;
+                            time-range 2.5offset;
                         }
                     }
                     then {
                         status {
                             color green;
-                            message "OSPF receive module is functioning, hello receive count($hello-received) increasing";
+                            message "OSPF receive module is functioning, hello receive count($hello-received) is increasing";
                         }
                     }
                 }
                 term is-ospf-hello-receive-not-increasing {
+                    when {
+                        matches-with-previous "$hello-received";
+                    }				
                     then {
                         status {
                             color red;
-                            message "OSPF receive module not functioning, hello receive count($hello-received) not increasing";
+                            message "OSPF receive module not functioning, hello receive count($hello-received) is not increasing";
                         }
                     }
                 }
@@ -95,22 +83,24 @@
                     when {
                         increasing-at-least-by-value "$hello-sent" {
                             value "$hello-count-threshold";
-                            time-range 5offset;
-                            any;
+                            time-range 2.5offset;
                         }
                     }
                     then {
                         status {
                             color green;
-                            message "OSPF send module is functioning, hello send count($hello-sent) increasing";
+                            message "OSPF send module is functioning, hello send count($hello-sent) is increasing";
                         }
                     }
                 }
                 term is-ospf-hello-sent-not-increasing {
+                    when {
+                        matches-with-previous "$hello-sent";
+                    }				
                     then {
                         status {
                             color red;
-                            message "OSPF send module not functioning, hello send count($hello-sent) not increasing";
+                            message "OSPF send module not functioning, hello send count($hello-sent) is not increasing";
                         }
                     }
                 }
