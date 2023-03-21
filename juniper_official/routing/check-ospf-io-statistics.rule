@@ -9,7 +9,7 @@
             sensor ospf-io-statistics-netconf {
                 synopsis "OSPF netconf sensor definition";
                 iAgent {
-                    file OspfStats.yml;
+                    file OspfIoStatsTable.yml;
                     table OspfIoStatsTable;
                     frequency 180s;
                 }
@@ -43,20 +43,6 @@
                 description "Sets health based on ospf io errors";
                 frequency 1offset;
                 /*
-                 * Sets color to green when no ospf errors.
-                 */
-                term no-ospf-error-reported {
-                    when {
-                        matches-with "$ospf-error" no-error;
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "OSPF IO is error free";
-                        }
-                    }
-                }
-                /*
                  * Sets color to red and sends out an anomaly notification
                  * when the ospf error count increases by 1.
                  */
@@ -64,6 +50,7 @@
                     when {
                         increasing-at-least-by-value "$ospf-error" {
                             value "$error-threshold";
+                            time-range 2.5offset;							
                         }
                     }
                     then {
@@ -73,6 +60,22 @@
                         }
                     }
                 }
+                /*
+                 * Sets color to green when ospf errors is not incrementing.
+                 */
+                term no-ospf-error-reported {
+                    when {
+                    matches-with-previous "$ospf-error" {
+                        time-range 2.5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF IO error ($ospf-error)is not increasing";
+                        }
+                    }
+                }				
                 /*
                  * Defaults color to green.
                  */
@@ -153,7 +156,7 @@
                     }
                 }
                 helper-files other {
-                    list-of-files OspfStats.yml;
+                    list-of-files OspfIoStatsTable.yml;
                 }
             }
         }
