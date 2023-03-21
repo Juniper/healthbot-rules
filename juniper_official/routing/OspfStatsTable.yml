@@ -1,0 +1,36 @@
+---
+OspfStatsTable:
+  rpc: get-ospf-statistics-information
+  item: ospf-statistics/packet-statistics[ospf-packet-type="Hello"]
+  key: ospf-packet-type
+  view: OspfStatsView
+
+OspfStatsView:
+  fields:
+    hello-sent: packets-sent
+    hello-received: packets-received
+    hello-sent-5sec: packets-sent-5seconds
+    hello-received-5sec: packets-received-5seconds
+
+xslt: "<xsl:stylesheet version=\"1.0\"
+ xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"
+ xmlns:ns=\"some:ns\">
+ <xsl:output omit-xml-declaration=\"yes\" indent=\"yes\"/>
+ <xsl:strip-space elements=\"*\"/>
+ <ns:WhiteList>
+      <name>ospf-packet-type</name>
+      <name>packets-sent</name>
+      <name>packets-received</name>
+      <name>packets-sent-5seconds</name>
+      <name>packets-received-5seconds</name>
+ </ns:WhiteList>
+ <ns:blacklist>
+ </ns:blacklist>
+ <xsl:template match=\"node()|@*\">
+      <xsl:copy>
+             <xsl:apply-templates select=\"node()|@*\"/>
+      </xsl:copy>
+ </xsl:template>
+ <xsl:template match=
+  \"*[not(descendant-or-self::*[name()=document('')/*/ns:WhiteList/*]) or (self::*[name()=document('')/*/ns:blacklist/*])]\"/>
+ </xsl:stylesheet>"
