@@ -2,7 +2,7 @@
 intfaceStats:
   rpc: get-interface-information
   args:
-    extensive: True
+    extensive: "True"
   item: physical-interface
   key: name
   view: intfStatsView
@@ -25,3 +25,28 @@ intfStatsView:
   fields_ems:
     input-crc-errors: input-crc-errors
     output-crc-errors: output-crc-errors
+
+xslt: "<xsl:stylesheet version=\"1.0\"
+ xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"
+ xmlns:ns=\"some:ns\">
+ <xsl:output omit-xml-declaration=\"yes\" indent=\"yes\"/>
+ <xsl:strip-space elements=\"*\"/>
+ <ns:WhiteList>
+      <name>name</name>
+      <name>fec_ccw_count</name>
+      <name>fec_nccw_count</name>
+      <name>framing-errors</name>
+      <name>input-crc-errors</name>
+      <name>output-crc-errors</name>
+      <name>fec-corrected-words</name>
+ </ns:WhiteList>
+ <ns:blacklist>
+ </ns:blacklist>
+ <xsl:template match=\"node()|@*\">
+      <xsl:copy>
+             <xsl:apply-templates select=\"node()|@*\"/>
+      </xsl:copy>
+ </xsl:template>
+ <xsl:template match=
+  \"*[not(descendant-or-self::*[name()=document('')/*/ns:WhiteList/*]) or (self::*[name()=document('')/*/ns:blacklist/*])]\"/>
+ </xsl:stylesheet>"
