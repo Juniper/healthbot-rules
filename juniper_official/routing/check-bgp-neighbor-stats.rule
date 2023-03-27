@@ -69,7 +69,7 @@
             trigger bgp-neighbor-flap {
                 synopsis "BGP neighbor session flaps KPI";
                 description "Sets health based on increase in bgp neighbor session flaps";
-                frequency 1.5offset;
+                frequency 1offset;
                 /*
                  * Sets color to green when flap count is not increasing
                  */
@@ -85,23 +85,6 @@
                     }
                 }
                 /*
-                 * Sets color to yellow and sends out an anomaly notification when
-                 * the neighbor flap count increases.
-                 */
-                term is-session-inconsistent {
-                    when {
-                        increasing-at-least-by-value "$flap-count" {
-                            value "$flap-count-threshold";
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "BGP neighbor($peer-address) session flap-count($flap-count) is intermittent";
-                        }
-                    }
-                }
-                /*
                  * Sets color to red and sends out an anomaly notification when
                  * the neighbor flap count increases for all points in 3 offset period.
                  */
@@ -109,7 +92,7 @@
                     when {
                         increasing-at-least-by-value "$flap-count" {
                             value "$flap-count-threshold";
-                            time-range 3offset;
+                            time-range 2.5offset;
                             all;
                         }
                     }
@@ -119,10 +102,28 @@
                             message "BGP neighbor($peer-address) session flap-count($flap-count) is abnormal";
                         }
                     }
+                }				
+                /*
+                 * Sets color to yellow and sends out an anomaly notification when
+                 * the neighbor flap count increases.
+                 */
+                term is-session-inconsistent {
+                    when {
+                        increasing-at-least-by-value "$flap-count" {
+                            value "$flap-count-threshold";
+                            time-range 2.5offset;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "BGP neighbor($peer-address) session flap-count($flap-count) is intermittent";
+                        }
+                    }
                 }
             }
             trigger bgp-neighbor-status {
-                frequency 1.5offset;
+                frequency 1offset;
                 term neighbor-up {
                     when {
                         matches-with "$peer-state" Established {
@@ -137,6 +138,11 @@
                     }
                 }
                 term is-neighbor-down {
+                    when {
+                        does-not-match-with "$peer-state" Established {
+                            ignore-case;
+                        }
+                    }				
                     then {
                         status {
                             color red;
