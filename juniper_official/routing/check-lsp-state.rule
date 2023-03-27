@@ -41,7 +41,7 @@
              * Anomaly detection logic to detect lsp state changes.
              */
             trigger lsp-state {
-                frequency 1.5offset;
+                frequency 1offset;
                 term lsp-up {
                     when {
                         matches-with "$oper-status" UP {
@@ -74,12 +74,13 @@
              * Anomaly detection logic to detect lsp flaps.
              */
             trigger lsp-flaps {
-                frequency 1.5offset;
+                frequency 1offset;
                 term lsp-stable {
                     when {
                         exists "$lsp-name";
                         increasing-at-most-by-value "$lsp-state-change-count" {
                             value 0;
+                            time-range 2.5offset;
                         }
                     }
                     then {
@@ -94,7 +95,7 @@
                         exists "$lsp-name";
                         increasing-at-least-by-value "$lsp-state-change-count" {
                             value 1;
-                            time-range 5offset;
+                            time-range 2.5offset;
                         }
                     }
                     then {
@@ -109,6 +110,7 @@
                         exists "$lsp-name";
                         increasing-at-least-by-value "$lsp-state-change-count" {
                             value 1;
+                            time-range 2.5offset;
                         }
                     }
                     then {
