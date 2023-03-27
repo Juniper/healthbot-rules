@@ -148,6 +148,7 @@ healthbot {
                  */				
                 term is-temperature-median {
                     when {
+                        greater-than-or-equal-to "$chassis-temperature" "$low-threshold";
                         less-than "$chassis-temperature" "$high-threshold";
                     }
                     then {
@@ -162,6 +163,9 @@ healthbot {
                  * 
                  */				
                 term temperature-abnormal {
+                    when {
+                        greater-than-or-equal-to "$chassis-temperature" "$high-threshold";
+                    }
                     then {
                         status {
                             color red;
@@ -196,6 +200,11 @@ healthbot {
                  * 
                  */				
                 term state-is-not-online {
+                    when {
+                        matches-with "$chassis-state" offline {
+                            ignore-case;
+                        }
+                    }
                     then {
                         status {
                             color red;
