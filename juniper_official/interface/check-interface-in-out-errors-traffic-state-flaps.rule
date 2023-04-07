@@ -214,7 +214,10 @@ healthbot {
                  */				
                 term interface-in-traffic-normal {
                     when {
-                        matches-with-previous "$in-util";
+                        matches-with-previous "$in-util"{
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }				
                     then {
                         status {
@@ -223,26 +226,6 @@ healthbot {
                         }
                     }
                 }							
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the interface input traffic($in-util) is
-                 * above low threshold (low-threshold) for all points 
-                 * in a 2.5offset period.
-                 */					
-                term is-interface-in-traffic-median {
-                    when {
-                        increasing-at-least-by-value "$in-util" {
-                            value "$low-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is in medium range";
-                        }
-                    }
-                }
                 /*
                  * Sets color to red and sends out an anomaly notification
                  * when the interface input traffic ($in-util) is
@@ -254,6 +237,7 @@ healthbot {
                         increasing-at-least-by-value "$in-util" {
                             value "$high-threshold";
                             time-range 2.5offset;
+                            latest;
                         }
                     }
                     then {
@@ -263,6 +247,27 @@ healthbot {
                         }
                     }
                 }	
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface input traffic($in-util) is
+                 * above low threshold (low-threshold) for all points 
+                 * in a 2.5offset period.
+                 */					
+                term is-interface-in-traffic-median {
+                    when {
+                        increasing-at-least-by-value "$in-util" {
+                            value "$low-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is in medium range";
+                        }
+                    }
+                }
             }    
             trigger interface-input-errors {
                 synopsis "Interface input-errors kpi";
@@ -273,7 +278,10 @@ healthbot {
                  */				
                 term no-interface-in-errors {
                     when {
-                        matches-with-previous "$in-errors-count";
+                        matches-with-previous "$in-errors-count"{
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }				
                     then {
                         status {
@@ -292,6 +300,7 @@ healthbot {
                         increasing-at-least-by-value "$in-errors-count" {
                             value "$in-errors-threshold";
                             time-range 2.5offset;
+                            latest;
                         }
                     }
                     then {
@@ -301,24 +310,6 @@ healthbot {
                         }
                     }
                 }			
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the increase is at least once.
-                 */				
-                term is-interface-in-errors-median {
-                    when {
-                        increasing-at-least-by-value "$in-errors-count" {
-                            value "$in-errors-threshold";
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name input errors($in-errors-count) are intermittent";
-                        }
-                    }
-                }
-                
             }
             trigger interface-link-flaps {
                 synopsis "Link flaps KPI";
@@ -329,7 +320,10 @@ healthbot {
                  */				
                 term is-link-stable {
                     when {
-                        matches-with-previous "$flaps";
+                        matches-with-previous "$flaps"{
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }				
                     then {
                         status {
@@ -346,6 +340,7 @@ healthbot {
                         increasing-at-least-by-value "$flaps" {
                             value "$flaps-threshold";
                             time-range 2.5offset;
+                            latest;
                         }
                     }
                     then {
@@ -355,23 +350,6 @@ healthbot {
                         }
                     }
                 }		
-                /*
-                 * Sets color to yellow when number of flaps are increasing-at-least-by-value flaps-threshold
-                 */				
-                term is-link-fluctuating {
-                    when {
-                        increasing-at-least-by-value "$flaps" {
-                            value "$flaps-threshold";
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name flaps($flaps) are intermittent";
-                        }
-                    }
-                }
-                		
             }
             trigger interface-link-state {
                 synopsis "link state kpi";
@@ -418,7 +396,10 @@ healthbot {
                  */				
                 term no-interface-out-errors {
                     when {
-                        matches-with-previous "$out-errors-count";
+                        matches-with-previous "$out-errors-count"{
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }				
                     then {
                         status {
@@ -437,29 +418,13 @@ healthbot {
                         increasing-at-least-by-value "$out-errors-count" {
                             value "$out-errors-threshold";
                             time-range 2.5offset;
+                            latest;
                         }
                     }
                     then {
                         status {
                             color red;
                             message "Output errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
-                        }
-                    }
-                }	
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the increase is at least once.
-                 */				
-                term is-interface-out-errors-median {
-                    when {
-                        increasing-at-least-by-value "$out-errors-count" {
-                            value "$out-errors-threshold";
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name output errors ($out-errors-count) are intermittent";
                         }
                     }
                 }			
@@ -473,32 +438,15 @@ healthbot {
                  */ 				
                 term is-interface-stats-normal {
                     when {
-                        matches-with-previous "$out-util";
+                        matches-with-previous "$out-util"{
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }				
                     then {
                         status {
                             color green;
                             message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow and sends out an anomaly notification
-                 * when the interface output traffic ($out-util)
-                 * is above low threshold (low-threshold) for all
-                 * points in 2.5offset period.
-                 */				
-                term is-interface-stats-median {
-                    when {
-                        increasing-at-least-by-value "$out-util" {
-                            value "$low-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is in medium range";
                         }
                     }
                 }
@@ -513,6 +461,7 @@ healthbot {
                         increasing-at-least-by-value "$out-util" {
                             value "$high-threshold";
                             time-range 2.5offset;
+                            latest;
                         }
                     }
                     then {
@@ -521,7 +470,28 @@ healthbot {
                             message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is above high threshold";
                         }
                     }
-                }				
+                }	
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the interface output traffic ($out-util)
+                 * is above low threshold (low-threshold) for all
+                 * points in 2.5offset period.
+                 */				
+                term is-interface-stats-median {
+                    when {
+                        increasing-at-least-by-value "$out-util" {
+                            value "$low-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is in medium range";
+                        }
+                    }
+                }
             }
             variable errors-threshold-variable {
                 value 1;
