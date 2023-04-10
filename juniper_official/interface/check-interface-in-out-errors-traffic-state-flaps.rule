@@ -210,23 +210,6 @@ healthbot {
                 description "Sets health based on input traffic exceed threshold";
                 frequency 1offset;
                 /*
-                 * Sets color to green when in-util is not increasing
-                 */				
-                term interface-in-traffic-normal {
-                    when {
-                        matches-with-previous "$in-util"{
-                            time-range 2.5offset;
-                            latest;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is normal";
-                        }
-                    }
-                }							
-                /*
                  * Sets color to red and sends out an anomaly notification
                  * when the interface input traffic ($in-util) is
                  * above high threshold (high-threshold) for all  
@@ -267,7 +250,21 @@ healthbot {
                             message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is in medium range";
                         }
                     }
-                }
+                }				
+                /*
+                 * Sets color to green when in-util is not increasing
+                 */				
+                term interface-in-traffic-normal {
+                    when {
+                        exists "$in-util";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is normal";
+                        }
+                    }
+                }							
             }    
             trigger interface-input-errors {
                 synopsis "Interface input-errors kpi";
@@ -434,23 +431,6 @@ healthbot {
                 description "Sets health based on output traffic exceed threshold";
                 frequency 1offset;
                 /*
-                 * Sets color to green when out-util is not increasing
-                 */ 				
-                term is-interface-stats-normal {
-                    when {
-                        matches-with-previous "$out-util"{
-                            time-range 2.5offset;
-                            latest;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
-                        }
-                    }
-                }
-                /*
                  * Sets color to red and sends out an anomaly notification when
                  * the interface output traffic ($out-util) is
                  * above high threshold (high-threshold) for all
@@ -492,6 +472,20 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to green when out-util is present
+                 */ 				
+                term is-interface-stats-normal {
+                    when {
+                        exists "$out-util";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
+                        }
+                    }
+                }				
             }
             variable errors-threshold-variable {
                 value 1;
