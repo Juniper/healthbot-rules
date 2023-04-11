@@ -43,30 +43,13 @@
                 description "Sets health based on ospf io errors";
                 frequency 1offset;
                 /*
-                 * Sets color to red and sends out an anomaly notification
-                 * when the ospf error count increases by 1.
-                 */
-                term is-ospf-error-increasing {
-                    when {
-                        increasing-at-least-by-value "$ospf-error" {
-                            value "$error-threshold";
-                            time-range 2.5offset;							
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "OSPF IO is reporting errors($ospf-error)";
-                        }
-                    }
-                }
-                /*
                  * Sets color to green when ospf errors is not incrementing.
                  */
                 term no-ospf-error-reported {
                     when {
                     matches-with-previous "$ospf-error" {
                         time-range 2.5offset;
+                        latest;						
                         }
                     }
                     then {
@@ -77,13 +60,21 @@
                     }
                 }				
                 /*
-                 * Defaults color to green.
+                 * Sets color to red and sends out an anomaly notification
+                 * when the ospf error count increases by 1.
                  */
-                term is-ospf-error-reported {
+                term is-ospf-error-increasing {
+                    when {
+                        increasing-at-least-by-value "$ospf-error" {
+                            value "$error-threshold";
+                            time-range 2.5offset;
+                            latest;							
+                        }
+                    }
                     then {
                         status {
-                            color green;
-                            message "OSPF IO is error free";
+                            color red;
+                            message "OSPF IO is reporting errors($ospf-error)";
                         }
                     }
                 }
