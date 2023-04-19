@@ -1,0 +1,66 @@
+healthbot {
+    topic service.spu {
+        rule service-spu-queue-drops {
+            keys [ spu-queue-counter-name spu-queue-pic-name ];
+            sensor queue-drops {
+                iAgent {
+                    file spu-queue-drops.yml;
+                    table SPUQueueDropsTable;
+                    frequency 10s;
+                }
+            }
+            field spu-queue-counter-name {
+                sensor queue-drops {
+                    path spu-queue-counter-name;
+                }
+                type string;
+                description spu-queue-counter-name;
+            }
+            field spu-queue-drop-packet-value {
+                sensor queue-drops {
+                    path spu-queue-drop-packet-value;
+                }
+                type integer;
+                description spu-queue-drop-packet-value;
+            }
+            field spu-queue-pic-name {
+                sensor queue-drops {
+                    path spu-queue-pic-name;
+                }
+                type string;
+                description spu-queue-pic-name;
+            }
+            trigger queue-drops {
+                frequency 60s;
+                term Red {
+                    when {
+                        increasing-at-least-by-value "$spu-queue-drop-packet-value" {
+                            value 100;
+                            time-range 10s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "pic: $spu-queue-pic-name queue: $spu-queue-counter-name dropped-packet: $spu-queue-drop-packet-value";
+                        }
+                    }
+                }
+                term Green {
+                    when {
+                        increasing-at-most-by-value "$spu-queue-drop-packet-value" {
+                            value 10;
+                            time-range 30s;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "pic: $spu-queue-pic-name queue: $spu-queue-counter-name dropped-packet: $spu-queue-drop-packet-value";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
