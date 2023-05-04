@@ -1,0 +1,80 @@
+/*
+ * These two rules are used to collect online FPCs in network device and update dependent yml files
+ */
+healthbot {
+    topic linecard.statistics {
+        description "This topic has rule on collecting and updating online fpc";
+        synopsis  "This topic has rule on collecting and updating online fpc";
+        rule update-online-fpc {
+            synopsis "collects online fpc using udf and updates dependent rules sensor table";
+            description  "collects online fpc using udf and updates dependent rules sensor table";
+            /*
+             * iAgent sensor configuration to get data from network devices
+             */
+            sensor online-fpc {
+                iAgent {
+                    file online-fpc.yml;
+                    table UpdateTable;
+                    frequency 1m;
+                }
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products SRX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+               helper-files other {
+                    list-of-files online-fpc.yml;
+                }
+            }
+        }
+    }
+}

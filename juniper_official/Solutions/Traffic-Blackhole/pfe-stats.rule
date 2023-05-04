@@ -1,0 +1,70 @@
+/*
+* Rule to get all the PFE stats(ASIC input/output) stats
+* Upstream application will use these stats to find anomaly
+*/
+healthbot {
+    topic linecard.blackhole {
+        rule pfe-stats {
+            keys fpc-name;
+            synopsis "PFE transit traffic stats";
+            description "PFE ASIC input/output stats";
+            sensor pfestats {
+                synopsis "PFE transit traffic stats";
+                description "GNMI based telemetry which collects ASIC traffic stats";
+                open-config {
+                    sensor-name /junos/system/linecard/packet/usage/;
+                    frequency 60s;
+                }
+            }
+            field ts-input-packets-pps {
+                sensor pfestats {
+					where "/components/component/properties/property/@name == 'ts-input-packets-pps'";
+                    path /components/component/properties/property/state/value;
+                }
+                type unsigned-integer;
+                description "PFE input stats";
+            }
+            field ts-output-packets-pps {
+                sensor pfestats {
+					where "/components/component/properties/property/@name == 'ts-output-packets-pps'";
+                    path /components/component/properties/property/state/value;
+                }
+                type unsigned-integer;
+                description "PFE output stats";
+            }
+            field fpc-name {
+                sensor pfestats {
+                    path "/components/component/@name";
+                }
+                type string;
+                description "FPC name";
+            }
+	    rule-properties {
+              version 1;
+              contributor juniper;
+              category advanced;
+              supported-healthbot-version 4.2.0;
+              supported-devices {
+                 juniper {
+                    operating-system junosEvolved {
+                        products PTX {
+                            platforms PTX10008 {
+                                releases 22.2R1 {
+                                        release-support min-supported-release;
+                                }
+                            }
+                        }
+                        products ACX {
+	                  platforms All {
+          		        releases 22.3R1 {
+                    			release-support min-supported-release;
+                  		}
+                	  }
+              		}
+		    }
+		 }
+	      }
+	    }
+        }
+    }
+}
