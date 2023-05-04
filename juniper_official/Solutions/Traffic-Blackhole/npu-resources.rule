@@ -1,64 +1,71 @@
 /*
- * Rule to get NPU(ASIC) resource usage stats.
- * Upstream application will use these stats to find anomaly.
- * Each platform will have different property names and each property represents the resource name.
- * This sensor extracts resource utilization for all the resources, hence we have generic sensor to capture all the properties at once instead of individual ones. 
- * In addition, property names can vary for different platforms and different ASIC versions
- */
+	* Rule to get NPU(ASIC) resource usage stats.
+	* Upstream application will use these stats to find the anomalies
+	* Each platform will have different property names and each property represents the resource name.
+    * This sensor extracts resource utilization for all the resources, hence we have generic sensor to capture all the properties at once instead of individual ones. 
+    * In addition, property names can vary for different platforms and different ASIC versions
+*/
 healthbot {
-    topic linecard.blackhole {
-        rule npu-resource {
-            keys fpc-name;
-            synopsis "PFE Hardware Resource";
-            description "Rule to fetch PFE Hardware Resource";
-            sensor sensor-npu-resources {
-                synopsis "PFE Hardware Resource definition";
-                description "GNMI based telemetry which collects ASIC resource usage";
-                open-config {
-                    sensor-name /junos/system/linecard/npu/memory/;
-                    frequency 60s;
-                }
-            }
-            field fpc-name {
-                sensor sensor-npu-resources {
-                    path "/components/component/@name";
-                }
-                type string;
-                description "FPC name";
-            }
-            field property-name {
-                sensor sensor-npu-resources {
-                    path "/components/component/properties/property/@name";
-                }
-                type string;
-                description "Resource name";
-            }
-            field property-value {
-                sensor sensor-npu-resources {
-                    path /components/component/properties/property/state/value;
-                }
-                type integer;
-                description "Resource usage";
-            }
-            rule-properties {
-                version 1;
-                contributor juniper;
-                category basic;
-                supported-healthbot-version 1.0.0;
-                supported-devices {
-                    juniper {
-                        operating-system junosEvolved {
-                            products PTX {
-                                platforms PTX10008 {
-                                    releases 22.2R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+	topic linecard.blackhole {
+		rule npu-resource {
+			keys [ fpc-name property-name ];
+			synopsis "NPU resource usage stats analyzer";
+			description "Rule to fetch NPU resource stats";
+			sensor sensor-npu-resources {
+				synopsis "NPU resource usage stats analyzer";
+				description "GNMI based telemetry which collects ASIC NPU resource usage";
+				open-config {
+					sensor-name /junos/system/linecard/npu/memory/;
+					frequency 60s;
+				}
+			}
+			field fpc-name {
+				sensor sensor-npu-resources {
+					path "/components/component/@name";
+				}
+				type string;
+				description "FPC name";
+			}
+			field property-name {
+				sensor sensor-npu-resources {
+					path "/components/component/properties/property/@name";
+				}
+				type string;
+				description "Resource name";
+			}
+			field property-value {
+				sensor sensor-npu-resources {
+					path /components/component/properties/property/state/value;
+				}
+				type integer;
+				description "Resource usage";
+			}
+			rule-properties {
+				version 1;
+				contributor juniper;
+				category advanced;
+				supported-healthbot-version 4.2.0;
+				supported-devices {
+					juniper {
+						operating-system junosEvolved {
+							products PTX {
+								platforms PTX10008 {
+									releases 22.2R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+							products ACX {
+						                platforms All {
+                  							releases 22.3R1 {
+                    								release-support min-supported-release;
+                  							}
+                						}
+              						}
+						}
+					}
+				}
+			}
+		}
+	}
 }
