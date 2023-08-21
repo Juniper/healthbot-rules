@@ -1,13 +1,17 @@
 /*
  * Monitors PSM power usage,state and notifies when anomalies are found
  * 
- * Three inputs control detection
+ * Five inputs control detection
  *
  *   1) "psm-power-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 80.
  *   2) "psm-power-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 50.
  *   3) "psm" is the power module,it can be psm0 or psm1.
+ *   4) "psm-temperature-high-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 55.
+ *   5) "psm-temperature-low-threshold" is the threshold that causes the
+ *      rule to report an anomaly. By default it's 44.
  *
  * Requirement 14 (https://paragon-automation.atlassian.net/browse/REQ-14)
  *      
@@ -16,7 +20,7 @@ healthbot {
     topic hardware.chassis {
         rule check-psm-power-usage-state {
             /*
-             * Monitors PSM power usage,state and notifies via dashboard, red color 
+             * Monitors PSM power usage,state,temperature and notifies via dashboard, red color 
              * when threshold is exceeded else green.
 			 *
              * Use PSM as key for rule.
@@ -102,6 +106,20 @@ healthbot {
                 type integer;
                 description "psm power usage low threshold";
             }
+            field psm-temperature-high-threshold {
+                constant {
+                    value "{{psm-temperature-high-threshold}}";
+                }
+                type integer;
+                description "PSM temperature high threshold";
+            }
+            field psm-temperature-low-threshold {
+                constant {
+                    value "{{psm-temperature-low-threshold}}";
+                }
+                type integer;
+                description "PSM temperature low threshold";
+            }			
             field psm-state {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == 'state'";
