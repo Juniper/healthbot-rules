@@ -8,16 +8,15 @@
  *   2) "psm-power-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 50.
  *   3) "psm" is the power module,it can be psm0 or psm1.
- *   4) "psm-temperature-high-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 55.
- *   5) "psm-temperature-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 44.      
+ *
+ * Requirement 14 (https://paragon-automation.atlassian.net/browse/REQ-14)
+ *      
  */
 healthbot {
     topic hardware.chassis {
         rule check-psm-power-usage-state {
             /*
-             * Monitors PSM power usage,state,temperature and notifies via dashboard, red color 
+             * Monitors PSM power usage,state and notifies via dashboard, red color 
              * when threshold is exceeded else green.
 			 *
              * Use PSM as key for rule.
@@ -36,6 +35,12 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor components-oc-platform {
+                open-config {
+                    sensor-name /components;
+                    frequency 60s;
+                }
+            }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -44,12 +49,20 @@ healthbot {
                 sensor components-oc {
                     path /components/component/power-supply/state/output-power;
                 }
+                sensor components-oc-platform {
+                    where "/components/component/properties/property/@name == 'power-dc-output'";
+                    path /components/component/properties/property/state/value;
+                }
                 type integer;
                 description "PSM DC output";
             }
             field psm {
                 sensor components-oc {
-                    where "/components/component/@name =~ /{{psm}}/";
+                    where "/components/component/@name =~ /^PSM[{{psm}}]$|^PEM[{{psm}}]$/";
+                    path "/components/component/@name";
+                }
+                sensor components-oc-platform {
+                    where "/components/component/@name =~ /^PSM[{{psm}}]$|^PEM[{{psm}}]$/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -57,7 +70,11 @@ healthbot {
             }
             field psm-power-capacity-maximum {
                 sensor components-oc {
-                   path /components/component/power-supply/state/capacity;
+                    path /components/component/power-supply/state/capacity;
+                }
+                sensor components-oc-platform {
+                    where "/components/component/properties/property/@name == 'power-capacity-maximum'";
+                    path /components/component/properties/property/state/value;
                 }
                 type integer;
                 description "PSM maximum power capacity";
@@ -85,6 +102,38 @@ healthbot {
                 type integer;
                 description "psm power usage low threshold";
             }
+            field psm-state {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
+                }
+                sensor components-oc-platform {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+                description "State of power supply module";
+            }
+            field psm-temperature {
+                formula {
+                    capture-groups {
+                        field-name "$psm-temperature-degrees";
+                        pattern "\d+";
+                    }
+                }
+                type integer;
+            }
+            field psm-temperature-degrees {
+                sensor components-oc {
+                    where "/components/component/properties/property/@name == Temperature";
+                    path /components/component/properties/property/state/value;
+                }
+                sensor components-oc-platform {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                type string;
+            }
             field psm-temperature-high-threshold {
                 constant {
                     value "{{psm-temperature-high-threshold}}";
@@ -98,31 +147,7 @@ healthbot {
                 }
                 type integer;
                 description "PSM temperature low threshold";
-            }			
-            field psm-state {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'state'";
-                    path /components/component/properties/property/state/value;
-                }
-                type string;
-                description "State of power supply module";
             }
-            field psm-temperature-degrees {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == Temperature";
-                    path /components/component/properties/property/state/value;
-                }
-                type string;
-            }
-            field psm-temperature {
-                formula {
-                    capture-groups {
-                        field-name "$psm-temperature-degrees";
-                        pattern "\d+";
-                    }
-                }
-                type integer;
-            }			
             /*
              * Anomaly detection logic.
              */			
@@ -202,7 +227,7 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red when state is not online
+                 * Sets color to red when state is offline.
                  * 
                  */				
                 term state-is-not-online {
@@ -210,13 +235,13 @@ healthbot {
                         does-not-match-with "$psm-state" online {
                             ignore-case;
                         }
-                    }				
+                    }
                     then {
                         status {
                             color red;
                             message "$psm is $psm-state";
                         }
-                        next;						
+                        next;
                     }
                 }
             }
@@ -261,7 +286,7 @@ healthbot {
                 term temperature-exceeds-high-threshold {
                     when {
                         greater-than-or-equal-to "$psm-temperature" "$psm-temperature-high-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color red;
@@ -269,13 +294,13 @@ healthbot {
                         }
                     }
                 }
-            }			
+            }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */			
             variable psm {
-                value "^PSM[0-9]+$";
+                value 0-9;
                 description "Enter PSM to be monitored";
                 type string;
             }
@@ -298,7 +323,7 @@ healthbot {
                 value 45;
                 description "Default PSM low threshold is 45 degree celsius";
                 type int;
-            }			
+            }
             rule-properties {
                 version 1;
                 contributor juniper;
@@ -308,13 +333,41 @@ healthbot {
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
-                                platforms All {
+                                sensors components-oc;							
+                                platforms ACX7024 {
+                                    sensors components-oc;								
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
                                 }
+                                platforms ACX7100 {
+                                    sensors components-oc;								
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
                             }
-                        }
+                        }							
+                        operating-system junos {							
+                            products MX {
+                                sensors components-oc-platform;
+                                platforms MX304 {
+                                    releases 23.4I {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+						}
                     }
                 }
             }
