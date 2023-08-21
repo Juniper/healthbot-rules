@@ -1,5 +1,7 @@
 /*
- * Monitors system power  usage,temperature,state and notifies when anomalies are found
+ * Monitors system chassis temperature and notifies when anomalies are found
+ *
+ * Req 14 (https://paragon-automation.atlassian.net/browse/REQ-14) 
  * 
  * Four inputs control detection
  *
@@ -9,13 +11,7 @@
  *   2) "chassis-temperature-low-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 45 degrees. 
  * 
- *   3) "system-power-remaining-high-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 50.
- * 
- *   4) "system-power-remaining-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 20.
- *
- *   5) "slot-no" is the Chassis number that is being monitored.
+ *   3) "slot-no" is the Chassis number that is being monitored.
  *      
  */
 healthbot {
@@ -52,13 +48,6 @@ healthbot {
                 }
                 type string;
             }
-            field chassis-state {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'state'";
-                    path /components/component/properties/property/state/value;
-                }
-                type string;
-            }
             field chassis-temperature {
                 sensor components-oc {
                     where "/components/component/chassis/properties/property/@name == 'temperature-ambient'";
@@ -80,47 +69,6 @@ healthbot {
                 }
                 type integer;
                 description "Chassis ambient temperature low threshold";
-            }
-            field power-system-maximum {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'power-system-maximum'";
-                    path /components/component/properties/property/state/value;
-                    zero-suppression;					
-                }
-                type integer;
-                description "System max power available";
-            }
-            field power-system-remaining {
-                sensor components-oc {
-                    where "/components/component/properties/property/@name == 'power-system-remaining'";
-                    path /components/component/properties/property/state/value;
-                    zero-suppression;					
-                }
-                type integer;
-                description "System remaining power";
-            }
-            field system-power-remaining-in-percentage {
-                formula {
-                    eval {
-                        expression "( $power-system-remaining / $power-system-maximum ) * 100";
-                    }
-                }
-                type integer;
-                description "Stores remaining power for system using UDF";
-            }
-            field system-power-usage-high-threshold {
-                constant {
-                    value "{{system-power-remaining-high-threshold}}";
-                }
-                type integer;
-                description "System power usage high threshold";
-            }
-            field system-power-usage-low-threshold {
-                constant {
-                    value "{{system-power-remaining-low-threshold}}";
-                }
-                type integer;
-                description "System power usage low threshold";
             }
             /*
              * Anomaly detection logic.
@@ -176,96 +124,6 @@ healthbot {
                     }
                 }
             }
-            trigger chassis-state {
-                synopsis "Chassis State KPI";
-                description "Sets health based on Chassis State";			
-                frequency 1offset;
-                /*
-                 * Sets color to green when chassis-state is online.
-                 * 
-                 */				
-                term state-is-online {
-                    when {
-                        matches-with "$chassis-state" Online {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Chassis is Online";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red when chassis-state is offline.
-                 * 
-                 */				
-                term state-is-not-online {
-                    when {
-                        matches-with "$chassis-state" offline {
-                            ignore-case;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Chassis is Offline";
-                        }
-                    }
-                }
-            }
-            trigger system-power-usage {
-                synopsis "System power usage KPI";
-                description "Sets health based on increasing system power usage";
-                frequency 1offset;
-                /*
-                 * Sets color to green when system power remaining is more than system power high threshold
-                 * 
-                 */				
-                term power-usage-normal {
-                    when {
-                        greater-than "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "System power remaining is $system-power-remaining-in-percentage %";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when system power remaining is less than system power high threshold
-                 * 
-                 */				
-                term is-power-remaining-less-than-high-threshold {
-                    when {
-                        greater-than "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
-                        less-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-high-threshold";
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "System power remaining is $system-power-remaining-in-percentage %";
-                        }
-                    }
-                }	
-                /*
-                 * Sets color to red when system power remaining is less than system power low threshold
-                 * 
-                 */				
-                term is-power-remaining-less-than-low-threshold {
-                    when {
-                        less-than-or-equal-to "$system-power-remaining-in-percentage" "$system-power-usage-low-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "System power remaining is $system-power-remaining-in-percentage %";
-                        }
-                    }
-                }
-            }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
@@ -278,16 +136,6 @@ healthbot {
             variable chassis-temperature-low-threshold {
                 value 45;
                 description "Chassis temperature low threshold: Utilization increase between metrics, before we report anomaly";
-                type int;
-            }
-            variable system-power-remaining-high-threshold {
-                value 50;
-                description "System remaining power high threshold percentage";
-                type int;
-            }
-            variable system-power-remaining-low-threshold {
-                value 20;
-                description "System remaining power low threshold percentage";
                 type int;
             }
             variable slot-no {
