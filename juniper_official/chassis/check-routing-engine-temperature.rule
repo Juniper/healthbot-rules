@@ -15,7 +15,9 @@
  * 
  *   3) "re-temperature-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55 degree Celcius of RE 
- *      temperature. 
+ *      temperature.
+ *
+ * Requirement 14 (https://paragon-automation.atlassian.net/browse/REQ-14)
  *
  */
 healthbot {
@@ -41,6 +43,12 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor components-oc-platform {
+                open-config {
+                    sensor-name /components;
+                    frequency 60s;
+                }
+            }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -50,6 +58,10 @@ healthbot {
                     where "/components/component/properties/property/@name == 'CPU Temperature'";
                     path /components/component/properties/property/state/value;
                 }
+                sensor components-oc-platform {
+                    where "/components/component/properties/property/@name == 'temperature-cpu'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type integer;
                 description "CPU temperature";
             }
@@ -58,6 +70,10 @@ healthbot {
                     where "/components/component/properties/property/@name == 'temperature'";
                     path /components/component/properties/property/state/value;
                 }
+                sensor components-oc-platform {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type integer;
                 description "RE temperature";
             }
@@ -66,6 +82,10 @@ healthbot {
                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$|^RE[{{re-slot-no}}]$/";
                     path "/components/component/@name";
                 }
+                sensor components-oc-platform {
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$|^RE[{{re-slot-no}}]$/";
+                    path "/components/component/@name";
+                }				
                 description "RE name to monitor";
             }
             field high-threshold {
@@ -296,13 +316,41 @@ healthbot {
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
-                                platforms All {
+                                sensors components-oc;							
+                                platforms ACX7024 {
+                                    sensors components-oc;								
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
                                 }
+                                platforms ACX7100 {
+                                    sensors components-oc;								
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
                             }
-                        }
+                        }							
+                        operating-system junos {							
+                            products MX {
+                                sensors components-oc-platform;
+                                platforms MX304 {
+                                    releases 23.4I {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 16.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+						}
                     }
                 }
             }
