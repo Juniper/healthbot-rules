@@ -11,7 +11,9 @@
  *   4) "psm-temperature-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 55.
  *   5) "psm-temperature-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 44.      
+ *      rule to report an anomaly. By default it's 44.
+ *
+ * Requirement 14 (https://paragon-automation.atlassian.net/browse/REQ-14)
  */
 healthbot {
     topic hardware.chassis {
@@ -36,6 +38,12 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor components-oc-junos {
+                open-config {
+                    sensor-name /components/component;
+                    frequency 60s;
+                }
+            }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -44,12 +52,20 @@ healthbot {
                 sensor components-oc {
                     path /components/component/power-supply/state/output-power;
                 }
+                sensor components-oc-junos {
+                    where "/components/component/properties/property/@name == 'power-dc-output'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type integer;
                 description "PSM DC output";
             }
             field psm {
                 sensor components-oc {
-                    where "/components/component/@name =~ /{{psm}}/";
+                    where "/components/component/@name =~ /^PSM[{{psm}}]$|^PEM[{{psm}}]$/";
+                    path "/components/component/@name";
+                }
+                sensor components-oc-junos {
+                    where "/components/component/@name =~ /^PSM[{{psm}}]$|^PEM[{{psm}}]$/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -59,6 +75,10 @@ healthbot {
                 sensor components-oc {
                    path /components/component/power-supply/state/capacity;
                 }
+                sensor components-oc-junos {
+                    where "/components/component/properties/property/@name == 'power-capacity-maximum'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type integer;
                 description "PSM maximum power capacity";
             }
@@ -104,6 +124,10 @@ healthbot {
                     where "/components/component/properties/property/@name == 'state'";
                     path /components/component/properties/property/state/value;
                 }
+                sensor components-oc-junos {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type string;
                 description "State of power supply module";
             }
@@ -112,6 +136,10 @@ healthbot {
                     where "/components/component/properties/property/@name == Temperature";
                     path /components/component/properties/property/state/value;
                 }
+                sensor components-oc-junos {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type string;
             }
             field psm-temperature {
@@ -275,7 +303,7 @@ healthbot {
              * while deploying playbook instance.
              */			
             variable psm {
-                value "^PSM[0-9]+$";
+                value "0-9";
                 description "Enter PSM to be monitored";
                 type string;
             }
@@ -305,11 +333,38 @@ healthbot {
                 category basic;
                 supported-healthbot-version 4.3.0;
                 supported-devices {
+                    sensors components-oc;				
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
+                                sensors components-oc;							
                                 platforms All {
                                     releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }							
+                        operating-system junos {							
+                            products MX {
+                                sensors components-oc-junos;
+                                platforms MX204 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms MX304 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 23.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
