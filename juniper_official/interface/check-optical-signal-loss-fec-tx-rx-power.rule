@@ -1,5 +1,7 @@
 /*
  * Monitor interface optics stats like signal loss, power, and errors and notify anomalies
+ *
+ * Req 72 : https://paragon-automation.atlassian.net/browse/REQ-72
  * 
  */
 healthbot {
@@ -26,6 +28,12 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor optical-sensor-oc-junos {
+                open-config {
+                    sensor-name /junos/system/linecard/optics/;
+                    frequency 60s;
+                }
+            }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -34,6 +42,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/media_fec_uncorr_blocks;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/media_fec_uncorr_blocks;
+                }				
                 type integer;
                 description "Number of code blocks received that could not be corrected. A non-zero value equals packet loss";
             }
@@ -41,6 +52,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path "/interfaces/interface/optics/lanediags/lane/@lane_number";
                 }
+                sensor optical-sensor-oc-junos {
+                    path "/interfaces/interface/optics/lanediags/lane/@number";
+                }				
                 type string;
                 description "Interface lane index";
             }
@@ -49,6 +63,10 @@ healthbot {
                     where "/interfaces/interface/@name =~ /{{interface-name}}/";
                     path "/interfaces/interface/@name";
                 }
+                sensor optical-sensor-oc-junos {
+                    where "/interfaces/interface/@name =~ /{{interface-name}}/";
+                    path "/interfaces/interface/@name";
+                }				
                 type string;
                 description "Interface name";
             }
@@ -56,6 +74,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/lane_rx_loss_of_signal_alarm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/lane_rx_loss_of_signal_alarm;
+                }				
                 type string;
                 description "RX loss of signal alarm";
             }
@@ -63,6 +84,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/lane_tx_laser_disabled_alarm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/lane_tx_laser_disabled_alarm;
+                }				
                 type string;
                 description "tx laster disabled alarm";
             }
@@ -70,6 +94,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/lane_tx_loss_of_signal_alarm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/lane_tx_loss_of_signal_alarm;
+                }				
                 type string;
                 description "tx loss of signal functionality alarm";
             }
@@ -77,6 +104,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
+                }				
                 type float;
                 description "Default rx power high alarm threshold.";
             }
@@ -84,6 +114,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_rx_power_high_warning_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_rx_power_high_warning_threshold_dbm;
+                }				
                 type float;
                 description "Default rx power high warning threshold.";
             }
@@ -91,6 +124,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
+                }				
                 type float;
                 description "Default rx power low alarm threshold.";
             }
@@ -98,6 +134,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_rx_power_low_warning_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_rx_power_low_warning_threshold_dbm;
+                }				
                 type float;
                 description "Default rx power low warning threshold.";
             }
@@ -105,6 +144,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/lane_laser_receiver_power_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/lane_laser_receiver_power_dbm;
+                }				
                 type float;
                 description "rx power level of the optical module.";
             }
@@ -112,6 +154,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/lane_laser_output_power_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/lane_laser_output_power_dbm;
+                }				
                 type float;
                 description "output power level of the optical module.";
             }
@@ -119,6 +164,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/lane_laser_bias_current;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/lanediags/lane/lane_laser_bias_current;
+                }				
                 type float;
                 description "laser bias current of the optical module.";
             }
@@ -126,6 +174,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
+                }				
                 type float;
                 description "Default tx power high alarm threshold.";
             }
@@ -133,6 +184,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_output_power_high_warning_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_output_power_high_warning_threshold_dbm;
+                }				
                 type float;
                 description "Default tx power high warning threshold.";
             }
@@ -140,6 +194,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
+                }				
                 type float;
                 description "Default tx power low alarm threshold.";
             }
@@ -147,6 +204,9 @@ healthbot {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/laser_output_power_low_warning_threshold_dbm;
                 }
+                sensor optical-sensor-oc-junos {
+                    path /interfaces/interface/optics/laser_output_power_low_warning_threshold_dbm;
+                }				
                 type float;
                 description "Default tx power low warning threshold.";
             }
@@ -465,21 +525,43 @@ healthbot {
                 is-scaling-rule {
                     description "Fields:interface-name ; Directly impacted by number of interfaces running in each network device";
                 }
-                supported-healthbot-version 4.2.0;
+                supported-healthbot-version 4.3.0;
                 catalogue {
                     tier 1;
                 }
                 supported-devices {
+                    sensors optical-sensor-oc-junos;				
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
+                                sensors optical-sensor-oc-junos;							
                                 platforms All {
-                                    releases 22.3R1 {
+                                    releases 23.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                             }
-                        }
+                        }							
+                        operating-system junos {							
+                            products MX {
+                                sensors optical-sensor-oc-junos;
+                                platforms MX304 {
+                                    releases 23.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX304 {
+                                    releases 23.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX304 {
+                                    releases 23.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+						}
                     }
                 }
             }
