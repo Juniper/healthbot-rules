@@ -1,5 +1,7 @@
 /*
  * Monitors ISIS adjacency status and notifies when state is down.
+ * 
+ * Req 15 : https://paragon-automation.atlassian.net/browse/REQ-15
  */
  healthbot {
     topic routing.isis {
@@ -23,6 +25,14 @@
                     frequency 60s;
                 }
             }
+            sensor isis-oc-junos {
+            	synopsis "ISIS open-config sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces;
+                    frequency 60s;
+                }
+            }			
             field adjacency-state {
                 sensor isis-netconf {
                     path adjacency-state;
@@ -30,6 +40,9 @@
                 sensor isis-oc {
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/lan-adjacency-state;
                 }
+                sensor isis-oc-junos {
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-state;
+                }				
                 type string;
                 description "Isis neighbor state";
             }
@@ -42,6 +55,10 @@
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
                 }
+                sensor isis-oc-junos {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+                }				
                 type string;
                 description "Isis interface name";
             }
@@ -52,6 +69,9 @@
                 sensor isis-oc {
                     path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number";
                 }
+                sensor isis-oc-junos {
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number";
+                }				
                 type string;
                 description "Isis level as string due to rule key";
             }
@@ -62,6 +82,9 @@
                 sensor isis-oc {
                     path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id";
                 }
+                sensor isis-oc-junos {
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/@system-id";
+                }				
                 type string;
                 description "Isis router name";
             }
@@ -111,49 +134,15 @@
             rule-properties {
                 version 1;
                 contributor juniper;
-                supported-healthbot-version 2.1.0;
+                supported-healthbot-version 4.3.0;
                 supported-devices {
                     sensors isis-oc;
                     juniper {
                         operating-system junos {
-                            products ACX {
-                                platforms All {
-                                    releases 22.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-                            products EX {
-                                platforms All {
-                                    releases 15.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
                             products MX {
+                                sensors isis-oc-junos;							
                                 platforms All {
-                                    releases 15.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-                            products PTX {
-                                platforms All {
-                                    releases 15.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-                            products QFX {
-                                platforms All {
-                                    releases 15.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-                            products ACX {
-                                platforms All {
-                                    releases 22.1R1 {
+                                    releases 23.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
@@ -161,10 +150,16 @@
                         }
                         operating-system junosEvolved {
                             products ACX {
+                                sensors isis-oc;							
                                 platforms All {
                                     releases 22.3R1 {
+                                        sensors isis-oc;									
                                         release-support min-supported-release;
                                     }
+                                    releases 23.2R1 {
+                                        sensors isis-oc-junos;									
+                                        release-support min-supported-release;
+                                    }									
                                 }
                             }
                         }						
