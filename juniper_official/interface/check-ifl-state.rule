@@ -1,5 +1,6 @@
 /*
  * Monitors sub interfaces state and notifies when anomalies are found.
+ * EOP requirements - REQ-33->REQ-454 and REQ-455
  * Two inputs control detection
  *
  *   1) ifd-name, is a regular expression that matches the interfaces
@@ -15,8 +16,8 @@
 healthbot {
     topic interfaces {
         rule check-ifl-state {
-            synopsis "Sub Interface input traffic analyzer.";
-            description "Collects input/output traffic (in-octets/out-octets) periodically and notifies in case of traffic is above threshold";
+            synopsis "IFL state analyzer.";
+            description "Collects IFL stats and notifies anomaly when the IFL operational state is down.";
             /*
              * Monitors the interface state. If ifl operational state is down 
              * red alarm is shown else it is green. 
@@ -72,7 +73,7 @@ healthbot {
             /*
              * Anomaly detection logic.
              */
-            trigger ifl-state {
+            trigger sub-interface-link-state {
                 synopsis "Sub-interface status check kpi";
                 description "Sets health based on ifl state";
                 frequency 1offset;
