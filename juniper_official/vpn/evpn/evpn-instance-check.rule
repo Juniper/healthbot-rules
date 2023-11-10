@@ -1,0 +1,104 @@
+/*
+ *   This rule collects evpn instance interfaces state and notifies anomaly when 
+ *   interface state is down.
+ */
+ healthbot {
+    topic evpn {
+        rule check-evpn-instance {
+            keys [ evpn-instance-name evpn-interface-name ];
+            sensor evpn {
+                iAgent {
+                    file EvpnInstanceInfo.yml;
+                    table EvpnInstanceInfoTable;
+                    frequency 180s;
+                }
+            }
+            field evpn-instance-name {
+                sensor evpn {
+                    where "evpn-instance-name =~ /{{instance-name}}/";
+                    path evpn-instance-name;
+                }
+                type string;
+                description "L2VPN evpn instance name";
+            }
+            field evpn-interface-mode {
+                sensor evpn {
+                    path evpn-interface-mode;
+                }
+                type string;
+                description "Mode of evpn Interface";
+            }
+            field evpn-interface-name {
+                sensor evpn {
+                    where "evpn-interface-name =~ /{{interface-name}}/";
+                    path evpn-interface-name;
+                }
+                type string;
+                description "EVPN Interface name";
+            }
+            field evpn-interface-status {
+                sensor evpn {
+                    path evpn-interface-status;
+                }
+                type string;
+                description "Instance state";
+            }
+            trigger evpn-instance-state {
+                frequency 1offset;
+                term is-evpn-instance-up {
+                    when {
+                        matches-with "$evpn-interface-status" Up {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "EVPN instance $evpn-instance-name interface $evpn-interface-name state is $evpn-interface-status and mode is $evpn-interface-mode";
+                        }
+                    }
+                }
+                term evpn-instance-down {
+                    then {
+                        status {
+                            color red;
+                            message "EVPN instance $evpn-instance-name interface $evpn-interface-name state is $evpn-interface-status and mode is $evpn-interface-mode";
+                        }
+                    }
+                }
+            }
+            variable instance-name {
+                value .*;
+                description "Input evpn instance-name to be monitored in regex.";
+                type string;
+            }
+            variable interface-name {
+                value .*;
+                description "Input evpn interface-name to be monitored in regex.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                         operating-system junosEvolved {
+                             products ACX {
+                                 platforms All {
+                                     releases 22.3R1 {
+                                         release-support min-supported-release;
+                                     }
+                                 }
+                             }
+                         }						
+                    }
+                }
+                helper-files other {
+                    list-of-files EvpnInstanceInfo.yml;
+                }
+            }
+        }
+    }
+}
+
