@@ -1,5 +1,8 @@
 /*
  * Collects LFM state for a PE interface that connects to a CE
+ *
+ * Requirement 455 - https://paragon-automation.atlassian.net/browse/REQ-455
+ *
  */
 healthbot {
     topic oam {
@@ -15,7 +18,7 @@ healthbot {
                 iAgent {
                     file ethernet-oam-lfm.yml;
                     table EvpnLFMTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             field lfm-discovery-state {
@@ -42,7 +45,7 @@ healthbot {
             trigger lfm-interface-discovery-state {
                 synopsis "LFM discovery status KPI";
                 description "Sets health based on LFM discovery state between PE and CE";
-                frequency 1.5offset;
+                frequency 1offset;
                 term is-lfm-remote-discovery-status {
                     when {
                         matches-with "$lfm-discovery-state" "Send Any";
@@ -74,15 +77,24 @@ healthbot {
                 supported-healthbot-version 4.0.0;
                 supported-devices {
                     juniper {
+                         operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                         }
                          operating-system junosEvolved {
-                             products ACX {
-                                 platforms All {
-                                     releases 22.3R1 {
-                                         release-support min-supported-release;
-                                     }
-                                 }
-                             }
-                         }						
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
             }

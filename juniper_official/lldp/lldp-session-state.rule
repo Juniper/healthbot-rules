@@ -42,7 +42,7 @@ healthbot {
             }
             field interface-name {
                 sensor lldp-sensor {
-                    where "/lldp/interfaces/interface/@name =~ /{{if-name}}/";
+                    where "/lldp/interfaces/interface/@name =~ /{{interface-name}}/";
                     path "/lldp/interfaces/interface/@name";
                 }
                 type string;
@@ -50,7 +50,7 @@ healthbot {
             }
             field neighbor-state {
                 reference {
-                    path "/topic[topic-name='protocols.lldp']/rule[rule-name='get-lldp-state']/field[interface-name='$interface-name']/neighbor-capability-state";
+                    path "/topic[topic-name='lldp']/rule[rule-name='get-lldp-state']/field[interface-name='$interface-name']/neighbor-capability-state";
                     time-range 60s;
                 }
                 type string;
@@ -94,7 +94,7 @@ healthbot {
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
              */
-            variable if-name {
+            variable interface-name {
                 value ".*";
                 type string;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
@@ -132,6 +132,13 @@ healthbot {
                                         release-support min-supported-release;
                                     }
                                 }								
+                            }
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
                             }
                         }
                     }

@@ -17,12 +17,12 @@ healthbot {
                 description "/lldp open-config sensor to collect telemetry data from network device";
                 open-config {
                     sensor-name /lldp/;
-                    frequency 59s;
+                    frequency 60s;
                 }
             }
             field interface-name {
                 sensor lldp-sensor {
-                    where "/lldp/interfaces/interface/@name =~ /{{if-name}}/";
+                    where "/lldp/interfaces/interface/@name =~ /{{interface-name}}/";
                     path "/lldp/interfaces/interface/@name";
                 }
                 type string;
@@ -35,7 +35,7 @@ healthbot {
                 type string;
                 description "Remote LLDP neighbor state";
             }
-            variable if-name {
+            variable interface-name {
                 value .*;
                 description "Interface names to monitor, regular expression, eg 'ge-.*'";
                 type string;
@@ -46,35 +46,24 @@ healthbot {
                 supported-healthbot-version 4.0.0;
                 supported-devices {
                     juniper {
-                        operating-system junos {
+                         operating-system junos {
                             products MX {
-                                platforms MX2010 {
-                                    releases 20.1R1 {
+                                platforms All {
+                                    releases 15.1R1 {
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms MX2020 {
-                                    releases 20.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                                platforms MX240 {
-                                    releases 20.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                                platforms MX480 {
-                                    releases 20.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                                platforms MX960 {
-                                    releases 20.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }								
                             }
-                        }
+                         }
+                         operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
             }
