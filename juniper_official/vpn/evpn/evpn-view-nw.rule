@@ -1,0 +1,164 @@
+/*
+ * Refers protocol evpn status between PE and CE, PE interface details
+ * and notifies anomalies when either evpn session or PE interface is down.
+ *
+ * Requirement 455 - https://paragon-automation.atlassian.net/browse/REQ-455
+ *
+ */
+healthbot {
+    topic protocol.evpn {
+        description "EVPN network rule to monitor evpn neighbors and notify anomalies";
+        synopsis "EVPN state analyzer";
+        rule evpn-view {
+            synopsis "EVPN session state detector";
+            description "Refer EVPN peer state and PE interface state from rule protocol.evpn/check-evpn-neighbor & interfaces/check-ifl-state and notify anomalies";
+            rule-frequency 190s;
+            network-rule;
+            field instance-ifl-no {
+                constant {
+                    value "{{pe-ifl-number}}";
+                }
+                type integer;
+                description "Routing instance IFL number";
+            }
+            field instance-interface-name {
+                constant {
+                    value "{{pe-interface-name}}";
+                }
+                type string;
+                description "Routing instance interface name";
+            }
+            field instance-interface-status {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='interfaces']/rule[rule-name=check-ifl-state]/field[sub-interface-index='{{pe-ifl-number}}' and interface-name='{{pe-interface-name}}']/ifl-oper-status";
+                }
+                type string;
+                description "Routing instance interface status";
+            }
+            /*
+             * Fields defined by collecting values from other rule. Maps the
+             * longer references to the shorter field names used in this rule.
+             */
+            field pe-router-name {
+                constant {
+                    value "{{pe-device-name}}";
+                }
+                type string;
+                description "PE router name to monitor";
+            }
+            field vpn-name {
+                constant {
+                    value "{{customer-vpn-name}}";
+                }
+                type string;
+                description "Evpn instance name";
+            }
+            field vpn-state {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='protocol.evpn']/rule[rule-name=check-evpn-neighbor]/field[evpn-instance-name='{{customer-vpn-name}}']/evpn-num-neighbors";
+                }
+                type integer;
+                description "EVPN instance neighbor state";
+            }
+            trigger evpn-pe-interface-state {
+                frequency 1offset;
+                term is-pe-interface-up {
+                    when {
+                        matches-with "$instance-interface-status" up {
+                        ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$pe-router-name, VPN: $vpn-name, Interface: $instance-interface-name.$instance-ifl-no, Interface-state: $instance-interface-status";
+                        }
+                    }
+                }
+                term is-pe-interface-down {
+                    then {
+                        status {
+                            color red;
+                            message "$pe-router-name, VPN: $vpn-name, Interface: $instance-interface-name.$instance-ifl-no, Interface-state: $instance-interface-status";
+                        }
+                    }
+                }
+            }
+            trigger evpn-state {
+                synopsis "EVPN session status KPI";
+                description "Sets health based on state change in EVPN peer and PE interface state.";
+                frequency 1offset;
+                term is-vpn-session-up {
+                    when {
+                        greater-than "$vpn-state" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$pe-router-name, VPN: $vpn-name, Neighbor-state: up";
+                        }
+                    }
+                }
+                term is-vpn-session-down {
+                    then {
+                        status {
+                            color red;
+                            message "$pe-router-name, VPN: $vpn-name, Neighbor-state: down";
+                        }
+                    }
+                }
+            }
+            /*
+             * Variables with default values. Default values can be
+             * changed while deploying playbook instance.
+             */
+            variable customer-vpn-name {
+                description "VRF name to monitor, regular expression, e.g. 'customer*'";
+                type string;
+            }
+            variable pe-device-group {
+                description "Router group to monitor, regular expression, e.g. 'edge.*'";
+                type device-group;
+            }
+            variable pe-device-name {
+                description "Router name to monitor, regular expression, e.g. 'edge-router.*'";
+                type device;
+            }
+            variable pe-ifl-number {
+                description "PE IFL to monitor, regular expression, e.g. '1-10'";
+                type int;
+            }
+            variable pe-interface-name {
+                description "PE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                         operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                         }
+                         operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }
+        }
+    }
+}
