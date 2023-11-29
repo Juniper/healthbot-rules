@@ -1,0 +1,126 @@
+/*
+ *   This rule checks health of MAC count in evpn mac table and notify in case any of the health monitored field crosses threshold
+ *
+ * Requirement 455 - https://paragon-automation.atlassian.net/browse/REQ-455
+ *
+ */
+healthbot {
+    topic evpn {
+        description "This rule checks health of MAC count in evpn mac table and notify in case any of the health monitored field crosses threshold";
+        synopsis "MAC count check in evpn";
+        rule evpn-check-mac-count-netconf {
+            keys instance-name;
+            synopsis "MAC count in evpn mac table analyzer";
+            description "This rule checks health of MAC count in ethernet switching table and notify in case any of the health monitored field crosses threshold";
+            sensor evpn-mac-count {
+                synopsis "mac count netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file evpn-mac-count.yml;
+                    table MacCountTable;
+                    frequency 180s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+            field mac-count {
+                sensor evpn-mac-count {
+                    path mac-count;
+                }
+                type integer;
+                description "This filed is for mac count";
+            }
+            field instance-name {
+                sensor evpn-mac-count {
+                    where "instance-name =~ /{{instance-name}}/";
+                    path instance-name;
+                }
+                type string;
+                description "This filed is for rtb name in mac table";
+            }
+            field threshold {
+                constant {
+                    value "{{static-threshold}}";
+                }
+                type integer;
+            }
+            field learn-vlan {
+                sensor evpn-mac-count {
+                    path learn-vlan;
+                }
+                type string;
+                description "VLAN ID";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger evpn-mac-count {
+                synopsis "MAC count kpi";
+                description "Sets health based on evpn mac count";
+                frequency 1offset;
+                term is-mac-count-above-static-threshold {
+                    when {
+                        greater-than-or-equal-to "$mac-count" "$threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "MAC count ($mac-count) of instance $instance-name vlan $learn-vlan is above threshold($threshold)";
+                        }
+                    }
+                }
+                term mac-count-normal {
+                    then {
+                        status {
+                            color green;
+                            message "MAC count ($mac-count) of instance $instance-name vlan $learn-vlan is normal";
+                        }
+                    }
+                }
+            }
+           /*
+            * Variables with default values. Default values can be changed
+            * while deploying playbook instance.
+            */
+            variable static-threshold {
+                value 800;
+                description "Enter MAC limit threshold per VLAN";
+                type int;
+            }
+            variable instance-name {
+                value .*;
+                description "Enter instance-name to be monitored.";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                         operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                         }
+                         operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }
+        }
+    }
+}

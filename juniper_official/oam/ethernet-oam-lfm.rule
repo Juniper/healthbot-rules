@@ -1,0 +1,103 @@
+/*
+ * Collects LFM state for a PE interface that connects to a CE
+ *
+ * Requirement 455 - https://paragon-automation.atlassian.net/browse/REQ-455
+ *
+ */
+healthbot {
+    topic oam {
+        description "Collect LFM interface state";
+        synopsis "OAM LFM discovery state analyzer";
+        rule get-lfm-information {
+            keys  [ lfm-interface-name ];
+            synopsis "LFM discovery state analyzer";
+            description "Monitors the discovery state for a PE interface which is connected to CE";
+            sensor link-fault-management-information {
+                synopsis "EVPN LFM iAgent sensor definition";
+                description "Netconfig rpc get-evpn-lfm-information iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file ethernet-oam-lfm.yml;
+                    table EvpnLFMTable;
+                    frequency 180s;
+                }
+            }
+            field lfm-discovery-state {
+                sensor link-fault-management-information {
+                    path lfmd-discovery-state;
+                }
+                type string;
+                description "Discovery state for a given interface";
+            }
+            field lfm-interface-name {
+                sensor link-fault-management-information {
+                    path lfmd-interface-name;
+                }
+                type string;
+                description "interface for which LFM info is collected";
+            }
+            field pe-interface-name {
+                constant {
+                    value "{{interface-name}}"
+                }
+                type string;
+                description "PE Interface to monitor";
+            }
+            trigger lfm-interface-discovery-state {
+                synopsis "LFM discovery status KPI";
+                description "Sets health based on LFM discovery state between PE and CE";
+                frequency 1offset;
+                term is-lfm-remote-discovery-status {
+                    when {
+                        matches-with "$lfm-discovery-state" "Send Any";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$lfm-interface-name discovery state: $lfm-discovery-state";
+                        }
+                    }
+                }
+                term lfm-discovery-state-remote-unstable {
+                    then {
+                        status {
+                            color red;
+                            message "$lfm-interface-name discovery state: $lfm-discovery-state";
+                        }
+                    }
+                }
+            }
+            variable interface-name {
+                value .*
+                description "PE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                         operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                         }
+                         operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }
+        }
+    }
+}
