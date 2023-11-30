@@ -1,0 +1,111 @@
+/*
+ *   This rule checks health of each bfd session state and notify in case any of the health monitored field crosses threshold
+ *   One input controls detection
+ * 
+ *   1) bfd-session-id, is the BFD session IP to monitor 
+ */
+healthbot {
+    topic protocol.bfd {
+        description "This topic is to monitor bfd session state";
+        synopsis "bfd neighbor status check";
+        rule check-bfd-session-state {
+            keys session-neighbor;
+            synopsis "bfd session state analyzer";
+            description "This rule collects bfd session state periodically and notifies in case of anomalies";
+            sensor bfd-sensor {
+                synopsis "bfd netconf based iAgent sensor definition";
+                description "iAgent sensor defined in yml file using netconf rpc/cli command and defined fields using pyez tables&views to collect data from network device";
+                iAgent {
+                    file bfd-session-state.yml;
+                    table BfdSessionTable;
+                    frequency 60s;
+                }
+            }
+            field session-neighbor {
+                sensor bfd-sensor {
+                    where "session-neighbor =~ /{{bfd-session-id}}/";
+                    path session-neighbor;
+                }
+                type string;
+                description "BFD neighbor ip";
+            }
+            trigger bfd-session-state {
+                synopsis "BFD neighbor state kpi";
+                description "Sets health based on BFD neighbor state.";
+                frequency 1.5offset;
+                term is-bfd-session-down {
+                    when {
+                        does-not-match-with "$session-state" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "BFD session to $session-neighbor is $session-state. Remote state is $remote-state";
+                        }
+                    }
+                }
+                term bfd-session-up {
+                    then {
+                        status {
+                            color green;
+                            message "BFD session to $session-neighbor is $session-state. Remote state is $remote-state";
+                        }
+                    }
+                }
+            }
+            variable bfd-session-id {
+                value .*;
+                description "BFD session IP to monitor, regular expression, e.g. '10.10.10.1|10.20.20.1|172.16.1.1'";
+                type string;
+            }
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category advanced;
+                is-scaling-rule {
+                    description "Fields:session-neighbor ; Directly impacted by number of bfd sessions running in each network device";
+                }				
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                            products QFX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }							
+                            }
+                        }
+                    }
+                }
+                helper-files other {
+                    list-of-files bfd-session-state.yml;
+                }
+            }
+        }
+    }
+}
