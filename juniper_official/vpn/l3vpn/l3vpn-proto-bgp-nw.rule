@@ -12,7 +12,7 @@ healthbot {
         rule check-l3vpn-bgp-state {
             synopsis "L3VPN session state detector";
             description "Refer L3VPN peer state and PE interface state from rule routing.bgp/check-bgp-neighbor-stats & interfaces/check-ifl-state and notify anomalies when flap count increases";
-            rule-frequency 75s;
+            rule-frequency 65s;
             network-rule;
             field instance-ifl-no {
                 constant {
@@ -71,7 +71,9 @@ healthbot {
                 frequency 1offset;
                 term is-pe-interface-up {
                     when {
-                        matches-with "$instance-interface-status" UP;
+                        matches-with "$instance-interface-status" UP {
+                            ignore-case;
+                        }
                     }
                     then {
                         status {
@@ -81,10 +83,15 @@ healthbot {
                     }
                 }
                 term is-pe-interface-down {
+                    when {
+                        matches-with "$instance-interface-status" DOWN {
+                            ignore-case;
+                        }
+                    }
                     then {
                         status {
                             color red;
-                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is $instance-interface-status";
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is DOWN";
                         }
                     }
                 }
@@ -95,7 +102,9 @@ healthbot {
                 frequency 1offset;
                 term is-vpn-session-up {
                     when {
-                        matches-with "$vpn-state" ESTABLISHED;
+                        matches-with "$vpn-state" ESTABLISHED {
+                            ignore-case;
+                        }
                     }
                     then {
                         status {
@@ -105,10 +114,15 @@ healthbot {
                     }
                 }
                 term is-vpn-session-down {
+                    when {
+                        does-not-match-with "$vpn-state" ESTABLISHED {
+                            ignore-case;
+                        }
+                    }
                     then {
                         status {
                             color red;
-                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is $vpn-state";
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is DOWN";
                         }
                     }
                 }

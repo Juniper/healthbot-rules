@@ -11,7 +11,7 @@ healthbot {
         rule check-l3vpn-static-state {
             synopsis "L3VPN session state detector";
             description "Refer L3VPN PE interface state from rule interfaces/check-ifl-state and notify anomalies";
-            rule-frequency 75s;
+            rule-frequency 65s;
             network-rule;
             field instance-ifl-no {
                 constant {
@@ -63,7 +63,9 @@ healthbot {
                 frequency 1offset;
                 term is-pe-interface-up {
                     when {
-                        matches-with "$instance-interface-status" UP;
+                        matches-with "$instance-interface-status" UP {
+                            ignore-case;
+                        }
                     }
                     then {
                         status {
@@ -73,10 +75,15 @@ healthbot {
                     }
                 }
                 term is-pe-interface-down {
+                    when {
+                        matches-with "$instance-interface-status" DOWN {
+                            ignore-case;
+                        }
+                    }
                     then {
                         status {
                             color red;
-                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is $instance-interface-status";
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is DOWN";
                         }
                     }
                 }
