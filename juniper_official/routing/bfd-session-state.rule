@@ -18,7 +18,7 @@ healthbot {
                 iAgent {
                     file bfd-session-state.yml;
                     table BfdSessionTable;
-                    frequency 60s;
+                    frequency 180s;
                 }
             }
             field session-neighbor {
@@ -29,10 +29,24 @@ healthbot {
                 type string;
                 description "BFD neighbor ip";
             }
+            field session-state {
+                sensor bfd-sensor {
+                    path session-state;
+                }
+                type string;
+                description "BFD session state";
+            }
+            field remote-state {
+                sensor bfd-sensor {
+                    path remote-state;
+                }
+                type string;
+                description "BFD remote state";
+            }
             trigger bfd-session-state {
                 synopsis "BFD neighbor state kpi";
                 description "Sets health based on BFD neighbor state.";
-                frequency 1.5offset;
+                frequency 1offset;
                 term is-bfd-session-down {
                     when {
                         does-not-match-with "$session-state" UP {
