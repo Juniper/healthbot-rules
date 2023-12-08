@@ -43,6 +43,12 @@ healthbot {
                     sensor-name /components/component;
                     frequency 60s;
                 }
+            }
+            sensor components-oc-ptx {
+                open-config {
+                    sensor-name /components/component;
+                    frequency 60s;
+                }
             }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
@@ -55,6 +61,9 @@ healthbot {
                 sensor components-oc-junos {
                     where "/components/component/properties/property/@name == 'power-dc-output'";
                     path /components/component/properties/property/state/value;
+                }
+                sensor components-oc-ptx {
+                    path /components/component/power-supply/state/output-power;
                 }				
                 type integer;
                 description "PSM DC output";
@@ -68,6 +77,10 @@ healthbot {
                     where "/components/component/@name =~ /{{psm}}|^PSM[{{pem}}]$|^PEM[{{pem}}]$/";
                     path "/components/component/@name";
                 }
+                sensor components-oc-ptx {
+                    where "/components/component/@name =~ /{{psm}}|^PSM[{{pem}}]$|^PEM[{{pem}}]$/";
+                    path "/components/component/@name";
+                }				
                 type string;
                 description "Power supply module";
             }
@@ -78,6 +91,9 @@ healthbot {
                 sensor components-oc-junos {
                     where "/components/component/properties/property/@name == 'power-capacity-maximum'";
                     path /components/component/properties/property/state/value;
+                }
+                sensor components-oc-ptx {
+                   path /components/component/power-supply/state/capacity;
                 }				
                 type integer;
                 description "PSM maximum power capacity";
@@ -127,6 +143,10 @@ healthbot {
                 sensor components-oc-junos {
                     where "/components/component/properties/property/@name == 'state'";
                     path /components/component/properties/property/state/value;
+                }
+                sensor components-oc-ptx {
+                    where "/components/component/properties/property/@name == 'state'";
+                    path /components/component/properties/property/state/value;
                 }				
                 type string;
                 description "State of power supply module";
@@ -137,6 +157,10 @@ healthbot {
                     path /components/component/properties/property/state/value;
                 }
                 sensor components-oc-junos {
+                    where "/components/component/properties/property/@name == 'temperature'";
+                    path /components/component/properties/property/state/value;
+                }
+                sensor components-oc-ptx {
                     where "/components/component/properties/property/@name == 'temperature'";
                     path /components/component/properties/property/state/value;
                 }				
@@ -349,6 +373,14 @@ healthbot {
                                     }
                                 }
                             }
+                            products PTX {
+                                sensors components-oc-ptx;
+                                platforms PTX10008 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
                         }							
                         operating-system junos {							
                             products MX {
