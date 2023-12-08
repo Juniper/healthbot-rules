@@ -12,7 +12,7 @@ healthbot {
         rule evpn-view {
             synopsis "EVPN session state detector";
             description "Refer EVPN peer state and PE interface state from rule protocol.evpn/check-evpn-neighbor & interfaces/check-ifl-state and notify anomalies";
-            rule-frequency 190s;
+            rule-frequency 185s;
             network-rule;
             field instance-ifl-no {
                 constant {
@@ -75,7 +75,12 @@ healthbot {
                         }
                     }
                 }
-                term is-pe-interface-down {
+                term is-pe-interface-up {
+                    when {
+                        matches-with "$instance-interface-status" down {
+                        ignore-case;
+                        }
+                    }
                     then {
                         status {
                             color red;
@@ -99,7 +104,10 @@ healthbot {
                         }
                     }
                 }
-                term is-vpn-session-down {
+                term is-vpn-session-up {
+                    when {
+                        less-than "$vpn-state" 0;
+                    }
                     then {
                         status {
                             color red;
