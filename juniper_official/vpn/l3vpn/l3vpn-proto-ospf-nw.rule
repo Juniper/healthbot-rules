@@ -1,0 +1,183 @@
+/*
+ * Refers L3VPN OSPF protocol status between PE and CE, PE interface details
+ * and notifies anomalies when either OSPF session or PE interface is down.
+ *
+ * Requirement 455 - https://paragon-automation.atlassian.net/browse/REQ-455
+ *
+ */
+healthbot {
+    topic vpn.l3vpn {
+        description "Refer routing instance OSPF session state and PE interfaces state and notify anomalies";
+        synopsis "L3VPN OSPF session state analyzer";
+        rule check-l3vpn-ospf-state {
+            synopsis "L3VPN session state detector";
+            description "Refer L3VPN peer state, PE interface state from rule routing.ospf/check-ospf-neighbor-state & interfaces/check-ifl-state and notify anomalies when flap count increases";
+            rule-frequency 185s;
+            network-rule;
+            field instance-ifl-no {
+                constant {
+                    value "{{pe-ifl-number}}";
+                }
+                type integer;
+                description "Routing instance IFL number";
+            }
+            field instance-interface-name {
+                constant {
+                    value "{{pe-interface-name}}";
+                }
+                type string;
+                description "Routing instance interface name";
+            }
+            field instance-interface-status {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='interfaces']/rule[rule-name=check-ifl-state]/field[sub-interface-index='{{pe-ifl-number}}' and interface-name='{{pe-interface-name}}']/ifl-oper-status";
+                }
+                type string;
+                description "Routing instance interface status";
+            }
+            field neighbor-session {
+                constant {
+                    value "{{customer-neighbor-address}}";
+                }
+                type string;
+                description "Protocol neighbor address";
+            }
+            field pe-router-name {
+                constant {
+                    value "{{pe-device-name}}";
+                }
+                type string;
+                description "PE router name to monitor";
+            }
+            field vpn-name {
+                constant {
+                    value "{{customer-vpn-name}}";
+                }
+                type string;
+                description "VRF name";
+            }
+            field vpn-state {
+                reference {
+                    path "/device-group[device-group-name={{pe-device-group}}]/device[device-id={{pe-device-name}}]/topic[topic-name='routing.ospf']/rule[rule-name=check-ospf-neighbor-state]/field[neighbor-address='{{customer-neighbor-address}}']/ospf-neighbor-state";
+                    data-if-missing {
+                        value DOWN;
+                    }
+                    time-range 185s;
+                }
+                type string;
+                description "VRF peer state";
+            }
+            trigger l3vpn-pe-interface-state {
+                frequency 1offset;
+                term is-pe-interface-up {
+                    when {
+                        matches-with "$instance-interface-status" UP {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is UP";
+                        }
+                    }
+                }
+                term is-pe-interface-down {
+                    when {
+                        matches-with "$instance-interface-status" DOWN {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "PE interface $instance-interface-name.$instance-ifl-no of VPN:$vpn-name on router $pe-router-name is DOWN";
+                        }
+                    }
+                }
+            }
+            trigger l3vpn-state {
+                synopsis "L3VPN session status KPI";
+                description "Sets health based on state change in L3VPN peer and PE interface state.";
+                frequency 1offset;
+                term is-vpn-session-up {
+                    when {
+                        matches-with "$vpn-state" Full {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is UP";
+                        }
+                    }
+                }
+                term is-vpn-session-down {
+                    when {
+                        does-not-match-with "$vpn-state" Full {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "L3VPN:$vpn-name neighbor:$neighbor-session of $pe-router-name is DOWN";
+                        }
+                    }
+                }
+            }
+            variable customer-neighbor-address {
+                description "OSPF neighbor addresses to monitor, regular expression, e.g. '172.16.*'";
+                type string;
+            }
+            variable customer-vpn-name {
+                description "VRF name to monitor, regular expression, e.g. 'customer*'";
+                type string;
+            }
+            variable pe-device-group {
+                description "Router group to monitor, regular expression, e.g. 'edge.*'";
+                type device-group;
+            }
+            variable pe-device-name {
+                description "Router name to monitor, regular expression, e.g. 'edge-router.*'";
+                type device;
+            }
+            variable pe-ifl-number {
+                description "PE IFL to monitor, regular expression, e.g. '1-10'";
+                type int;
+            }
+            variable pe-interface-name {
+                description "PE interface to monitor, regular expression, e.g. 'ge-.*'";
+                type string;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                supported-healthbot-version 4.0.0;
+                supported-devices {
+                    juniper {
+                         operating-system junos {
+                            products MX {
+                                platforms All {
+                                    releases 15.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                         }
+                         operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.1R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+                    }
+                }
+            }
+        }
+    }
+}
