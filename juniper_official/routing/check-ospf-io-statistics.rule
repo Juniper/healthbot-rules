@@ -17,6 +17,9 @@
             field ospf-error {
                 sensor ospf-io-statistics-netconf {
                     path ospf-error;
+                    data-if-missing {
+                        value 0;
+                    }					
                 }
                 type integer;
                 description "Ospf IO error count";
@@ -58,7 +61,7 @@
                             message "OSPF IO error ($ospf-error)is not increasing";
                         }
                     }
-                }				
+                }
                 /*
                  * Sets color to red and sends out an anomaly notification
                  * when the ospf error count increases by 1.
@@ -91,6 +94,7 @@
                 supported-healthbot-version 1.0.1;
                 supported-devices {
                     juniper {
+                        sensors ospf-io-statistics-netconf;					
                         operating-system junos {
                             products ACX {
                                 platforms All {
@@ -134,6 +138,13 @@
                                     }
                                 }
                             }
+                            products VMX {
+                                platforms VMX {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
                         }
                         operating-system junosEvolved {
                             products ACX {
@@ -143,6 +154,13 @@
                                     }
                                 }
                             }
+                            products PTX {
+                                platforms PTX10008 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
                         }						
                     }
                 }
