@@ -1,0 +1,75 @@
+healthbot{
+  topic RPM {
+    description "Sends ICMP probes to destination host and notify anomalies";
+    synopsis "ICMP response analyzer";
+    rule probe_delay {
+        keys [ target_address test_name ];
+        function northstart_HB {
+            path northstart_HB.py;
+            method northstar;
+            argument interface_ip {
+                mandatory;
+            }
+        }
+        sensor probe_delay {
+            iAgent {
+                file RPMprobe.yml;
+                table RPMprobeTable;
+                frequency 30s;
+            }
+        }
+        field probe_delay {
+            sensor probe_delay {
+                path probe_rt_ave_delay;
+            }
+            type integer;
+        }
+        field source_address {
+            sensor probe_delay {
+                path source_address;
+            }
+            type string;
+        }
+        field target_address {
+            sensor probe_delay {
+                path target_address;
+            }
+            type string;
+        }
+        field test_name {
+            sensor probe_delay {
+                path test_name;
+            }
+            type string;
+        }
+        trigger probe_exceed {
+            frequency 30s;
+            term Term_1 {
+                when {
+                    greater-than "$probe_delay" 200000;
+                }
+                then {
+                    status {
+                        color red;
+                        message "$source_address   $target_address $test_name delay is $probe_delay  exceeds delay threshold 200000 us.  ";
+                    }
+                    user-defined-action northstart_HB {
+                        argument interface_ip "$target_address";
+                    }
+                }
+            }
+            term Term_2 {
+                when {
+                    less-than-or-equal-to "$probe_delay" 200000;
+                }
+                then {
+                    status {
+                        color green;
+                        message "$source_address   $target_address $test_name delay $probe_delay is normal .  ";
+                    }
+                }
+            }
+        }
+    }
+  }
+}
