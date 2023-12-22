@@ -43,6 +43,14 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor components-oc-mx {
+                synopsis "system cpu and memory KPI";
+                description "/components open-config sensor to collect telemetry data from MX network device";
+                open-config {
+                    sensor-name /components/component;
+                    frequency 60s;
+                }
+            }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -53,6 +61,10 @@ healthbot {
                     path /components/component/properties/property/state/value;
                     zero-suppression;
                 }
+                sensor components-oc-mx {
+                    where "/components/component/properties/property/@name == 'cpu-utilization-total'";
+                    path /components/component/properties/property/state/value;
+                }				
                 type float;
                 description "Collects RE CPU utilization";
             }
@@ -85,6 +97,11 @@ healthbot {
                     path /components/component/properties/property/state/value;
                     zero-suppression;
                 }
+                sensor components-oc-mx {
+                    where "/components/component/properties/property/@name == 'memory-utilization-buffer'";
+                    path /components/component/properties/property/state/value;
+                    zero-suppression;
+                }				
                 type integer;
                 description "RE system memory buffer value";
             }
@@ -116,6 +133,10 @@ healthbot {
                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$|^RE[{{re-slot-no}}]$/";
                     path "/components/component/@name";
                 }
+                sensor components-oc-mx {
+                    where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$|^RE[{{re-slot-no}}]$/";
+                    path "/components/component/@name";
+                }				
                 description "RE name to monitor";
             }
             /*
@@ -153,7 +174,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$routing-engine CPU utilization($re-cpu-utilization%) is not between the predicted range of ($re-cpu-utilization-anomaly-lower-boundary and $re-cpu-utilization-anomaly-upper-boundary)";
+                            message "$routing-engine CPU utilization($re-cpu-utilization%) is not between the predicted range of ($re-cpu-utilization-anomaly-lower-boundary% and $re-cpu-utilization-anomaly-upper-boundary%)";
                         }
                     }
                 }		
@@ -234,7 +255,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$routing-engine memory buffer utilization($re-memory-buffer%) is not between the predicted range of ($re-memory-buffer-anomaly-lower-boundary and $re-memory-buffer-anomaly-upper-boundary)";
+                            message "$routing-engine memory buffer utilization($re-memory-buffer%) is not between the predicted range of ($re-memory-buffer-anomaly-lower-boundary% and $re-memory-buffer-anomaly-upper-boundary%)";
                         }
                     }
                 }	
@@ -328,6 +349,22 @@ healthbot {
                                 }
                             }
                         }
+                        operating-system junos {							
+                            products MX {
+                                sensors components-oc-mx;
+                                platforms MX204 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms MX304 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
+						
                     }
                 }
             }
