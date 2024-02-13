@@ -51,6 +51,14 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor bgp-sensor-evo {
+                synopsis "BGP open-config sensor definition";
+                description "/protocol/bgp open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/bgp/neighbors;
+                    frequency 60s;
+                }
+            }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -60,6 +68,10 @@ healthbot {
                     where "/network-instances/network-instance/@instance-name =~ /{{routing-instance}}/";
                     path "/network-instances/network-instance/@instance-name";
                 }
+                sensor bgp-sensor-evo {
+                    where "/network-instances/network-instance/@name =~ /{{routing-instance}}/";
+                    path "/network-instances/network-instance/@name";
+                }				
                 type string;
                 description "Routing instance to find neighbor's parent instance";
             }
@@ -68,6 +80,10 @@ healthbot {
                     where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
                 }
+                sensor bgp-sensor-evo {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address =~ /{{neighbors}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/@neighbor-address";
+                }				
                 type string;
                 description "BGP neighbor addresses to monitor";
             }
@@ -76,6 +92,10 @@ healthbot {
                     where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr-table}}/";
                     path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name";
                 }
+                sensor bgp-sensor-evo {
+                    where "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name =~ /{{addr-table}}/";
+                    path "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/@afi-safi-name";
+                }				
                 type string;
                 description "Address-table to find table specific prefixes";
             }
@@ -84,6 +104,10 @@ healthbot {
                     path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received;
                     zero-suppression;
                 }
+                sensor bgp-sensor-evo {
+                    path /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received;
+                    zero-suppression;
+                }				
                 type integer;
                 description "Number of received routes";
             }
@@ -200,6 +224,7 @@ healthbot {
                 supported-devices {
                     juniper {
                         operating-system junos {
+                            sensors bgp-sensor;						
                             products EX {
                                 platforms EX9200 {
                                     releases 17.3R1 {
@@ -289,6 +314,16 @@ healthbot {
                                 }								
                             }
                         }
+                        operating-system junosEvolved {
+                            sensors bgp-sensor-evo;
+                            products ACX {
+                                   platforms ACX7100 {
+                                    releases 22.4R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                     other-vendor cisco-IOS-XR {
                         vendor-name cisco;
