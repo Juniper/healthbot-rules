@@ -281,42 +281,6 @@
                 type integer;
                 description "State timeout error count";
             }
-            field unknown-ack {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-ack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-ack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Unknown acknowledgement error count";
-            }
-            field unknown-nack {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-nack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-nack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Unknown no acknowledgement error count";
-            }
             field error-threshold {
                 constant {
                     value "{{error-threshold}}";
@@ -327,7 +291,7 @@
             /*
              * Anomaly detection logic to detect rsvp-te global errors.
              */
-            trigger rsvp-te-global-errors {
+            trigger authentication-fail {
                 frequency 1offset;
                 term is-authentication-fail {
                     when {
@@ -340,11 +304,22 @@
                     then {
                         status {
                             color red;
-                            message "Authentication failure error count($authentication-fail)increasing";
+                            message "Authentication failure error count($authentication-fail) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-authentication-fail-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global authentication-fail error count ($authentication-fail) is normal";
+                        }
+                    }
+                }
+            }
+            trigger bad-checksum {
+                frequency 1offset;			
                 term is-bad-checksum {
                     when {
                         increasing-at-least-by-value "$bad-checksum" {
@@ -356,11 +331,22 @@
                     then {
                         status {
                             color red;
-                            message "Bad checksum error count($bad-checksum)increasing";
+                            message "Bad checksum error count($bad-checksum) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-bad-checksum-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global bad-checksum error count($bad-checksum) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger bad-packet-format {
+                frequency 1offset;				
                 term is-bad-packet-format {
                     when {
                         increasing-at-least-by-value "$bad-packet-format" {
@@ -372,11 +358,22 @@
                     then {
                         status {
                             color red;
-                            message "Bad packet format error count($bad-packet-format)increasing";
+                            message "Bad packet format error count($bad-packet-format) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-bad-packet-format-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global bad-packet-format error count ($bad-packet-format) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger bad-packet-length {
+                frequency 1offset;				
                 term is-bad-packet-length {
                     when {
                         increasing-at-least-by-value "$bad-packet-length" {
@@ -388,11 +385,21 @@
                     then {
                         status {
                             color red;
-                            message "Bad packet length error count($bad-packet-length)increasing";
+                            message "Bad packet length error count($bad-packet-length) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-bad-packet-length-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global bad-packet-length error count ($bad-packet-length) is normal";
+                        }
+                    }
+                }				
+            trigger bad-packet-version {
+                frequency 1offset;				
                 term is-bad-packet-version {
                     when {
                         increasing-at-least-by-value "$bad-packet-version" {
@@ -404,11 +411,21 @@
                     then {
                         status {
                             color red;
-                            message "Bad packet version error count($bad-packet-version)increasing";
+                            message "Bad packet version error count($bad-packet-version) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-bad-packet-version-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global bad-packet-version error count ($bad-packet-version) is normal";
+                        }
+                    }
+                }				
+            trigger in-path-error-messages {
+                frequency 1offset;				
                 term is-in-path-error-messages {
                     when {
                         increasing-at-least-by-value "$in-path-error-messages" {
@@ -420,11 +437,22 @@
                     then {
                         status {
                             color red;
-                            message "In path error messages count($in-path-error-messages)increasing";
+                            message "In path error messages count($in-path-error-messages) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-in-path-error-messages-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global in-path-error-messages error count ($in-path-error-messages) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger in-reservation-error-messages {
+                frequency 1offset;				
                 term in-reservation-error-messages {
                     when {
                         increasing-at-least-by-value "$in-reservation-error-messages" {
@@ -436,11 +464,22 @@
                     then {
                         status {
                             color red;
-                            message "In reservation error messages count($in-reservation-error-messages)increasing";
+                            message "In reservation error messages count($in-reservation-error-messages) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-in-reservation-error-messages-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global in-reservation-error-messages error count ($in-reservation-error-messages) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger message-out-of-order {
+                frequency 1offset;				
                 term is-message-out-of-order {
                     when {
                         increasing-at-least-by-value "$message-out-of-order" {
@@ -452,11 +491,22 @@
                     then {
                         status {
                             color red;
-                            message "Message out of order error count($message-out-of-order)increasing";
+                            message "Message out of order error count($message-out-of-order) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-message-out-of-order-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global message-out-of-order error ($message-out-of-order) count is normal";
+                        }
+                    }
+                }
+            }				
+            trigger out-path-error-messages {
+                frequency 1offset;				
                 term out-path-error-messages {
                     when {
                         increasing-at-least-by-value "$out-path-error-messages" {
@@ -468,11 +518,22 @@
                     then {
                         status {
                             color red;
-                            message "Out path error messages count($out-path-error-messages)increasing";
+                            message "Out path error messages count($out-path-error-messages) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-out-path-error-messages-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global out-path-error-messages error count ($out-path-error-messages) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger out-reservation-error-messages {
+                frequency 1offset;				
                 term out-reservation-error-messages {
                     when {
                         increasing-at-least-by-value "$out-reservation-error-messages" {
@@ -484,27 +545,22 @@
                     then {
                         status {
                             color red;
-                            message "Out reservation error messages count($out-reservation-error-messages)increasing";
+                            message "Out reservation error messages count($out-reservation-error-messages) is increasing";
                         }
                         next;
                     }
                 }
-                term is-received-nack {
-                    when {
-                        increasing-at-least-by-value "$received-nack" {
-                            value "$error-threshold";
-                            time-range 2.5offset;
-                            latest;
-                        }
-                    }
+                term no-rsvp-te-global-out-reservation-error-messages-errors {
                     then {
                         status {
-                            color red;
-                            message "Received nack error count($received-nack)increasing";
+                            color green;
+                            message "RSVP TE global out-reservation-error-messages error count ($out-reservation-error-messages) is normal";
                         }
-                        next;
                     }
                 }
+            }				
+            trigger recv-pkt-disabled-intf {
+                frequency 1offset;				
                 term recv-pkt-disabled-intf {
                     when {
                         increasing-at-least-by-value "$recv-pkt-disabled-intf" {
@@ -516,11 +572,22 @@
                     then {
                         status {
                             color red;
-                            message "Recv-pkt-disabled-intf error count($recv-pkt-disabled-intf)increasing";
+                            message "Recv-pkt-disabled-intf error count($recv-pkt-disabled-intf) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-recv-pkt-disabled-intf-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global recv-pkt-disabled-intf error count ($recv-pkt-disabled-intf) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger send-failure {
+                frequency 1offset;				
                 term send-failure {
                     when {
                         increasing-at-least-by-value "$send-failure" {
@@ -532,11 +599,22 @@
                     then {
                         status {
                             color red;
-                            message "Send failure error count($send-failure)increasing";
+                            message "Send failure error count($send-failure) is increasing";
                         }
                         next;
                     }
                 }
+                term no-rsvp-te-global-send-failure-errors {
+                    then {
+                        status {
+                            color green;
+                            message "RSVP TE global send-failure error count ($send-failure) is normal";
+                        }
+                    }
+                }
+            }				
+            trigger state-timeout {
+                frequency 1offset;				
                 term is-state-timeout {
                     when {
                         increasing-at-least-by-value "$state-timeout" {
@@ -548,15 +626,15 @@
                     then {
                         status {
                             color red;
-                            message "State timeout error count($state-timeout)increasing";
+                            message "State timeout error count($state-timeout) is increasing";
                         }
                     }
                 }
-                term no-rsvp-te-global-errors {
+                term no-rsvp-te-global-state-timeout-errors {
                     then {
                         status {
                             color green;
-                            message "RSVP TE global error count is normal";
+                            message "RSVP TE global state-timeout error count ($state-timeout) is normal";
                         }
                     }
                 }
@@ -606,24 +684,45 @@
                                     }
                                 }
                                 platforms MX10004 {
+								    sensor lsp-updated;
                                     releases 24.1 {
                                         sensors lsp-updated;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10008 {
+								    sensor lsp-updated;
                                     releases 24.1 {
                                         sensors lsp-updated;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10016 {
+								    sensor lsp-updated;
                                     releases 24.1 {
                                         sensors lsp-updated;
                                         release-support min-supported-release;
                                     }
                                 }								
                             }
+                            products JNP {
+                                sensors lsp-updated;
+                                platforms JNP10004 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms JNP10008 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms JNP10016 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
                             products PTX {
                                 platforms PTX1000 {
                                     releases 17.4R1 {
@@ -656,12 +755,21 @@
                         }
                         operating-system junosEvolved {
                             products ACX {
+							    sensors lsp-updated;
                                 platforms All {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                             }
+                            products PTX {
+                                sensors lsp-updated;
+                                platforms PTX10008 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
                         }						
                     }
                 }
