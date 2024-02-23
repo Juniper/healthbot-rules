@@ -49,7 +49,7 @@ healthbot {
              */
             field chassis-name {
                 sensor components {
-                    where "/components/component/@name =~ /Chassis/";
+                    where "/components/component/@name =~ /^Chassis$|^CHASSIS[{{slot-no}}]$/";
                     path "/components/component/@name";
                 }
                 type string;
@@ -145,6 +145,11 @@ healthbot {
                 description "Chassis temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
             }
+            variable slot-no {
+                value 0-9;
+                description "Chassis slot number.";
+                type string;
+            }			
             rule-properties {
                 version 2;
                 contributor juniper;
@@ -242,6 +247,15 @@ healthbot {
                                 }								
                             }
                         }
+                        operating-system junosEvolved {
+                            products ACX {
+                                   platforms ACX7100 {
+                                    releases 22.4R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }						
                     }
                 }
             }
