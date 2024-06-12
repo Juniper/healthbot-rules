@@ -1,0 +1,115 @@
+/*
+  Author: Diogo Montagner <dmontagner@juniper.net>
+  Example yang for generating OC equivalent of RPM probe results
+  Requirements:
+  Junos >= 18.1
+  Installation:
+  1) Load this file in Junos (18.1R1 or newer) with
+     request system yang add package rpm proxy-xml module xmlproxyd_rpm.yang
+  2) Enable gRPC (without authentication) in Junos configuration:
+     set system services extension-service request-response grpc clear-text port 50051
+     set system services extension-service request-response grpc skip-authentication
+  Check https://www.juniper.net/documentation/en_US/junos/topics/task/configuration/yang-xmlproxy-junos-telemetry-interface-configuring.html for background information.
+
+  Note: the above can work with JUNOS 17.4 but it require extra steps not covered here.
+ */
+
+module xmlproxyd_rpm {
+  yang-version 1;
+
+  namespace "http://juniper.net/yang/software";
+
+  prefix "rpm";
+
+  import drend {
+    prefix dr;
+  }
+
+  grouping probe-results-grouping {
+
+        list probe-test-results {
+          key "owner test-name";
+          dr:source "probe-test-results";
+          leaf owner {
+            dr:source owner;
+            type string;
+          }
+          leaf test-name {
+            dr:source test-name;
+            type string;
+          }
+          leaf target-address {
+            dr:source target-address;
+            type string;
+          }
+          leaf test-size {
+            dr:source test-size;
+            type int32;
+          }
+          leaf probes-sent {
+            dr:source probe-last-test-results/probe-test-generic-results/probes-sent;
+            type int32;
+          }
+          leaf probe-responses {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-responses;
+            type int32;
+          }
+          leaf loss-percentage {
+            dr:source probe-last-test-results/probe-test-generic-results/loss-percentage;
+            type decimal64 {
+              fraction-digits 10;
+            }
+          }
+          leaf last-test-time {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-last-test-info/last-test-time;
+            type string;
+          }
+          leaf probe-results-type {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/probe-results-type;
+            type string;
+          }
+          leaf samples {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/samples;
+            type int32;
+          }
+          leaf min-delay {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/min-delay;
+            type int32;
+          }
+          leaf max-delay {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/max-delay;
+            type int32;
+          }
+          leaf avg-delay {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/avg-delay;
+            type int32;
+          }
+          leaf jitter-delay {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/jitter-delay;
+            type int32;
+          }
+          leaf stddev-delay {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/stddev-delay;
+            type int32;
+          }
+          leaf sum-delay {
+            dr:source probe-last-test-results/probe-test-generic-results/probe-test-rtt/probe-summary-results/sum-delay;
+            type int32;
+          }
+        }
+  }
+
+  dr:command-app "xmlproxyd";
+  rpc juniper-netconf-get {
+    dr:command-top-of-output "/probe-results";
+    dr:command-full-name "drend juniper-netconf-get";
+    dr:cli-command "show services rpm probe-results";
+    dr:command-help "default <get> rpc";
+    output {
+      container probe-results {
+        dr:source "/probe-results";
+        uses probe-results-grouping;
+      }
+    }
+  }
+}
