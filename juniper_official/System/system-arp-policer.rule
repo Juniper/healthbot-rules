@@ -1,0 +1,60 @@
+iceberg {
+    topic system.arp-policer {
+        description "Topic used to check for ARP policed packets in the system";
+        synopsis "ARP policed packets";
+        rule check-arp-policer {
+            keys policer-name;
+            synopsis "ARP policer analyzer";
+            description "This rule collects __default_arp_policer__ counters periodically and notifies in case ARP policed packets exceed the threshold";
+            rule-frequency 60s;
+            sensor arp-policer {
+                synopsis "iAgent ARP policer sensor definition";
+                description "iAgent sensor usin the show policer __default_arp_policer__ command to collect ARP policer bytes and packets counters from the network device";
+                iAgent {
+                    file system-arp-policer.yml;
+                    table SystemARPPolicerTable;
+                    frequency 60s;
+                }
+            }
+            field arp-policer-drops-threshold {
+                constant {
+                    value "{{arp-policer-drops-threshold}}";
+                }
+                type integer;
+                description "The threshold for ARP policer drops reporting";
+            }
+            trigger arp-policer-drops-status {
+                synopsis "ARP policer drops status";
+                description "Sets health based on MAC moves detection";
+                frequency 60s;
+                term arp-policer-drops {
+                    when {
+                        increasing-at-least-by-value "$packet-count" {
+                            value "$arp-policer-drops-threshold";
+                            time-range 60s;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "ARP policer drops over the threshold ($arp-policer-drops-threshold)";
+                        }
+                    }
+                }
+                term no-arp-policer-drops {
+                    then {
+                        status {
+                            color green;
+                            message "ARP policer drops under the threshold";
+                        }
+                    }
+                }
+            }
+            variable arp-policer-drops-threshold {
+                value 100;
+                description "The threshold for ARP policed packets";
+                type int;
+            }
+        }
+    }
+}
