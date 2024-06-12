@@ -1,0 +1,87 @@
+iceberg {
+    topic snmp.cpu {
+        rule cpu-usage {
+            keys [ l0index l1index l2index l3index ];
+            sensor jnxOperatingTable {
+                snmp {
+                    table .1.3.6.1.4.1.2636.3.1.13;
+                    frequency 60s;
+                }
+            }
+            field jnxOperating1MinLoadAvg {
+                sensor jnxOperatingTable {
+                    path jnxOperating1MinLoadAvg;
+                }
+                type integer;
+            }
+            field jnxOperatingDescr {
+                sensor jnxOperatingTable {
+                    path jnxOperatingDescr;
+                }
+                type string;
+            }
+            field l0index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingContentsIndex;
+                }
+                type string;
+            }
+            field l1index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingL1Index;
+                }
+                type string;
+            }
+            field l2index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingL2Index;
+                }
+                type string;
+            }
+            field l3index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingL1Index;
+                }
+                type string;
+            }
+            trigger cpu-trigger {
+                frequency 60s;
+                term cpu_ok {
+                    when {
+                        less-than "$jnxOperating1MinLoadAvg" 100;
+                        not-equal-to "$jnxOperating1MinLoadAvg" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Unix-style CPU load of $jnxOperatingDescr is $jnxOperating1MinLoadAvg";
+                        }
+                    }
+                }
+                term cpu_warning {
+                    when {
+                        greater-than-or-equal-to "$jnxOperating1MinLoadAvg" 100;
+                        less-than-or-equal-to "$jnxOperating1MinLoadAvg" 300;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Unix-style CPU load of $jnxOperatingDescr is $jnxOperating1MinLoadAvg\n";
+                        }
+                    }
+                }
+                term cpu_critical {
+                    when {
+                        greater-than "$jnxOperating1MinLoadAvg" 300;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Unix-style CPU load of $jnxOperatingDescr is $jnxOperating1MinLoadAvg\n";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,96 @@
+iceberg {
+	topic snmp.memory {
+		rule memory-usage {
+		    keys [ jnxContentsIndex jnxOperatingL1Index jnxOperatingL2Index jnxOperatingL3Index ];
+		    sensor memory-usage {
+		        snmp {
+		            table .1.3.6.1.4.1.2636.3.1.13;
+		            frequency 60s;
+		        }
+		    }
+		    field jnxContentsIndex {
+		        sensor memory-usage {
+		            path jnxOperatingContentsIndex;
+		        }
+		        type string;
+		    }
+		    field jnxOperatingBuffer {
+		        sensor memory-usage {
+		            path jnxOperatingBuffer;
+		        }
+		        type integer;
+		    }
+		    field jnxOperatingDescr {
+		        sensor memory-usage {
+		            path jnxOperatingDescr;
+		        }
+		        type string;
+		    }
+		    field jnxOperatingL1Index {
+		        sensor memory-usage {
+		            path jnxOperatingL1Index;
+		        }
+		        type string;
+		    }
+		    field jnxOperatingL2Index {
+		        sensor memory-usage {
+		            path jnxOperatingL2Index;
+		        }
+		        type string;
+		    }
+		    field jnxOperatingL3Index {
+		        sensor memory-usage {
+		            path jnxOperatingL2Index;
+		        }
+		        type string;
+		    }
+		    trigger memory_trigger {
+		        frequency 60s;
+		        term memory_ok {
+		            when {
+		                less-than "$jnxOperatingBuffer" 70;
+		                not-equal-to "$jnxOperatingBuffer" 0;
+		                matches-with "$jnxOperatingDescr" "routing engine" {
+		                    ignore-case;
+		                }
+		            }
+		            then {
+		                status {
+		                    color green;
+		                    message "$jnxOperatingBuffer % memory used on $jnxOperatingDescr";
+		                }
+		            }
+		        }
+		        term memory_warning {
+		            when {
+		                greater-than-or-equal-to "$jnxOperatingBuffer" 70;
+		                less-than-or-equal-to "$jnxOperatingBuffer" 90;
+		                matches-with "$jnxOperatingDescr" "routing engine" {
+		                    ignore-case;
+		                }
+		            }
+		            then {
+		                status {
+		                    color yellow;
+		                    message "$jnxOperatingBuffer % memory used on $jnxOperatingDescr";
+		                }
+		            }
+		        }
+		        term memory_critical {
+		            when {
+		                greater-than "$jnxOperatingBuffer" 90;
+		                matches-with "$jnxOperatingDescr" "routing engine" {
+		                    ignore-case;
+		                }
+		            }
+		            then {
+		                status {
+		                    color red;
+		                    message "$jnxOperatingBuffer % memory used on $jnxOperatingDescr";
+		                }
+		            }
+		        }
+		    }
+		}
+	}
+}

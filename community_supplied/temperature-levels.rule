@@ -1,0 +1,97 @@
+iceberg {
+    topic snmp.temperatures {
+        rule temperature-level {
+            keys [ Field_rtsn6d L0Index l0index l1index l2index l3index ];
+            sensor jnxOperatingTable {
+                snmp {
+                    table .1.3.6.1.4.1.2636.3.1.13;
+                    frequency 60s;
+                }
+            }
+            field jnxOperatingDescr {
+                sensor jnxOperatingTable {
+                    path jnxOperatingDescr;
+                }
+                type string;
+                description "";
+            }
+            field jnxOperatingTemp {
+                sensor jnxOperatingTable {
+                    path jnxOperatingTemp;
+                }
+                type integer;
+            }
+            field l0index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingContentsIndex;
+                }
+                type string;
+            }
+            field l1index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingL1Index;
+                }
+                type string;
+            }
+            field l2index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingL2Index;
+                }
+                type string;
+            }
+            field l3index {
+                sensor jnxOperatingTable {
+                    path jnxOperatingL3Index;
+                }
+                type string;
+            }
+            trigger temperature_trigger {
+                frequency 60s;
+                term temp_ok {
+                    when {
+                        less-than "$jnxOperatingTemp" 50;
+                        not-equal-to "$jnxOperatingTemp" 0;
+                        matches-with "$jnxOperatingDescr" "routing engine" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Temperature of $jnxOperatingDescr is $jnxOperatingTemp";
+                        }
+                    }
+                }
+                term temp_warning {
+                    when {
+                        greater-than-or-equal-to "$jnxOperatingTemp" 50;
+                        less-than-or-equal-to "$jnxOperatingTemp" 70;
+                        matches-with "$jnxOperatingDescr" "routing engine" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Temperature of $jnxOperatingDescr is $jnxOperatingTemp";
+                        }
+                    }
+                }
+                term temp_critical {
+                    when {
+                        greater-than "$jnxOperatingTemp" 70;
+                        matches-with "$jnxOperatingDescr" "routing engine" {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Temperature of $jnxOperatingDescr is $jnxOperatingTemp";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
