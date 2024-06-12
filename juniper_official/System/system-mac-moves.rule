@@ -1,0 +1,68 @@
+iceberg {
+    topic system.mac-learning {
+        description "topic used to check for MAC moves in the system";
+        synopsis "MAC moves kpi";
+        rule check-mac-moves {
+            keys mac-move-time;
+            synopsis "MAC moves analyzer";
+            description "This rule collects l2-learning mac-move-buffer periodically and notifies in case MAC moves are detected";
+            sensor mac-moves {
+                synopsis "iAgent MAC moves sensor definition";
+                description "iAgent sensor using l2-learning mac-move-buffer command to collect data from network device";
+                iAgent {
+                    file system-mac-moves.yml;
+                    table SystemL2MacMovesTable;
+                    frequency 60s;
+                }
+            }
+            field mac-moves-count {
+                formula {
+                    count {
+                        field-name "$mac";
+                        time-range 1m;
+                    }
+                }
+                type integer;
+                description "Number of MAC moves";
+            }
+            field mac-moves-threshold {
+                constant {
+                    value "{{mac-moves-threshold}}";
+                }
+                type integer;
+                description "The threshold for MAC moves reporting";
+            }
+            trigger mac-moves-status {
+                synopsis "MAC moves kpi";
+                description "Sets health based on MAC moves detection";
+                term no-mac-moves-detected {
+                    when {
+                        equal-to "$mac-moves-count" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "No MAC moves detected in the system";
+                        }
+                    }
+                }
+                term mac-moves-detected {
+                    when {
+                        greater-than "$mac-moves-count" "$mac-moves-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The MAC address $mac is moving between the interfaces $ifl-from and $ifl-to in bridge domain $bd";
+                        }
+                    }
+                }
+            }
+            variable mac-moves-threshold {
+                value 3;
+                description "The threshold for MAC moves reporting";
+                type int;
+            }
+        }
+    }
+}
