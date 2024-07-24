@@ -1,0 +1,74 @@
+/*
+	* Rule to collect Host Process CPU and Memory Utilization for Blackhole Detection RCA.
+*/
+healthbot {
+	topic hardware.fpc {
+		rule host-process-cpu-memory {
+			keys [ fpc-name process-name ];
+			synopsis "Host Process CPU and Memory Utilization";
+			description "Host Process CPU and Memory Utilization";
+			sensor sensor-host-process-cpu-memory {
+				synopsis "Host Process CPU and Memory Utilization";
+				description "Host Process CPU and Memory Utilization";
+				open-config {
+					sensor-name /junos/system/linecard/cpu/memory/;
+					frequency 60s;
+				}
+			}
+			field fpc-name {
+				sensor sensor-host-process-cpu-memory {
+					path "/system-process/component/@name";
+				}
+				type string;
+				description "FPC Name";
+			}
+			field process-name {
+				sensor sensor-host-process-cpu-memory {
+					path "/system-process/component/process/@processName";
+				}
+				type string;
+				description "Error Name";
+			}
+			field process-cpu {
+				sensor sensor-host-process-cpu-memory {
+					path "/system-process/component/process/processCpu";
+				}
+				type integer;
+				description "Process CPU Utilization";
+			}
+			field process-memory {
+				sensor sensor-host-process-cpu-memory {
+					path "/system-process/component/process/processMem";
+				}
+				type integer;
+				description "Process Memory Utilization";
+			}
+			rule-properties {
+				version 1;
+				contributor juniper;
+				category advanced;
+				supported-healthbot-version 4.2.0;
+				supported-devices {
+					juniper {
+						operating-system junosEvolved {
+							products PTX {
+								platforms PTX10008 {
+									releases 22.2R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+							products ACX {
+								platforms All {
+									releases 22.3R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

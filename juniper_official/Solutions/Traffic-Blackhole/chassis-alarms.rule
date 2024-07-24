@@ -1,0 +1,81 @@
+/*
+	* Rule to collect Chassis Alarms for Blackhole Detection RCA.
+*/
+healthbot {
+	topic hardware.fpc {
+		rule chassis-alarms {
+			keys [ fru-slot fru-type error-name ];
+			synopsis "Chassis Alarms";
+			description "Chassis Alarms";
+			sensor sensor-chassis-alarms {
+				synopsis "Chassis Alarms";
+				description "Chassis Alarms";
+				open-config {
+					sensor-name /junos/system/cmerror/counters/;
+					frequency 60s;
+				}
+			}
+			field fru-slot {
+				sensor sensor-chassis-alarms {
+					path "/junos/chassis/cmerror/counters/fru-slot";
+				}
+				type string;
+				description "FRU Slot";
+			}
+			field fru-type {
+				sensor sensor-chassis-alarms {
+					path "/junos/chassis/cmerror/counters/fru-type";
+				}
+				type string;
+				description "FRU Type";
+			}
+			field error-name {
+				sensor sensor-chassis-alarms {
+					path "/junos/chassis/cmerror/counters/@name";
+				}
+				type string;
+				description "Error Name";
+			}
+			field error-count {
+				sensor sensor-chassis-alarms {
+					path "/junos/chassis/cmerror/counters/occur-count";
+				}
+				type integer;
+				description "Alarm Occurrences";
+			}
+			field error-active {
+				sensor sensor-chassis-alarms {
+					path "/junos/chassis/cmerror/counters/enabled";
+				}
+				type string;
+				description "Alarm State";
+			}
+			rule-properties {
+				version 1;
+				contributor juniper;
+				category advanced;
+				supported-healthbot-version 4.2.0;
+				supported-devices {
+					juniper {
+						operating-system junosEvolved {
+							products PTX {
+								platforms PTX10008 {
+									releases 22.2R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+							products ACX {
+								platforms All {
+									releases 22.3R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

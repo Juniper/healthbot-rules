@@ -1,0 +1,77 @@
+/*
+	* Rule to get Trap Statistics (Drop Counters) for Blackhole Detection.
+	* Each platform will have different trap names.
+*/
+healthbot {
+	topic hardware.fpc {
+		rule trap-stats {
+			keys [ fpc-name trap-name ];
+			synopsis "Forwarding Block Trap Names and Values";
+			description "Forwarding Block Trap Names and Values";
+			sensor sensor-trap-stats {
+				synopsis "Forwarding Block Trap Names and Values";
+				description "Forwarding Block Trap Names and Values";
+				open-config {
+					sensor-name /junos/system/linecard/packet/usage/;
+					frequency 60s;
+				}
+			}
+			field fpc-name {
+				sensor sensor-trap-stats {
+					where "/components/component/@name =~ /PIC[0-9]:NPU/";
+					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
+					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					path "/components/component/@name";
+				}
+				type string;
+				description "FPC name";
+			}
+			field trap-name {
+				sensor sensor-trap-stats {
+					where "/components/component/@name =~ /PIC[0-9]:NPU/";
+					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
+					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					path "/components/component/properties/property/@name";
+				}
+				type string;
+				description "Trap Name";
+			}
+			field trap-value {
+				sensor sensor-trap-stats {
+					where "/components/component/@name =~ /PIC[0-9]:NPU/";
+					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
+					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					path "/components/component/properties/property/state/value";
+				}
+				type integer;
+				description "Trap Value";
+			}
+			rule-properties {
+				version 1;
+				contributor juniper;
+				category advanced;
+				supported-healthbot-version 4.2.0;
+				supported-devices {
+					juniper {
+						operating-system junosEvolved {
+							products PTX {
+								platforms PTX10008 {
+									releases 22.2R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+							products ACX {
+								platforms All {
+									releases 22.3R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

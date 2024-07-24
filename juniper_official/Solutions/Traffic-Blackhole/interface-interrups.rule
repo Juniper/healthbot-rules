@@ -1,0 +1,74 @@
+/*
+	* Rule to collect Interface Block CM Errors and Interrupts for Blackhole Detection RCA.
+*/
+healthbot {
+	topic hardware.fpc {
+		rule interface-interrupts {
+			keys [ fpc-name error-name ];
+			synopsis "Interface Block CM Errors and Interrupts";
+			description "Interface Block CM Errors and Interrupts";
+			sensor sensor-interrupts {
+				synopsis "Interface Block CM Errors and Interrupts";
+				description "Interface Block CM Errors and Interrupts";
+				open-config {
+					sensor-name /components/component/integrated-circuit/pipeline-counters/errors/;
+					frequency 60s;
+				}
+			}
+			field fpc-name {
+				sensor sensor-interrupts {
+					path "/components/component/@name";
+				}
+				type string;
+				description "FPC Name";
+			}
+			field error-name {
+				sensor sensor-interrupts {
+					path "/components/component/integrated-circuit/pipeline-counters/errors/interface-block/interface-block-error/@name";
+				}
+				type string;
+				description "Error Name";
+			}
+			field error-count {
+				sensor sensor-interrupts {
+					path "/components/component/integrated-circuit/pipeline-counters/errors/interface-block/interface-block-error/state/count";
+				}
+				type integer;
+				description "Interrupt Occurrences";
+			}
+			field error-active {
+				sensor sensor-interrupts {
+					path "/components/component/integrated-circuit/pipeline-counters/errors/interface-block/interface-block-error/state/active";
+				}
+				type string;
+				description "Interrupt State";
+			}
+			rule-properties {
+				version 1;
+				contributor juniper;
+				category advanced;
+				supported-healthbot-version 4.2.0;
+				supported-devices {
+					juniper {
+						operating-system junosEvolved {
+							products PTX {
+								platforms PTX10008 {
+									releases 22.2R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+							products ACX {
+								platforms All {
+									releases 22.3R1 {
+										release-support min-supported-release;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
