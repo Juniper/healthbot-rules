@@ -1,0 +1,83 @@
+healthbot {
+    topic service.spu {
+        rule spu-thread-utilization-generic {
+            keys [ cpu_thread_id tnp_name ];
+            description "This rule monitors the SRX SPC3 SPU CPU thread utilization per worker thread and triggers alarms based on the configured utlization thresholds. Clone this role as many times needed to match the SPU count of the monitored device and provide the tnp_name_var variable during the playbook execution.";
+            sensor cpu-thread {
+                iAgent {
+                    file spu-cpu-thread_with_tnp_name.yml;
+                    table CPUThreadTable;
+                    frequency 10s;
+                    args tnp_name {
+                        arg-value "{{tnp_name_var}}";
+                    }
+                }
+            }
+            field cpu_thread_id {
+                sensor cpu-thread {
+                    path CPU;
+                }
+                type string;
+                description "SPU PIC CPU core #";
+            }
+            field cpu_thread_worker_util {
+                sensor cpu-thread {
+                    path WUtil;
+                }
+                type integer;
+                description "SPU PIC CPU core worker thread utilization";
+            }
+            field tnp_name {
+                sensor cpu-thread {
+                    where "tnp_name =~ /{{ tnp_name_var }}/";
+                    path tnp_name;
+                }
+                type string;
+            }
+            trigger trigger_cpu_thread_high {
+                frequency 10s;
+                term green {
+                    when {
+                        less-than-or-equal-to "$cpu_thread_worker_util" 50;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "pic: $tnp_name cpu_thread_id: $cpu_thread_id cpu_thread_worker_util: $cpu_thread_worker_util";
+                        }
+                    }
+                }
+                term red {
+                    when {
+                        greater-than "$cpu_thread_worker_util" 80;
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "pic: $tnp_name cpu_thread_id: $cpu_thread_id cpu_thread_worker_util: $cpu_thread_worker_util";
+                        }
+                    }
+                }
+                term orange {
+                    when {
+                        range "$cpu_thread_worker_util" {
+                            min 51;
+                            max 80;
+                        }
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "pic: $tnp_name cpu_thread_id: $cpu_thread_id cpu_thread_worker_util: $cpu_thread_worker_util";
+                        }
+                    }
+                }
+            }
+            variable tnp_name_var {
+                value fpc1.pic0;
+                description "Enter the fpcX.picY tnp name of the SPU to monitor. For example: fpc1.pic0";
+                type sensor-argument;
+            }
+        }
+    }
+}
