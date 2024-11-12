@@ -1,0 +1,295 @@
+/*
+ * Monitors sub interfaces state and notifies when anomalies are found.
+ * EOP requirements - REQ-33->REQ-454 and REQ-455
+ * Two inputs control detection
+ *
+ *
+ */
+healthbot {
+    topic interfaces {
+        rule check-ifl-stats {
+            synopsis "IFL state analyzer.";
+            description "Collects IFL stats and notifies anomaly when the IFL operational state is down.";
+            /*
+             * Monitors the interface state. If ifl operational state is down 
+             * red alarm is shown else it is green. 
+             *
+             * Use interface and sub-interface name as keys for rule.
+             */
+            keys [interface-name sub-interface-index];
+            /*
+             * Sensor configuration to get data from network devices.
+             */
+            sensor interfaces-oc {
+                synopsis "Sub Interface open-config sensor definition";
+                description "Sub Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /interfaces/interface/subinterfaces/subinterface/state/counters;
+                    frequency 60s;
+                }
+            }
+            /*
+             * Fields defined using sensor path. Map the longer sensor names
+             * to the shorter field names used in the rules.
+             */
+			field interface-name {
+                sensor interfaces-oc {
+                    where "/interfaces/interface/@name =~ /{{ifd-name}}/";
+                    path "/interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field sub-interface-index {
+                sensor interfaces-oc {
+                    where "/interfaces/interface/subinterfaces/subinterface/@index =~ /{{ifl-no}}/";
+                    path "/interfaces/interface/subinterfaces/subinterface/@index";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field in-octets {
+                sensor interfaces-oc {
+                    path /interfaces/interface/subinterfaces/subinterface/state/counters/in-octets;
+                }
+                type integer;
+                description "Subinterface(IFL) statistics counter (in-octets) value";
+            }
+            field in-util {
+                formula {
+                    eval {
+                        expression "($in-mbps / $in-bw) * 100";
+                    }
+                }
+                type float;
+                description "Utilization in percentage which derived based on mbps and interface in bw";
+            }
+            field in-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-octets";
+                        multiplication-factor 0.000008;
+                    }
+                }
+                type float;
+                description "Derives mbps based (current in-octets - previous in-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+            }
+            field out-octets {
+                sensor interfaces-oc {
+                    path /interfaces/interface/subinterfaces/subinterface/state/counters/out-octets;
+                    zero-suppression;
+                }
+                type integer;
+                description "Subinterface(IFL) statistics counter (out-octets) value";
+            }
+            field out-util {
+                formula {
+                    eval {
+                        expression "($out-mbps / $out-bw) * 100";
+                    }
+                }
+                type float;
+                description "Utilization out percentage which derived based on mbps and interface out bw";
+            }
+            field out-mbps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-octets";
+                        multiplication-factor 0.000008;
+                    }
+                }
+                type float;
+                description "Derives mbps based (current out-octets - previous out-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+            }
+            field high-threshold {
+                constant {
+                    value "{{traffic-high-threshold}}";
+                }
+                type integer;
+                description "Traffic high threshold";
+            }
+            field low-threshold {
+                constant {
+                    value "{{traffic-low-threshold}}";
+                }
+                type integer;
+                description "Traffic low threshold";
+            }
+            field in-bw {
+                constant {
+                    value "{{in-bw }}";
+                }
+                type integer;
+                description "Subinterface input bandwidth";
+            }
+            field out-bw {
+                constant {
+                    value "{{out-bw}}";
+                }
+                type integer;
+                description "Subinterface output bandwidth";
+            }
+            /*
+             * Anomaly detection logic.
+             */
+            trigger ifl-input-traffic {
+                alert-type interfaces.rx.traffic.interface-input-traffic;
+                synopsis "Sub interface input traffic kpi";
+                description "Sets health based on input traffic exceed threshold";
+                frequency 1offset;
+                /*
+                 * Sets color to green when in-util is below low-threshold
+                 */				
+                term interface-in-traffic-normal {
+                    when {
+                        less-than "$in-util" "$low-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name.$sub-interface-index input traffic:$in-mbps mbps, util:$in-util %, in-bw: $in-bw mbps is normal";
+                        }
+                    }
+                }				
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the IFL input traffic($in-util) is
+                 * above low threshold (low-threshold)
+                 */					
+                term is-ifl-in-traffic-median {
+                    when {
+                        greater-than-or-equal-to "$in-util" "$low-threshold";
+                        less-than "$in-util" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name.$sub-interface-index input traffic:$in-mbps mbps, util:$in-util %, in-bw: $in-bw mbps is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-util) is
+                 * above high threshold (high-threshold)
+                 */				
+                term is-ifl-in-traffic-abnormal {
+                    when {
+                        greater-than-or-equal-to "$in-util" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name.$sub-interface-index input traffic:$in-mbps mbps, util:$in-util %, in-bw: $in-bw mbps is above high threshold";
+                        }
+                    }
+                }
+            }
+            trigger ifl-output-traffic {
+                alert-type interfaces.tx.traffic.interface-output-traffic;
+                synopsis "Subinterface output traffic kpi";
+                description "Sets health based on output traffic exceed threshold";
+                frequency 1offset;
+                /*
+                 * Sets color to green when out-util is below low threshold
+                 */ 				
+                term is-ifl-stats-normal {
+                    when {
+                        less-than "$out-util" "$low-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name.$sub-interface-index output traffic:$out-mbps mbps, util:$out-util %, out-bw: $out-bw mbps is normal";
+                        }
+                    }
+                }				
+                /*
+                 * Sets color to yellow and sends out an anomaly notification
+                 * when the subinterface output traffic ($out-util)
+                 * is above low threshold (low-threshold)
+                 */				
+                term is-ifl-stats-median {
+                    when {
+                        greater-than-or-equal-to "$out-util" "$low-threshold";
+                        less-than "$out-util" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name.$sub-interface-index output traffic:$out-mbps mbps, util:$out-util %, out-bw: $out-bw mbps is in medium range";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface output traffic ($out-util) is
+                 * above high threshold (high-threshold)
+                 */ 				
+                term is-ifl-stats-abnormal {
+                    when {
+                        greater-than-or-equal-to "$out-util" "$high-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name.$sub-interface-index output traffic:$out-mbps mbps, util:$out-util %, out-bw: $out-bw mbps is above high threshold";
+                        }
+                    }
+                }				
+            }
+            variable ifd-name {
+                value ".*";
+                description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            variable ifl-no {
+                value ".*";
+                description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+                type string;
+            }
+            variable traffic-high-threshold {
+                value 80;
+                description "Subinterface traffic high threshold value in percentage";
+                type int;
+            }
+            variable traffic-low-threshold {
+                value 50;
+                description "Subinterface traffic high threshold value in percentage";
+                type int;
+            }
+            variable out-bw {
+                value 512;
+                description "Subinterface output bandwidth";
+                type int;
+            }
+            variable in-bw {
+                value 1024;
+                description "Subinterface input bandwidth";
+                type int;
+            }
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category basic;
+                is-scaling-rule {
+                    description "Fields: interface-name ; Directly impacted by number of interfaces and IFLs in each network device";
+                }				
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    	}	
+    }
+}
