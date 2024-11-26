@@ -28,7 +28,7 @@
              * 
              * Use interface name as key for rule.
              */
-            keys interface-name;
+            keys [ interface-name level ];
             /*
              * Sensor configuration to get data from network devices
              */
@@ -40,6 +40,14 @@
                     frequency 60s;
                 }
             }
+            sensor isis-sensor-path {
+                synopsis "ISIS open-config sensor definition";
+                description "Open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/;
+                    frequency 60s;
+                }
+            }			
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
@@ -48,8 +56,11 @@
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/csnp/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/dropped;
+                }				
                 type integer;
                 description "Number of csnp drops";
             }
@@ -57,8 +68,11 @@
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/esh/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/esh/state/dropped;
+                }				
                 type integer;
                 description "Number of esh drops";
             }
@@ -66,8 +80,11 @@
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/iih/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/dropped;
+                }				
                 type integer;
                 description "Number of iih drops";
             }
@@ -76,15 +93,32 @@
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id";
+                }				
                 type string;
                 description "Interfaces to be monitored";
             }
+            field level {
+                sensor isis-sensor {
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number";
+                }
+                sensor isis-sensor-path {
+                    path "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number";
+                }				
+                type integer;
+                description "Isis level as string due to rule key";
+            }			
             field ish-drops {
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/ish/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/ish/state/dropped;
+                }				
                 type integer;
                 description "Number of ish drops";
             }
@@ -92,8 +126,11 @@
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/lsp/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/dropped;
+                }				
                 type integer;
                 description "Number of lsp drops";
             }
@@ -101,8 +138,11 @@
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/psnp/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/dropped;
+                }				
                 type integer;
                 description "Number of psnp drops";
             }
@@ -117,8 +157,11 @@
                 sensor isis-sensor {
                     where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/unknown/state/dropped;
-                    zero-suppression;
                 }
+                sensor isis-sensor-path {
+                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/dropped;
+                }				
                 type integer;
                 description "Number of unknown drops";
             }
@@ -440,67 +483,181 @@
                 supported-devices {
                     juniper {
                         operating-system junos {
+                            sensors isis-sensor;						
                             products MX {
                                 platforms MX240 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX480 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX960 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2010 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2020 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }							
                             }
                             products PTX {
                                 platforms PTX5000 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX1000 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10000 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 17.4R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }							
                             }
                             products ACX {
                                 platforms All {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 22.1R1 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                             }
                         }
                         operating-system junosEvolved {
+                            sensors isis-sensor;						
                             products ACX {
-                                platforms All {
+                                platforms ACX7024 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
                                     releases 22.3R1 {
+                                        sensors isis-sensor;									
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7100-48L {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
+                                    releases 22.3R1 {
+                                        sensors isis-sensor;									
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7100-32C {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;									
+                                        release-support min-supported-release;
+                                    }								
+                                    releases 22.3R1 {
+                                        sensors isis-sensor;									
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms ACX7348 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;
+                                        release-support min-supported-release;
+                                    }
+                                    releases 22.3R1 {
+                                        sensors isis-sensor;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7024X {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;
+                                        release-support min-supported-release;
+                                    }
+                                    releases 22.3R1 {
+                                        sensors isis-sensor;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7509 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;
+                                        release-support min-supported-release;
+                                    }
+                                    releases 22.3R1 {
+                                        sensors isis-sensor;
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products PTX {
+                                platforms PTX10008 {
+                                    releases 23.2R1 {
+                                        sensors isis-sensor-path;
+                                        release-support min-supported-release;
+                                    }								
+                                    releases 22.2R3 {
+                                        sensors isis-sensor;									
                                         release-support min-supported-release;
                                     }
                                 }
                             }
-                        }						
+                        }
                     }
                 }
             }
