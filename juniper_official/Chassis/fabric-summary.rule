@@ -1,0 +1,42 @@
+iceberg {
+    topic chassis {
+        description "Rules monitoring fabric stability and errors";
+        synopsis "Fabric related rules";
+        rule check-chassis-fabric-summary {
+            keys plane-slot;
+            synopsis "show chassis fabric summary extended";
+            description "Checking fabric planes states , errors and uptimes";
+            sensor fabric-summary {
+                iAgent {
+                    file fabric-summary.yml;
+                    table fabricSummary;
+                    frequency 300s;
+                }
+            }
+            trigger plane-state-online-or-spare {
+                term is-plane-state-not-online-or-spare {
+                    when {
+                        does-not-match-with "$state" "(Online|Spare)";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "The plane $plane-slot is in state $state";
+                        }
+                    }
+                }
+                term is-plane-state-online-or-spare {
+                    when {
+                        matches-with "$state" "(Online|Spare)";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "The plane $plane-slot is in state $state";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
