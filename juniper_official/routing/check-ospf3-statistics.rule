@@ -1,0 +1,191 @@
+/*
+ * Monitors OSPF3 hello packets and notifies anomalies when hello send and receive count 
+ * is not increasing.
+ */
+ healthbot {
+    topic routing.ospf {
+        rule check-ospf3-statistics {
+            keys ospf-packet-type;
+            synopsis "ospf hello statistics analyzer";
+            description "Monitors the transmission and reception of hello packets";
+            sensor ospf-statistics-netconf {
+                synopsis "OSPF iAgent sensor definition";
+                description "Netconfig rpc get-ospf-neighbor-information iAgent sensor to collect telemetry data from network device";
+                iAgent {
+                    file Ospf3NeighborStatsTable.yml;
+                    table Ospf3StatsTable;
+                    frequency 180s;
+                }
+            }
+            field hello-received {
+                sensor ospf-statistics-netconf {
+                    path hello-received;
+                }
+                type integer;
+                description "Ospf hello packets received";
+            }
+            field hello-sent {
+                sensor ospf-statistics-netconf {
+                    path hello-sent;
+                }
+                type integer;
+                description "Ospf hello packets sent";
+            }
+            field ospf-packet-type {
+                sensor ospf-statistics-netconf {
+                    path ospf-packet-type;
+                }
+                type string;
+                description "Packet type";
+            }
+            field hello-count-threshold {
+                constant {
+                    value "{{hello-count-threshold}}";
+                }
+                type integer;
+                description "Hello count threshold";
+            }			
+            trigger ospf-hello-received {
+                alert-type routing.ospf.hello.received.ospf-hello-received;
+                synopsis "ospf hello received statistics kpi";
+                description "Sets health based on ospf hello received statistics";
+                frequency 1offset;
+                term is-ospf-hello-receive-increasing {
+                    when {
+                        increasing-at-least-by-value "$hello-received" {
+                            value "$hello-count-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF receive module is functioning, hello receive count($hello-received) is increasing";
+                        }
+                    }
+                }
+                term is-ospf-hello-receive-not-increasing {
+                    when {
+                        matches-with-previous "$hello-received"{
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }				
+                    then {
+                        status {
+                            color red;
+                            message "OSPF receive module not functioning, hello receive count($hello-received) is not increasing";
+                        }
+                    }
+                }
+            }
+            trigger ospf-hello-sent {
+                alert-type routing.ospf.hello.sent.ospf-hello-sent;
+                synopsis "ospf hello sent statistics kpi";
+                description "Sets health based on ospf hello sent statistics";
+                frequency 1offset;
+                term is-ospf-hello-sent-increasing {
+                    when {
+                        increasing-at-least-by-value "$hello-sent" {
+                            value "$hello-count-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF send module is functioning, hello send count($hello-sent) is increasing";
+                        }
+                    }
+                }
+                term is-ospf-hello-sent-not-increasing {
+                    when {
+                        matches-with-previous "$hello-sent"{
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }				
+                    then {
+                        status {
+                            color red;
+                            message "OSPF send module not functioning, hello send count($hello-sent) is not increasing";
+                        }
+                    }
+                }
+            }
+            variable hello-count-threshold {
+                value 1;
+                type int;
+                description "Increase between metrics, before we report anomaly";
+            }			
+            rule-properties {
+                version 2;
+                contributor juniper;
+                category basic;
+                supported-healthbot-version 1.0.1;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products ACX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products EX {
+                                platforms All {
+                                    releases 15.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms All {
+                                    releases 11.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products VMX {
+                                platforms VMX {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }							
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                platforms All {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                platforms PTX10008 {
+                                    releases 22.2R3 {
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }							
+                        }						
+                    }
+                }
+                helper-files other {
+                    list-of-files Ospf3NeighborStatsTable.yml;
+                }
+            }
+        }
+    }
+}
