@@ -213,6 +213,42 @@ healthbot {
                 type integer;
                 description "Interface speed";
             }
+            field in-errors-count-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$in-errors-count";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on input errors count field";
+            }
+            field in-mbps-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$in-mbps";
+                    }
+                }
+                type float;
+                description "JAIML anomaly detection on input traffic field";
+            }
+            field out-errors-count-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$out-errors-count";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on output errors count field";
+            }
+            field out-mbps-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$out-mbps";
+                    }
+                }
+                type float;
+                description "JAIML anomaly detection on output traffic field";
+            }
             /*
              * Anomaly detection logic.
              */			
@@ -267,6 +303,20 @@ healthbot {
                             message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is above high threshold";
                         }
                     }
+                }
+                /*
+                 * Sets color to yellow when in-mbps is not in between predicted range.
+                 */
+                term is-in-mbps-anomalous {
+                    when {
+                        equal-to "$in-mbps-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, input traffic:$in-mbps mbps is not between the predicted range of ($in-mbps-anomaly-lower-boundary) and ($in-mbps-anomaly-upper-boundary)";
+                        }
+                    }
                 }				
             }    
             trigger interface-input-errors {
@@ -308,6 +358,20 @@ healthbot {
                         status {
                             color red;
                             message "Input errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when in-errors-count is not in between predicted range.
+                 */
+                term is-in-errors-count-anomalous {
+                    when {
+                        equal-to "$in-errors-count-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, input errors count $in-errors-count is not between the predicted range of ($in-errors-count-anomaly-lower-boundary) and ($in-errors-count-anomaly-upper-boundary)";
                         }
                     }
                 }			
@@ -433,6 +497,20 @@ healthbot {
                             message "Output errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
                         }
                     }
+                }
+                /*
+                 * Sets color to yellow when out-errors-count is not in between predicted range.
+                 */
+                term is-out-errors-count-anomalous {
+                    when {
+                        equal-to "$out-errors-count-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, output errors count $out-errors-count is not between the predicted range of ($out-errors-count-anomaly-lower-boundary) and ($out-errors-count-anomaly-upper-boundary)";
+                        }
+                    }
                 }			
             }
             trigger interface-output-traffic {
@@ -484,6 +562,20 @@ healthbot {
                         status {
                             color red;
                             message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is above high threshold";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when out-mbps is not in between predicted range.
+                 */
+                term is-out-mbps-anomalous {
+                    when {
+                        equal-to "$out-mbps-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, output traffic:$out-mbps mbps is not between the predicted range of ($out-mbps-anomaly-lower-boundary) and ($out-mbps-anomaly-upper-boundary)";
                         }
                     }
                 }				

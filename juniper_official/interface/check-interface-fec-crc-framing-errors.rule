@@ -95,6 +95,51 @@ healthbot {
                 type integer;
                 description "Checks for output CRC errors";
             }
+            field fec-corrected-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$fec-corrected";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for FEC corrected errors field";
+            }
+            field fec-uncorrected-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$fec-uncorrected";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for FEC un-corrected errors field";
+            }
+            field framing-errors-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$framing-errors";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for framing errors field";
+            }
+            field input-crc-errors-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$input-crc-errors";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for input CRC errors field";
+            }
+            field output-crc-errors-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$output-crc-errors";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for output CRC errors field";
+            }
             /*
              * Anomaly detection logic.
              */			
@@ -136,6 +181,20 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when fec-corrected-errors is not in between predicted range.
+                 */
+                term is-fec-corrected-errors-anomalous {
+                    when {
+                        equal-to "$fec-corrected-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, FEC corrected errors $fec-corrected is not between the predicted range of ($fec-corrected-anomaly-lower-boundary) and ($fec-corrected-anomaly-upper-boundary)";
+                        }
+                    }
+                }
             }
             trigger fec-uncorrected-errors {
                 alert-type interfaces.errors.fec-uncorrected-errors;
@@ -172,6 +231,20 @@ healthbot {
                         status {
                             color red;
                             message "FEC Uncorrected Errors $fec-uncorrected on $interface-name has increased";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when fec-uncorrected-errors is not in between predicted range.
+                 */
+                term is-fec-uncorrected-errors-anomalous {
+                    when {
+                        equal-to "$fec-uncorrected-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, FEC uncorrected errors $fec-uncorrected is not between the predicted range of ($fec-uncorrected-anomaly-lower-boundary) and ($fec-uncorrected-anomaly-upper-boundary)";
                         }
                     }
                 }				
@@ -217,6 +290,20 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when framing-errors is not in between predicted range.
+                 */
+                term is-framing-errors-anomalous {
+                    when {
+                        equal-to "$framing-errors-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, framing errors $framing-errors is not between the predicted range of ($framing-errors-anomaly-lower-boundary) and ($framing-errors-anomaly-upper-boundary)";
+                        }
+                    }
+                }
             }
             trigger input-crc-errors {
                 alert-type interfaces.rx_errors.crc.input-crc-errors;
@@ -256,6 +343,20 @@ healthbot {
                         }
                     }
                 }
+                /*
+                 * Sets color to yellow when input-crc-errors is not in between predicted range.
+                 */
+                term is-input-crc-errors-anomalous {
+                    when {
+                        equal-to "$input-crc-errors-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, input CRC errors $input-crc-errors is not between the predicted range of ($input-crc-errors-anomaly-lower-boundary) and ($input-crc-errors-anomaly-upper-boundary)";
+                        }
+                    }
+                }
             }
             trigger output-crc-errors {
                 alert-type interfaces.tx_errors.crc.output-crc-errors;
@@ -292,6 +393,20 @@ healthbot {
                         status {
                             color red;
                             message "Output CRC Error \"$output-crc-errors\" on $interface-name has increased";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when output-crc-errors is not in between predicted range.
+                 */
+                term is-output-crc-errors-anomalous {
+                    when {
+                        equal-to "$output-crc-errors-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, output CRC errors $output-crc-errors is not between the predicted range of ($output-crc-errors-anomaly-lower-boundary) and ($output-crc-errors-anomaly-upper-boundary)";
                         }
                     }
                 }

@@ -62,6 +62,15 @@ healthbot {
                 type integer;
                 description "Temperature of the Optical Module in degrees Centigrade.";
             }
+            field optical-temp-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$optical-temp";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for optical temp field";
+            }
             /*
              * Anomaly detection logic.
              */			
@@ -112,7 +121,21 @@ healthbot {
                             message "$interface-name,temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
                         }
                     }
-                }				
+                }
+                /*
+                 * Sets color to yellow when optical-temp is not in between predicted range.
+                 */
+                term is-optical-temp-anomalous {
+                    when {
+                        equal-to "$optical-temp-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, temperature $optical-temp is not between the predicted range of ($optical-temp-anomaly-lower-boundary) and ($optical-temp-anomaly-upper-boundary)";
+                        }
+                    }
+                }
             }
             /*
              * Variables with default values. Default values can be changed
