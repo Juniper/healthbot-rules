@@ -229,7 +229,7 @@ healthbot {
                     }
                 }
                 type float;
-                description "JAIML anomaly detection on input traffic field";
+                description "JAIML anomaly detection on input traffic rate field";
             }
             field out-errors-count-anomaly {
                 formula {
@@ -247,7 +247,7 @@ healthbot {
                     }
                 }
                 type float;
-                description "JAIML anomaly detection on output traffic field";
+                description "JAIML anomaly detection on output traffic rate field";
             }
             /*
              * Anomaly detection logic.
@@ -258,16 +258,18 @@ healthbot {
                 description "Sets health based on input traffic exceed threshold";
                 frequency 1offset;
                 /*
-                 * Sets color to green when in-util is below low-threshold
+                 * Sets color to red and sends out an anomaly notification
+                 * when the interface input traffic ($in-util) is
+                 * above high threshold (high-threshold)
                  */				
-                term interface-in-traffic-normal {
+                term is-interface-in-traffic-abnormal {
                     when {
-                        less-than "$in-util" "$low-threshold";
-                    }				
+                        greater-than-or-equal-to "$in-util" "$high-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is normal";
+                            color red;
+                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is above high threshold";
                         }
                     }
                 }				
@@ -289,22 +291,6 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red and sends out an anomaly notification
-                 * when the interface input traffic ($in-util) is
-                 * above high threshold (high-threshold)
-                 */				
-                term is-interface-in-traffic-abnormal {
-                    when {
-                        greater-than-or-equal-to "$in-util" "$high-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is above high threshold";
-                        }
-                    }
-                }
-                /*
                  * Sets color to yellow when in-mbps is not in between predicted range.
                  */
                 term is-in-mbps-anomalous {
@@ -315,6 +301,20 @@ healthbot {
                         status {
                             color yellow;
                             message "$interface-name, input traffic:$in-mbps mbps is not between the predicted range of ($in-mbps-anomaly-lower-boundary) and ($in-mbps-anomaly-upper-boundary)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when in-util is below low-threshold
+                 */				
+                term interface-in-traffic-normal {
+                    when {
+                        less-than "$in-util" "$low-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is normal";
                         }
                     }
                 }				
@@ -519,16 +519,18 @@ healthbot {
                 description "Sets health based on output traffic exceed threshold";
                 frequency 1offset;
                 /*
-                 * Sets color to green when out-util is below low threshold
+                 * Sets color to red and sends out an anomaly notification when
+                 * the interface output traffic ($out-util) is
+                 * above high threshold (high-threshold)
                  */ 				
-                term is-interface-stats-normal {
+                term is-interface-stats-abnormal {
                     when {
-                        less-than "$out-util" "$low-threshold";
-                    }				
+                        greater-than-or-equal-to "$out-util" "$high-threshold";
+                    }
                     then {
                         status {
-                            color green;
-                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
+                            color red;
+                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is above high threshold";
                         }
                     }
                 }				
@@ -550,22 +552,6 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red and sends out an anomaly notification when
-                 * the interface output traffic ($out-util) is
-                 * above high threshold (high-threshold)
-                 */ 				
-                term is-interface-stats-abnormal {
-                    when {
-                        greater-than-or-equal-to "$out-util" "$high-threshold";
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is above high threshold";
-                        }
-                    }
-                }
-                /*
                  * Sets color to yellow when out-mbps is not in between predicted range.
                  */
                 term is-out-mbps-anomalous {
@@ -576,6 +562,20 @@ healthbot {
                         status {
                             color yellow;
                             message "$interface-name, output traffic:$out-mbps mbps is not between the predicted range of ($out-mbps-anomaly-lower-boundary) and ($out-mbps-anomaly-upper-boundary)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when out-util is below low threshold
+                 */ 				
+                term is-interface-stats-normal {
+                    when {
+                        less-than "$out-util" "$low-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
                         }
                     }
                 }				
