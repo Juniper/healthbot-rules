@@ -11,8 +11,13 @@
             sensor isis-oc {
             	synopsis "ISIS open-config sensor definition";
                 description "Open-config sensor to collect telemetry data from network device";
+                /* Modified OC path to a more specific field to reduce bulk data collection from all devices.
+                 * This change applies only to 'collect-isis-lsdb-lsp.rule' under State Collection.
+                 * Previously, the broader 'link-state-database' path collected excessive data across all devices.
+                 * Now, the path directly targets 'lsp/state' to optimize data retrieval.
+                 */
                 open-config {
-                    sensor-name /network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/;
+                    sensor-name /network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state;
                     frequency 60s;
                 }
             }			
