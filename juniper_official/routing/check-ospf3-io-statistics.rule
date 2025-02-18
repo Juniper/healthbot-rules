@@ -1,137 +1,92 @@
 /*
- * Monitors OSPF IPv6 neighbors status and notifies when state is not full.
- * EOP requirements - REQ-1313 (https://paragon-automation.atlassian.net/browse/REQ-1313).
+ * Detects Osp3fIoStatsTable IO errors and notifies when anomalies are found.
+ * EOP requirements - REQ-1313 (https://paragon-automation.atlassian.net/browse/REQ-1313)  
  */
  healthbot {
     topic routing.ospf {
-        rule check-ospf3-neighbor-state {
-            keys [ interface-name neighbor-id instance-name neighbor-address ];
-            synopsis "OSPF IPv6 neighbor state analyzer";
-            description "Monitors the OSPF IPv6 neighbor states";
-            sensor ospf-neighbor-netconf {
+        rule check-ospf3-io-statistics {
+            synopsis "OSPF3 IO statistics analyzer";
+            description "Monitors OSPF3's I/O statistics";
+            sensor ospf-io-statistics-netconf {
                 synopsis "OSPF3 netconf sensor definition";
-                description "Netconfig rpc get-ospf3-neighbor-information iAgent sensor to collect telemetry data from network device";
                 iAgent {
-                    file Ospf3NeighborStatsTable.yml;
-                    table Ospf3NeighborStatsTable;
+                    file Ospf3IoStatsTable.yml;
+                    table Osp3fIoStatsTable;
                     frequency 180s;
                 }
             }
-            field interface-name {
-                sensor ospf-neighbor-netconf {
-                    where "interface-name =~ /{{ospf-interface-name}}/";
-                    path interface-name;
+            field ospf-error {
+                sensor ospf-io-statistics-netconf {
+                    path ospf-error;
                 }
-                type string;
-                description "Ospf interface name";
+                type integer;
+                description "Ospf IO error count";
             }
-            field instance-name {
-                sensor ospf-neighbor-netconf {
-                    where "instance-name =~ /{{instance-name}}/";
-                    path instance-name;
+            field error-threshold {
+                constant {
+                    value "{{error-threshold}}";
                 }
-                type string;
-                description "Ospf instance name";
+                type integer;
+                description "Packet error threshold";
             }			
-            field neighbor-address {
-                sensor ospf-neighbor-netconf {
-                    where "neighbor-address =~ /{{ospf-neighbor-address}}/";				
-                    path neighbor-address;
-                }
-                type string;
-                description "Ospf neighbor address";
-            }
-            field neighbor-id {
-                sensor ospf-neighbor-netconf {
-                    where "neighbor-id =~ /{{ospf-neighbor-id}}/";
-                    path neighbor-id;
-                }
-                type string;
-                description "Ospf neighbor ID";
-            }
-            field ospf-neighbor-state {
-                sensor ospf-neighbor-netconf {
-                    path ospf-neighbor-state;
-                }
-                type string;
-                description "Ospf neighbor state";
-                enumerate not-available as -99;
-                enumerate Down as -30;
-                enumerate Attempt as -25;
-                enumerate Init as -20;
-                enumerate 2-Way as -15;
-                enumerate Exstart as -10;
-                enumerate Exchange as -5;
-                enumerate Loading as 0;				
-                enumerate Full as 1;				
-            }
             /*
              * Anomaly detection logic.
              */
-            trigger ospf-ipv6-neighbor-state {
-                alert-type routing.ospf.state.ospf-neighbor-state;
-                synopsis "ospf neigbor state kpi";
-                description "Sets health based on ospf neighbor state";
+            trigger ospf-io-errors {
+                alert-type routing.ospf.errors.io.ospf-io-errors;
+                synopsis "ospf io statistics kpi";
+                description "Sets health based on ospf io errors";
                 frequency 1offset;
                 /*
-                 * Sets color to green when ospf neighbor state is full
+                 * Sets color to green when ospf errors is not incrementing.
                  */
-                term is-ipv6-neighbor-state-full {
+                term no-ospf-error-reported {
                     when {
-                        matches-with "$ospf-neighbor-state" Full;
+                    matches-with-previous "$ospf-error" {
+                        time-range 2.5offset;
+                        latest;						
+                        }
                     }
                     then {
                         status {
                             color green;
-                            message "OSPF3 neighbor $neighbor-address state is $ospf-neighbor-state on $instance-name routing-instance";
+                            message "OSPF3 IO error ($ospf-error)is not increasing";
                         }
                     }
                 }
                 /*
-                 * Defaults color to red.
+                 * Sets color to red and sends out an anomaly notification
+                 * when the ospf error count increases by 1.
                  */
-                term ospf-ipv6-neighbor-state-notfull {
+                term is-ospf-error-increasing {
                     when {
-                        does-not-match-with "$ospf-neighbor-state" Full;
+                        increasing-at-least-by-value "$ospf-error" {
+                            value "$error-threshold";
+                            time-range 2.5offset;
+                            latest;							
+                        }
                     }
                     then {
                         status {
                             color red;
-                            message "OSPF3 neighbor $neighbor-address state is $ospf-neighbor-state on $instance-name routing-instance";
+                            message "OSPF3 IO is reporting errors($ospf-error)";
                         }
                     }
                 }
             }
-            variable ospf-interface-name {
-                value .*;
-                description "Enter the ospf ipv6 interface names to be monitored in the form of regex e.g. ge-0/0/0.1|xe-1/1/1.0";
-                type string;
-            }
-            variable ospf-neighbor-id {
-                value .*;
-                description "Enter ospf neighbor id to be monitored in the form of regex e.g. ::192:168:1:1|172.16.1.1";
-                type string;
-            }
-            variable instance-name {
-                value .*;
-                description "Enter instance name in the form of regex e.g. vpn1, master etc.";
-                type string;
-            }
-            variable ospf-neighbor-address {
-                value .*;
-                description "Enter ospf ipv6 neighbor address to be monitored in the form of regex";
-                type string;
+            variable error-threshold {
+                value 1;
+                type int;
+                description "Packet error threshold: Increase between metrics, before we report anomaly";
             }			
             rule-properties {
                 version 2;
                 contributor juniper;
                 category basic;
-                is-scaling-rule {
-                    description "Fields:[ interface-name neighbor-id ] ; Directly impacted by number of interfaces and ospf neighbors running in each network device";
-                }
                 supported-healthbot-version 1.0.1;
                 supported-devices {
                     juniper {
+                        sensors ospf-io-statistics-netconf;					
                         operating-system junos {							
                             products MX {
                                 platforms MX204 {
@@ -249,7 +204,7 @@
                     }
                 }
                 helper-files other {
-                    list-of-files Ospf3NeighborStatsTable.yml;
+                    list-of-files Ospf3IoStatsTable.yml;
                 }
             }
         }

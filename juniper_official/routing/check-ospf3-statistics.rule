@@ -1,134 +1,129 @@
 /*
- * Monitors OSPF IPv6 neighbors status and notifies when state is not full.
- * EOP requirements - REQ-1313 (https://paragon-automation.atlassian.net/browse/REQ-1313).
+ * Monitors OSPF3 hello packets and notifies anomalies when hello send and receive count 
+ * is not increasing.
  */
  healthbot {
     topic routing.ospf {
-        rule check-ospf3-neighbor-state {
-            keys [ interface-name neighbor-id instance-name neighbor-address ];
-            synopsis "OSPF IPv6 neighbor state analyzer";
-            description "Monitors the OSPF IPv6 neighbor states";
-            sensor ospf-neighbor-netconf {
-                synopsis "OSPF3 netconf sensor definition";
+        rule check-ospf3-statistics {
+            keys ospf-packet-type;
+            synopsis "ospf3 hello statistics analyzer";
+            description "Monitors the transmission and reception of hello packets";
+            sensor ospf-statistics-netconf {
+                synopsis "OSPF3 iAgent sensor definition";
                 description "Netconfig rpc get-ospf3-neighbor-information iAgent sensor to collect telemetry data from network device";
                 iAgent {
-                    file Ospf3NeighborStatsTable.yml;
-                    table Ospf3NeighborStatsTable;
+                    file Ospf3StatsTable.yml;
+                    table Ospf3StatsTable;
                     frequency 180s;
                 }
             }
-            field interface-name {
-                sensor ospf-neighbor-netconf {
-                    where "interface-name =~ /{{ospf-interface-name}}/";
-                    path interface-name;
+            field hello-received {
+                sensor ospf-statistics-netconf {
+                    path hello-received;
                 }
-                type string;
-                description "Ospf interface name";
+                type integer;
+                description "Ospf3 hello packets received";
             }
-            field instance-name {
-                sensor ospf-neighbor-netconf {
-                    where "instance-name =~ /{{instance-name}}/";
-                    path instance-name;
+            field hello-sent {
+                sensor ospf-statistics-netconf {
+                    path hello-sent;
+                }
+                type integer;
+                description "Ospf3 hello packets sent";
+            }
+            field ospf-packet-type {
+                sensor ospf-statistics-netconf {
+                    path ospf-packet-type;
                 }
                 type string;
-                description "Ospf instance name";
+                description "Packet type";
+            }
+            field hello-count-threshold {
+                constant {
+                    value "{{hello-count-threshold}}";
+                }
+                type integer;
+                description "Hello count threshold";
             }			
-            field neighbor-address {
-                sensor ospf-neighbor-netconf {
-                    where "neighbor-address =~ /{{ospf-neighbor-address}}/";				
-                    path neighbor-address;
-                }
-                type string;
-                description "Ospf neighbor address";
-            }
-            field neighbor-id {
-                sensor ospf-neighbor-netconf {
-                    where "neighbor-id =~ /{{ospf-neighbor-id}}/";
-                    path neighbor-id;
-                }
-                type string;
-                description "Ospf neighbor ID";
-            }
-            field ospf-neighbor-state {
-                sensor ospf-neighbor-netconf {
-                    path ospf-neighbor-state;
-                }
-                type string;
-                description "Ospf neighbor state";
-                enumerate not-available as -99;
-                enumerate Down as -30;
-                enumerate Attempt as -25;
-                enumerate Init as -20;
-                enumerate 2-Way as -15;
-                enumerate Exstart as -10;
-                enumerate Exchange as -5;
-                enumerate Loading as 0;				
-                enumerate Full as 1;				
-            }
-            /*
-             * Anomaly detection logic.
-             */
-            trigger ospf-ipv6-neighbor-state {
-                alert-type routing.ospf.state.ospf-neighbor-state;
-                synopsis "ospf neigbor state kpi";
-                description "Sets health based on ospf neighbor state";
+            trigger ospf-hello-received {
+                alert-type routing.ospf.hello.received.ospf-hello-received;
+                synopsis "ospf hello received statistics kpi";
+                description "Sets health based on ospf hello received statistics";
                 frequency 1offset;
-                /*
-                 * Sets color to green when ospf neighbor state is full
-                 */
-                term is-ipv6-neighbor-state-full {
+                term is-ospf-hello-receive-increasing {
                     when {
-                        matches-with "$ospf-neighbor-state" Full;
+                        increasing-at-least-by-value "$hello-received" {
+                            value "$hello-count-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }
                     then {
                         status {
                             color green;
-                            message "OSPF3 neighbor $neighbor-address state is $ospf-neighbor-state on $instance-name routing-instance";
+                            message "OSPF3 receive module is functioning, hello receive count($hello-received) is increasing";
                         }
                     }
                 }
-                /*
-                 * Defaults color to red.
-                 */
-                term ospf-ipv6-neighbor-state-notfull {
+                term is-ospf-hello-receive-not-increasing {
                     when {
-                        does-not-match-with "$ospf-neighbor-state" Full;
-                    }
+                        matches-with-previous "$hello-received"{
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }				
                     then {
                         status {
                             color red;
-                            message "OSPF3 neighbor $neighbor-address state is $ospf-neighbor-state on $instance-name routing-instance";
+                            message "OSPF3 receive module not functioning, hello receive count($hello-received) is not increasing";
                         }
                     }
                 }
             }
-            variable ospf-interface-name {
-                value .*;
-                description "Enter the ospf ipv6 interface names to be monitored in the form of regex e.g. ge-0/0/0.1|xe-1/1/1.0";
-                type string;
+            trigger ospf-hello-sent {
+                alert-type routing.ospf.hello.sent.ospf-hello-sent;
+                synopsis "ospf hello sent statistics kpi";
+                description "Sets health based on ospf hello sent statistics";
+                frequency 1offset;
+                term is-ospf-hello-sent-increasing {
+                    when {
+                        increasing-at-least-by-value "$hello-sent" {
+                            value "$hello-count-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "OSPF3 send module is functioning, hello send count($hello-sent) is increasing";
+                        }
+                    }
+                }
+                term is-ospf-hello-sent-not-increasing {
+                    when {
+                        matches-with-previous "$hello-sent"{
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }				
+                    then {
+                        status {
+                            color red;
+                            message "OSPF3 send module not functioning, hello send count($hello-sent) is not increasing";
+                        }
+                    }
+                }
             }
-            variable ospf-neighbor-id {
-                value .*;
-                description "Enter ospf neighbor id to be monitored in the form of regex e.g. ::192:168:1:1|172.16.1.1";
-                type string;
-            }
-            variable instance-name {
-                value .*;
-                description "Enter instance name in the form of regex e.g. vpn1, master etc.";
-                type string;
-            }
-            variable ospf-neighbor-address {
-                value .*;
-                description "Enter ospf ipv6 neighbor address to be monitored in the form of regex";
-                type string;
+            variable hello-count-threshold {
+                value 1;
+                type int;
+                description "Increase between metrics, before we report anomaly";
             }			
             rule-properties {
                 version 2;
                 contributor juniper;
                 category basic;
-                is-scaling-rule {
-                    description "Fields:[ interface-name neighbor-id ] ; Directly impacted by number of interfaces and ospf neighbors running in each network device";
-                }
                 supported-healthbot-version 1.0.1;
                 supported-devices {
                     juniper {
@@ -249,7 +244,7 @@
                     }
                 }
                 helper-files other {
-                    list-of-files Ospf3NeighborStatsTable.yml;
+                    list-of-files Ospf3StatsTable.yml;
                 }
             }
         }
