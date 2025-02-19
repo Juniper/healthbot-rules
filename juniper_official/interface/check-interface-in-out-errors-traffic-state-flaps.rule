@@ -339,8 +339,24 @@ healthbot {
                             color green;
                             message "$interface-name input error count is normal.";
                         }
+                        next;
                     }
-                }	
+                }
+                /*
+                 * Sets color to yellow when in-errors-count is not in between predicted range.
+                 */
+                term is-in-errors-count-anomalous {
+                    when {
+                        equal-to "$in-errors-count-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, input errors count $in-errors-count is not between the predicted range of ($in-errors-count-anomaly-lower-boundary) and ($in-errors-count-anomaly-upper-boundary)";
+                        }
+                        next;
+                    }
+                }		
                 /*
                  * Sets color to red and sends out an anomaly notification when
                  * interface Input errors ($in-errors-count) count increases for 
@@ -360,21 +376,7 @@ healthbot {
                             message "Input errors are increasing continuously on $interface-name, Error count is:$in-errors-count";
                         }
                     }
-                }
-                /*
-                 * Sets color to yellow when in-errors-count is not in between predicted range.
-                 */
-                term is-in-errors-count-anomalous {
-                    when {
-                        equal-to "$in-errors-count-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name, input errors count $in-errors-count is not between the predicted range of ($in-errors-count-anomaly-lower-boundary) and ($in-errors-count-anomaly-upper-boundary)";
-                        }
-                    }
-                }			
+                }		
             }
             trigger interface-link-flaps {
                 alert-type interfaces.link_flaps.interface-link-flaps;
@@ -476,6 +478,22 @@ healthbot {
                             color green;
                             message "$interface-name output errors count is normal.";
                         }
+                        next;
+                    }
+                }
+                /*
+                 * Sets color to yellow when out-errors-count is not in between predicted range.
+                 */
+                term is-out-errors-count-anomalous {
+                    when {
+                        equal-to "$out-errors-count-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, output errors count $out-errors-count is not between the predicted range of ($out-errors-count-anomaly-lower-boundary) and ($out-errors-count-anomaly-upper-boundary)";
+                        }
+                        next;
                     }
                 }
                 /*
@@ -495,20 +513,6 @@ healthbot {
                         status {
                             color red;
                             message "Output errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when out-errors-count is not in between predicted range.
-                 */
-                term is-out-errors-count-anomalous {
-                    when {
-                        equal-to "$out-errors-count-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name, output errors count $out-errors-count is not between the predicted range of ($out-errors-count-anomaly-lower-boundary) and ($out-errors-count-anomaly-upper-boundary)";
                         }
                     }
                 }			
