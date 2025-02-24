@@ -8,314 +8,66 @@
             synopsis "RSVP TE global statistics analyzer";
             description "Collects RSVP TE global error statistics periodically and notifies when error count increases";
             sensor lsp {
-                open-config {
-                    sensor-name /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state;
+                iAgent {
+                    file RsvpGlobalErrorsTableInstance.yml;
+                    table RsvpGlobalErrorsTableInstance;
                     frequency 60s;
                 }
             }
-            sensor lsp-updated {
-                open-config {
-                    sensor-name /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state;
-                    frequency 60s;
-                }
-            }			
             field authentication-fail {
                 sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/authentication-fail;
+                    path rcv-pkt-auth-fail;
                     zero-suppression;
                     data-if-missing {
                         value 0;
                     }
                 }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/authentication-fail;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
                 type integer;
                 description "Authentication fail error count";
             }
             field bad-checksum {
                 sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/bad-checksum;
+                    path rcv-pkt-bad-checksum;
                     zero-suppression;
                     data-if-missing {
                         value 0;
                     }
                 }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-checksum;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
                 type integer;
                 description "Bad checksum error count";
             }
             field bad-packet-format {
                 sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/bad-packet-format;
+                    path rcv-pkt-bad-format;
                     zero-suppression;
                     data-if-missing {
                         value 0;
                     }
                 }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-packet-format;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
                 type integer;
                 description "Bad packet format error count";
             }
             field bad-packet-length {
                 sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/bad-packet-length;
+                    path rcv-pkt-bad-length;
                     zero-suppression;
                     data-if-missing {
                         value 0;
                     }
                 }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-packet-length;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
                 type integer;
                 description "Bad packet length error count";
             }
             field bad-packet-version {
                 sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/bad-packet-version;
+                    path rcv-pkt-bad-version;
                     zero-suppression;
                     data-if-missing {
                         value 0;
                     }
                 }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/bad-packet-version;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
                 type integer;
                 description "Bad packet version error count";
-            }
-            field in-path-error-messages {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/in-path-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/in-path-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "In path messages error count";
-            }
-            field in-reservation-error-messages {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/in-reservation-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/in-reservation-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "In reservation messages error count";
-            }
-            field instance-name {
-                sensor lsp {
-                    path "/network-instances/network-instance/@name";
-                }
-                sensor lsp-updated {
-                    path "/network-instances/network-instance/@name";
-                }				
-                type string;
-                description "Instance name to monitor";
-            }
-            field message-out-of-order {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/message-out-of-order;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/message-out-of-order;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Out of order messages error count";
-            }
-            field out-path-error-messages {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/out-path-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/out-path-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Out of path error count";
-            }
-            field out-reservation-error-messages {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/out-reservation-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/out-reservation-error-messages;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Out reservation error count";
-            }
-            field received-nack {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/received-nack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/received-nack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Received no acknowledgement error count";
-            }
-            field recv-pkt-disabled-intf {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/recv-pkt-disabled-intf;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/recv-pkt-disabled-intf;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Received packet disable error count";
-            }
-            field send-failure {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/send-failure;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/send-failure;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Send failure error count";
-            }
-            field state-timeout {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/state-timeout;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/state-timeout;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "State timeout error count";
-            }
-            field unknown-ack {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/unknown-ack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-ack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Unknown acknowledgement error count";
-            }
-            field unknown-nack {
-                sensor lsp {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/counters/errors/unknown-nack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }
-                sensor lsp-updated {
-                    path /network-instances/network-instance/mpls/signaling-protocols/rsvp-te/global/state/error-counters/unknown-nack;
-                    zero-suppression;
-                    data-if-missing {
-                        value 0;
-                    }
-                }				
-                type integer;
-                description "Unknown no acknowledgement error count";
             }
             field error-threshold {
                 constant {
@@ -323,12 +75,136 @@
                 }
                 type integer;
                 description "Packet error threshold";
-            }			
-            /*
-             * Anomaly detection logic to detect rsvp-te global errors.
-             */
+            }
+            field in-path-error-messages {
+                sensor lsp {
+                    path messages-path-received;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "In path messages error count";
+            }
+            field in-reservation-error-messages {
+                sensor lsp {
+                    path messages-resv-received;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "In reservation messages error count";
+            }
+            field instance-name {
+                constant {
+                    value "{{instance-name}}";
+                }
+                type string;
+            }
+            field message-out-of-order {
+                sensor lsp {
+                    path message-out-of-order;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Out of order messages error count";
+            }
+            field out-path-error-messages {
+                sensor lsp {
+                    path message-path-sent;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Out of path error count";
+            }
+            field out-reservation-error-messages {
+                sensor lsp {
+                    path message-resv-sent;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Out reservation error count";
+            }
+            field received-nack {
+                sensor lsp {
+                    path msg-id-nack;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Received no acknowledgement error count";
+            }
+            field recv-pkt-disabled-intf {
+                sensor lsp {
+                    path pkt-disabled-interface;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Received packet disable error count";
+            }
+            field send-failure {
+                sensor lsp {
+                    path transmit-failure;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Send failure error count";
+            }
+            field state-timeout {
+                sensor lsp {
+                    path resv-timeout;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "State timeout error count";
+            }
+            field unknown-ack {
+                sensor lsp {
+                    path unknown-msg-id-ack;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Unknown acknowledgement error count";
+            }
+            field unknown-nack {
+                sensor lsp {
+                    path unknown-msg-id-nack;
+                    zero-suppression;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                type integer;
+                description "Unknown no acknowledgement error count";
+            }
             trigger rsvp-te-authentication-fail-errors {
-                alert-type routing.mpls.rsvp.errors.rsvp-te-authentication-fail-errors;			
+                alert-type routing.mpls.rsvp.errors.rsvp-te-authentication-fail-errors;				
                 frequency 1offset;
                 term is-authentication-fail {
                     when {
@@ -348,7 +224,7 @@
                 term no-rsvp-te-authentication-fail-errors {
                     when {
                         exists "$authentication-fail";
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -359,7 +235,7 @@
             }
             trigger rsvp-te-bad-checksum-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-bad-checksum-errors;			
-                frequency 1offset;			
+                frequency 1offset;
                 term is-bad-checksum {
                     when {
                         increasing-at-least-by-value "$bad-checksum" {
@@ -373,23 +249,23 @@
                             color red;
                             message "Bad checksum error count($bad-checksum) is increasing";
                         }
-                     }
+                    }
                 }
                 term no-rsvp-te-bad-checksum-errors {
                     when {
                         exists "$bad-checksum";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($bad-checksum) is not increasing";
+                            message "Bad checksum error count($bad-checksum) is not increasing";
                         }
                     }
                 }
             }
             trigger rsvp-te-bad-packet-format-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-bad-packet-format-errors;			
-                frequency 1offset;			
+                frequency 1offset;
                 term is-bad-packet-format {
                     when {
                         increasing-at-least-by-value "$bad-packet-format" {
@@ -408,18 +284,18 @@
                 term no-rsvp-te-bad-packet-format-errors {
                     when {
                         exists "$bad-packet-format";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($bad-packet-format) is not increasing";
+                            message "Bad packet format error count($bad-packet-format) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-bad-packet-length-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-bad-packet-length-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-bad-packet-length {
                     when {
                         increasing-at-least-by-value "$bad-packet-length" {
@@ -438,18 +314,18 @@
                 term no-rsvp-te-bad-packet-length-errors {
                     when {
                         exists "$bad-packet-length";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($bad-packet-length) is not increasing";
+                            message "Bad packet length error count($bad-packet-length) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-bad-packet-version-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-bad-packet-version-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-bad-packet-version {
                     when {
                         increasing-at-least-by-value "$bad-packet-version" {
@@ -468,18 +344,18 @@
                 term no-rsvp-te-bad-packet-version-errors {
                     when {
                         exists "$bad-packet-version";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($bad-packet-version) is not increasing";
+                            message "Bad packet version error count($bad-packet-version) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-in-path-error-messages-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-in-path-error-messages-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-in-path-error-messages {
                     when {
                         increasing-at-least-by-value "$in-path-error-messages" {
@@ -498,18 +374,18 @@
                 term no-rsvp-te-in-path-error-messages-errors {
                     when {
                         exists "$in-path-error-messages";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($in-path-error-messages) is not increasing";
+                            message "In path error messages count($in-path-error-messages) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-in-reservation-error-messages-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-in-reservation-error-messages-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term in-reservation-error-messages {
                     when {
                         increasing-at-least-by-value "$in-reservation-error-messages" {
@@ -528,18 +404,18 @@
                 term no-rsvp-te-in-reservation-error-messages-errors {
                     when {
                         exists "$in-reservation-error-messages";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($in-reservation-error-messages) is not increasing";
+                            message "In reservation error messages count($in-reservation-error-messages) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-message-out-of-order-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-message-out-of-order-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-message-out-of-order {
                     when {
                         increasing-at-least-by-value "$message-out-of-order" {
@@ -558,18 +434,18 @@
                 term no-rsvp-te-message-out-of-order-errors {
                     when {
                         exists "$message-out-of-order";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($message-out-of-order) is not increasing";
+                            message "Message out of order error count($message-out-of-order) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-out-path-error-messages-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-out-path-error-messages-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term out-path-error-messages {
                     when {
                         increasing-at-least-by-value "$out-path-error-messages" {
@@ -588,18 +464,18 @@
                 term no-rsvp-te-out-path-error-messages-errors {
                     when {
                         exists "$out-path-error-messages";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($out-path-error-messages) is not increasing";
+                            message "Out path error messages count($out-path-error-messages) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-out-reservation-error-messages-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-out-reservation-error-messages-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term out-reservation-error-messages {
                     when {
                         increasing-at-least-by-value "$out-reservation-error-messages" {
@@ -618,18 +494,18 @@
                 term no-rsvp-te-out-reservation-error-messages-errors {
                     when {
                         exists "$out-reservation-error-messages";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($out-reservation-error-messages) is not increasing";
+                            message "Out reservation error messages count($out-reservation-error-messages) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-received-nack-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-received-nack-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-received-nack {
                     when {
                         increasing-at-least-by-value "$received-nack" {
@@ -648,18 +524,18 @@
                 term no-rsvp-te-received-nack-errors {
                     when {
                         exists "$received-nack";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($received-nack) is not increasing";
+                            message "Received nack error count($received-nack) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-recv-pkt-disabled-intf-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-recv-pkt-disabled-intf-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term recv-pkt-disabled-intf {
                     when {
                         increasing-at-least-by-value "$recv-pkt-disabled-intf" {
@@ -678,18 +554,18 @@
                 term no-rsvp-te-recv-pkt-disabled-intf-errors {
                     when {
                         exists "$recv-pkt-disabled-intf";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($recv-pkt-disabled-intf) is not increasing";
+                            message "Recv-pkt-disabled-intf error count($recv-pkt-disabled-intf) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-send-failure-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-send-failure-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term send-failure {
                     when {
                         increasing-at-least-by-value "$send-failure" {
@@ -708,18 +584,18 @@
                 term no-rsvp-te-send-failure-errors {
                     when {
                         exists "$send-failure";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "Authentication failure error count($send-failure) is not increasing";
+                            message "Send failure error count($send-failure) is not increasing";
                         }
                     }
                 }
-            }				
+            }
             trigger rsvp-te-state-timeout-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-state-timeout-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-state-timeout {
                     when {
                         increasing-at-least-by-value "$state-timeout" {
@@ -738,7 +614,7 @@
                 term no-rsvp-te-state-timeout-errors {
                     when {
                         exists "$state-timeout";
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -749,7 +625,7 @@
             }
             trigger rsvp-te-unknown-ack-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-unknown-ack-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-unknown-ack {
                     when {
                         increasing-at-least-by-value "$unknown-ack" {
@@ -761,25 +637,25 @@
                     then {
                         status {
                             color red;
-                            message "State timeout error count($unknown-ack) is increasing";
+                            message "Unknown Ack error count($unknown-ack) is increasing";
                         }
                     }
                 }
                 term no-rsvp-te-unknown-ack-errors {
                     when {
                         exists "$unknown-ack";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "State timeout error count($unknown-ack) is not increasing";
+                            message "Unknown Ack error count($unknown-ack) is not increasing";
                         }
                     }
                 }
             }
             trigger rsvp-te-unknown-nack-errors {
                 alert-type routing.mpls.rsvp.errors.rsvp-te-unknown-nack-errors;			
-                frequency 1offset;				
+                frequency 1offset;
                 term is-unknown-nack {
                     when {
                         increasing-at-least-by-value "$unknown-nack" {
@@ -791,26 +667,31 @@
                     then {
                         status {
                             color red;
-                            message "State timeout error count($unknown-nack) is increasing";
+                            message "Unknown NAck error count($unknown-nack) is increasing";
                         }
                     }
                 }
                 term no-rsvp-te-unknown-nack-errors {
                     when {
                         exists "$unknown-nack";
-                    }				
+                    }
                     then {
                         status {
                             color green;
-                            message "State timeout error count($unknown-nack) not increasing";
+                            message "Unknown NAck error count($unknown-nack) not increasing";
                         }
                     }
                 }
-            }			
+            }
             variable error-threshold {
                 value 1;
-                type int;
                 description "Packet error threshold: Increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable instance-name {
+                value master;
+                description "Default Instance Name";
+                type string;
             }			
             rule-properties {
                 version 1;
@@ -824,73 +705,84 @@
                     juniper {
                         operating-system junos {
                             products MX {
-                                sensors lsp-updated;							
+                                sensors lsp;							
                                 platforms MX240 {
                                     releases 22.3R1 {
-                                        sensors lsp;				
                                         release-support min-supported-release;
                                     }								
                                 }
                                 platforms MX480 {
                                     releases 22.3R1 {
-                                        sensors lsp;				
                                         release-support min-supported-release;
                                     }								
                                 }
                                 platforms MX960 {
                                     releases 22.3R1 {
-                                        sensors lsp;				
                                         release-support min-supported-release;
                                     }								
                                 }
                                 platforms MX304 {
                                     releases 22.3R1 {
-                                        sensors lsp;				
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX204 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10004 {
                                     releases 22.3R1 {
-                                        sensors lsp;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10008 {
                                     releases 22.3R1 {
-                                        sensors lsp;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10016 {
                                      releases 22.3R1 {
-                                        sensors lsp;									
                                         release-support min-supported-release;
                                     }
                                 }								
                             }
                             products JNP {
-                                sensors lsp-updated;							
+                                sensors lsp;							
                                 platforms JNP10004 {
                                     releases 22.3R1 {
-                                        sensors lsp;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms JNP10008 {
                                     releases 22.3R1 {
-                                        sensors lsp;									
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms JNP10016 {
                                     releases 22.3R1 {
-                                        sensors lsp;									
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                            products EX {
+                                platforms EX9204 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms EX9208 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms EX9216 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ex4300-48mp {
+                                    releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
                                 }								
@@ -914,85 +806,72 @@
                         }
                         operating-system junosEvolved {
                             products ACX {
-                                sensors lsp-updated;			
+                                sensors lsp;			
                                 platforms ACX7024 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7100-32C {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7100-48L {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }								
                                 platforms ACX7348 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7332 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }								
                                 platforms ACX7024X {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7509 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                             }
                             products PTX {
-                                sensors lsp-updated;
+                                sensors lsp;
                                 platforms PTX10001-36MR-K {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10001-36MR {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10001-20C {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }																
                                 platforms PTX10004 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10008 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10016 {
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }								
