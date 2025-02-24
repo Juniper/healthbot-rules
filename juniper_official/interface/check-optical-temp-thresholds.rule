@@ -62,6 +62,15 @@ healthbot {
                 type integer;
                 description "Temperature of the Optical Module in degrees Centigrade.";
             }
+            field optical-temp-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$optical-temp";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for optical temperature";
+            }
             /*
              * Anomaly detection logic.
              */			
@@ -76,6 +85,7 @@ healthbot {
                 term normal {
                     when {
                         less-than "$optical-temp" "$high-warning-threshold";
+                        less-than-or-equal-to "$optical-temp-anomaly" 0;
                     }				
                     then {
                         status {
@@ -83,7 +93,22 @@ healthbot {
                             message "$interface-name, temperature $optical-temp is normal.";
                         }
                     }
-                }				
+                }
+                /*
+                 * Sets color to yellow when optical-temp is not in between predicted range.
+                 */
+                term anomalous {
+                    when {
+                        less-than "$optical-temp" "$high-warning-threshold";
+                        equal-to "$optical-temp-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, temperature $optical-temp is not between the predicted range of $optical-temp-anomaly-lower-boundary and $optical-temp-anomaly-upper-boundary";
+                        }
+                    }
+                }
                 /*
                  * Sets color to yellow when optical-temperature is greater-than-or-equal-to high-warning-threshold.
                  */				
@@ -95,7 +120,7 @@ healthbot {
                     then {
                         status {
                             color yellow;
-                            message "$interface-name,temperature $optical-temp exceeds default warning threshold ($high-warning-threshold)";
+                            message "$interface-name, temperature $optical-temp exceeds default warning threshold ($high-warning-threshold)";
                         }
                     }
                 }
@@ -109,10 +134,10 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$interface-name,temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
+                            message "$interface-name, temperature $optical-temp exceeds default alarm threshold ($high-alarm-threshold)";
                         }
                     }
-                }				
+                }
             }
             /*
              * Variables with default values. Default values can be changed

@@ -219,6 +219,24 @@ healthbot {
                 type float;
                 description "Default tx power low warning threshold.";
             }
+            field optics-rx-power-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$optics-rx-power";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for optics input power field";
+            }
+            field optics-tx-power-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$optics-tx-power";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection for optics output power field";
+            }
             /*
              * Anomaly detection logic.
              */			
@@ -254,7 +272,7 @@ healthbot {
                             message "Interface $interface-name has non-zero FEC uncorrected errors";
                         }
                     }
-    }
+                }
             }
             trigger interface-rx-loss-of-signal-functionality {
                 alert-type interfaces.rx.los.interface-rx-loss-of-signal-functionality;
@@ -377,11 +395,28 @@ healthbot {
                     when {
                         greater-than "$optics-rx-power" "$rx-low-warning-threshold";
                         less-than "$optics-rx-power" "$rx-high-warning-threshold";
+                        less-than-or-equal-to "$optics-rx-power-anomaly" 0;
                     }
                     then {
                         status {
                             color green;
                             message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when optics rx power is not in between predicted range.
+                 */				
+                term anomalous-rx-power {
+                    when {
+                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
+                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
+                        equal-to "$optics-rx-power-anomaly" 1;
+                        }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is not between the predicted range of $optics-rx-power-anomaly-lower-boundary and $optics-rx-power-anomaly-upper-boundary";
                         }
                     }
                 }
@@ -459,11 +494,28 @@ healthbot {
                     when {
                         greater-than "$optics-tx-power" "$tx-low-warning-threshold";
                         less-than "$optics-tx-power" "$tx-high-warning-threshold";
+                        less-than-or-equal-to "$optics-tx-power-anomaly" 0;
                     }
                     then {
                         status {
                             color green;
                             message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when optics tx power is not in between predicted range.
+                 */				
+                term anomalous-tx-power {
+                    when {
+                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
+                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
+                        equal-to "$optics-tx-power-anomaly" 1;
+                        }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, lane $lane-index Tx power  $optics-tx-power is not between the predicted range of $optics-tx-power-anomaly-lower-boundary and $optics-tx-power-anomaly-upper-boundary";
                         }
                     }
                 }
@@ -509,7 +561,7 @@ healthbot {
                     then {
                         status {
                             color red;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
+                            message "$interface-name, lane $lane-index Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
                         }
                     }
                 }
