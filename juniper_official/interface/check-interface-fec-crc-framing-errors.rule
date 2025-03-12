@@ -44,13 +44,6 @@ healthbot {
                 type integer;
                 description "Drop count increase threshold";
             }
-            field fec-corrected {
-                sensor errorinfo-netconf {
-                    path fec_corr_err;
-                }
-                type integer;
-                description "Checks for FEC Corrected errors";
-            }
             field fec-uncorrected {
                 sensor errorinfo-netconf {
                     path fec_uncorr_err;
@@ -98,45 +91,6 @@ healthbot {
             /*
              * Anomaly detection logic.
              */			
-            trigger fec-corrected-errors {
-                alert-type interfaces.errors.fec-corrected-errors;			
-                frequency 1offset;
-                /*
-                 * Sets color to green when the fec-corrected-errors count is not increasing
-                 */				
-                term fec-corrected-errors-not-increasing {
-                    when {
-                        matches-with-previous "$fec-corrected"{
-                            time-range 2.5offset;
-                            latest;							
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "FEC Corrected Errors $fec-corrected on $interface-name has not increased";
-                        }
-                    }
-                }				
-                /*
-                 * Sets color to red when the fec-corrected-errors count is increasing at least by drop threshold value
-                 */				
-                term fec-corrected-errors-increasing {
-                    when {
-                        increasing-at-least-by-value "$fec-corrected" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                            latest;							
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "FEC Corrected Errors $fec-corrected on $interface-name has increased";
-                        }
-                    }
-                }
-            }
             trigger fec-uncorrected-errors {
                 alert-type interfaces.errors.fec-uncorrected-errors;
                 frequency 1offset;
