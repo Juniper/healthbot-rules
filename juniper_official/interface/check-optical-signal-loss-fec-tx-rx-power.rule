@@ -421,6 +421,22 @@ healthbot {
                     }
                 }
                 /*
+                 * Sets color to green when optic rx power is betweeen rx-below-low-warning-threshold
+                 * and rx-high-warning-threshold				 
+                 */				
+                term rx-betweeen-warning-threshold {
+                    when {
+                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
+                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
+                        }
+                    }
+                }
+                /*
                  * Sets color to yellow when optics rx power is greater-than-or-equal-to rx-high-warning-threshold
 				 * and less-than-or-equal-to rx-high-alarm-threshold
                  */				
@@ -516,6 +532,22 @@ healthbot {
                         status {
                             color yellow;
                             message "$interface-name, lane $lane-index Tx power  $optics-tx-power is not between the predicted range of $optics-tx-power-anomaly-lower-boundary and $optics-tx-power-anomaly-upper-boundary";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when optic tx power is betweeen tx-low-warning-threshold
+                 * and tx-high-warning-threshold				 
+                 */				
+                term tx-betweeen-warning-threshold {
+                    when {
+                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
+                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
                         }
                     }
                 }

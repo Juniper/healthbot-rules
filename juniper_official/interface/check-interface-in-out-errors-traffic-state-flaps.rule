@@ -270,6 +270,20 @@ healthbot {
                     }
                 }
                 /*
+                 * Sets color to green when in-util is below low-threshold
+                 */				
+                term is-interface-in-traffic-less-than-low-threshold {
+                    when {
+                        less-than "$in-util" "$low-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is normal";
+                        }
+                    }
+                }
+                /*
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface input traffic($in-util) is
                  * above low threshold (low-threshold)
@@ -501,6 +515,20 @@ healthbot {
                         status {
                             color yellow;
                             message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is not between the predicted range of $out-mbps-anomaly-lower-boundary and $out-mbps-anomaly-upper-boundary";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when out-util is below low threshold
+                 */ 				
+                term is-interface-stats-less-than-low-threshold {
+                    when {
+                        less-than "$out-util" "$low-threshold";
+                    }				
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
                         }
                     }
                 }
