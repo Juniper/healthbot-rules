@@ -52,6 +52,7 @@
                 enumerate Dn as 0;
                 enumerate VC-Dn as -1;
                 enumerate UP as 1;
+                enumerate HS as 2;				
                 enumerate CF as -14;
                 enumerate IB as -15;
                 enumerate TDM as -16;
@@ -59,7 +60,6 @@
                 enumerate SP as -18;
                 enumerate RS as -19;
                 enumerate XX as -20;
-                enumerate HS as -21;
             }
             trigger l2circuit-connection-status {
                 frequency 1offset;
@@ -74,8 +74,22 @@
                             color green;
                             message "l2circuit neighbor-address:$neighbor connection-id:$connection-id state is $connection-status";
                         }
+                        next;
                     }
                 }
+                term is-l2ckt-connection-standby {
+                    when {
+                        matches-with "$connection-status" HS {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "l2circuit neighbor-address:$neighbor connection-id:$connection-id state is $connection-status";
+                        }
+                    }
+                }				
                 term l2ckt-connection-down {
                     then {
                         status {
