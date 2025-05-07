@@ -106,6 +106,18 @@ healthbot {
                 }
                 type float;
                 description "Stores % of power usage by PSMs";
+                plots psm-plots {
+                    unit percentage;
+                    triggers psm-power-usage;
+                    thresholds psm-high-threshold {
+                        field-name "$psm-power-usage-high-threshold";
+                        severity critical;
+                    }
+                    thresholds psm-low-threshold {
+                        field-name "$psm-power-usage-low-threshold";
+                        severity minor;
+                    }					
+                }				
             }
             field psm-power-usage-high-threshold {
                 constant {
@@ -153,7 +165,10 @@ healthbot {
                 enumerate __default__ as -99;
                 enumerate Fault as -10;				
                 enumerate Offline as 0;
-                enumerate online as 1;				
+                enumerate online as 1;
+                plots psm-state-plots {
+                    triggers psm-state;
+                }				
             }
             field psm-temperature-degrees {
                 sensor components-oc {
@@ -178,6 +193,18 @@ healthbot {
                     }
                 }
                 type integer;
+                plots psm-temperature-plots {
+                    unit celsius;
+                    triggers psm-temperature;
+                    thresholds temp-high-threshold {
+                        field-name "$psm-temperature-high-threshold";
+                        severity critical;
+                    }
+                    thresholds temp-low-threshold {
+                        field-name "$psm-temperature-low-threshold";
+                        severity minor;
+                    }					
+                }				
             }			
             /*
              * Anomaly detection logic.

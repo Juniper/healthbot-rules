@@ -81,6 +81,18 @@ healthbot {
                 }
                 type integer;
                 description "RPM percentage";
+                plots rpm-plots {
+                    unit percentage;
+                    triggers rpm-percent;
+                    thresholds high-threshold {
+                        field-name "$high-threshold";
+                        severity critical;
+                    }
+                    thresholds low-threshold {
+                        field-name "$low-threshold";
+                        severity minor;
+                    }					
+                }				
             }
             field rpm-percent-anomaly {
                 formula {
@@ -100,7 +112,10 @@ healthbot {
                 enumerate __default__ as -99;
                 enumerate Failed as -1;
                 enumerate Absent as 0;				
-                enumerate ok as 1;				
+                enumerate ok as 1;
+                plots fan-state-plots {
+                    triggers fan-state;
+                }				
             }
             field high-threshold {
                 constant {
