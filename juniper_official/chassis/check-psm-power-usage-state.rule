@@ -133,6 +133,15 @@ healthbot {
                 type integer;
                 description "psm power usage low threshold";
             }
+            field psm-power-usage-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$psm-power-usage";
+                    }
+                }
+                type float;
+                description "JAIML anomaly detection on psm power usage";
+            }
             field psm-temperature-high-threshold {
                 constant {
                     value "{{psm-temperature-high-threshold}}";
@@ -205,7 +214,8 @@ healthbot {
                         severity minor;
                     }					
                 }				
-            }			
+            }	
+		
             /*
              * Anomaly detection logic.
              */			
@@ -221,6 +231,7 @@ healthbot {
                 term power-usage-normal {
                     when {
                         less-than "$psm-power-usage" "$psm-power-usage-low-threshold";
+                        less-than-or-equal-to "$psm-power-usage-anomaly" 0;
                         matches-with "$psm-state" Online {
                             ignore-case;
                         }
@@ -231,6 +242,18 @@ healthbot {
                             message "$psm power usage($psm-power-usage%) is normal";
                         }
                     }
+                term is-psm-power-usage-anomalous {
+                    when {
+                        less-than "$psm-power-usage" "$psm-power-usage-low-threshold"; 
+                        equal-to "$psm-power-usage-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$psm input traffic:$psm-power-usage is not between the predicted range of $psm-power-usage-lower-boundary and $psm-power-usage-upper-boundary";
+                        }
+                    }
+                }
                 }
                 /*
                  * Sets color to yellow when psm-power-usage is greater than psm-power-usage-low-threshold.
