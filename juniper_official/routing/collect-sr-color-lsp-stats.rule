@@ -1,0 +1,195 @@
+/*
+ * Collect SR Color LSP traffic statistics for pathfinder dynamic topology.
+ *
+ * Req TBD: TBD
+ *
+ * Two input control detection
+ *
+ *   1) input-to-address, is a regular expression that matches the SR color lsp 
+ *      destination address that must be monitored.  By default it's '.*', which matches
+ *      all destination address. Use something like '11.0.0*' to match only destination 
+ *      address starting with '11.0.0'.  
+ *
+ *   2) input-color, is a regular expression that matches the color of SR color lsp 
+ *      that must be monitored.  By default it's '.*', which matches
+ *      all colors. Use something like '10*' to match LSPs starting with color '10'.
+ *
+ */
+healthbot {
+    topic routing.spring {
+        rule collect-sr-color-lsp-stats {
+            keys [ lsp-name ];
+            description "Collects SR color LSP stats periodically";
+            sensor jnpr-sr-color-lsp {
+                open-config {
+                    sensor-name /junos/services/segment-routing/traffic-engineering/ingress/usage/;
+                    frequency 60s;
+                }
+            }
+            field lsp-destination {
+                sensor jnpr-sr-color-lsp {
+                    where "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@to-address =~ /{{input-to-address}}/";
+                    path "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@to-address";
+                }                
+                type string;
+                description "LSP destination in case of SR color LSP and name in case of SR LSP";
+            }
+            field lsp-color {
+                sensor jnpr-sr-color-lsp {
+                    where "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@color =~ /{{input-color}}/";
+                    path "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@color";
+                }                
+                type string;
+                description "Color of the LSP being monitored";
+            }
+            field lsp-stats-bytes {
+                sensor jnpr-sr-color-lsp {
+                    path /mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/state/counters/bytes;
+                }
+                type integer;
+                description "LSP bytes counter";
+            }      
+            field lsp-stats-packets {
+                sensor jnpr-sr-color-lsp {
+                    path /mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/state/counters/packets;
+                }
+                type integer;
+                description "LSP packet counter";
+            }
+            field lsp-name {
+                formula {
+                    concatenate {
+                        strings [ "srte_c_" "$lsp-color" "_ep_" "$lsp-destination" ];
+                    }
+                }
+                type string;
+                description "LSP name";
+            }
+            field lsp-stats-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-bytes";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "LSP byte rate";
+            }            
+            field lsp-stats-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-packets";
+                    }
+                }
+                type integer;
+                description "LSP packet rate";
+            }
+            variable input-to-address {
+                value .*;
+                description "SR color LSP destination address to monitor, regular expression, eg '11.0.0.*|10.52.135.*'";
+                type string;
+            }
+            variable input-color {
+                value .*;
+                description "SR color LSP colors to monitor, regular expression, eg '100|20*'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            sensors jnpr-sr-color-lsp;
+                            products MX {
+                                sensors jnpr-sr-color-lsp;
+                                platforms MX960 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2008 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020  {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                sensors jnpr-sr-color-lsp;
+                                platforms PTX1000 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000  {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                sensors jnpr-sr-color-lsp;
+                                platforms QFX5200 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                        operating-system junosEvolved {
+                            sensors jnpr-sr-color-lsp;	
+                            products PTX {
+                                sensors jnpr-sr-color-lsp;	
+                                platforms PTX10001-36MR {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;	
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10003 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;	
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10004 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;	
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms PTX10008 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;	
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10016  {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-color-lsp;	
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
