@@ -1,0 +1,169 @@
+/*
+ * Collect SR LSP traffic statistics for pathfinder dynamic topology.
+ *
+ * Req <TBD>: TBD 
+ *
+ * One input control detection
+ *
+ *   1) input-lsp-name, is a regular expression that matches the SR lsp name
+ *      that must be monitored.  By default it's '.*', which matches
+ *      all lsps. Use something like 'Silver*' to match only lsp names starting
+ *      with 'Silver'.
+ *
+ */
+healthbot {
+    topic routing.spring {
+        rule collect-sr-lsp-stats {
+            keys [ lsp-name ];
+            description "Collects SR LSP stats periodically";
+            sensor jnpr-sr-lsp {
+                open-config {
+                    sensor-name /junos/services/segment-routing/traffic-engineering/tunnel/ingress/usage/;
+                    frequency 60s;
+                }
+            }
+            field lsp-name {
+                sensor jnpr-sr-lsp {
+                    where "/mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/@tunnel-name =~ /{{input-lsp-name}}/";
+                    path "/mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/@tunnel-name";
+                }              
+                type string;
+                description "LSP destination in case of SR color LSP and name in case of SR LSP";
+            }
+            field lsp-stats-bytes {
+                sensor jnpr-sr-lsp {
+                    path /mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/state/counters/bytes;
+                }
+                type integer;
+                description "LSP bytes counter";
+            }      
+            field lsp-stats-packets {
+                sensor jnpr-sr-lsp {
+                    path /mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/state/counters/packets;
+                }
+                type integer;
+                description "LSP packet counter";
+            }
+            field lsp-stats-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-bytes";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "LSP bit rate";
+            }            
+            field lsp-stats-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-packets";
+                    }
+                }
+                type integer;
+                description "LSP packet rate";
+            }
+            variable input-lsp-name {
+                value .*;
+                description "LSP names to monitor, regular expression, eg 'LSP-1.*|LSP-A.*'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            sensors jnpr-sr-lsp;	
+                            products MX {
+                                sensors jnpr-sr-lsp;
+                                platforms MX960 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2008 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020  {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products PTX {
+                                sensors jnpr-sr-lsp;
+                                platforms PTX1000 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10000  {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products QFX {
+                                sensors jnpr-sr-lsp;
+                                platforms QFX5200 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                        operating-system junosEvolved {
+                            sensors jnpr-sr-lsp;
+                            products PTX {
+                                sensors jnpr-sr-lsp;
+                                platforms PTX10001-36MR {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10003 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10004 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                                platforms PTX10008 {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10016  {
+                                    releases 22.1R1 {
+                                        sensors jnpr-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }								
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
