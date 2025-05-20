@@ -69,6 +69,9 @@ healthbot {
                 enumerate DORMANT as -3;
                 enumerate NOT_PRESENT as -4;
                 enumerate LOWER_LAYER_DOWN as -5;
+                plots ifl-oper-state-plots {
+                    triggers sub-interface-link-state;
+                }				
             }
             field in-octets {
                 sensor interfaces-oc {
@@ -85,6 +88,18 @@ healthbot {
                 }
                 type float;
                 description "Utilization in percentage which derived based on mbps and interface in bw";
+                plots in-traffic-util-plots {
+                    unit percentage;
+                    triggers sub-interface-input-traffic;
+                    thresholds high-threshold {
+                        field-name "$high-threshold";
+                        severity critical;
+                    }
+                    thresholds low-threshold {
+                        field-name "$low-threshold";
+                        severity minor;
+                    }					
+                }				
             }
             field in-mbps {
                 formula {
@@ -111,6 +126,18 @@ healthbot {
                 }
                 type float;
                 description "Utilization out percentage which derived based on mbps and interface out bw";
+                plots out-traffic-util-plots {
+                    unit percentage;
+                    triggers sub-interface-output-traffic;
+                    thresholds high-threshold {
+                        field-name "$high-threshold";
+                        severity critical;
+                    }
+                    thresholds low-threshold {
+                        field-name "$low-threshold";
+                        severity minor;
+                    }					
+                }				
             }
             field out-mbps {
                 formula {
