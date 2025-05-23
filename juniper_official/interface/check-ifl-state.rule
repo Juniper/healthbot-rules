@@ -69,6 +69,9 @@ healthbot {
                 enumerate DORMANT as -3;
                 enumerate NOT_PRESENT as -4;
                 enumerate LOWER_LAYER_DOWN as -5;
+                plots ifl-oper-state {
+                    triggers sub-interface-link-state;
+                }				
             }
             field in-octets {
                 sensor interfaces-oc {
@@ -85,6 +88,18 @@ healthbot {
                 }
                 type float;
                 description "Utilization in percentage which derived based on mbps and interface in bw";
+                plots input-traffic-utilization {
+                    unit percentage;
+                    triggers sub-interface-input-traffic;
+                    thresholds high-threshold {
+                        field-name "$high-threshold";
+                        severity critical;
+                    }
+                    thresholds low-threshold {
+                        field-name "$low-threshold";
+                        severity minor;
+                    }					
+                }				
             }
             field in-mbps {
                 formula {
@@ -95,6 +110,10 @@ healthbot {
                 }
                 type float;
                 description "Derives mbps based (current in-octets - previous in-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+                plots input-traffic-mbps {
+                    unit mbps;
+                    triggers sub-interface-input-traffic;
+                }				
             }
             field out-octets {
                 sensor interfaces-oc {
@@ -111,6 +130,18 @@ healthbot {
                 }
                 type float;
                 description "Utilization out percentage which derived based on mbps and interface out bw";
+                plots output-traffic-utilization {
+                    unit percentage;
+                    triggers sub-interface-output-traffic;
+                    thresholds high-threshold {
+                        field-name "$high-threshold";
+                        severity critical;
+                    }
+                    thresholds low-threshold {
+                        field-name "$low-threshold";
+                        severity minor;
+                    }					
+                }				
             }
             field out-mbps {
                 formula {
@@ -121,6 +152,10 @@ healthbot {
                 }
                 type float;
                 description "Derives mbps based (current out-octets - previous out-octets) divided by (current time - previous time) divided by mbps multiplication factor";
+                plots output-traffic-mbps {
+                    unit mbps;
+                    triggers sub-interface-output-traffic;
+                }		
             }
             field high-threshold {
                 constant {
