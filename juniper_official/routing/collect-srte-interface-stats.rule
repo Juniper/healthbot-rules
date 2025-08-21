@@ -1,0 +1,127 @@
+/*
+ * Collect SRTE Interface statistics for pathfinder dynamic topology.
+ *
+ * Req 1351: https://paragon-automation.atlassian.net/browse/REQ-1351
+ *
+ * Two input control detection
+ *
+ *   1) inp-lsp-name, is a regular expression that matches the srte interface name
+ *      that must be monitored.  By default it's 'srte_c.*', which matches
+ *      all Cisco SR Color LSPs.
+ *
+ *   2) inp-device-vendor, indicates the device vendor is empty by default and needs to be filled during
+ *      rule deployment based on device.  
+ *
+ */
+healthbot {
+    topic routing.spring {
+        rule collect-srte-interface-stats {
+            keys [ lsp-name ];
+            description "Collects SRTE Interface based stats periodically";
+            sensor srte-interface-oc {
+                description "open-config Interface sensor definition";
+                open-config {
+                    sensor-name /interfaces/interface/state/counters;
+                    frequency 60s;
+                }
+            }
+            field lsp-stats-bytes {
+                sensor srte-interface-oc {
+                    path /interfaces/interface/state/counters/out-octets;
+                }
+                type integer;
+                description "LSP bytes counter";
+            }      
+            field lsp-stats-packets {
+                sensor srte-interface-oc {
+                    path /interfaces/interface/state/counters/out-pkts;
+                }
+                type integer;
+                description "LSP packet counter";
+            }
+            field lsp-name {
+                sensor srte-interface-oc {
+                    where "/interfaces/interface/@name =~ /{{inp-lsp-name}}/";
+                    path "/interfaces/interface/@name";
+                }                
+                type string;
+                description "Interface name";
+            }
+            field lsp-stats-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-bytes";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "LSP bit rate";
+            }            
+            field lsp-stats-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-packets";
+                    }
+                }
+                type integer;
+                description "LSP packet rate";
+            }           
+            field device-vendor {
+                constant {
+                    value "{{inp-device-vendor}}";
+                }
+                type string;                
+                description "Indicates device vendor";
+            }
+            variable inp-lsp-name {
+                value srte_c.*;
+                description "Cisco SR Color LSPs are available as srte interfaces, need to prefix srte_c_ to all interface names, eg 'srte_c_3.*|srte_c_300.*'";
+                type string;
+            }            
+            variable inp-device-vendor {
+                value "";
+                description "Contains the name of the device vendor";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor cisco {
+                        vendor-name cisco;
+                        operating-systems iosxr {     
+                            products "XRV Appliance" {
+                                platforms "XRV Appliance" {                                    
+                                    sensors srte-interface-oc;
+                                    releases 7.5.1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }                            
+                            products "XRv" {
+                                platforms "XRv 9000" {                                    
+                                    sensors srte-interface-oc;
+                                    releases 7.5.1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }                            
+                            products "NCS" {
+                                platforms "NCS-5504" {
+                                    sensors srte-interface-oc;
+                                    releases 7.5.1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms "NCS-5508" {                                    
+                                    sensors srte-interface-oc;
+                                    releases 7.5.1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

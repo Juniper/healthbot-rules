@@ -2,24 +2,26 @@
  * Collect SR Color LSP traffic statistics for pathfinder dynamic topology.
  *
  * Req 1936: https://paragon-automation.atlassian.net/browse/REQ-1936
- * Req 1351: https://paragon-automation.atlassian.net/browse/REQ-1351
  *
- * Two input control detection
+ * Three input control detection
  *
- *   1) input-to-address, is a regular expression that matches the SR color lsp 
+ *   1) inp-lsp-destination, is a regular expression that matches the SR color lsp 
  *      destination address that must be monitored.  By default it's '.*', which matches
  *      all destination address. Use something like '11.0.0*' to match only destination 
  *      address starting with '11.0.0'.  
  *
- *   2) input-color, is a regular expression that matches the color of SR color lsp 
+ *   2) inp-lsp-color, is a regular expression that matches the color of SR color lsp 
  *      that must be monitored.  By default it's '.*', which matches
  *      all colors. Use something like '10*' to match LSPs starting with color '10'.
+ *
+ *   3) inp-device-vendor, indicates the device vendor is empty by default and needs to be filled during
+ *      rule deployment based on device.  
  *
  */
 healthbot {
     topic routing.spring {
         rule collect-sr-color-lsp-stats {
-            keys [ lsp-name lsp-cfg-name ];
+            keys [ lsp-name ];
             description "Collects SR color LSP stats periodically";
             sensor jnpr-sr-color-lsp {
                 open-config {
@@ -27,38 +29,19 @@ healthbot {
                     frequency 60s;
                 }
             }
-            sensor cisco-oc-sr-color-lsp {
-                description "Cisco open-config SR Color LSP sensor definition";
-                open-config {
-                    sensor-name /interfaces/interface/state/counters;
-                    frequency 60s;
-                }
-            }
             field lsp-destination {
                 sensor jnpr-sr-color-lsp {
-                    where "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@to-address =~ /{{input-to-address}}/";
+                    where "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@to-address =~ /{{inp-lsp-destination}}/";
                     path "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@to-address";
-                } 
-                sensor cisco-oc-sr-color-lsp {
-                    path cisco_lsp_destination_dummy_path;
-                    data-if-missing {
-                        value "cisco_sr_lsp_destination";
-                    }
-                }               
+                }                
                 type string;
                 description "LSP destination in case of SR color LSP and name in case of SR LSP";
             }
             field lsp-color {
                 sensor jnpr-sr-color-lsp {
-                    where "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@color =~ /{{input-color}}/";
+                    where "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@color =~ /{{inp-lsp-color}}/";
                     path "/mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/@color";
-                }
-                sensor cisco-oc-sr-color-lsp {
-                    path cisco_lsp_color_dummy_path;
-                    data-if-missing {
-                        value "cisco_sr_lsp_color";
-                    }
-                }                 
+                }                
                 type string;
                 description "Color of the LSP being monitored";
             }
@@ -66,18 +49,12 @@ healthbot {
                 sensor jnpr-sr-color-lsp {
                     path /mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/state/counters/bytes;
                 }
-                sensor cisco-oc-sr-color-lsp {
-                    path /interfaces/interface/state/counters/out-octets;
-                }
                 type integer;
                 description "LSP bytes counter";
             }      
             field lsp-stats-packets {
                 sensor jnpr-sr-color-lsp {
                     path /mpls/signaling-protocols/segment-routing/sr-te-ip-policies/sr-te-ip-policy/state/counters/packets;
-                }
-                sensor cisco-oc-sr-color-lsp {
-                    path /interfaces/interface/state/counters/out-pkts;
                 }
                 type integer;
                 description "LSP packet counter";
@@ -89,37 +66,7 @@ healthbot {
                     }
                 }
                 type string;
-                description "LSP computed name";
-            }
-            field lsp-cfg-name {
-                sensor jnpr-sr-color-lsp {
-                    path juniper_interface_name_dummy_path;
-                    data-if-missing {
-                        value "jnpr_sr_lsp";
-                    }
-                }
-                sensor cisco-oc-sr-color-lsp {
-                    where "/interfaces/interface/@name =~ /{{input-cisco-sr-color-lsp-name}}/";
-                    path "/interfaces/interface/@name";
-                }                
-                type string;
-                description "Interface name";
-            }
-            field vendor {
-                sensor jnpr-sr-color-lsp {
-                    path juniper_sr_color_lsp_vendor_dummy_path;
-                    data-if-missing {
-                        value "juniper";
-                    }
-                }
-                sensor cisco-oc-sr-color-lsp {
-                    path cisco_sr_color_lsp_vendor_dummy_path;
-                    data-if-missing {
-                        value "cisco";
-                    }              
-                }
-                type string;                
-                description "Indicates telemetry vendor";
+                description "LSP name";
             }
             field lsp-stats-bps {
                 formula {
@@ -139,20 +86,27 @@ healthbot {
                 }
                 type integer;
                 description "LSP packet rate";
+            }            
+            field device-vendor {
+                constant {
+                    value "{{inp-device-vendor}}";
+                }
+                type string;                
+                description "Indicates device vendor";
             }
-            variable input-to-address {
+            variable inp-lsp-destination {
                 value .*;
                 description "SR color LSP destination address to monitor, regular expression, eg '11.0.0.*|10.52.135.*'";
                 type string;
             }
-            variable input-color {
+            variable inp-lsp-color {
                 value .*;
                 description "SR color LSP colors to monitor, regular expression, eg '100|20*'";
                 type string;
-            }
-            variable input-cisco-sr-color-lsp-name {
-                value srte_c.*;
-                description "Cisco SR Color LSPs are available as srte interfaces, need to prefix srte_c_ to all interface names, eg 'srte_c_3.*|srte_c_300.*'";
+            }            
+            variable inp-device-vendor {
+                value "";
+                description "Contains the name of the device vendor";
                 type string;
             }
             rule-properties {
@@ -164,49 +118,48 @@ healthbot {
                                 sensors jnpr-sr-color-lsp;
                                 platforms MX960 {
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms MX2008 {
+                                platforms MX2008 {                                    
+                                    sensors jnpr-sr-color-lsp;
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms MX2010 {
+                                platforms MX2010 {                                    
+                                    sensors jnpr-sr-color-lsp;
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms MX2020  {
+                                platforms MX2020  {                                    
+                                    sensors jnpr-sr-color-lsp;
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                             }
                             products PTX {
                                 sensors jnpr-sr-color-lsp;
-                                platforms PTX1000 {
+                                platforms PTX1000 {                                    
+                                    sensors jnpr-sr-color-lsp;
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms PTX10000  {
+                                platforms PTX10000  {                                    
+                                    sensors jnpr-sr-color-lsp;
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                             }
                             products QFX {
                                 sensors jnpr-sr-color-lsp;
-                                platforms QFX5200 {
+                                platforms QFX5200 {                                    
+                                    sensors jnpr-sr-color-lsp;
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -216,75 +169,36 @@ healthbot {
                             sensors jnpr-sr-color-lsp;	
                             products PTX {
                                 sensors jnpr-sr-color-lsp;	
-                                platforms PTX10001-36MR {
+                                platforms PTX10001-36MR {                                    
+                                    sensors jnpr-sr-color-lsp;	
                                     releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;	
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms PTX10003 {
-                                    releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;	
+                                platforms PTX10003 {                                    
+                                    sensors jnpr-sr-color-lsp;
+                                    releases 22.4R1 {	
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms PTX10004 {
-                                    releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;	
+                                platforms PTX10004 {                                    
+                                    sensors jnpr-sr-color-lsp;
+                                    releases 22.4R1 {	
                                         release-support min-supported-release;
                                     }
                                 }								
-                                platforms PTX10008 {
-                                    releases 22.4R1 {
-                                        sensors jnpr-sr-color-lsp;	
+                                platforms PTX10008 {                                    
+                                    sensors jnpr-sr-color-lsp;
+                                    releases 22.4R1 {	
                                         release-support min-supported-release;
                                     }
                                 }
-                                platforms PTX10016  {
-                                    releases 22.1R1 {
-                                        sensors jnpr-sr-color-lsp;	
+                                platforms PTX10016  {                                    
+                                    sensors jnpr-sr-color-lsp;
+                                    releases 22.4R1 {	
                                         release-support min-supported-release;
                                     }
                                 }								
-                            }
-                        }
-                    }
-                    other-vendor cisco {
-                        vendor-name cisco;
-                        operating-systems iosxr {     
-                            products "XRV Appliance" {
-                                platforms "XRV Appliance" {
-                                    sensors cisco-oc-sr-color-lsp;
-                                    releases 7.5.1 {
-                                        sensors cisco-oc-sr-color-lsp;
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }                            
-                            products "XRv" {
-                                platforms "XRv 9000" {
-                                    sensors cisco-oc-sr-color-lsp;
-                                    releases 7.5.1 {
-                                        sensors cisco-oc-sr-color-lsp;
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }                            
-                            products "NCS" {
-                                platforms "NCS-5504" {
-                                    sensors cisco-oc-sr-color-lsp;
-                                    releases 7.5.1 {
-                                        sensors cisco-oc-sr-color-lsp;
-                                        release-support min-supported-release;
-                                    }
-                                }
-                                platforms "NCS-5508" {
-                                    sensors cisco-oc-sr-color-lsp;
-                                    releases 7.5.1 {
-                                        sensors cisco-oc-sr-color-lsp;
-                                        release-support min-supported-release;
-                                    }
-                                }
                             }
                         }
                     }
