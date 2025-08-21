@@ -4,16 +4,20 @@
  * Req 60: https://paragon-automation.atlassian.net/browse/REQ-60
  * Req 1351: https://paragon-automation.atlassian.net/browse/REQ-1351
  *
- * Two input control detection
+ * Four input control detection
  *
- *   1) input-lsp-name, is a regular expression that matches the lsp name
+ *   1) inp-lsp-name, is a regular expression that matches the lsp name
  *      that you would like to monitor.  By default it's '.*', which matches
  *      all lsps. Use something like 'Silver*' to match only lsp names starting
  *      with 'Silver'. 
- *   2) input-cisco-tunnel-te-name, is a regular expression that matches the 
- *      Cisco RSVP LSP traffic and signalling entries. By default it's 'tunnel-te.*', which matches
- *      all Cisco RSVP LSP/interfaces. Use something like 'tunnel-te1*' to match only lsp names starting
- *      with 'tunnel-te1'. 
+ *   2) inp-referenced-rules, must be strings that contain the names of the rules to
+ *      to be referred to evaluate the reference data.
+ *
+ *   3) inp-reference-rule-expression-name, is a string having the golang Common Expression Language 
+ *      compatible expression based on the rule and their fields to be used for reference field value evaluation.
+ *
+ *   4) inp-device-vendor, indicates the device vendor is empty by default and needs to be filled during
+ *      rule deployment based on device.  
  *
  */
  healthbot {
@@ -37,63 +41,36 @@
             }
             field lsp-name {
                 sensor lsp {
-                    where "/mpls/lsps/constrained-path/tunnels/tunnel/@name =~ /{{input-lsp-name}}/";
+                    where "/mpls/lsps/constrained-path/tunnels/tunnel/@name =~ /{{inp-lsp-name}}/";
                     path "/mpls/lsps/constrained-path/tunnels/tunnel/@name";
                 }
                 sensor cisco-oc-lsp-traffic {
-                    where "/interfaces/interface/@name =~ /{{input-cisco-tunnel-te-name}}/";
+                    where "/interfaces/interface/@name =~ /{{inp-lsp-name}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
                 description "LSP name to be monitored";
-            }
-            field vendor {
-                sensor lsp {
-                    path juniper_rsvp_lsp_vendor_dummy_path;
-                    data-if-missing {
-                        value "juniper";
-                    }
-                }
-                sensor cisco-oc-lsp-traffic {
-                    path cisco_traffic_vendor_dummy_path;
-                    data-if-missing {
-                        value "cisco";
-                    }              
-                }
-                type string;                
-                description "Indicates telemetry vendor";
             }     
             field referenced-rules {
-                sensor lsp {
-                    path juniper_rsvp_lsp_reference_rule_path;
-                    data-if-missing {
-                        value "none";
-                    }
-                }
-                sensor cisco-oc-lsp-traffic {
-                    path cisco_traffic_referenced_rules_dummy_path;
-                    data-if-missing {
-                        value "collect-rsvp-cfg";
-                    }              
-                }                
+                constant {
+                    value "{{inp-referenced-rules}}";
+                }              
                 type string;                
                 description "Indicates rules to be referenced to computed the data set for this rule";
             } 
-            field reference-rule-expression {
-                sensor lsp {
-                    path juniper_rsvp_lsp_reference_rule_expression_dummy_path;
-                    data-if-missing {
-                        value "none";
-                    }
-                }
-                sensor cisco-oc-lsp-traffic {
-                    path cisco_rsvp_lsp_reference_rule_expression_dummy_path;
-                    data-if-missing {
-                        value "collect-rsvp-stats.vendor == \"cisco\" && collect-rsvp-stats.lsp-name == collect-rsvp-cfg.lsp-name && abs(collect-rsvp-stats.__device_timestamp__ - collect-rsvp-cfg.__device_timestamp__) < env_cfg[\"ACTIVE_DEVICE_CFG_INTERVAL\"] ? {\"lsp-name\": collect-rsvp-cfg.lsp-signaled-name}:null";
-                    }
+            field reference-rule-expression-name {
+                constant {
+                    value "{{inp-reference-rule-expression-name}}";
                 }
                 type string;                
                 description "Indicates the expression to be used to compute the data set for this rule";
+            }             
+            field device-vendor {
+                constant {
+                    value "{{inp-device-vendor}}";
+                }
+                type string;                
+                description "Indicates device vendor";
             }
             field lsp-stats-bps {
                 formula {
@@ -132,14 +109,24 @@
                 }
                 type integer;
             }
-            variable input-lsp-name {
+            variable inp-lsp-name {
                 value .*;
                 description "LSP names to monitor, regular expression, eg 'LSP-1.*|LSP-A.*'";
                 type string;
             }
-            variable input-cisco-tunnel-te-name {
-                value tunnel-te.*;
-                description "Cisco RSVP LSPs are available as tunnel-te interfaces, need to prefix tunnel-te to all interface/tunnel name fields, eg 'tunnel-te10.*|tunnel-te300.*'";
+            variable inp-referenced-rules {
+                value none;
+                description "Contains the list of rules which will be referred to construct the value for some fields at the client/consumer side, must be a rule name and accepts multple rule name in a comma seperted list, eg 'collect-rsvp-cfg,collect-sr-sp-stats'";
+                type string;
+            }
+            variable inp-reference-rule-expression-name {
+                value none;
+                description "Contains the expression to be used to evaluate and extract the necessary data from the referenced rules";
+                type string;
+            }            
+            variable inp-device-vendor {
+                value "";
+                description "Contains the name of the device vendor";
                 type string;
             }
             rule-properties {
@@ -157,56 +144,48 @@
                                 platforms MX2010 {
                                     sensors lsp;
                                     releases 22.4R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2020 {
                                     sensors lsp;
                                     releases 22.4R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10004 {
                                     sensors lsp;
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10008 {
                                     sensors lsp;
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10016 {
                                     sensors lsp;
                                     releases 22.3R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX240 {
                                     sensors lsp;
                                     releases 22.4R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX480 {
                                     sensors lsp;
                                     releases 22.4R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX960 {
                                     sensors lsp;
                                     releases 22.4R1 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -217,28 +196,24 @@
                                 platforms PTX10001 {
                                     sensors lsp;
                                     releases 22.2R3 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10004 {
                                     sensors lsp;
                                     releases 22.2R3 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10008 {
                                     sensors lsp;
                                     releases 22.2R3 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }								
                                 platforms PTX10016 {
                                     sensors lsp;
                                     releases 22.2R3 {
-                                        sensors lsp;
                                         release-support min-supported-release;
                                     }
                                 }								
@@ -252,7 +227,6 @@
                                 platforms "XRV Appliance" {
                                     sensors cisco-oc-lsp-traffic;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-lsp-traffic;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -261,7 +235,6 @@
                                 platforms "XRv 9000" {
                                     sensors cisco-oc-lsp-traffic;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-lsp-traffic;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -270,14 +243,12 @@
                                 platforms "NCS-5504" {
                                     sensors cisco-oc-lsp-traffic;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-lsp-traffic;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms "NCS-5508" {
                                     sensors cisco-oc-lsp-traffic;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-lsp-traffic;
                                         release-support min-supported-release;
                                     }
                                 }
