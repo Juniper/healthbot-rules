@@ -4,30 +4,26 @@
  * Req 60: https://paragon-automation.atlassian.net/browse/REQ-60
  * Req 1351: https://paragon-automation.atlassian.net/browse/REQ-1351
  *
- * One input control detection
+ * Two input control detection
  *
- *   1) input-ifd-name, is a regular expression that matches the interfaces
+ *   1) inp-interface-name, is a regular expression that matches the interfaces
  *      that you would like to monitor.  By default it's '.*', which matches
  *      all interfaces. Use something like 'ge.*' to match only gigabit
- *      ethernet interfaces. 
+ *      ethernet interfaces.
+ *
+ *   2) inp-device-vendor, indicates the device vendor is empty by default and needs to be filled during
+ *      rule deployment based on device. 
  */
  healthbot {
     topic interfaces {
         rule collect-physical-interface-stats {
-            keys [ interface-name ];
+            keys interface-name;
             description "Collects physical interface traffic stats periodically";
             sensor interfaces-oc {
                 synopsis "Interface open-config sensor definition";
                 description "Interface open-config sensor definition";
                 open-config {
                     sensor-name /interfaces/interface/state;
-                    frequency 60s;
-                }
-            }
-            sensor cisco-oc-ifd {
-                description "Cisco open-config Physical interface sensor definition";
-                open-config {
-                    sensor-name /interfaces/interface/state/counters;
                     frequency 60s;
                 }
             }
@@ -44,17 +40,11 @@
                 sensor interfaces-oc {
                     path /interfaces/interface/state/counters/out-octets;
                 }
-                sensor cisco-oc-ifd {
-                    path /interfaces/interface/state/counters/out-octets;
-                }
                 type integer;
                 description "Interface egress octets counter";
             }
             field out-pkts {
                 sensor interfaces-oc {
-                    path /interfaces/interface/state/counters/out-pkts;
-                }
-                sensor cisco-oc-ifd {
                     path /interfaces/interface/state/counters/out-pkts;
                 }
                 type integer;
@@ -81,17 +71,11 @@
                 sensor interfaces-oc {
                     path /interfaces/interface/state/counters/in-octets;
                 }
-                sensor cisco-oc-ifd {
-                    path /interfaces/interface/state/counters/in-octets;
-                }
                 type integer;
                 description "Interface ingress octets";
             }
             field in-pkts {
                 sensor interfaces-oc {
-                    path /interfaces/interface/state/counters/in-pkts;
-                }
-                sensor cisco-oc-ifd {
                     path /interfaces/interface/state/counters/in-pkts;
                 }
                 type integer;
@@ -107,35 +91,27 @@
             }
             field interface-name {
                 sensor interfaces-oc {
-                    where "/interfaces/interface/@name =~ /{{input-ifd-name}}/";
-                    path "/interfaces/interface/@name";
-                }
-                sensor cisco-oc-ifd {
-                    where "/interfaces/interface/@name =~ /{{input-ifd-name}}/";
+                    where "/interfaces/interface/@name =~ /{{inp-interface-name}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
                 description "Interfaces to be monitored";
-            }
-            field vendor {
-                sensor interfaces-oc {
-                    path juniper_physical_interface_vendor_dummy_path;
-                    data-if-missing {
-                        value "juniper";
-                    }
-                }
-                sensor cisco-oc-ifd {
-                    path cisco_physical_interface_vendor_dummy_path;
-                    data-if-missing {
-                        value "cisco";
-                    }              
+            }             
+            field device-vendor {
+                constant {
+                    value "{{inp-device-vendor}}";
                 }
                 type string;                
-                description "Indicates telemetry vendor";
-            }
-            variable input-ifd-name {
+                description "Indicates device vendor";
+            } 
+            variable inp-interface-name {
                 value .*;
                 description "Interfaces to be monitored, regular expression, eg 'ge-.*'";
+                type string;
+            }
+            variable inp-device-vendor {
+                value "";
+                description "Contains the name of the device vendor";
                 type string;
             }
             rule-properties {
@@ -153,35 +129,30 @@
                                 platforms ACX7024 {
                                     sensors interfaces-oc;
                                     releases 22.3R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7024X {
                                     sensors interfaces-oc;
                                     releases 22.3R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7100 {
                                     sensors interfaces-oc;
                                     releases 22.3R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7509 {
                                     sensors interfaces-oc;
                                     releases 22.3R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7348 {
                                     sensors interfaces-oc;
                                     releases 22.3R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }								
@@ -190,7 +161,6 @@
                                 platforms PTX10008 {
                                     sensors interfaces-oc;
                                     releases 22.2R3 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -201,56 +171,48 @@
                                platforms MX2010 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2020 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
 								platforms MX10004 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10008 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10016 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX240 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX480 {
                                     sensors interfaces-oc;
                                     releases 22.4R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX960 {
                                     sensors interfaces-oc;
                                     releases 22.2R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -259,21 +221,18 @@
                                 platforms PTX1000 {
                                     sensors interfaces-oc;
                                     releases 22.2R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10000 {
                                     sensors interfaces-oc;
                                     releases 22.2R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX5000 {
                                     sensors interfaces-oc;
                                     releases 22.2R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -282,14 +241,12 @@
                                 platforms QFX10000 {
                                     sensors interfaces-oc;
                                     releases 22.2R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms QFX5200 {
                                     sensors interfaces-oc;
                                     releases 22.2R1 {
-                                        sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -301,34 +258,31 @@
                         operating-systems iosxr {  
                             products "XRV Appliance" {
                                 platforms "XRV Appliance" {
-                                    sensors cisco-oc-ifd;
+                                    sensors interfaces-oc;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-ifd;
                                         release-support min-supported-release;
                                     }
                                 }
                             }                            
                             products "XRv" {
                                 platforms "XRv 9000" {
-                                    sensors cisco-oc-ifd;
+                                    sensors interfaces-oc;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-ifd;
                                         release-support min-supported-release;
                                     }
                                 }
                             }                         
                             products "NCS" {
                                 platforms "NCS-5504" {
-                                    sensors cisco-oc-ifd;
+                                    sensors interfaces-oc;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-ifd;
+                                    sensors interfaces-oc;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms "NCS-5508" {
-                                    sensors cisco-oc-ifd;
+                                    sensors interfaces-oc;
                                     releases 7.5.1 {
-                                        sensors cisco-oc-ifd;
                                         release-support min-supported-release;
                                     }
                                 }
