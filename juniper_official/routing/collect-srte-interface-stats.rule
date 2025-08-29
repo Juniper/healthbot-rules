@@ -3,14 +3,11 @@
  *
  * Req 1351: https://paragon-automation.atlassian.net/browse/REQ-1351
  *
- * Two input control detection
+ * One input control detection
  *
- *   1) inp-lsp-name, is a regular expression that matches the srte interface name
+ *   1) input-lsp-name, is a regular expression that matches the srte interface name
  *      that must be monitored.  By default it's 'srte_c.*', which matches
  *      all Cisco SR Color LSPs.
- *
- *   2) inp-device-vendor, indicates the device vendor is empty by default and needs to be filled during
- *      rule deployment based on device.  
  *
  */
 healthbot {
@@ -41,7 +38,7 @@ healthbot {
             }
             field lsp-name {
                 sensor srte-interface-oc {
-                    where "/interfaces/interface/@name =~ /{{inp-lsp-name}}/";
+                    where "/interfaces/interface/@name =~ /{{input-lsp-name}}/";
                     path "/interfaces/interface/@name";
                 }                
                 type string;
@@ -65,22 +62,10 @@ healthbot {
                 }
                 type integer;
                 description "LSP packet rate";
-            }           
-            field device-vendor {
-                constant {
-                    value "{{inp-device-vendor}}";
-                }
-                type string;                
-                description "Indicates device vendor";
             }
-            variable inp-lsp-name {
+            variable input-lsp-name {
                 value srte_c.*;
                 description "Cisco SR Color LSPs are available as srte interfaces, need to prefix srte_c_ to all interface names, eg 'srte_c_3.*|srte_c_300.*'";
-                type string;
-            }            
-            variable inp-device-vendor {
-                value "";
-                description "Contains the name of the device vendor";
                 type string;
             }
             rule-properties {
