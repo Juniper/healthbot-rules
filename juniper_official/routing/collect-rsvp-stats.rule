@@ -4,20 +4,12 @@
  * Req 60: https://paragon-automation.atlassian.net/browse/REQ-60
  * Req 1351: https://paragon-automation.atlassian.net/browse/REQ-1351
  *
- * Four input control detection
+ * One input control detection
  *
- *   1) inp-lsp-name, is a regular expression that matches the lsp name
+ *   1) input-lsp-name, is a regular expression that matches the lsp name
  *      that you would like to monitor.  By default it's '.*', which matches
  *      all lsps. Use something like 'Silver*' to match only lsp names starting
  *      with 'Silver'. 
- *   2) inp-referenced-rules, must be strings that contain the names of the rules to
- *      to be referred to evaluate the reference data.
- *
- *   3) inp-reference-rule-expression-name, is a string having the golang Common Expression Language 
- *      compatible expression based on the rule and their fields to be used for reference field value evaluation.
- *
- *   4) inp-device-vendor, indicates the device vendor is empty by default and needs to be filled during
- *      rule deployment based on device.  
  *
  */
  healthbot {
@@ -41,36 +33,15 @@
             }
             field lsp-name {
                 sensor lsp {
-                    where "/mpls/lsps/constrained-path/tunnels/tunnel/@name =~ /{{inp-lsp-name}}/";
+                    where "/mpls/lsps/constrained-path/tunnels/tunnel/@name =~ /{{input-lsp-name}}/";
                     path "/mpls/lsps/constrained-path/tunnels/tunnel/@name";
                 }
                 sensor cisco-oc-lsp-traffic {
-                    where "/interfaces/interface/@name =~ /{{inp-lsp-name}}/";
+                    where "/interfaces/interface/@name =~ /{{input-lsp-name}}/";
                     path "/interfaces/interface/@name";
                 }
                 type string;
                 description "LSP name to be monitored";
-            }     
-            field referenced-rules {
-                constant {
-                    value "{{inp-referenced-rules}}";
-                }              
-                type string;                
-                description "Indicates rules to be referenced to computed the data set for this rule";
-            } 
-            field reference-rule-expression-name {
-                constant {
-                    value "{{inp-reference-rule-expression-name}}";
-                }
-                type string;                
-                description "Indicates the expression to be used to compute the data set for this rule";
-            }             
-            field device-vendor {
-                constant {
-                    value "{{inp-device-vendor}}";
-                }
-                type string;                
-                description "Indicates device vendor";
             }
             field lsp-stats-bps {
                 formula {
@@ -109,24 +80,9 @@
                 }
                 type integer;
             }
-            variable inp-lsp-name {
+            variable input-lsp-name {
                 value .*;
                 description "LSP names to monitor, regular expression, eg 'LSP-1.*|LSP-A.*'";
-                type string;
-            }
-            variable inp-referenced-rules {
-                value none;
-                description "Contains the list of rules which will be referred to construct the value for some fields at the client/consumer side, must be a rule name and accepts multple rule name in a comma seperted list, eg 'collect-rsvp-cfg,collect-sr-sp-stats'";
-                type string;
-            }
-            variable inp-reference-rule-expression-name {
-                value none;
-                description "Contains the expression to be used to evaluate and extract the necessary data from the referenced rules";
-                type string;
-            }            
-            variable inp-device-vendor {
-                value "";
-                description "Contains the name of the device vendor";
                 type string;
             }
             rule-properties {
@@ -143,13 +99,13 @@
                             products MX {
                                 platforms MX2010 {
                                     sensors lsp;
-                                    releases 22.4R1 {
+                                    releases 19.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2020 {
                                     sensors lsp;
-                                    releases 22.4R1 {
+                                    releases 19.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
@@ -173,19 +129,19 @@
                                 }
                                 platforms MX240 {
                                     sensors lsp;
-                                    releases 22.4R1 {
+                                    releases 19.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX480 {
                                     sensors lsp;
-                                    releases 22.4R1 {
+                                    releases 19.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX960 {
                                     sensors lsp;
-                                    releases 22.4R1 {
+                                    releases 19.2R1 {
                                         release-support min-supported-release;
                                     }
                                 }
