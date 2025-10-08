@@ -22,11 +22,21 @@ healthbot {
                     frequency 60s;
                 }
             }
+            sensor jnpr-sr-lsp-tunnelName {
+                open-config {
+                    sensor-name /junos/services/segment-routing/traffic-engineering/tunnel/ingress/usage/;
+                    frequency 60s;
+                }
+            }
             field lsp-name {
                 sensor jnpr-sr-lsp {
                     where "/mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/@tunnel-name =~ /{{input-lsp-name}}/";
                     path "/mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/@tunnel-name";
-                }              
+                }   
+                sensor jnpr-sr-lsp-tunnelName {
+                    where "/mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/@tunnelName =~ /{{input-lsp-name}}/";
+                    path "/mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/@tunnelName";
+                }           
                 type string;
                 description "LSP destination in case of SR color LSP and name in case of SR LSP";
             }
@@ -34,11 +44,17 @@ healthbot {
                 sensor jnpr-sr-lsp {
                     path /mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/state/counters/bytes;
                 }
+                sensor jnpr-sr-lsp-tunnelName {
+                    path /mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/state/counters/bytes;
+                }
                 type integer;
                 description "LSP bytes counter";
             }      
             field lsp-stats-packets {
                 sensor jnpr-sr-lsp {
+                    path /mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/state/counters/packets;
+                }
+                sensor jnpr-sr-lsp-tunnelName {
                     path /mpls/signaling-protocols/segment-routing/sr-te-ingress-tunnel-policies/sr-te-ingress-tunnel-policy/state/counters/packets;
                 }
                 type integer;
@@ -72,9 +88,16 @@ healthbot {
                 supported-devices {
                     juniper {
                         operating-system junos {
-                            sensors jnpr-sr-lsp;	
+                            sensors jnpr-sr-lsp;
                             products MX {
                                 sensors jnpr-sr-lsp;
+                                platforms MX304 {
+                                    sensors jnpr-sr-lsp-tunnelName;
+                                    releases 23.4R2 {
+                                        sensors jnpr-sr-lsp-tunnelName;
+                                        release-support min-supported-release;
+                                    }
+                                }
                                 platforms MX960 {
                                     sensors jnpr-sr-lsp;
                                     releases 22.1R1 {
@@ -100,26 +123,20 @@ healthbot {
                                     }
                                 }
                             }
-                            products PTX {
+                            products QFX {
                                 sensors jnpr-sr-lsp;
-                                platforms PTX1000 {
-                                    sensors jnpr-sr-lsp;
-                                    releases 22.1R1 {
-                                        release-support min-supported-release;
-                                    }
-                                }
-                                platforms PTX10000  {
+                                platforms QFX5200 {
                                     sensors jnpr-sr-lsp;
                                     releases 22.1R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                             }
-                            products QFX {
+                            products VMX {
                                 sensors jnpr-sr-lsp;
-                                platforms QFX5200 {
+                                platforms VMX {                                    
                                     sensors jnpr-sr-lsp;
-                                    releases 22.1R1 {
+                                    releases 22.4R1 {
                                         release-support min-supported-release;
                                     }
                                 }
@@ -159,6 +176,15 @@ healthbot {
                                         release-support min-supported-release;
                                     }
                                 }								
+                            }
+                            products ACX {
+                                sensors jnpr-sr-lsp;
+                                platforms ACX7024 {
+                                sensors jnpr-sr-lsp;
+                                    releases 23.4R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }						
                             }
                         }
                     }
