@@ -1,190 +1,163 @@
 /*
- * REQ: REQ-222
- * Rule to get all the Fabric Drops
- * Upstream application will use these stats to find Blackholes
- */
+* Rule to get all the Fabric stats (input/output) stats
+* Upstream application will use these stats to find anomaly
+*/
 healthbot {
     topic hardware.fpc {
-        rule fabric-drops {
-            keys [ src-slot src-pfe src-type dst-slot dst-pfe dst-type ];
-            synopsis "Fabric Drops";
-            description "Fabric Drops";
-            sensor sensor-fabric-drops {
-                synopsis "Fabric Drops";
-                description "Fabric Drops";
+        rule fabric-stats {
+            keys fpc;
+            synopsis "Fabric transit traffic stats";
+            description "Fabric input/output stats";
+            sensor fabricstats {
+                synopsis "Fabric transit traffic stats";
+                description "GNMI based telemetry which collects ASIC traffic stats";
                 open-config {
-                    sensor-name /junos/system/linecard/fabric/;
+                    sensor-name /junos/system/linecard/packet/usage/;
                     frequency 60s;
                 }
             }
-            field src-slot {
-                sensor sensor-fabric-drops {
-                    path "/junos/fabric-statistics/fabric-message/edges/@src-slot";
-                }
-                type string;
-                description "Source FPC";
-            }
-            field src-pfe {
-                sensor sensor-fabric-drops {
-                    path "/junos/fabric-statistics/fabric-message/edges/@src-pfe";
-                }
-                type string;
-                description "Source PFE";
-            }
-            field src-type {
-                sensor sensor-fabric-drops {
-                    path "/junos/fabric-statistics/fabric-message/edges/@src-type";
-                }
-                type string;
-                description "Source Type";
-            }
-            field dst-slot {
-                sensor sensor-fabric-drops {
-                    path "/junos/fabric-statistics/fabric-message/edges/@dst-slot";
-                }
-                type string;
-                description "Destination FPC";
-            }
-            field dst-pfe {
-                sensor sensor-fabric-drops {
-                    path "/junos/fabric-statistics/fabric-message/edges/@dst-pfe";
-                }
-                type string;
-                description "Destination PFE";
-            }
-            field dst-type {
-                sensor sensor-fabric-drops {
-                    path "/junos/fabric-statistics/fabric-message/edges/@dst-type";
-                }
-                type string;
-                description "Destination Type";
-            }
-            field drop-packets {
-                sensor sensor-fabric-drops {
-                    path /junos/fabric-statistics/fabric-message/edges/class-stats/transmit-counts/drop-packets;
+            field ts-fabric-input-packets-pps {
+                sensor fabricstats {
+                    where "/components/component/properties/property/@name == 'ts-fabric-input-packets-pps'";
+                    path /components/component/properties/property/state/value;
                 }
                 type unsigned-integer;
-                description "Drop Packets";
+                description "Fabric input packet rate (pps)";
             }
-            field error-packets {
-                sensor sensor-fabric-drops {
-                    path /junos/fabric-statistics/fabric-message/edges/class-stats/transmit-counts/error-packets;
+            field ts-fabric-output-packets-pps {
+                sensor fabricstats {
+                    where "/components/component/properties/property/@name == 'ts-fabric-output-packets-pps'";
+                    path /components/component/properties/property/state/value;
                 }
                 type unsigned-integer;
-                description "Drop Packets";
+                description "Fabric output packet rate (pps)";
+            }
+            field fpc {
+                sensor fabricstats {
+                    path "/components/component/@name";
+                }
+                type string;
+                description "FPC name";
             }
             rule-properties {
                 version 1;
                 contributor juniper;
-                category basic;
-                supported-healthbot-version 1.0.0;
+                category advanced;
+                supported-healthbot-version 4.2.0;
                 supported-devices {
                     juniper {
                         operating-system junosEvolved {
                             products PTX {
                                 platforms PTX10001-36MR {
                                     releases 22.2R1 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10002-36QDD {
                                     releases 22.2R1 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10003 {
                                     releases 22.2R1 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10004 {
                                     releases 22.2R1 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10008 {
                                     releases 22.2R1 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10016 {
                                     releases 22.2R1 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products ACX {
+                                platforms ALL {
+                                    releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                             }
                         }
-                        operating-system junos {    
+                        operating-system junos {
                             products MX {
                                 platforms MX204 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX240 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX301 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX304 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX480 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX960 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10004 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10008 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2010 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2008 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2020 {
                                     releases 24.4R2 {
-                                        sensors sensor-fabric-drops;
+                                        sensors fabricstats;
                                         release-support min-supported-release;
                                     }
                                 }
