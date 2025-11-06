@@ -9,6 +9,11 @@ healthbot {
 			keys [ fpc exception-name ];
 			synopsis "Forwarding Block Exception Names and Values";
 			description "Forwarding Block Exception Names and Values";
+			variable component-name-filter {
+				value "/(PIC|FPC)[0-9]+:NPU[0-9]*/";
+				description "Regex pattern to filter component names (e.g., FPC1:NPU0, PIC0:NPU)";
+				type string;
+			}
 			sensor sensor-exception-stats {
 				synopsis "Forwarding Block Exception Names and Values";
 				description "Forwarding Block Exception Names and Values";
@@ -19,7 +24,7 @@ healthbot {
 			}
 			field fpc {
 				sensor sensor-exception-stats {
-					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/@name =~ {{component-name-filter}}";
 					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
 					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
 					path "/components/component/@name";
@@ -29,6 +34,9 @@ healthbot {
 			}
 			field exception-name {
 				sensor sensor-exception-stats {
+					where "/components/component/@name =~ {{component-name-filter}}";
+					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
+					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
 					path "/components/component/properties/property/@name";
 				}
 				type string;
@@ -36,6 +44,9 @@ healthbot {
 			}
 			field exception-value {
 				sensor sensor-exception-stats {
+					where "/components/component/@name =~ {{component-name-filter}}";
+					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
+					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
 					path "/components/component/properties/property/state/value";
 				}
 				type unsigned-integer;
