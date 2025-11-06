@@ -1,0 +1,126 @@
+/*
+	* REQ: REQ-222
+	* Rule to get Exception Statistics (Drop Counters) for Blackhole Detection.
+	* Each platform will have different exception names.
+*/
+healthbot {
+	topic hardware.fpc {
+		rule exception-stats {
+			keys [ fpc exception-name ];
+			synopsis "Forwarding Block Exception Names and Values";
+			description "Forwarding Block Exception Names and Values";
+			sensor sensor-exception-stats {
+				synopsis "Forwarding Block Exception Names and Values";
+				description "Forwarding Block Exception Names and Values";
+				open-config {
+					sensor-name /junos/system/linecard/packet/usage/;
+					frequency 60s;
+				}
+			}
+			field fpc {
+				sensor sensor-exception-stats {
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
+					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					path "/components/component/@name";
+				}
+				type string;
+				description "FPC name";
+			}
+			field exception-name {
+				sensor sensor-exception-stats {
+					path "/components/component/properties/property/@name";
+				}
+				type string;
+				description "Exception Name";
+			}
+			field exception-value {
+				sensor sensor-exception-stats {
+					path "/components/component/properties/property/state/value";
+				}
+				type unsigned-integer;
+				description "Exception Value";
+			}
+            rule-properties {
+                version 1;
+                contributor juniper;
+                category advanced;
+                supported-healthbot-version 4.2.0;
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX204 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX301 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX304 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX10004 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX10008 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2008 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 24.4R2 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
