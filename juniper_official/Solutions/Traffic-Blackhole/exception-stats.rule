@@ -9,11 +9,6 @@ healthbot {
 			keys [ fpc exception-name ];
 			synopsis "Forwarding Block Exception Names and Values";
 			description "Forwarding Block Exception Names and Values";
-			variable component-name-filter {
-				value "/(PIC|FPC)[0-9]+:NPU[0-9]*/";
-				description "Regex pattern to filter component names (e.g., FPC1:NPU0, PIC0:NPU)";
-				type string;
-			}
 			sensor sensor-exception-stats {
 				synopsis "Forwarding Block Exception Names and Values";
 				description "Forwarding Block Exception Names and Values";
@@ -24,9 +19,8 @@ healthbot {
 			}
 			field fpc {
 				sensor sensor-exception-stats {
-					where "/components/component/@name =~ {{component-name-filter}}";
-					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
-					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name =~ /^hwds-[\w-]+$/";
 					path "/components/component/@name";
 				}
 				type string;
@@ -34,9 +28,8 @@ healthbot {
 			}
 			field exception-name {
 				sensor sensor-exception-stats {
-					where "/components/component/@name =~ {{component-name-filter}}";
-					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
-					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name =~ /^hwds-[\w-]+$/";
 					path "/components/component/properties/property/@name";
 				}
 				type string;
@@ -44,9 +37,8 @@ healthbot {
 			}
 			field exception-value {
 				sensor sensor-exception-stats {
-					where "/components/component/@name =~ {{component-name-filter}}";
-					where "/components/component/properties/property/@name != 'ts-input-packets-pps'";
-					where "/components/component/properties/property/@name != 'ts-output-packets-pps'";
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name =~ /^hwds-[\w-]+$/";
 					path "/components/component/properties/property/state/value";
 				}
 				type unsigned-integer;
@@ -59,6 +51,46 @@ healthbot {
                 supported-healthbot-version 4.2.0;
                 supported-devices {
                     juniper {
+                        operating-system junosEvolved {
+                            products PTX {
+                                platforms PTX10001-36MR {
+                                    releases 22.2R1 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10002-36QDD {
+                                    releases 22.2R1 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10003 {
+                                    releases 22.2R1 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10004 {
+                                    releases 22.2R1 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10008 {
+                                    releases 22.2R1 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms PTX10016 {
+                                    releases 22.2R1 {
+                                        sensors sensor-exception-stats;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
                         operating-system junos {
                             products MX {
                                 platforms MX204 {
