@@ -1,45 +1,49 @@
 /*
-* DEPRECATED - Will be merged into pfe-stats.rule in the future
-* Rule to get all the Fabric stats (input/output) stats
-* Upstream application will use these stats to find anomaly
+	* REQ: REQ-222
+	* Rule to get Exception Statistics (Drop Counters) for Blackhole Detection.
+	* Each platform will have different exception names.
 */
 healthbot {
-    topic hardware.fpc {
-        rule fabric-stats {
-            keys fpc;
-            synopsis "Fabric transit traffic stats";
-            description "Fabric input/output stats";
-            sensor fabricstats {
-                synopsis "Fabric transit traffic stats";
-                description "GNMI based telemetry which collects ASIC traffic stats";
-                open-config {
-                    sensor-name /junos/system/linecard/packet/usage/;
-                    frequency 60s;
-                }
-            }
-            field ts-fabric-input-packets-pps {
-                sensor fabricstats {
-                    where "/components/component/properties/property/@name == 'ts-fabric-input-packets-pps'";
-                    path /components/component/properties/property/state/value;
-                }
-                type unsigned-integer;
-                description "Fabric input packet rate (pps)";
-            }
-            field ts-fabric-output-packets-pps {
-                sensor fabricstats {
-                    where "/components/component/properties/property/@name == 'ts-fabric-output-packets-pps'";
-                    path /components/component/properties/property/state/value;
-                }
-                type unsigned-integer;
-                description "Fabric output packet rate (pps)";
-            }
-            field fpc {
-                sensor fabricstats {
-                    path "/components/component/@name";
-                }
-                type string;
-                description "FPC name";
-            }
+	topic hardware.fpc {
+		rule exception-stats {
+			keys [ fpc exception-name ];
+			synopsis "Forwarding Block Exception Names and Values";
+			description "Forwarding Block Exception Names and Values";
+			sensor sensor-exception-stats {
+				synopsis "Forwarding Block Exception Names and Values";
+				description "Forwarding Block Exception Names and Values";
+				open-config {
+					sensor-name /junos/system/linecard/packet/usage/;
+					frequency 60s;
+				}
+			}
+			field fpc {
+				sensor sensor-exception-stats {
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name =~ /^hwds-[\w-]+$/";
+					path "/components/component/@name";
+				}
+				type string;
+				description "FPC name";
+			}
+			field exception-name {
+				sensor sensor-exception-stats {
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name =~ /^hwds-[\w-]+$/";
+					path "/components/component/properties/property/@name";
+				}
+				type string;
+				description "Exception Name";
+			}
+			field exception-value {
+				sensor sensor-exception-stats {
+					where "/components/component/@name =~ /(PIC|FPC)[0-9]+:NPU[0-9]*/";
+					where "/components/component/properties/property/@name =~ /^hwds-[\w-]+$/";
+					path "/components/component/properties/property/state/value";
+				}
+				type unsigned-integer;
+				description "Exception Value";
+			}
             rule-properties {
                 version 1;
                 contributor juniper;
@@ -51,44 +55,37 @@ healthbot {
                             products PTX {
                                 platforms PTX10001-36MR {
                                     releases 22.2R1 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10002-36QDD {
                                     releases 22.2R1 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10003 {
                                     releases 22.2R1 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10004 {
                                     releases 22.2R1 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10008 {
                                     releases 22.2R1 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms PTX10016 {
                                     releases 22.2R1 {
-                                        sensors fabricstats;
-                                        release-support min-supported-release;
-                                    }
-                                }
-                            }
-                            products ACX {
-                                platforms ALL {
-                                    releases 22.3R1 {
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
@@ -98,67 +95,67 @@ healthbot {
                             products MX {
                                 platforms MX204 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX240 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX301 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX304 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX480 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX960 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10004 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX10008 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2010 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2008 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms MX2020 {
                                     releases 24.4R2 {
-                                        sensors fabricstats;
+                                        sensors sensor-exception-stats;
                                         release-support min-supported-release;
                                     }
                                 }
