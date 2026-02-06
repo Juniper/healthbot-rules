@@ -1,13 +1,13 @@
 /*
-* Rule to get all the PFE stats(ASIC input/output) stats
+* Rule to get all the PFE stats(ASIC input/output) and Fabric stats
 * Upstream application will use these stats to find anomaly
 */
 healthbot {
     topic hardware.fpc {
         rule pfe-stats {
             keys fpc;
-            synopsis "PFE transit traffic stats";
-            description "PFE ASIC input/output stats";
+            synopsis "PFE and Fabric transit traffic stats";
+            description "PFE ASIC and Fabric input/output stats";
             sensor pfestats {
                 synopsis "PFE transit traffic stats";
                 description "GNMI based telemetry which collects ASIC traffic stats";
@@ -38,6 +38,22 @@ healthbot {
                 }
                 type string;
                 description "FPC name";
+            }
+            field ts-fabric-input-packets-pps {
+                sensor pfestats {
+                    where "/components/component/properties/property/@name == 'ts-fabric-input-packets-pps'";
+                    path /components/component/properties/property/state/value;
+                }
+                type unsigned-integer;
+                description "Fabric input packet rate (pps)";
+            }
+            field ts-fabric-output-packets-pps {
+                sensor pfestats {
+                    where "/components/component/properties/property/@name == 'ts-fabric-output-packets-pps'";
+                    path /components/component/properties/property/state/value;
+                }
+                type unsigned-integer;
+                description "Fabric output packet rate (pps)";
             }
             rule-properties {
                 version 1;
