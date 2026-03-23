@@ -63,7 +63,12 @@
                         field-name "$advertised-route-count-threshold";
                         severity critical;
                     }
-                }				
+                    thresholds advertised-routes-anomaly {
+                        field-name "$advertised-routes-anomaly";
+                        severity minor;
+                        type jaiml-threshold;
+                    }
+                }
             }
             field peer-address {
                 sensor bgp-netconf {
@@ -93,7 +98,12 @@
                         field-name "$received-route-count-threshold";
                         severity critical;
                     }
-                }				
+                    thresholds received-routes-anomaly {
+                        field-name "$received-routes-anomaly";
+                        severity minor;
+                        type jaiml-threshold;
+                    }
+                }
             }
             field advertised-route-count-threshold {
                 constant {
@@ -109,6 +119,24 @@
                 type integer;
                 description "Received routes count increase threshold";
             }
+            field advertised-routes-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$advertised-routes";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on advertised-routes field";
+            }
+            field received-routes-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$received-routes";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on received-routes field";
+            }
             /*
              * Anomaly detection logic.
              */			
@@ -118,9 +146,40 @@
                 description "Sets health based on increase in advertised routes on neighbor session";
                 frequency 1offset;
                 /*
-                 * Sets color to green when advertised-routes is less than or equal to threshold
+                 * Sets color to green when advertised-routes is less than threshold
+                 * and advertised-routes value is normal.
                  */				
                 term route-count-normal {
+                    when {
+                        less-than "$advertised-routes" "$advertised-route-count-threshold";
+                        less-than-or-equal-to "$dvertised-routes-anomaly" 0;
+                    }	
+                    then {
+                        status {                    
+                            color green;
+                            message "Advertised route count($advertised-routes) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when advertised-routes is less than threshold
+                 * and advertised-routes value is anomalous.
+                 */				
+                term route-count-normal {
+                    when {
+                        less-than "$advertised-routes" "$advertised-route-count-threshold";
+                        equal-to "$dvertised-routes-anomaly" 1;
+                    }	
+                    then {
+                        status {                    
+                            color yellow;
+                            message "Advertised route count is anomalous.";
+                        }
+                  
+                /*
+                 * Sets color to green when advertised-routes is less than threshold
+                 */				
+                term route-count-less-than-threshold {
                     when {
                         less-than "$advertised-routes" "$advertised-route-count-threshold";
                     }	
@@ -132,7 +191,7 @@
                     }
                 }
                 /*
-                 * Sets color to red when advertised-routes is greater than threshold
+                 * Sets color to red when advertised-routes is greater than or equal to threshold
                  */				
                 term above-static-threshold {
                     when {
@@ -153,8 +212,40 @@
                 frequency 1offset;
                 /*
                  * Sets color to green when received-routes is less than or equal to threshold
+                 * and received-routes value is normal.
                  */				
                 term route-count-normal {
+                    when {
+                        less-than "$received-routes" "$received-route-count-threshold";
+                        less-than-equal-to "$received-routes-anomaly" 0;
+                    }	
+                    then {
+                        status {                    
+                            color green;
+                            message "Received route count($received-routes) is normal";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when received-routes is less than or equal to threshold
+                 * and received-routes value is anomalous.
+                 */				
+                term route-count-anomalous {
+                    when {
+                        less-than "$received-routes" "$received-route-count-threshold";
+                        equal-to "$received-routes-anomaly" 1;
+                    }	
+                    then {
+                        status {                    
+                            color green;
+                            message "Received route count is anomalous";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when received-routes is less than threshold
+                 */				
+                term route-count-less-than-threshold {
                     when {
                         less-than "$received-routes" "$received-route-count-threshold";
                     }	
@@ -166,7 +257,7 @@
                     }
                 }
                 /*
-                 * Sets color to red when received-routes is greater than threshold
+                 * Sets color to red when received-routes is greater than or equal to threshold
                  */				
                 term above-static-threshold {
                     when {
