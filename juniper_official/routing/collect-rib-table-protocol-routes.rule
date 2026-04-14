@@ -22,6 +22,14 @@
                 }
                 type integer;
                 description "Protocol active route count";
+                plots protocol-routes-count {
+                    unit count;
+                    triggers protocol-routes-count;
+                    thresholds route-count-threshold {
+                        field-name "$threshold";
+                        severity critical;
+                    }
+                }				
             }
             field protocol-name {
                 sensor route-protocol-summary {
@@ -37,14 +45,6 @@
                 }
                 type integer;
                 description "Protocol route count";
-                plots protocol-total-route-count {
-                    unit count;
-                    triggers protocol-routes-count;
-                    thresholds route-count-threshold {
-                        field-name "$threshold";
-                        severity critical;
-                    }
-                }
             }
             field table-name {
                 sensor route-protocol-summary {
@@ -66,23 +66,23 @@
                 frequency 1offset;
                 term protocol-route-count-ok {
                     when {
-                        less-than "$protocol-total-route-count" "$threshold";
+                        less-than "$active-route-count" "$threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count)is normal and active route count is ($active-route-count)";
+                            message "Protocol $protocol-name of route-table ($table-name) active route count($active-route-count)is normal and total route count is ($protocol-total-route-count)";
                         }
                     }
                 }
                 term above-static-threshold {
                     when {
-                        greater-than-or-equal-to "$protocol-total-route-count" "$threshold";
+                        greater-than-or-equal-to "$active-route-count" "$threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Protocol $protocol-name of route-table ($table-name) route count($protocol-total-route-count) is abnormal and active route count is ($active-route-count)";
+                            message "Protocol $protocol-name of route-table ($table-name) active route count($active-route-count) is abnormal and total route count is ($protocol-total-route-count)";
                         }
                     }
                 }
