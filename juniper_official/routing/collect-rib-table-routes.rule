@@ -24,7 +24,7 @@
                 description "Active route count";
                 plots active-route-count {
                     unit count;
-                    triggers route-table-total-routes-count;
+                    triggers route-table-routes-count;
                     thresholds route-count-threshold {
                         field-name "$threshold";
                         severity critical;
@@ -77,20 +77,20 @@
             /*
              * Anomaly detection logic.
              */			
-            trigger route-table-total-routes-count {
-                alert-type routing.rib.routes.count.route-table-total-routes-count;			
+            trigger route-table-routes-count {
+                alert-type routing.rib.routes.count.route-table-routes-count;			
                 frequency 1offset;
                 /*
                  * Sets color to green when route-count is less-than-or-equal-to than threshold
                  */				
                 term route-count-normal {
                     when {
-                        less-than "$table-total-route-count" "$threshold";
+                        less-than "$active-route-count" "$threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "Route table($table-name) total route count($table-total-route-count) is normal and active route count is ($active-route-count)";
+                            message "Route table($table-name) active route count($active-route-count) is normal and total route count is ($table-total-route-count)";
                         }
                     }
                 }
@@ -99,12 +99,12 @@
                  */				
                 term is-route-count-abnormal {
                     when {
-                        greater-than-or-equal-to "$table-total-route-count" "$threshold";
+                        greater-than-or-equal-to "$active-route-count" "$threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "Route table($table-name) total route count($table-total-route-count) is abnormal and active route count is ($active-route-count)";
+                            message "Route table($table-name) active route count($active-route-count) is abnormal and total route count is ($table-total-route-count)";
                         }
                     }
                 }
