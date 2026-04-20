@@ -6,6 +6,7 @@
  */
  healthbot {
     topic vpn.l2circuit {
+        description "Collects L2Circuit connection state periodically and notifies anomaly when the connection is down";
         rule check-l2circuit-pw-state {
             keys [ neighbor connection-id ];
             sensor l2ckt {
@@ -64,7 +65,8 @@
                     triggers l2circuit-connection-status;
                 }				
             }
-            trigger l2circuit-connection-status {
+            trigger l2circuit-connection-status {                
+                description "Evaluates l2circuit connection status and raises events for connection-up, standby, or down states.";                
                 alert-type vpn.eline-l2circuit-nsm.state.connection-status;			
                 frequency 1offset;
                 term is-l2ckt-connection-up {

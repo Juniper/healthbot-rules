@@ -7,6 +7,7 @@
  */
  healthbot {
     topic evpn {
+        description "Collects EVPN instance interface state periodically and notifies anomaly when the interface is down";
         rule check-evpn-instance-state {
             keys [ evpn-instance-name evpn-interface-name ];
             sensor evpn {
@@ -53,9 +54,13 @@
                     triggers evpn-instance-state;
                 }				
             }
-            trigger evpn-instance-state {
+            trigger evpn-instance-state {                
+                description "Evaluates EVPN instance interface state and raises healthy or down anomaly events.";                
                 alert-type vpn.evpn.state.instance-state;			
                 frequency 1offset;
+                /*
+                 * Sets color to green when EVPN interface state is UP
+                 */
                 term is-evpn-instance-up {
                     when {
                         matches-with "$evpn-interface-status" Up {
@@ -69,6 +74,9 @@
                         }
                     }
                 }
+                /*
+                 * Sets color to red when EVPN interface state is Down
+                 */
                 term evpn-instance-down {
                     then {
                         status {
