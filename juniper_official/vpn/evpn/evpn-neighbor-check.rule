@@ -7,6 +7,7 @@
  */
  healthbot {
     topic evpn {
+        description "Collects EVPN neighbor count periodically and notifies anomaly when a neighbor disappears";
         rule check-evpn-neighbor {
             keys evpn-instance-name;
             sensor evpnNeighbors {
@@ -22,12 +23,14 @@
                     path evpn-instance-name;
                 }
                 type string;
+                description "EVPN instance name";
             }
             field evpn-num-neighbors {
                 sensor evpnNeighbors {
                     path evpn-num-neighbors;
                 }
                 type integer;
+                description "Number of EVPN neighbors";
                 plots evpn-neighbors {
                     unit count;
                     triggers evpn-neighbor-state;
@@ -36,8 +39,10 @@
             variable instance-name {
                 value .*;
                 type string;
+                description "evpn instance-name to be monitored in regex.";
             }
-            trigger evpn-neighbor-state {
+            trigger evpn-neighbor-state {                
+                description "Evaluates EVPN neighbor count and raises anomaly when the neighbor count is zero.";                
                 alert-type vpn.evpn.state.neighbor-state;			
                 frequency 1offset;
                 term is-evpn-neighbor-exists {
