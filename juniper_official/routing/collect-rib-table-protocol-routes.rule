@@ -29,7 +29,12 @@
                         field-name "$threshold";
                         severity critical;
                     }
-                }				
+                    thresholds active-route-count-anomaly {
+                        field-name "$active-route-count-anomaly";
+                        severity minor;
+                        type jaiml-threshold;
+                    }
+                }
             }
             field protocol-name {
                 sensor route-protocol-summary {
@@ -61,9 +66,50 @@
                 type integer;
                 description "Route count static threshold";
             }
+            field active-route-count-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$active-route-count";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on active-route-count field";
+            }
             trigger protocol-routes-count {
                 alert-type routing.rib.protocol.routes.count.protocol-routes-count;
                 frequency 1offset;
+                /*
+                 * Sets color to green when active-route-count is less than threshold
+                 * and active-route-count value is normal.
+                 */
+                term protocol-route-count-normal {
+                    when {
+                        less-than "$active-route-count" "$threshold";
+                        less-than-or-equal-to "$active-route-count-anomaly" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Protocol $protocol-name of route-table ($table-name) active route count($active-route-count)is normal and total route count is ($protocol-total-route-count)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when active-route-count is less than threshold
+                 * and active-route-count value is anomalous.
+                 */
+                term protocol-route-count-anomalous {
+                    when {
+                        less-than "$active-route-count" "$threshold";
+                        equal-to "$active-route-count-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Protocol $protocol-name of route-table ($table-name) active route count is anomalous";
+                        }
+                    }
+                }
                 term protocol-route-count-ok {
                     when {
                         less-than "$active-route-count" "$threshold";
@@ -91,7 +137,7 @@
                 value 10000;
                 description "Route table's route-count threshold";
                 type int;
-            }			
+            }
             variable route-protocol-name {
                 value .+;
                 description "Route table specific routes, regular expression, e.g. 'BGP|RSVP|IS-ISI'";
@@ -171,8 +217,8 @@
                                         release-support min-supported-release;
                                     }
                                 }
-                            }							
-                        }						
+                            }
+                        }
                     }
                 }
                 helper-files other {

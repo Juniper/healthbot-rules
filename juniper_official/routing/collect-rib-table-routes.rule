@@ -29,7 +29,12 @@
                         field-name "$threshold";
                         severity critical;
                     }
-                }				
+                    thresholds active-route-count-anomaly {
+                        field-name "$active-route-count-anomaly";
+                        severity minor;
+                        type jaiml-threshold;
+                    }
+                }
             }
             field destination-count {
                 sensor route-summary {
@@ -74,16 +79,57 @@
                 type integer;
                 description "Route count static threshold";
             }
+            field active-route-count-anomaly {
+                formula {
+                    jaiml-anomaly-detection {
+                        field-name "$active-route-count";
+                    }
+                }
+                type integer;
+                description "JAIML anomaly detection on active-route-count field";
+            }
             /*
              * Anomaly detection logic.
-             */			
+             */
             trigger route-table-routes-count {
-                alert-type routing.rib.routes.count.route-table-routes-count;			
+                alert-type routing.rib.routes.count.route-table-routes-count;
                 frequency 1offset;
                 /*
-                 * Sets color to green when route-count is less-than-or-equal-to than threshold
-                 */				
+                 * Sets color to green when active-route-count is less than threshold
+                 * and active-route-count value is normal.
+                 */
                 term route-count-normal {
+                    when {
+                        less-than "$active-route-count" "$threshold";
+                        less-than-or-equal-to "$active-route-count-anomaly" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Route table($table-name) active route count($active-route-count) is normal and total route count is ($table-total-route-count)";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to yellow when active-route-count is less than threshold
+                 * and active-route-count value is anomalous.
+                 */
+                term route-count-anomalous {
+                    when {
+                        less-than "$active-route-count" "$threshold";
+                        equal-to "$active-route-count-anomaly" 1;
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "Route table($table-name) active route count is anomalous";
+                        }
+                    }
+                }
+                /*
+                 * Sets color to green when route-count is less-than-or-equal-to than threshold
+                 */
+                term route-count-less-than-threshold {
                     when {
                         less-than "$active-route-count" "$threshold";
                     }
@@ -96,7 +142,7 @@
                 }
                 /*
                  * Sets color to red when route-count is greater than threshold
-                 */				
+                 */
                 term is-route-count-abnormal {
                     when {
                         greater-than-or-equal-to "$active-route-count" "$threshold";
@@ -113,7 +159,7 @@
                 value 10000;
                 description "Route table's route-count threshold";
                 type int;
-            }			
+            }
             variable route-table-name {
                 value .+;
                 description "Route table specific routes, regular expression, e.g. 'inet.0|inet6.0|vpn_1.inet6.0'";
@@ -187,9 +233,9 @@
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-                        }						
+                                }
+                            }
+                        }
                     }
                 }
                 helper-files other {
