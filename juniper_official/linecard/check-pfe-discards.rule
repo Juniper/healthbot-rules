@@ -37,10 +37,6 @@ healthbot {
                 }
                 type integer;
                 description "Bad route discard count";
-                plots bad-route-discard-plot {
-                    unit count;
-                    triggers pfe-bad-route-discard;
-                }				
             }
             field bits-to-test-discard {
                 sensor pfe-sensor-netconf {
@@ -48,10 +44,6 @@ healthbot {
                 }
                 type integer;
                 description "Bits to test discard count";
-                plots bits-to-test-discard-plot {
-                    unit count;
-                    triggers pfe-bits-to-test-discard;
-                }				
             }
             field data-error-discard {
                 sensor pfe-sensor-netconf {
@@ -59,10 +51,6 @@ healthbot {
                 }
                 type integer;
                 description "Data error discard count";
-                plots data-error-discard-plot {
-                    unit count;
-                    triggers pfe-data-error-discard;
-                }				
             }
             field drop-threshold {
                 constant {
@@ -77,10 +65,6 @@ healthbot {
                 }
                 type integer;
                 description "Fabric discard count";
-                plots fabric-discards-plot {
-                    unit count;
-                    triggers pfe-fabric-discards;
-                }				
             }
             field info-cell-discard {
                 sensor pfe-sensor-netconf {
@@ -88,10 +72,6 @@ healthbot {
                 }
                 type integer;
                 description "Info cell discard count";
-                plots info-cell-discard-plot {
-                    unit count;
-                    triggers pfe-info-cell-discard;
-                }				
             }
             field invalid-iif-discard {
                 sensor pfe-sensor-netconf {
@@ -99,10 +79,6 @@ healthbot {
                 }
                 type integer;
                 description "Invalid IIF discard count";
-                plots invalid-iif-discard-plot {
-                    unit count;
-                    triggers pfe-invalid-iif-discard;
-                }				
             }
             field nexthop-discard {
                 sensor pfe-sensor-netconf {
@@ -110,10 +86,6 @@ healthbot {
                 }
                 type integer;
                 description "Nexthop discard count";
-                plots nexthop-discard-plot {
-                    unit count;
-                    triggers pfe-nexthop-discard;
-                }				
             }
             field stack-overflow-discard {
                 sensor pfe-sensor-netconf {
@@ -121,10 +93,6 @@ healthbot {
                 }
                 type integer;
                 description "Stack overflow discard count";
-                plots stack-overflow-discard-plot {
-                    unit count;
-                    triggers pfe-stack-overflow-discard;
-                }				
             }
             field stack-underflow-discard {
                 sensor pfe-sensor-netconf {
@@ -132,10 +100,6 @@ healthbot {
                 }
                 type integer;
                 description "Stack underflow discard count";
-                plots stack-underflow-discard-plot {
-                    unit count;
-                    triggers pfe-stack-underflow-discard;
-                }				
             }
             field tcp-header-error-discard {
                 sensor pfe-sensor-netconf {
@@ -143,10 +107,6 @@ healthbot {
                 }
                 type integer;
                 description "TCP header error discard count";
-                plots tcp-header-error-discard-plot {
-                    unit count;
-                    triggers pfe-tcp-header-error-discard;
-                }				
             }
             field bad-route-discard-rate {
                 formula {
@@ -241,396 +201,6 @@ healthbot {
             /*
             * Anomaly detection logic.
             */			
-            trigger pfe-data-error-discard {
-                alert-type hardware.fpc.pfe.pfe-data-error-discard;
-                synopsis "PFE data error discards KPI";
-                description "Sets health based on the change in PFE data error discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when data-error-discard is same as previous value.
-                 */				
-                term no-data-error-discard {
-                    when {
-                        matches-with-previous "$data-error-discard"{
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "Data-error-discard count $data-error-discard";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red when data-error-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-data-error-discard {
-                    when {
-                        increasing-at-least-by-value "$data-error-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing data-error-discard count $data-error-discard at the rate $data-error-discard-rate per minute ";
-                        }
-                    }
-                }
-            }
-            trigger pfe-bad-route-discard {
-                alert-type hardware.fpc.pfe.pfe-bad-route-discard;			
-                synopsis "PFE bad route discards KPI";
-                description "Sets health based on the change in PFE bad route discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when bad-route-discard is same as previous value.
-                 */				
-                term no-bad-route-discard {
-                    when {
-                        matches-with-previous "$bad-route-discard"{
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "bad-route-discard count $bad-route-discard";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to red when bad-route-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-bad-route-discard {
-                    when {
-                        increasing-at-least-by-value "$bad-route-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing bad-route-discard drop count $bad-route-discard at the rate $bad-route-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-bits-to-test-discard {
-                alert-type hardware.fpc.pfe.pfe-bits-to-test-discard;			
-                synopsis "PFE bits to test discards KPI";
-                description "Sets health based on the change in PFE bits to test discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when bits-to-test-discard is same as previous value.
-                 */
-                term no-bits-to-test-discard {
-                    when {
-                        matches-with-previous "$bits-to-test-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "Bits-to-test-discard count $bits-to-test-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when bits-to-test-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-bits-to-test-discard {
-                    when {
-                        increasing-at-least-by-value "$bits-to-test-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing bits-to-test-discard drop count $bits-to-test-discard at the rate $bits-to-test-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-fabric-discards {
-                alert-type hardware.fpc.pfe.pfe-fabric-discards;			
-                synopsis "PFE fabric discards KPI";
-                description "Sets health based on the change in PFE fabric discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when fabric-discard is same as previous value.
-                 */
-                term no-fabric-drop {
-                    when {
-                        matches-with-previous "$fabric-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "Fabric drop count $fabric-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when fabric-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-fabric-drop {
-                    when {
-                        increasing-at-least-by-value "$fabric-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing fabric drop count $fabric-discard at the rate $fabric-discard-rate per minute.";
-                        }
-                    }
-                }
-            }
-            trigger pfe-info-cell-discard {
-                alert-type hardware.fpc.pfe.pfe-info-cell-discard;			
-                synopsis "PFE info cell discards KPI";
-                description "Sets health based on the change in PFE info cell discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when info-cell-discard is same as previous value.
-                 */
-                term no-info-cell-discard {
-                    when {
-                        matches-with-previous "$info-cell-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "info-cell-discard count $info-cell-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when info-cell-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-info-cell-discard {
-                    when {
-                        increasing-at-least-by-value "$info-cell-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing info-cell-discard drop count $info-cell-discard at the rate $info-cell-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-invalid-iif-discard {
-                alert-type hardware.fpc.pfe.pfe-invalid-iif-discard;			
-                synopsis "PFE invalid IIF discards KPI";
-                description "Sets health based on the change in PFE invalid IIF discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when invalid-iif-discard is same as previous value.
-                 */
-                term no-invalid-iif-discard {
-                    when {
-                        matches-with-previous "$invalid-iif-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "invalid-iif-discard count $invalid-iif-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when invalid-iif-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-invalid-iif-discard {
-                    when {
-                        increasing-at-least-by-value "$invalid-iif-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing invalid-iif-discard drop count $invalid-iif-discard at the rate $invalid-iif-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-nexthop-discard {
-                alert-type hardware.fpc.pfe.pfe-nexthop-discard;			
-                synopsis "PFE nexthop discards KPI";
-                description "Sets health based on the change in PFE nexthop discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when nexthop-discard is same as previous value.
-                 */
-                term no-nexthop-discard {
-                    when {
-                        matches-with-previous "$nexthop-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "nexthop-discard count $nexthop-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when nexthop-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-nexthop-discard {
-                    when {
-                        increasing-at-least-by-value "$nexthop-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing nexthop-discard drop count $nexthop-discard at the rate $nexthop-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-stack-overflow-discard {
-                alert-type hardware.fpc.pfe.pfe-stack-overflow-discard;			
-                synopsis "PFE stack overflow discards KPI";
-                description "Sets health based on the change in PFE stack overflow discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when stack-overflow-discard is same as previous value.
-                 */
-                term no-stack-overflow-discard {
-                    when {
-                        matches-with-previous "$stack-overflow-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "Stack-overflow-discard count $stack-overflow-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when stack-overflow-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-stack-overflow-discard {
-                    when {
-                        increasing-at-least-by-value "$stack-overflow-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing stack-overflow-discard drop count $stack-overflow-discard at the rate $stack-overflow-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-stack-underflow-discard {
-                alert-type hardware.fpc.pfe.pfe-stack-underflow-discard;			
-                synopsis "PFE stack underflow discards KPI";
-                description "Sets health based on the change in PFE stack underflow discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when stack-underflow-discard is same as previous value.
-                 */
-                term no-stack-underflow-discard {
-                    when {
-                        matches-with-previous "$stack-underflow-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "Stack-underflow-discard count $stack-underflow-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when stack-underflow-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-stack-underflow-discard {
-                    when {
-                        increasing-at-least-by-value "$stack-underflow-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing stack-underflow-discard drop count $stack-underflow-discard at the rate $stack-underflow-discard-rate per minute";
-                        }
-                    }
-                }
-            }
-            trigger pfe-tcp-header-error-discard {
-                alert-type hardware.fpc.pfe.pfe-tcp-header-error-discard;			
-                synopsis "PFE TCP header error discards KPI";
-                description "Sets health based on the change in PFE TCP header error discard count";
-                frequency 1offset;
-                /*
-                 * Sets color to green when tcp-header-error-discard is same as previous value.
-                 */
-                term no-tcp-header-error-discard {
-                    when {
-                        matches-with-previous "$tcp-header-error-discard"{
-                            time-range 2.5offset;
-                        }
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "Tcp-header-error-discard count $tcp-header-error-discard";
-                        }
-                    }
-                }				 
-                /*
-                 * Sets color to red when tcp-header-error-discard is increasing-at-least-by-value drop-threshold.
-                 */				
-                term is-tcp-header-error-discard {
-                    when {
-                        increasing-at-least-by-value "$tcp-header-error-discard" {
-                            value "$drop-threshold";
-                            time-range 2.5offset;
-                        }
-                    }
-                    then {
-                        status {
-                            color red;
-                            message "Increasing tcp-header-error-discard drop count $tcp-header-error-discard at the rate $tcp-header-error-discard-rate per minute";
-                        }
-                    }
-                }
-            }
             variable discard-count {
                 value 1;
                 description "PFE discard threshold: Number of discards increase between metrics, before we report anomaly";
