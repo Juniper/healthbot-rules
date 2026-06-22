@@ -2,24 +2,24 @@
  * Monitor interface optics stats like signal loss, power, and errors and notify anomalies
  *
  * Req 72 : https://paragon-automation.atlassian.net/browse/REQ-72
- * 
+ *
  */
 healthbot {
     topic interfaces {
         rule check-optical-signal-loss-fec-tx-rx-power {
             /*
-             * Checks for tx and rx signal loss and notifies via dashboard ,red color 
-             * when there is no signal else green. 
-             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
+             * Checks for tx and rx signal loss and notifies via dashboard ,red color
+             * when there is no signal else green.
+             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than
              * threshold values and notifies by displaying green,yellow and red alarms.
              * Use interface-name as key for the rule.
-             */		
+             */
             keys [ interface-name lane-index ];
             synopsis "KPI for  interface optical degradation";
             description "Monitor the interface optical degradation";
             /*
              * Sensor configuration to get data from network devices.
-             */			
+             */
             sensor optical-sensor-oc {
                 synopsis "Interface optics sensor definition";
                 description "Sensor to collects data from network device";
@@ -33,24 +33,24 @@ healthbot {
                     sensor-name /junos/system/linecard/optics/;
                     frequency 60s;
                 }
-            }			
+            }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */			
+             */
             field fec-uncorrected {
                 sensor optical-sensor-oc {
                     path /interfaces/interface/optics/lanediags/lane/media_fec_uncorr_blocks;
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/media_fec_uncorr_blocks;
-                }				
+                }
                 type integer;
                 description "Number of code blocks received that could not be corrected. A non-zero value equals packet loss";
                 plots fec-uncorrected {
                     unit count;
                     triggers uncorrected-forward-error-correction-errors;
-                }				
+                }
             }
             field lane-index {
                 sensor optical-sensor-oc {
@@ -58,7 +58,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path "/interfaces/interface/optics/lanediags/lane/@number";
-                }				
+                }
                 type string;
                 description "Interface lane index";
             }
@@ -70,7 +70,7 @@ healthbot {
                 sensor optical-sensor-oc-junos {
                     where "/interfaces/interface/@name =~ /{{interface-name}}/";
                     path "/interfaces/interface/@name";
-                }				
+                }
                 type string;
                 description "Interface name";
             }
@@ -80,7 +80,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/lane_rx_loss_of_signal_alarm;
-                }				
+                }
                 type string;
                 description "RX loss of signal alarm";
                 enumerate __default__ as -1;
@@ -88,7 +88,7 @@ healthbot {
                 enumerate true as 1;
                 plots rx-loss-of-signal-alarm {
                     triggers interface-rx-loss-of-signal-functionality;
-                }				
+                }
             }
             field tx-laser-disabled-alarm {
                 sensor optical-sensor-oc {
@@ -96,7 +96,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/lane_tx_laser_disabled_alarm;
-                }				
+                }
                 type string;
                 description "tx laster disabled alarm";
                 enumerate __default__ as -1;
@@ -104,7 +104,7 @@ healthbot {
                 enumerate true as 1;
                 plots tx-laser-disabled-alarm {
                     triggers interface-tx-laser-disabled-alarm;
-                }				
+                }
             }
             field tx-loss-of-signal-functionality-alarm {
                 sensor optical-sensor-oc {
@@ -112,7 +112,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/lane_tx_loss_of_signal_alarm;
-                }				
+                }
                 type string;
                 description "tx loss of signal functionality alarm";
                 enumerate __default__ as -1;
@@ -120,7 +120,7 @@ healthbot {
                 enumerate true as 1;
                 plots tx-loss-of-signal-functionality {
                     triggers interface-tx-loss-of-signal-functionality;
-                }				
+                }
             }
             field rx-high-alarm-threshold {
                 sensor optical-sensor-oc {
@@ -128,7 +128,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_rx_power_high_alarm_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default rx power high alarm threshold.";
             }
@@ -138,7 +138,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_rx_power_high_warning_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default rx power high warning threshold.";
             }
@@ -148,7 +148,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_rx_power_low_alarm_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default rx power low alarm threshold.";
             }
@@ -158,7 +158,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_rx_power_low_warning_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default rx power low warning threshold.";
             }
@@ -168,7 +168,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/lane_laser_receiver_power_dbm;
-                }				
+                }
                 type float;
                 description "rx power level of the optical module.";
                 plots optics-rx-power {
@@ -181,7 +181,7 @@ healthbot {
                     thresholds rx-high-warning-threshold {
                         field-name "$rx-high-warning-threshold";
                         severity minor;
-                    }					
+                    }
                     thresholds rx-low-alarm-threshold {
                         field-name "$rx-low-alarm-threshold";
                         severity critical;
@@ -190,12 +190,7 @@ healthbot {
                         field-name "$rx-low-warning-threshold";
                         severity minor;
                     }
-                    thresholds optics-rx-power-anomaly {
-                        field-name "$optics-rx-power-anomaly";
-                        severity minor;
-                        type jaiml-threshold;						
-                    }					
-                }				
+                }
             }
             field optics-tx-power {
                 sensor optical-sensor-oc {
@@ -203,7 +198,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/lane_laser_output_power_dbm;
-                }				
+                }
                 type float;
                 description "output power level of the optical module.";
                 plots optics-rx-power {
@@ -216,7 +211,7 @@ healthbot {
                     thresholds tx-high-warning-threshold {
                         field-name "$tx-high-warning-threshold";
                         severity minor;
-                    }					
+                    }
                     thresholds tx-low-alarm-threshold {
                         field-name "$tx-low-alarm-threshold";
                         severity critical;
@@ -225,12 +220,7 @@ healthbot {
                         field-name "$tx-low-warning-threshold";
                         severity minor;
                     }
-                    thresholds optics-tx-power-anomaly {
-                        field-name "$optics-tx-power-anomaly";
-                        severity minor;
-                        type jaiml-threshold;						
-                    }					
-                }				
+                }
             }
             field optics-current {
                 sensor optical-sensor-oc {
@@ -238,7 +228,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/lanediags/lane/lane_laser_bias_current;
-                }				
+                }
                 type float;
                 description "laser bias current of the optical module.";
             }
@@ -248,7 +238,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_output_power_high_alarm_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default tx power high alarm threshold.";
             }
@@ -258,7 +248,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_output_power_high_warning_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default tx power high warning threshold.";
             }
@@ -268,7 +258,7 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_output_power_low_alarm_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default tx power low alarm threshold.";
             }
@@ -278,39 +268,21 @@ healthbot {
                 }
                 sensor optical-sensor-oc-junos {
                     path /interfaces/interface/optics/laser_output_power_low_warning_threshold_dbm;
-                }				
+                }
                 type float;
                 description "Default tx power low warning threshold.";
             }
-            field optics-rx-power-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$optics-rx-power";
-                    }
-                }
-                type integer;
-                description "JAIML anomaly detection for optics input power field";
-            }
-            field optics-tx-power-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$optics-tx-power";
-                    }
-                }
-                type integer;
-                description "JAIML anomaly detection for optics output power field";
-            }
             /*
              * Anomaly detection logic.
-             */			
+             */
             trigger uncorrected-forward-error-correction-errors {
                 alert-type interfaces.optical.errors.uncorrected-forward-error-correction-errors;
                 synopsis "Uncorrected forward error correction errors KPI";
-                description "Sets health based on Uncorrected forward error correction errors";			
+                description "Sets health based on Uncorrected forward error correction errors";
                 frequency 1offset;
                 /*
                  * Sets color to green when fec uncorrected error is equal to 0
-                 */				
+                 */
                 term no-fec-uncorrected-errors {
                     when {
                         equal-to "$fec-uncorrected" 0;
@@ -324,11 +296,11 @@ healthbot {
                 }
                 /*
                  * Sets color to red when fec uncorrected error is greater than 0.
-                 */				
+                 */
                 term fec-uncorrected-errors-present {
                     when {
                         not-equal-to "$fec-uncorrected" 0;
-                    }				
+                    }
                     then {
                         status {
                             color red;
@@ -340,11 +312,11 @@ healthbot {
             trigger interface-rx-loss-of-signal-functionality {
                 alert-type interfaces.rx.los.interface-rx-loss-of-signal-functionality;
                 synopsis "Interface rx loss of signal functionality KPI";
-                description "Sets health based on Interface rx loss of signal functionality";			
+                description "Sets health based on Interface rx loss of signal functionality";
                 frequency 1offset;
                 /*
                  * Sets color to green when loss of signal functionality alarm is off.
-                 */				
+                 */
                 term is-rx-loss-of-signal-functionality-off {
                     when {
                         matches-with "$rx-loss-of-signal-alarm" false {
@@ -360,7 +332,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when loss of signal functionality alarm is ON.
-                 */				
+                 */
                 term is-rx-loss-of-signal-functionality-exists {
                     when {
                         exists "$rx-loss-of-signal-alarm";
@@ -376,11 +348,11 @@ healthbot {
             trigger interface-tx-laser-disabled-alarm {
                 alert-type interfaces.tx.laser_disabled_alarm.interface-tx-laser-disabled-alarm;
                 synopsis "Interface tx laser disabled alarm KPI";
-                description "Sets health based on Interface tx laser disabled alarm";			
+                description "Sets health based on Interface tx laser disabled alarm";
                 frequency 1offset;
                 /*
                  * Sets color to green when tx-laser-disabled-alarm is OFF.
-                 */				
+                 */
                 term is-tx-laser-disabled-alarm-off {
                     when {
                         matches-with "$tx-laser-disabled-alarm" false {
@@ -396,7 +368,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red tx-laser-disabled-alarm is ON.
-                 */				
+                 */
                 term is-tx-laser-disabled-alarm-exists {
                     when {
                         exists "$tx-laser-disabled-alarm";
@@ -412,11 +384,11 @@ healthbot {
             trigger interface-tx-loss-of-signal-functionality {
                 alert-type interfaces.tx.los.interface-tx-loss-of-signal-functionality;
                 synopsis "Interface tx loss of signal functionality KPI";
-                description "Sets health based on Interface tx loss of signal functionality";			
+                description "Sets health based on Interface tx loss of signal functionality";
                 frequency 1offset;
                 /*
                  * Sets color to green when tx-loss-of-signal-functionality is OFF.
-                 */				
+                 */
                 term is-tx-loss-of-signal-functionality-off {
                     when {
                         matches-with "$tx-loss-of-signal-functionality-alarm" false {
@@ -432,7 +404,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when tx-loss-of-signal-functionality is ON.
-                 */				
+                 */
                 term is-tx-loss-of-signal-functionality-exists {
                     when {
                         exists "$tx-loss-of-signal-functionality-alarm";
@@ -452,41 +424,8 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when optic rx power is betweeen rx-below-low-warning-threshold
-                 * and rx-high-warning-threshold				 
-                 */				
-                term normal-rx-power {
-                    when {
-                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
-                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
-                        less-than-or-equal-to "$optics-rx-power-anomaly" 0;
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name,lane $lane-index Rx power $optics-rx-power is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when optics rx power is not in between predicted range.
-                 */				
-                term anomalous-rx-power {
-                    when {
-                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
-                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
-                        equal-to "$optics-rx-power-anomaly" 1;
-                        }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name,lane $lane-index Rx power is anomalous";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to green when optic rx power is betweeen rx-below-low-warning-threshold
-                 * and rx-high-warning-threshold				 
-                 */				
+                 * and rx-high-warning-threshold
+                 */
                 term rx-betweeen-warning-threshold {
                     when {
                         greater-than "$optics-rx-power" "$rx-low-warning-threshold";
@@ -502,7 +441,7 @@ healthbot {
                 /*
                  * Sets color to yellow when optics rx power is greater-than-or-equal-to rx-high-warning-threshold
 				 * and less-than-or-equal-to rx-high-alarm-threshold
-                 */				
+                 */
                 term rx-above-high-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optics-rx-power" "$rx-high-warning-threshold";
@@ -518,7 +457,7 @@ healthbot {
                 /*
                  * Sets color to yellow when optics rx power is greater-than-or-equal-to rx-low-alarm-threshold
 				 * and less-than-or-equal-to rx-low-warning-threshold
-                 */				
+                 */
                 term rx-below-low-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
@@ -533,7 +472,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when optics rx power is greater-than rx-high-alarm-threshold.
-                 */				
+                 */
                 term rx-above-high-alarm-threshold {
                     when {
                         greater-than "$optics-rx-power" "$rx-high-alarm-threshold";
@@ -547,7 +486,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when optics rx power is lesser-than rx-low-alarm-threshold.
-                 */				
+                 */
                 term rx-below-low-alarm-threshold {
                     when {
                         less-than "$optics-rx-power" "$rx-low-alarm-threshold";
@@ -567,41 +506,8 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when optic tx power is betweeen tx-low-warning-threshold
-                 * and tx-high-warning-threshold				 
-                 */				
-                term normal-tx-power {
-                    when {
-                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
-                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
-                        less-than-or-equal-to "$optics-tx-power-anomaly" 0;
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name,lane $lane-index Tx power $optics-tx-power is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when optics tx power is not in between predicted range.
-                 */				
-                term anomalous-tx-power {
-                    when {
-                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
-                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
-                        equal-to "$optics-tx-power-anomaly" 1;
-                        }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name, lane $lane-index Tx power is anomalous";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to green when optic tx power is betweeen tx-low-warning-threshold
-                 * and tx-high-warning-threshold				 
-                 */				
+                 * and tx-high-warning-threshold
+                 */
                 term tx-betweeen-warning-threshold {
                     when {
                         greater-than "$optics-tx-power" "$tx-low-warning-threshold";
@@ -616,8 +522,8 @@ healthbot {
                 }
                 /*
                  * Sets color to yellow when optic tx power is greater-than-or-equal-to tx-high-warning-threshold
-                 * and less-than-or-equal-to tx-high-alarm-threshold				 
-                 */				
+                 * and less-than-or-equal-to tx-high-alarm-threshold
+                 */
                 term tx-above-high-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optics-tx-power" "$tx-high-warning-threshold";
@@ -632,8 +538,8 @@ healthbot {
                 }
                 /*
                  * Sets color to yellow when optic tx power is greater-than-or-equal-to tx-low-alarm-threshold
-                 * and less-than-or-equal-to tx-low-warning-threshold				 
-                 */				
+                 * and less-than-or-equal-to tx-low-warning-threshold
+                 */
                 term tx-below-low-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
@@ -648,7 +554,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when optics tx power is greater-than tx-high-alarm-threshold.
-                 */				
+                 */
                 term tx-above-high-alarm-threshold {
                     when {
                         greater-than "$optics-tx-power" "$tx-high-alarm-threshold";
@@ -662,7 +568,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when optics tx power is greater-than tx-low-alarm-threshold.
-                 */				
+                 */
                 term tx-lesser-than-low-alarm-threshold {
                     when {
                         less-than "$optics-tx-power" "$tx-low-alarm-threshold";
@@ -679,7 +585,7 @@ healthbot {
                 value .*;
                 description "Name of the interface.";
                 type string;
-                value-type interface;				
+                value-type interface;
             }
             rule-properties {
                 version 1;
@@ -694,11 +600,11 @@ healthbot {
                     tier 1;
                 }
                 supported-devices {
-                    sensors optical-sensor-oc;				
+                    sensors optical-sensor-oc;
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
-                                sensors optical-sensor-oc;							
+                                sensors optical-sensor-oc;
                                 platforms ACX7024 {
                                     releases 23.2R1 {
                                         release-support min-supported-release;
@@ -708,10 +614,10 @@ healthbot {
                                     releases 23.2R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
-                        }							
-                        operating-system junos {							
+                        }
+                        operating-system junos {
                             products MX {
                                 sensors optical-sensor-oc;
                                 platforms MX304 {
@@ -738,7 +644,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products JNP {
                                 sensors optical-sensor-oc;
@@ -756,12 +662,12 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
+                                }
+                            }
 						}
                     }
                 }
             }
         }
     }
-}	
+}

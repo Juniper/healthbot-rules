@@ -1,12 +1,12 @@
 /*
  * Monitors interface KPI's and notifies when anomalies are found.
  * Five inputs control detection
- * 
+ *
  *   1) interface-name, is a regular expression that matches the
  *      interfaces that you would like to monitor.  By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
- * 
+ *
  *   2) errors-threshold-variable, is the threshold that causes the rule to report
  *      an anomaly.  By default it's 1. This rule will set a dashboard
  *      color to red when *all* the error increases are greater than
@@ -14,10 +14,10 @@
  *      period of less than 180s, it'll turn the color to yellow,
  *      otherwise color is set to green.
  *
- *   3) traffic-high-threshold, is the threshold that causes the rule to 
- *      report an anomaly.  By default it's 80. This rule will 
- *      set a dashboard color to red when *all* the input traffic is above 
- *      threshold for 180 seconds period. 
+ *   3) traffic-high-threshold, is the threshold that causes the rule to
+ *      report an anomaly.  By default it's 80. This rule will
+ *      set a dashboard color to red when *all* the input traffic is above
+ *      threshold for 180 seconds period.
  *
  *   4) traffic-low-threshold, is the threshold that causes the rule to
  *      report an anomaly.  By default it's 50. This rule will
@@ -29,7 +29,7 @@
  *      color to red when *all* the flap-increases are greater than
  *      'flaps-threshold-variable' for 180s. If it sees any flaps increase for a
  *      period of less than 180s, it'll turn the color to yellow,
- *      otherwise color is set to green. 
+ *      otherwise color is set to green.
  */
 healthbot {
     topic interfaces {
@@ -43,11 +43,11 @@ healthbot {
              * Notifies via the dashboard colors when the field values increase by
              * more than the threshold values.
              * Use interface-name as key for rule.
-             */			
+             */
             keys interface-name;
             /*
              * Sensor configuration to get data from network devices.
-             */			
+             */
             sensor interfaces-oc {
                 synopsis "Interface open-config sensor definition";
                 description "Interfaces open-config sensor to collect telemetry data from network device";
@@ -59,7 +59,7 @@ healthbot {
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */			
+             */
             field admin-state {
                 sensor interfaces-oc {
                     path /interfaces/interface/state/admin-status;
@@ -81,7 +81,7 @@ healthbot {
                 plots flaps-plot {
                     unit count;
                     triggers interface-link-flaps;
-                }				
+                }
             }
             field flaps-threshold {
                 constant {
@@ -107,7 +107,7 @@ healthbot {
                 plots in-error-plots {
                     unit count;
                     triggers interface-input-errors;
-                }				
+                }
             }
             field in-errors-threshold {
                 constant {
@@ -127,7 +127,7 @@ healthbot {
                 description "Derives mbps based (current in-octets - previous in-octets) divided by (current time - previous time) divided by mbps multiplication factor";
                 plots in-mbps {
                     unit Mbps;
-                }				
+                }
             }
             field in-octets {
                 sensor interfaces-oc {
@@ -155,11 +155,6 @@ healthbot {
                         field-name "$low-threshold";
                         severity minor;
                     }
-                    thresholds in-mbps-anomaly {
-                        field-name "$in-mbps-anomaly";
-                        severity minor;
-                        type jaiml-threshold;						
-                    }					
                 }
             }
             field interface-name {
@@ -225,7 +220,7 @@ healthbot {
                 description "Derives mbps based (current out-octets - previous out-octets) divided by (current time - previous time) divided by mbps multiplication factor";
                 plots out-mbps {
                     unit Mbps;
-                }				
+                }
             }
             field out-octets {
                 sensor interfaces-oc {
@@ -253,11 +248,6 @@ healthbot {
                         field-name "$low-threshold";
                         severity minor;
                     }
-                    thresholds out-mbps-anomaly {
-                        field-name "$out-mbps-anomaly";
-                        severity minor;
-                        type jaiml-threshold;						
-                    }					
                 }
             }
             field speed {
@@ -268,29 +258,11 @@ healthbot {
                 description "Interface speed";
                 plots speed {
                     unit Mbps;
-                }				
-            }
-            field in-mbps-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$in-mbps";
-                    }
                 }
-                type integer;
-                description "JAIML anomaly detection on input traffic rate";
-            }
-            field out-mbps-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$out-mbps";
-                    }
-                }
-                type integer;
-                description "JAIML anomaly detection on output traffic rate";
             }
             /*
              * Anomaly detection logic.
-             */			
+             */
             trigger interface-input-traffic {
                 alert-type interfaces.rx.traffic.interface-input-traffic;
                 synopsis "Interface input traffic kpi";
@@ -298,41 +270,11 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when in-util is below low-threshold
-                 */				
-                term is-interface-in-traffic-normal {
-                    when {
-                        less-than "$in-util" "$low-threshold";
-                        less-than-or-equal-to "$in-mbps-anomaly" 0;
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when in-mbps is not in between predicted range.
                  */
-                term is-interface-in-traffic-anomalous {
-                    when {
-                        less-than "$in-util" "$low-threshold";
-                        equal-to "$in-mbps-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name input traffic is anomalous";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to green when in-util is below low-threshold
-                 */				
                 term is-interface-in-traffic-less-than-low-threshold {
                     when {
                         less-than "$in-util" "$low-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -344,7 +286,7 @@ healthbot {
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface input traffic($in-util) is
                  * above low threshold (low-threshold)
-                 */					
+                 */
                 term is-interface-in-traffic-median {
                     when {
                         greater-than-or-equal-to "$in-util" "$low-threshold";
@@ -361,7 +303,7 @@ healthbot {
                  * Sets color to red and sends out an anomaly notification
                  * when the interface input traffic ($in-util) is
                  * above high threshold (high-threshold)
-                 */				
+                 */
                 term is-interface-in-traffic-abnormal {
                     when {
                         greater-than-or-equal-to "$in-util" "$high-threshold";
@@ -372,8 +314,8 @@ healthbot {
                             message "$interface-name input traffic:$in-mbps mbps is $in-util % of interface speed $speed mbps is above high threshold";
                         }
                     }
-                }			
-            }    
+                }
+            }
             trigger interface-input-errors {
                 alert-type interfaces.rx_errors.interface-input-errors;
                 synopsis "Interface input-errors kpi";
@@ -381,14 +323,14 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when in-errors-count is not increasing
-                 */				
+                 */
                 term no-interface-in-errors {
                     when {
                         matches-with-previous "$in-errors-count"{
                             time-range 2.5offset;
                             latest;
                         }
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -398,9 +340,9 @@ healthbot {
                 }
                 /*
                  * Sets color to red and sends out an anomaly notification when
-                 * interface Input errors ($in-errors-count) count increases for 
+                 * interface Input errors ($in-errors-count) count increases for
                  * all points in 2.5offset period.
-                 */				
+                 */
                 term is-interface-in-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$in-errors-count" {
@@ -424,24 +366,24 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when interface is not flapping
-                 */				
+                 */
                 term is-link-stable {
                     when {
                         matches-with-previous "$flaps"{
                             time-range 2.5offset;
                             latest;
                         }
-                    }				
+                    }
                     then {
                         status {
                             color green;
                             message "$interface-name is stable";
                         }
                     }
-                }				
+                }
                 /*
                  * Sets color to red when number of flaps are increasing-at-least-by-value flaps-threshold for 2.5offset
-                 */				
+                 */
                 term is-link-flapping-consistently {
                     when {
                         increasing-at-least-by-value "$flaps" {
@@ -456,7 +398,7 @@ healthbot {
                             message "Flaps are increasing continuously on $interface-name, flap count is:$flaps";
                         }
                     }
-                }		
+                }
             }
             trigger interface-link-state {
                 alert-type interfaces.link_failure.interface-link-state;
@@ -465,12 +407,12 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when both admin and link state is UP
-                 */				
+                 */
                 term link-up {
                     when {
                         matches-with "$admin-state" UP;
                         matches-with "$link-state" UP;
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -479,9 +421,9 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to red and sends out anomaly notification when 
+                 * Sets color to red and sends out anomaly notification when
                  * the interface oper state ($link-state) is down.
-                 */				
+                 */
                 term is-link-down {
                     when {
                         matches-with "$admin-state" UP;
@@ -495,7 +437,7 @@ healthbot {
                             message "$interface-name link operator status is $link-state";
                         }
                     }
-                }				
+                }
             }
             trigger interface-output-errors {
                 alert-type interfaces.tx_errors.interface-output-errors;
@@ -504,14 +446,14 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when out-errors-count is not increasing
-                 */				
+                 */
                 term no-interface-out-errors {
                     when {
                         matches-with-previous "$out-errors-count"{
                             time-range 2.5offset;
                             latest;
                         }
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -523,7 +465,7 @@ healthbot {
                  * Sets color to red and sends out an anomaly notification when
                  * the interface Output errors ($output-errors-count) count increases
                  * for all points in 2.5offset period.
-                 */				
+                 */
                 term is-interface-out-errors-abnormal {
                     when {
                         increasing-at-least-by-value "$out-errors-count" {
@@ -538,7 +480,7 @@ healthbot {
                             message "Output errors are increasing continuously on $interface-name, Error count is:$out-errors-count";
                         }
                     }
-                }			
+                }
             }
             trigger interface-output-traffic {
                 alert-type interfaces.tx.traffic.interface-output-traffic;
@@ -547,41 +489,11 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when out-util is below low threshold
-                 */ 				
-                term is-interface-stats-normal {
-                    when {
-                        less-than "$out-util" "$low-threshold";
-                        less-than-or-equal-to "$out-mbps-anomaly" 0;
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when out-mbps is not in between predicted range.
                  */
-                term is-interface-stats-anomalous {
-                    when {
-                        less-than "$out-util" "$low-threshold";
-                        equal-to "$out-mbps-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name output traffic is anomalous";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to green when out-util is below low threshold
-                 */ 				
                 term is-interface-stats-less-than-low-threshold {
                     when {
                         less-than "$out-util" "$low-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -593,7 +505,7 @@ healthbot {
                  * Sets color to yellow and sends out an anomaly notification
                  * when the interface output traffic ($out-util)
                  * is above low threshold (low-threshold)
-                 */				
+                 */
                 term is-interface-stats-median {
                     when {
                         greater-than-or-equal-to "$out-util" "$low-threshold";
@@ -610,7 +522,7 @@ healthbot {
                  * Sets color to red and sends out an anomaly notification when
                  * the interface output traffic ($out-util) is
                  * above high threshold (high-threshold)
-                 */ 				
+                 */
                 term is-interface-stats-abnormal {
                     when {
                         greater-than-or-equal-to "$out-util" "$high-threshold";
@@ -621,7 +533,7 @@ healthbot {
                             message "$interface-name output traffic:$out-mbps mbps is $out-util % of interface speed $speed mbps is above high threshold";
                         }
                     }
-                }			
+                }
             }
             variable errors-threshold-variable {
                 value 1;
@@ -637,7 +549,7 @@ healthbot {
                 value .*;
                 description "Interface names to monitor, regular expression, e.g. 'ge-.*'";
                 type string;
-                value-type interface;				
+                value-type interface;
             }
             variable traffic-high-threshold {
                 value 80;
@@ -671,7 +583,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms ACX7100-32C {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -686,7 +598,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms ACX7348 {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -703,8 +615,8 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
+                                }
+                            }
                         }
                         operating-system junos {
                             products MX {
@@ -717,7 +629,7 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX304 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
@@ -732,7 +644,7 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX10004 {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -747,7 +659,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products JNP {
                                 platforms JNP10004 {
@@ -764,12 +676,12 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-                        }						
+                                }
+                            }
+                        }
                     }
                 }
             }
-    	}	
+    	}
     }
 }

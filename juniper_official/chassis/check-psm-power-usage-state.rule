@@ -1,6 +1,6 @@
 /*
  * Monitors PSM power usage,state and notifies when anomalies are found
- * 
+ *
  * Three inputs control detection
  *
  *   1) "psm-power-high-threshold" is the threshold that causes the
@@ -19,17 +19,17 @@ healthbot {
     topic hardware.chassis {
         rule check-psm-power-usage-state {
             /*
-             * Monitors PSM power usage,state,temperature and notifies via dashboard, red color 
+             * Monitors PSM power usage,state,temperature and notifies via dashboard, red color
              * when threshold is exceeded else green.
 			 *
              * Use PSM as key for rule.
-             */		
+             */
             keys psm;
             synopsis "Chassis psm power check";
             description "Collects PSM power properties periodically and notifies anomaly when exceeds threshold";
             /*
              * Sensor configuration to get data from network devices.
-             */			
+             */
             sensor components-oc {
                 synopsis "Chassis components sensor definition";
                 description "open-config sensor to collect telemetry data from network device";
@@ -49,11 +49,11 @@ healthbot {
                     sensor-name /components/component;
                     frequency 60s;
                 }
-            }			
+            }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */			
+             */
             field power-dc-output {
                 sensor components-oc {
                     path /components/component/power-supply/state/output-power;
@@ -64,7 +64,7 @@ healthbot {
                 }
                 sensor components-oc-ptx {
                     path /components/component/power-supply/state/output-power;
-                }				
+                }
                 type integer;
                 description "PSM DC output";
             }
@@ -80,7 +80,7 @@ healthbot {
                 sensor components-oc-ptx {
                     where "/components/component/@name =~ /{{psm}}|^PSM[{{pem}}]$|^PEM[{{pem}}]$|^CHASSIS[{{pem}}]:PSM[{{pem}}]$/";
                     path "/components/component/@name";
-                }				
+                }
                 type string;
                 description "Power supply module";
             }
@@ -94,7 +94,7 @@ healthbot {
                 }
                 sensor components-oc-ptx {
                    path /components/component/power-supply/state/capacity;
-                }				
+                }
                 type integer;
                 description "PSM maximum power capacity";
             }
@@ -117,12 +117,7 @@ healthbot {
                         field-name "$psm-power-usage-low-threshold";
                         severity minor;
                     }
-                    thresholds psm-power-usage-anomaly {
-                        field-name "$psm-power-usage-anomaly";
-                        severity minor;
-                        type jaiml-threshold;
-                    }					
-                }				
+                }
             }
             field psm-power-usage-high-threshold {
                 constant {
@@ -138,15 +133,6 @@ healthbot {
                 type integer;
                 description "psm power usage low threshold";
             }
-            field psm-power-usage-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$psm-power-usage";
-                    }
-                }
-                type float;
-                description "JAIML anomaly detection on psm power usage";
-            }
             field psm-temperature-high-threshold {
                 constant {
                     value "{{psm-temperature-high-threshold}}";
@@ -160,7 +146,7 @@ healthbot {
                 }
                 type integer;
                 description "PSM temperature low threshold";
-            }			
+            }
             field psm-state {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == 'state'";
@@ -173,16 +159,16 @@ healthbot {
                 sensor components-oc-ptx {
                     where "/components/component/properties/property/@name == 'state'";
                     path /components/component/properties/property/state/value;
-                }				
+                }
                 type string;
                 description "State of power supply module";
                 enumerate __default__ as -99;
-                enumerate Fault as -10;				
+                enumerate Fault as -10;
                 enumerate Offline as 0;
                 enumerate online as 1;
                 plots psm-state-plots {
                     triggers psm-state;
-                }				
+                }
             }
             field psm-temperature-degrees {
                 sensor components-oc {
@@ -196,7 +182,7 @@ healthbot {
                 sensor components-oc-ptx {
                     where "/components/component/properties/property/@name == 'temperature'";
                     path /components/component/properties/property/state/value;
-                }				
+                }
                 type string;
             }
             field psm-temperature {
@@ -217,13 +203,13 @@ healthbot {
                     thresholds temp-low-threshold {
                         field-name "$psm-temperature-low-threshold";
                         severity minor;
-                    }					
-                }				
-            }	
-		
+                    }
+                }
+            }
+
             /*
              * Anomaly detection logic.
-             */			
+             */
             trigger psm-power-usage {
                 alert-type hardware.power.psm.psm-power-usage;
                 synopsis "PSM power usage KPI";
@@ -231,12 +217,11 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when psm-power-usage is lesser than psm-power-usage-low-threshold
-                 * 
-                 */				
+                 *
+                 */
                 term power-usage-normal {
                     when {
                         less-than "$psm-power-usage" "$psm-power-usage-low-threshold";
-                        less-than-or-equal-to "$psm-power-usage-anomaly" 0;
                         matches-with "$psm-state" Online {
                             ignore-case;
                         }
@@ -248,22 +233,10 @@ healthbot {
                         }
                     }
                 }
-                term is-psm-power-usage-anomalous {
-                    when {
-                        less-than "$psm-power-usage" "$psm-power-usage-low-threshold"; 
-                        equal-to "$psm-power-usage-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$psm power usage is anomalous";
-                        }
-                    }
-                }
                 /*
                  * Sets color to yellow when psm-power-usage is greater than psm-power-usage-low-threshold.
-                 * 
-                 */				
+                 *
+                 */
                 term is-power-usage-exceeds-low-threshold {
                     when {
                         greater-than-or-equal-to "$psm-power-usage" "$psm-power-usage-low-threshold";
@@ -276,11 +249,10 @@ healthbot {
                         }
                     }
                 }
-
                 /*
                  * Sets color to red when psm-power-usage is greater than psm-power-usage-high-threshold
-                 * 
-                 */				
+                 *
+                 */
                 term is-power-usage-exceeds-high-threshold {
                     when {
                         greater-than-or-equal-to "$psm-power-usage" "$psm-power-usage-high-threshold";
@@ -294,14 +266,14 @@ healthbot {
                 }
             }
             trigger psm-state {
-                alert-type hardware.state.psm.psm-state;			
+                alert-type hardware.state.psm.psm-state;
                 synopsis "PSM State KPI";
                 description "Sets health based on PSM state";
                 frequency 1offset;
                 /*
                  * Sets color to green when state is online.
-                 * 
-                 */				
+                 *
+                 */
                 term state-is-online {
                     when {
                         matches-with "$psm-state" online {
@@ -317,20 +289,20 @@ healthbot {
                 }
                 /*
                  * Sets color to red when state is not online
-                 * 
-                 */				
+                 *
+                 */
                 term state-is-not-online {
                     when {
                         does-not-match-with "$psm-state" online {
                             ignore-case;
                         }
-                    }				
+                    }
                     then {
                         status {
                             color red;
                             message "$psm is $psm-state";
                         }
-                        next;						
+                        next;
                     }
                 }
             }
@@ -339,8 +311,8 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when psm-temperature is lesser than psm-temperature-low-threshold
-                 * 
-                 */				
+                 *
+                 */
                 term temperature-is-normal {
                     when {
                         less-than "$psm-temperature" "$psm-temperature-low-threshold";
@@ -353,10 +325,10 @@ healthbot {
                     }
                 }
                 /*
-                 * Sets color to yellow when psm-temperature is lesser than psm-temperature-high-threshold and 
-                 * greater-than-or-equal-to psm-temperature-high-threshold			 
-                 * 
-                 */				
+                 * Sets color to yellow when psm-temperature is lesser than psm-temperature-high-threshold and
+                 * greater-than-or-equal-to psm-temperature-high-threshold
+                 *
+                 */
                 term temperature-exceeds-low-threshold {
                     when {
                         greater-than-or-equal-to "$psm-temperature" "$psm-temperature-low-threshold";
@@ -371,12 +343,12 @@ healthbot {
                 }
                 /*
                  * Sets color to red when psm-temperature is exceeds psm-temperature-high-threshold
-                 * 
-                 */				
+                 *
+                 */
                 term temperature-exceeds-high-threshold {
                     when {
                         greater-than-or-equal-to "$psm-temperature" "$psm-temperature-high-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color red;
@@ -384,11 +356,11 @@ healthbot {
                         }
                     }
                 }
-            }			
+            }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
-             */			
+             */
             variable psm {
                 value "^PSM[0-9]+$";
                 description "Enter PSM to be monitored";
@@ -398,7 +370,7 @@ healthbot {
               value "0-9";
               description "Enter Power supply to be monitored";
               type string;
-            }			
+            }
             variable psm-power-high-threshold {
                 value 80;
                 description "Power supply module usage high threshold ";
@@ -422,7 +394,7 @@ healthbot {
             /*
              * For MX204 temperature is not available.
              * power-dc-output and psm-power-capacity-maximum are available from 24.4R1.
-             */			
+             */
             rule-properties {
                 version 1;
                 domain-name chassis;
@@ -430,22 +402,22 @@ healthbot {
                 category basic;
                 supported-healthbot-version 4.3.0;
                 supported-devices {
-                    sensors components-oc;				
+                    sensors components-oc;
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
-                                sensors components-oc;							
+                                sensors components-oc;
                                 platforms All {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
                                 }
                                 platforms ACX7509 {
-                                    sensors components-oc-ptx;								
+                                    sensors components-oc-ptx;
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products PTX {
                                 sensors components-oc-ptx;
@@ -453,14 +425,14 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-                        }							
-                        operating-system junos {							
+                                }
+                            }
+                        }
+                        operating-system junos {
                             products MX {
                                 sensors components-oc-junos;
                                 platforms MX204 {
-                                    sensors components-oc;								
+                                    sensors components-oc;
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
@@ -469,7 +441,7 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX304 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
@@ -499,7 +471,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products JNP {
                                 sensors components-oc-junos;
@@ -517,7 +489,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products EX {
                                 sensors components-oc-junos;
@@ -541,4 +513,4 @@ healthbot {
             }
         }
     }
-}	
+}

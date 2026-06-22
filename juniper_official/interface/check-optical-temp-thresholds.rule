@@ -1,28 +1,28 @@
 /*
  * Monitors optical temperature and notifies anomalies.
  * One inputs control detection
- * 
+ *
  *   1) if-name, is a regular expression that matches the
  *      interfaces that you would like to monitor.    By default it's
  *      '.*', which matches all interfaces. Use something like 'ge.*' to
  *      match only gigabit ethernet interfaces.
- * 
+ *
  */
 healthbot {
     topic interfaces {
         rule check-optical-temp-thresholds {
             /*
-             * Monitors the temperature and notifies via dashboard if there are 
+             * Monitors the temperature and notifies via dashboard if there are
              * anomalies.
-             * 
+             *
              * Use interface name as key for rule.
-             */		
+             */
             keys interface-name;
             synopsis "Optical module temperature KPI";
             description "To check if the optical temperature is within limit";
             /*
              * Sensor configuration to get data from network devices.
-             */			
+             */
             sensor temperature-thresholds-oc {
                 open-config {
                     sensor-name /junos/system/linecard/optics/;
@@ -32,7 +32,7 @@ healthbot {
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */			
+             */
             field high-alarm-threshold {
                 sensor temperature-thresholds-oc {
                     path /interfaces/interface/optics/module_temp_high_alarm_threshold;
@@ -72,25 +72,11 @@ healthbot {
                         field-name "$high-warning-threshold";
                         severity minor;
                     }
-                    thresholds optical-temp-anomaly {
-                        field-name "$optical-temp-anomaly";
-                        severity minor;
-                        type jaiml-threshold;						
-                    }					
-                }				
-            }
-            field optical-temp-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$optical-temp";
-                    }
                 }
-                type integer;
-                description "JAIML anomaly detection for optical temperature";
             }
             /*
              * Anomaly detection logic.
-             */			
+             */
             trigger interface-optical-temperature {
                 alert-type interfaces.temperature.interface-optical-temperature;
                 synopsis "high optical temperature";
@@ -98,41 +84,11 @@ healthbot {
                 frequency 1offset;
                 /*
                  * Sets color to green when optical-temperature is less than high-warning-threshold.
-                 */				
-                term normal {
-                    when {
-                        less-than "$optical-temp" "$high-warning-threshold";
-                        less-than-or-equal-to "$optical-temp-anomaly" 0;
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$interface-name, temperature $optical-temp is normal.";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when optical-temp is not in between predicted range.
                  */
-                term anomalous {
-                    when {
-                        less-than "$optical-temp" "$high-warning-threshold";
-                        equal-to "$optical-temp-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$interface-name, temperature $optical-temp is anomalous";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to green when optical-temperature is less than high-warning-threshold.
-                 */				
                 term less-than-warning-threshold {
                     when {
                         less-than "$optical-temp" "$high-warning-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color green;
@@ -142,7 +98,7 @@ healthbot {
                 }
                 /*
                  * Sets color to yellow when optical-temperature is greater-than-or-equal-to high-warning-threshold.
-                 */				
+                 */
                 term greater-than-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optical-temp" "$high-warning-threshold";
@@ -157,7 +113,7 @@ healthbot {
                 }
                 /*
                  * Sets color to red when optical-temperature is greater-than-or-equal-to high-alarm-threshold.
-                 */				
+                 */
                 term greater-than-alarm-threshold {
                     when {
                         greater-than-or-equal-to "$optical-temp" "$high-alarm-threshold";
@@ -173,12 +129,12 @@ healthbot {
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
-             */			
+             */
             variable if-name {
                 value .*;
                 description "Name of the interface.";
                 type string;
-                value-type interface;				
+                value-type interface;
             }
             rule-properties {
                 version 1;
@@ -202,7 +158,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms ACX7100-32C {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -217,7 +173,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms ACX7348 {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -234,8 +190,8 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
+                                }
+                            }
                         }
                         operating-system junos {
                             products MX {
@@ -248,7 +204,7 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX304 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
@@ -263,7 +219,7 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX10004 {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -278,7 +234,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products JNP {
                                 platforms JNP10004 {
@@ -295,9 +251,9 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-                        }						
+                                }
+                            }
+                        }
                     }
                 }
             }
