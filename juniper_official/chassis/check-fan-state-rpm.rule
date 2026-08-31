@@ -2,26 +2,26 @@
  * Monitors fan state and RPM percentage and notifies when anomalies are found.
  * 2 Variables :
  *
- *   1) high-threshold, defaults to 80% 
+ *   1) high-threshold, defaults to 80%
  *
  *   2) low-threshold, defaults to 50%
- *      
+ *
  */
 healthbot {
     topic hardware.chassis {
         rule check-fan-state-rpm {
             /*
-             * Monitors fan state and RPM percentage and notifies via dashboard, red color 
+             * Monitors fan state and RPM percentage and notifies via dashboard, red color
              * when threshold is exceeded else green
 			 *
              * Use fan-name as key for rule
-             */		
+             */
             keys fan-name;
             synopsis "Chassis fans health analyzer";
             description "Collects chassis environment statistics periodically and notifies anomalies when fan status is NOK";
             /*
              * Sensor configuration to get data from network devices
-             */			
+             */
             sensor fan-netconf {
                 iAgent {
                     file fanEVOTable.yml;
@@ -32,7 +32,7 @@ healthbot {
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules
-             */			
+             */
             field fan-name {
                 sensor fan-netconf {
                     path name;
@@ -46,11 +46,11 @@ healthbot {
                     zero-suppression;
                     data-if-missing {
                         value 0;
-                    }					
+                    }
                 }
                 type string;
-                description "RPM String Value";				
-            }			
+                description "RPM String Value";
+            }
             field measurement {
                 formula {
                     capture-groups {
@@ -59,7 +59,7 @@ healthbot {
                     }
                 }
                 type integer;
-                description "RPM Value";				
+                description "RPM Value";
             }
             field rpm-percents {
                 sensor fan-netconf {
@@ -71,7 +71,7 @@ healthbot {
                 }
                 type string;
                 description "RPM string percentage";
-            }			
+            }
             field rpm-percent {
                 formula {
                     capture-groups {
@@ -92,21 +92,7 @@ healthbot {
                         field-name "$low-threshold";
                         severity minor;
                     }
-                    thresholds rpm-percent-anomaly {
-                        field-name "$rpm-percent-anomaly";
-                        severity minor;
-                        type jaiml-threshold;
-                    }					
-                }				
-            }
-            field rpm-percent-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$rpm-percent";
-                    }
                 }
-                type integer;
-                description "JAIML anomaly detection on rpm-percent field";
             }
             field status {
                 sensor fan-netconf {
@@ -116,11 +102,11 @@ healthbot {
                 description "Status of the fan";
                 enumerate __default__ as -99;
                 enumerate Failed as -1;
-                enumerate Absent as 0;				
+                enumerate Absent as 0;
                 enumerate ok as 1;
                 plots fan-state-plots {
                     triggers fan-state;
-                }				
+                }
             }
             field high-threshold {
                 constant {
@@ -171,19 +157,19 @@ healthbot {
                 }
                 type integer;
                 description "RPM low threshold measurement";
-            }			
+            }
             /*
              * Anomaly detection logic
-             */			
+             */
             trigger fan-state {
                 alert-type hardware.state.fan.fan-state;
                 synopsis "Fan State KPI";
-                description "Sets health based on Fan state";			
+                description "Sets health based on Fan state";
                 frequency 1offset;
                 /*
                  * Sets color to green when status is ok.
-                 * 
-                 */				
+                 *
+                 */
                 term state-is-ok {
                     when {
                         matches-with "$status" ok {
@@ -199,8 +185,8 @@ healthbot {
                 }
                 /*
                  * Sets color to red when status is not ok
-                 * 
-                 */				
+                 *
+                 */
                 term state-is-not-ok {
                     when {
                         does-not-match-with "$status" ok {
@@ -218,44 +204,12 @@ healthbot {
             trigger rpm-percent {
                 alert-type hardware.rpm.fan.rpm-percent;
                 synopsis "Fan RPM KPI";
-                description "Sets health based on Fan RPM percentage";			
+                description "Sets health based on Fan RPM percentage";
                 frequency 1offset;
                 /*
-                 * Sets color to green when RPM is lesser than 50%.
-                 * 
-                 */				
-                term normal {
-                    when {
-                        less-than "$rpm-percent" "$low-threshold";
-                        less-than-or-equal-to "$rpm-percent-anomaly" 0;
-                    }				
-                    then {
-                        status {
-                            color green;
-                            message "$fan-name RPM percent($rpm-percent%) is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when RPM is below low threshold ($low-threshold)
-                 * and the RPM value is anomalous.
-                 */ 				
-                term is-rpm-percent-anomalous {
-                    when {
-                        less-than "$rpm-percent" "$low-threshold";
-                        equal-to "$rpm-percent-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$fan-name RPM percent is anomalous";
-                        }
-                    }
-                }
-                /*
                  * Sets color to green when RPM is below low threshold ($low-threshold)
-                 * 
-                 */				
+                 *
+                 */
                 term is-rpm-percent-less-than-low-threshold {
                     when {
                         less-than "$rpm-percent" "$low-threshold";
@@ -266,16 +220,16 @@ healthbot {
                             message "$fan-name RPM percent($rpm-percent%) is normal";
                         }
                     }
-                }				
+                }
                 /*
                  * Sets color to yellow when RPM is more than or equal to 50%.
-                 * 
-                 */				
+                 *
+                 */
                 term above-low-threshold {
                     when {
                         greater-than-or-equal-to "$rpm-percent" "$low-threshold";
                         less-than "$rpm-percent" "$high-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color yellow;
@@ -285,8 +239,8 @@ healthbot {
                 }
                 /*
                  * Sets color to red when RPM is more than 80%.
-                 * 
-                 */				
+                 *
+                 */
                 term above-high-threshold {
                     when {
                         greater-than-or-equal-to "$rpm-percent" "$high-threshold";
@@ -298,7 +252,7 @@ healthbot {
                         }
                     }
                 }
-            }				
+            }
             variable high-threshold {
                 value 80;
                 description "RPM high threshold";
@@ -308,7 +262,7 @@ healthbot {
                 value 50;
                 description "RPM low threshold";
                 type int;
-            }			
+            }
             rule-properties {
                 version 1;
                 domain-name chassis;
@@ -318,9 +272,9 @@ healthbot {
                 supported-devices {
                     juniper {
                         operating-system junosEvolved {
-                            sensors fan-netconf;						
+                            sensors fan-netconf;
                             products ACX {
-                                sensors fan-netconf;							
+                                sensors fan-netconf;
                                 platforms All {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -329,7 +283,7 @@ healthbot {
                             }
                         }
                         operating-system junos {
-                            sensors fan-netconf;						
+                            sensors fan-netconf;
                             products MX {
                                 sensors fan-netconf;
                                 platforms MX304 {
@@ -356,7 +310,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products PTX {
                                 sensors fan-netconf;
@@ -364,8 +318,8 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
+                                }
+                            }
                             products JNP {
                                 sensors fan-netconf;
                                 platforms JNP10004 {
@@ -382,18 +336,15 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-						}						
+                                }
+                            }
+						}
                     }
                 }
                 helper-files other {
                     list-of-files [ fanEVOTable.yml ];
-                }				
+                }
             }
         }
     }
-}	
-	
-		
-		
+}
