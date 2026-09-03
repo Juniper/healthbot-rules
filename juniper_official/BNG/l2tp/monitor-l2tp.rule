@@ -1,0 +1,101 @@
+healthbot {
+    topic bng.l2tp {
+        rule monitor-l2tp-tunnels {
+            synopsis "Monitors L2TP statistics";
+            description "Collects the L2TP periodically and notifies in case of anomalies";
+            sensor l2tp-statistics {
+                description "Subscriber-management open-config sensor to collect telemetry data from network device";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/client-protocols/l2tp/summary";
+                }
+                synopsis "Subscriber-management open-config sensor definition";
+            }
+            field l2tp-stats-total-tunnels {
+                description "Number of L2TP tunnels";
+                sensor l2tp-statistics {
+                    path "/junos/system/subscriber-management/client-protocols/l2tp/summary/l2tp-stats-total-tunnels";
+                }
+                type "integer";
+                plots l2tp-tunnels-count {
+                    unit "tunnels";
+                    triggers "l2tp-tunnels-count";
+                    thresholds l2tp-tunnel-count-threshold {
+                        field-name "$l2tp-tunnel-minimum-threshold";
+                        severity "critical";
+                    }
+                }
+            }
+            field l2tp-tunnel-minimum-threshold {
+                constant {
+                    value "{{l2tp-tunnel-min}}";
+                }
+                type "integer";
+                description "Minimum L2TP tunnel count";
+            }
+            variable l2tp-tunnel-min {
+                value "1";
+                description "Minimum L2TP tunnel count";
+                type "integer";
+            }
+            trigger l2tp-tunnels-count {
+                description "Sets health based on tunnels count";
+                synopsis "L2TP tunnels count KPI";
+                term is-l2tp-tunnels-count-normal {
+                    then {
+                        status {
+                            color "green";
+                            message "L2TP tunnel number is normal. Current value : $l2tp-stats-total-tunnels";
+                        }
+                    }
+                    when {
+                        greater-than-or-equal-to "$l2tp-stats-total-tunnels" "$l2tp-tunnel-minimum-threshold";
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color "red";
+                            message "L2TP tunnel number is dropped below $l2tp-tunnel-minimum-threshold. Current value : $l2tp-stats-total-tunnels";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

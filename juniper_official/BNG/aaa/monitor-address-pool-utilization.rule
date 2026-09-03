@@ -1,0 +1,190 @@
+healthbot {
+    topic bng.aaa {
+        rule monitor-address-pool-utilization {
+            keys [ "logical-system-routing-instance-name" "pool-name" ];
+            synopsis "Monitors address pool utilization";
+            description "Monitors per-pool subscriber address utilization to catch pools nearing exhaustion or abnormally under-used (per logical-system/routing-instance)";
+            sensor pool {
+                description "Monitors address pool utilization";
+                synopsis "Monitors address pool utilization";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/aaa/address-assignment-statistics";
+                }
+            }
+            field pool-utilization-critical-threshold {
+                constant {
+                    value "{{pool-utilization-critical-threshold}}";
+                }
+                description "Utilization at or above which the address pool is critically full";
+                type "integer";
+            }
+            field pool-utilization-warning-threshold {
+                constant {
+                    value "{{pool-utilization-warning-threshold}}";
+                }
+                description "Utilization at or above which the address pool is nearing exhaustion";
+                type "integer";
+            }
+            field pool-utilization-minimum-threshold {
+                constant {
+                    value "{{pool-utilization-minimum-threshold}}";
+                }
+                description "Minimum expected utilization threshold for pool-utilization-percent (abnormally low below this)";
+                type "integer";
+            }
+            field logical-system-routing-instance-name {
+                description "Logical system / routing-instance name for the address pool";
+                sensor pool {
+                    path "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/@name";
+                    where "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/@name =~ /{{logical-system-routing-instance-name}}/";
+                }
+                type "string";
+            }
+            field pool-name {
+                description "Address pool name";
+                sensor pool {
+                    path "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/@pool-name";
+                    where "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/@pool-name =~ /{{pool-name}}/";
+                }
+                type "string";
+            }
+            field pool-utilization-percent {
+                description "Address pool utilization percent";
+                sensor pool {
+                    path "/junos/system/subscriber-management/aaa/address-assignment-statistics/logical-system-routing-instances/logical-system-routing-instance/pools/pool/address-usage-percent";
+                }
+                type "integer";
+                plots Address pool utilization percent {
+                    unit "percent";
+                    triggers "address-pool-utilization";
+                }
+            }
+            variable pool-utilization-critical-threshold {
+                description "Utilization at or above which the address pool is critically full";
+                type "integer";
+                value "90";
+            }
+            variable pool-utilization-warning-threshold {
+                description "Utilization at or above which the address pool is nearing exhaustion";
+                type "integer";
+                value "75";
+            }
+            variable pool-utilization-minimum-threshold {
+                description "Minimum expected utilization threshold for pool-utilization-percent (abnormally low below this)";
+                type "integer";
+                value "10";
+            }
+            variable logical-system-routing-instance-name {
+                description "Regex filter for logical system / routing-instance name";
+                type "string";
+                value ".+";
+            }
+            variable pool-name {
+                description "Regex filter for address pool name";
+                type "string";
+                value ".+";
+            }
+            trigger address-pool-utilization {
+                description "Quantify address pool utilization health";
+                synopsis "Pool utilization health";
+                term is-nominal {
+                    when {
+                        greater-than-or-equal-to "$pool-utilization-percent" "$pool-utilization-minimum-threshold";
+                        less-than "$pool-utilization-percent" "$pool-utilization-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "pool-utilization-percent is healthy.";
+                        }
+                    }
+                }
+                term is-warning-utilization {
+                    when {
+                        greater-than-or-equal-to "$pool-utilization-percent" "$pool-utilization-warning-threshold";
+                        less-than "$pool-utilization-percent" "$pool-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "Pool $pool-name (RI $logical-system-routing-instance-name) utilization $pool-utilization-percent% >= warning $pool-utilization-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-utilization-abnormal {
+                    when {
+                        less-than "$pool-utilization-percent" "$pool-utilization-minimum-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "Pool $pool-name (RI $logical-system-routing-instance-name) utilization $pool-utilization-percent% < minimum $pool-utilization-minimum-threshold%.";
+                        }
+                    }
+                }
+                term is-critical-utilization {
+                    when {
+                        greater-than-or-equal-to "$pool-utilization-percent" "$pool-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "Pool $pool-name (RI $logical-system-routing-instance-name) utilization $pool-utilization-percent% >= critical $pool-utilization-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

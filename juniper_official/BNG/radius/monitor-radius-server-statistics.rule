@@ -1,0 +1,673 @@
+healthbot {
+    topic bng.radius {
+        rule monitor-radius-server-statistics {
+            keys [ "server-address" ];
+            synopsis "Monitors RADIUS server statistics and health";
+            description "KPIs: Monitor RADIUS per-server stats";
+            sensor radius-server-information {
+                description "Monitors RADIUS server statistics and health";
+                synopsis "Monitors RADIUS server statistics and health";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/aaa/radius-servers/radius-server";
+                }
+            }
+            field server-address {
+                description "RADIUS server IPv4/IPv6 address key for per-server statistics";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/@server-address";
+                    where "/junos/system/subscriber-management/aaa/radius-servers/radius-server/@server-address =~ /{{server-address}}/";
+                }
+                type "string";
+            }
+            field server-last-round-trip-time {
+                description "RADIUS server last measured round-trip time";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/server-last-rtt";
+                }
+                type "integer";
+                plots Server RTT {
+                    unit "ms";
+                    triggers "radius-server-round-trip-time";
+                }
+            }
+            field authentication-access-requests {
+                description "RADIUS authentication access-request packets sent";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/auth-access-requests";
+                }
+                type "integer";
+                plots Authentication access requests {
+                    unit "requests";
+                }
+            }
+            field authentication-retransmissions {
+                description "RADIUS authentication request retransmissions";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/auth-retransmissions";
+                }
+                type "integer";
+                plots Authentication retransmissions {
+                    unit "count";
+                }
+            }
+            field authentication-request-timeouts {
+                description "RADIUS authentication request timeouts";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/auth-request-timeouts";
+                }
+                type "integer";
+                plots Authentication request timeouts {
+                    unit "count";
+                }
+            }
+            field authentication-access-requests-min {
+                description "Minimum RADIUS authentication access-requests over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$authentication-access-requests";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-retransmissions-min {
+                description "Minimum RADIUS authentication retransmissions over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$authentication-retransmissions";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-retransmission-percentage {
+                description "Percentage of RADIUS authentication access-requests retransmitted over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $authentication-retransmissions - $authentication-retransmissions-min ) / ( $authentication-access-requests - $authentication-access-requests-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots Authentication retransmission percentage {
+                    unit "percent";
+                    triggers "radius-auth-retransmissions";
+                }
+            }
+            field authentication-request-timeouts-min {
+                description "Minimum RADIUS authentication request timeouts over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$authentication-request-timeouts";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-request-timeout-percentage {
+                description "Percentage of RADIUS authentication access-requests that timed out over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $authentication-request-timeouts - $authentication-request-timeouts-min ) / ( $authentication-access-requests - $authentication-access-requests-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots Authentication request timeout percentage {
+                    unit "percent";
+                    triggers "radius-auth-request-timeouts";
+                }
+            }
+            field accounting-retransmissions {
+                description "RADIUS accounting request retransmissions";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/acct-retransmissions";
+                }
+                type "integer";
+                plots Accounting retransmissions {
+                    unit "count";
+                }
+            }
+            field accounting-packets-dropped {
+                description "RADIUS accounting packets dropped";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/acct-packets-dropped";
+                }
+                type "integer";
+                plots Accounting packets dropped {
+                    unit "count";
+                }
+            }
+            field accounting-packets-dropped-critical-threshold {
+                constant {
+                    value "{{accounting-packets-dropped-critical-threshold}}";
+                }
+                description "Accounting packets-dropped percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+            }
+            field accounting-packets-dropped-warning-threshold {
+                constant {
+                    value "{{accounting-packets-dropped-warning-threshold}}";
+                }
+                description "Accounting packets-dropped percentage above which the RADIUS server needs attention";
+                type "integer";
+            }
+            field authentication-retransmission-critical-threshold {
+                constant {
+                    value "{{authentication-retransmission-critical-threshold}}";
+                }
+                description "Authentication retransmission percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+            }
+            field authentication-retransmission-warning-threshold {
+                constant {
+                    value "{{authentication-retransmission-warning-threshold}}";
+                }
+                description "Authentication retransmission percentage above which the RADIUS server needs attention";
+                type "integer";
+            }
+            field authentication-request-timeout-critical-threshold {
+                constant {
+                    value "{{authentication-request-timeout-critical-threshold}}";
+                }
+                description "Authentication request-timeout percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+            }
+            field accounting-start-requests {
+                description "RADIUS accounting Start requests sent";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/acct-start-requests";
+                }
+                type "integer";
+                plots Accounting Start requests sent {
+                    unit "requests";
+                }
+            }
+            field accounting-interim-requests {
+                description "RADIUS accounting Interim requests sent";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/acct-interim-requests";
+                }
+                type "integer";
+                plots Accounting Interim requests sent {
+                    unit "requests";
+                }
+            }
+            field accounting-stop-requests {
+                description "RADIUS accounting Stop requests sent";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/acct-stop-requests";
+                }
+                type "integer";
+                plots Accounting Stop requests sent {
+                    unit "requests";
+                }
+            }
+            field accounting-packets-dropped-min {
+                description "Minimum RADIUS accounting packets dropped over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-packets-dropped";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-start-requests-min {
+                description "Minimum RADIUS accounting Start requests sent over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-start-requests";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-interim-requests-min {
+                description "Minimum RADIUS accounting Interim requests sent over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-interim-requests";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-stop-requests-min {
+                description "Minimum RADIUS accounting Stop requests sent over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-stop-requests";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-packets-dropped-percentage {
+                description "Percentage of RADIUS accounting requests (Start+Interim+Stop) dropped over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $accounting-packets-dropped - $accounting-packets-dropped-min ) / ( ( $accounting-start-requests + $accounting-interim-requests + $accounting-stop-requests ) - ( $accounting-start-requests-min + $accounting-interim-requests-min + $accounting-stop-requests-min ) ) ) * 100";
+                    }
+                }
+                type "float";
+                plots Accounting packets dropped percentage {
+                    unit "percent";
+                    triggers "radius-acct-packets-dropped";
+                }
+            }
+            field accounting-retransmissions-min {
+                description "Minimum RADIUS accounting retransmissions over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-retransmissions";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-retransmission-percentage {
+                description "Percentage of RADIUS accounting requests (Start+Interim+Stop) retransmitted over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $accounting-retransmissions - $accounting-retransmissions-min ) / ( ( $accounting-start-requests + $accounting-interim-requests + $accounting-stop-requests ) - ( $accounting-start-requests-min + $accounting-interim-requests-min + $accounting-stop-requests-min ) ) ) * 100";
+                    }
+                }
+                type "float";
+                plots Accounting retransmission percentage {
+                    unit "percent";
+                    triggers "radius-acct-retransmissions";
+                }
+            }
+            field accounting-retransmission-critical-threshold {
+                constant {
+                    value "{{accounting-retransmission-critical-threshold}}";
+                }
+                description "Accounting retransmission percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+            }
+            field accounting-retransmission-warning-threshold {
+                constant {
+                    value "{{accounting-retransmission-warning-threshold}}";
+                }
+                description "Accounting retransmission percentage above which the RADIUS server needs attention";
+                type "integer";
+            }
+            field accounting-requests-total-delta {
+                description "RADIUS accounting requests (Start+Interim+Stop) sent in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( ( $accounting-start-requests + $accounting-interim-requests + $accounting-stop-requests ) - ( $accounting-start-requests-min + $accounting-interim-requests-min + $accounting-stop-requests-min ) )";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-access-requests-delta {
+                description "RADIUS authentication access-requests sent in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $authentication-access-requests - $authentication-access-requests-min )";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-request-timeout-warning-threshold {
+                constant {
+                    value "{{authentication-request-timeout-warning-threshold}}";
+                }
+                description "Authentication request-timeout percentage above which the RADIUS server needs attention";
+                type "integer";
+            }
+            field server-round-trip-time-critical-threshold {
+                constant {
+                    value "{{server-round-trip-time-critical-threshold}}";
+                }
+                description "Server round-trip time (ms) at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+            }
+            field server-round-trip-time-warning-threshold {
+                constant {
+                    value "{{server-round-trip-time-warning-threshold}}";
+                }
+                description "Server round-trip time (ms) above which the RADIUS server needs attention";
+                type "integer";
+            }
+            variable server-address {
+                description "RADIUS server IPv4/IPv6 address to match for per-server statistics";
+                type "string";
+                value ".+";
+            }
+            variable accounting-packets-dropped-critical-threshold {
+                description "Accounting packets-dropped percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            variable accounting-packets-dropped-warning-threshold {
+                description "Accounting packets-dropped percentage above which the RADIUS server needs attention";
+                type "integer";
+                value "5";
+            }
+            variable authentication-retransmission-critical-threshold {
+                description "Authentication retransmission percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            variable authentication-retransmission-warning-threshold {
+                description "Authentication retransmission percentage above which the RADIUS server needs attention";
+                type "integer";
+                value "5";
+            }
+            variable authentication-request-timeout-critical-threshold {
+                description "Authentication request-timeout percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+                value "5";
+            }
+            variable accounting-retransmission-critical-threshold {
+                description "Accounting retransmission percentage at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            variable accounting-retransmission-warning-threshold {
+                description "Accounting retransmission percentage above which the RADIUS server needs attention";
+                type "integer";
+                value "5";
+            }
+            variable authentication-request-timeout-warning-threshold {
+                description "Authentication request-timeout percentage above which the RADIUS server needs attention";
+                type "integer";
+                value "1";
+            }
+            variable server-round-trip-time-critical-threshold {
+                description "Server round-trip time (ms) at or above which the RADIUS server is treated as critically degraded";
+                type "integer";
+                value "1000";
+            }
+            variable server-round-trip-time-warning-threshold {
+                description "Server round-trip time (ms) above which the RADIUS server needs attention";
+                type "integer";
+                value "500";
+            }
+            trigger radius-acct-packets-dropped {
+                description "Alert when accounting-packets-dropped-percentage exceeds threshold";
+                synopsis "Alert when accounting-packets-dropped-percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$accounting-requests-total-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No RADIUS accounting requests in the last 1 hour; accounting percentages not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$accounting-packets-dropped-percentage" "$accounting-packets-dropped-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "accounting-packets-dropped-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$accounting-packets-dropped-percentage" "$accounting-packets-dropped-warning-threshold";
+                        less-than-or-equal-to "$accounting-packets-dropped-percentage" "$accounting-packets-dropped-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "accounting-packets-dropped-percentage = $accounting-packets-dropped-percentage%, exceeded warning threshold $accounting-packets-dropped-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$accounting-packets-dropped-percentage" "$accounting-packets-dropped-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "accounting-packets-dropped-percentage = $accounting-packets-dropped-percentage%, exceeded critical threshold $accounting-packets-dropped-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger radius-auth-retransmissions {
+                description "Evaluate RADIUS authentication retransmission percentage against warning and critical thresholds";
+                synopsis "Evaluate RADIUS authentication retransmission percentage";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$authentication-access-requests-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No RADIUS authentication requests in the last 1 hour; authentication percentages not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$authentication-retransmission-percentage" "$authentication-retransmission-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "authentication-retransmission-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$authentication-retransmission-percentage" "$authentication-retransmission-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "authentication-retransmission-percentage = $authentication-retransmission-percentage%, exceeded warning threshold $authentication-retransmission-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$authentication-retransmission-percentage" "$authentication-retransmission-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "authentication-retransmission-percentage = $authentication-retransmission-percentage%, exceeded critical threshold $authentication-retransmission-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger radius-auth-request-timeouts {
+                description "Evaluate RADIUS authentication request timeout percentage against warning and critical thresholds";
+                synopsis "Evaluate RADIUS authentication request timeout percentage";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$authentication-access-requests-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No RADIUS authentication requests in the last 1 hour; authentication percentages not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$authentication-request-timeout-percentage" "$authentication-request-timeout-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "authentication-request-timeout-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$authentication-request-timeout-percentage" "$authentication-request-timeout-warning-threshold";
+                        less-than-or-equal-to "$authentication-request-timeout-percentage" "$authentication-request-timeout-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "authentication-request-timeout-percentage = $authentication-request-timeout-percentage%, exceeded warning threshold $authentication-request-timeout-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$authentication-request-timeout-percentage" "$authentication-request-timeout-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "authentication-request-timeout-percentage = $authentication-request-timeout-percentage%, exceeded critical threshold $authentication-request-timeout-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger radius-acct-retransmissions {
+                description "Evaluate RADIUS accounting retransmission percentage against warning and critical thresholds";
+                synopsis "Evaluate RADIUS accounting retransmission percentage";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$accounting-requests-total-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No RADIUS accounting requests in the last 1 hour; accounting percentages not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$accounting-retransmission-percentage" "$accounting-retransmission-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "accounting-retransmission-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$accounting-retransmission-percentage" "$accounting-retransmission-warning-threshold";
+                        less-than-or-equal-to "$accounting-retransmission-percentage" "$accounting-retransmission-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "accounting-retransmission-percentage = $accounting-retransmission-percentage%, exceeded warning threshold $accounting-retransmission-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$accounting-retransmission-percentage" "$accounting-retransmission-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "accounting-retransmission-percentage = $accounting-retransmission-percentage%, exceeded critical threshold $accounting-retransmission-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger radius-server-round-trip-time {
+                description "Alert when the RADIUS server round-trip time exceeds a threshold";
+                synopsis "Alert when the RADIUS server round-trip time exceeds a threshold";
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$server-last-round-trip-time" "$server-round-trip-time-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "server-last-round-trip-time is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$server-last-round-trip-time" "$server-round-trip-time-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "server-last-round-trip-time = $server-last-round-trip-time ms, exceeded warning threshold $server-round-trip-time-warning-threshold ms.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$server-last-round-trip-time" "$server-round-trip-time-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "server-last-round-trip-time = $server-last-round-trip-time ms, exceeded critical threshold $server-round-trip-time-critical-threshold ms.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

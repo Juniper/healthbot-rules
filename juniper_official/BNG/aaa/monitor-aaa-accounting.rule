@@ -1,0 +1,201 @@
+healthbot {
+    topic bng.aaa {
+        rule monitor-aaa-accounting {
+            synopsis "Monitors AAA accounting statistics and performance";
+            description "Tracks the AAA accounting-request timeout rate over a rolling 1-hour window to detect degraded accounting-server responsiveness";
+            sensor aaa-accounting-information {
+                description "Monitors AAA accounting statistics and performance";
+                synopsis "Monitors AAA accounting statistics and performance";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/aaa/accounting-statistics";
+                }
+            }
+            field accounting-request-timeouts-critical-threshold {
+                constant {
+                    value "{{accounting-request-timeouts-critical-threshold}}";
+                }
+                description "Accounting request timeout rate at or above which the AAA service is treated as critically degraded";
+                type "integer";
+            }
+            field accounting-request-timeouts-warning-threshold {
+                constant {
+                    value "{{accounting-request-timeouts-warning-threshold}}";
+                }
+                description "Accounting request timeout rate above which the AAA service needs attention";
+                type "integer";
+            }
+            field accounting-request-timeouts {
+                description "AAA accounting requests that timed out (cumulative)";
+                sensor aaa-accounting-information {
+                    path "/junos/system/subscriber-management/aaa/accounting-statistics/acct-req-timeout";
+                }
+                type "integer";
+                plots Accounting request timeouts {
+                    unit "timeouts";
+                }
+            }
+            field accounting-requests-received {
+                description "AAA accounting requests received (cumulative)";
+                sensor aaa-accounting-information {
+                    path "/junos/system/subscriber-management/aaa/accounting-statistics/acct-req-received";
+                }
+                type "integer";
+                plots Accounting requests received {
+                    unit "requests";
+                }
+            }
+            field accounting-request-timeouts-min {
+                description "Minimum AAA accounting request timeouts over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-request-timeouts";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-requests-received-min {
+                description "Minimum AAA accounting requests received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$accounting-requests-received";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field accounting-request-timeout-percentage {
+                description "Percentage of AAA accounting requests that timed out over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $accounting-request-timeouts - $accounting-request-timeouts-min ) / ( $accounting-requests-received - $accounting-requests-received-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots Accounting request timeout percentage {
+                    unit "percent";
+                    triggers "aaa-accounting-request-timeouts";
+                }
+            }
+            field accounting-requests-received-delta {
+                description "AAA accounting requests received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $accounting-requests-received - $accounting-requests-received-min )";
+                    }
+                }
+                type "integer";
+            }
+            variable accounting-request-timeouts-warning-threshold {
+                description "Accounting request timeout rate above which the AAA service needs attention";
+                type "integer";
+                value "5";
+            }
+            variable accounting-request-timeouts-critical-threshold {
+                description "Accounting request timeout rate at or above which the AAA service is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            trigger aaa-accounting-request-timeouts {
+                description "Alert when accounting-request-timeout percentage exceeds threshold";
+                synopsis "Alert when accounting request timeout percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$accounting-requests-received-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No accounting requests in the last 1 hour; accounting-request-timeout-percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$accounting-request-timeout-percentage" "$accounting-request-timeouts-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "accounting-request-timeout-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$accounting-request-timeout-percentage" "$accounting-request-timeouts-warning-threshold";
+                        less-than-or-equal-to "$accounting-request-timeout-percentage" "$accounting-request-timeouts-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "accounting-request-timeout-percentage = $accounting-request-timeout-percentage%, exceeded warning threshold $accounting-request-timeouts-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$accounting-request-timeout-percentage" "$accounting-request-timeouts-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "accounting-request-timeout-percentage = $accounting-request-timeout-percentage%, exceeded critical threshold $accounting-request-timeouts-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

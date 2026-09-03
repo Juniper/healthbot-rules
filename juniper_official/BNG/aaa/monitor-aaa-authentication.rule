@@ -1,0 +1,201 @@
+healthbot {
+    topic bng.aaa {
+        rule monitor-aaa-authentication {
+            synopsis "Monitors AAA authentication statistics and performance";
+            description "Tracks the AAA authentication-request timeout rate over a rolling 1-hour window to detect degraded authentication responsiveness";
+            sensor aaa-authentication-information {
+                description "Monitors AAA authentication statistics and performance";
+                synopsis "Monitors AAA authentication statistics and performance";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/aaa/authentication-statistics";
+                }
+            }
+            field authentication-request-timeouts-critical-threshold {
+                constant {
+                    value "{{authentication-request-timeouts-critical-threshold}}";
+                }
+                description "Authentication request timeout rate at or above which the AAA service is treated as critically degraded";
+                type "integer";
+            }
+            field authentication-request-timeouts-warning-threshold {
+                constant {
+                    value "{{authentication-request-timeouts-warning-threshold}}";
+                }
+                description "Authentication request timeout rate above which the AAA service needs attention";
+                type "integer";
+            }
+            field authentication-requests-received {
+                description "AAA authentication requests received (cumulative)";
+                sensor aaa-authentication-information {
+                    path "/junos/system/subscriber-management/aaa/authentication-statistics/req-received";
+                }
+                type "integer";
+                plots Authentication requests received {
+                    unit "requests";
+                }
+            }
+            field authentication-request-timeouts {
+                description "AAA authentication requests that timed out (cumulative)";
+                sensor aaa-authentication-information {
+                    path "/junos/system/subscriber-management/aaa/authentication-statistics/req-timeout";
+                }
+                type "integer";
+                plots Authentication request timeouts {
+                    unit "timeouts";
+                }
+            }
+            field authentication-request-timeouts-min {
+                description "Minimum AAA authentication request timeouts over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$authentication-request-timeouts";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-requests-received-min {
+                description "Minimum AAA authentication requests received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$authentication-requests-received";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field authentication-request-timeout-percentage {
+                description "Percentage of AAA authentication requests that timed out over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $authentication-request-timeouts - $authentication-request-timeouts-min ) / ( $authentication-requests-received - $authentication-requests-received-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots Authentication request timeout percentage {
+                    unit "percent";
+                    triggers "authentication-request-timeouts";
+                }
+            }
+            field authentication-requests-received-delta {
+                description "AAA authentication requests received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $authentication-requests-received - $authentication-requests-received-min )";
+                    }
+                }
+                type "integer";
+            }
+            variable authentication-request-timeouts-critical-threshold {
+                description "Authentication request timeout rate at or above which the AAA service is treated as critically degraded";
+                type "integer";
+                value "5";
+            }
+            variable authentication-request-timeouts-warning-threshold {
+                description "Authentication request timeout rate above which the AAA service needs attention";
+                type "integer";
+                value "1";
+            }
+            trigger authentication-request-timeouts {
+                description "Alert when authentication-request-timeout percentage exceeds threshold";
+                synopsis "Alert when authentication request timeout percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$authentication-requests-received-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No authentication requests in the last 1 hour; authentication-request-timeout-percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$authentication-request-timeout-percentage" "$authentication-request-timeouts-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "authentication-request-timeout-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$authentication-request-timeout-percentage" "$authentication-request-timeouts-warning-threshold";
+                        less-than-or-equal-to "$authentication-request-timeout-percentage" "$authentication-request-timeouts-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "authentication-request-timeout-percentage = $authentication-request-timeout-percentage%, exceeded warning threshold $authentication-request-timeouts-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$authentication-request-timeout-percentage" "$authentication-request-timeouts-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "authentication-request-timeout-percentage = $authentication-request-timeout-percentage%, exceeded critical threshold $authentication-request-timeouts-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

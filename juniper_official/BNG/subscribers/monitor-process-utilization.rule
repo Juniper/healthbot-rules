@@ -1,0 +1,263 @@
+healthbot {
+    topic bng.subscribers {
+        rule monitor-process-utilization {
+            keys [ "routing-engine-name" "process-name" ];
+            synopsis "Monitors subscriber-management process CPU & memory utilization";
+            description "Monitor process-cpu-utilization, process-memory-utilization";
+            sensor subscriber-management-process-information {
+                description "Monitors subscriber-management process CPU & memory utilization";
+                synopsis "Monitors subscriber-management process CPU & memory utilization";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/process-status/subscriber-management-processes/subscriber-management-process";
+                }
+            }
+            field routing-engine-name {
+                description "Routing engine index scoping the subscriber-management process metrics";
+                sensor subscriber-management-process-information {
+                    path "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/@re-index";
+                    where "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/@re-index =~ /{{routing-engine-name}}/";
+                }
+                type "string";
+            }
+            field process-name {
+                description "Name of the subscriber-management process being monitored";
+                sensor subscriber-management-process-information {
+                    path "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/process-status/subscriber-management-processes/subscriber-management-process/@process-name";
+                    where "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/process-status/subscriber-management-processes/subscriber-management-process/@process-name =~ /{{process-name}}/";
+                }
+                type "string";
+            }
+            field process-cpu-utilization-critical-threshold {
+                constant {
+                    value "{{process-cpu-utilization-critical-threshold}}";
+                }
+                description "CPU utilization percentage at which the process is considered critically loaded";
+                type "integer";
+            }
+            field process-cpu-utilization-warning-threshold {
+                constant {
+                    value "{{process-cpu-utilization-warning-threshold}}";
+                }
+                description "CPU utilization percentage at which the process load warrants a warning";
+                type "integer";
+            }
+            field process-cpu-utilization {
+                description "Subscriber management process CPU utilization";
+                sensor subscriber-management-process-information {
+                    path "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/process-status/subscriber-management-processes/subscriber-management-process/cpu-utilization";
+                }
+                type "integer";
+                plots Subscriber management process CPU utilization {
+                    unit "percent";
+                }
+            }
+            field process-memory-utilization-critical-threshold {
+                constant {
+                    value "{{process-memory-utilization-critical-threshold}}";
+                }
+                description "Memory utilization percentage at which the process is considered critically loaded";
+                type "integer";
+            }
+            field process-memory-utilization-warning-threshold {
+                constant {
+                    value "{{process-memory-utilization-warning-threshold}}";
+                }
+                description "Memory utilization percentage at which the process load warrants a warning";
+                type "integer";
+            }
+            field process-memory-utilization {
+                description "Subscriber management process memory utilization";
+                sensor subscriber-management-process-information {
+                    path "/junos/system/subscriber-management/chassis/routing-engines/routing-engine/process-status/subscriber-management-processes/subscriber-management-process/memory-utilization";
+                }
+                type "integer";
+                plots Subscriber management process memory utilization {
+                    unit "percent";
+                }
+            }
+            field process-cpu-utilization-1h-average {
+                description "Mean CPU utilization of the process over the last 1 hour";
+                formula {
+                    mean {
+                        field-name "$process-cpu-utilization";
+                        time-range "1h";
+                    }
+                }
+                type "float";
+                plots Subscriber management process CPU utilization (1-hour average) {
+                    unit "percent";
+                    triggers "process-cpu-high";
+                }
+            }
+            field process-memory-utilization-1h-average {
+                description "Mean memory utilization of the process over the last 1 hour";
+                formula {
+                    mean {
+                        field-name "$process-memory-utilization";
+                        time-range "1h";
+                    }
+                }
+                type "float";
+                plots Subscriber management process memory utilization (1-hour average) {
+                    unit "percent";
+                    triggers "process-memory-high";
+                }
+            }
+            variable routing-engine-name {
+                description "Routing engine index to match; defaults to all routing engines";
+                type "string";
+                value ".+";
+            }
+            variable process-name {
+                description "Subscriber-management process name to match; defaults to all processes";
+                type "string";
+                value ".+";
+            }
+            variable process-cpu-utilization-critical-threshold {
+                description "CPU utilization percentage at which the process is considered critically loaded";
+                type "integer";
+                value "90";
+            }
+            variable process-cpu-utilization-warning-threshold {
+                description "CPU utilization percentage at which the process load warrants a warning";
+                type "integer";
+                value "75";
+            }
+            variable process-memory-utilization-critical-threshold {
+                description "Memory utilization percentage at which the process is considered critically loaded";
+                type "integer";
+                value "90";
+            }
+            variable process-memory-utilization-warning-threshold {
+                description "Memory utilization percentage at which the process load warrants a warning";
+                type "integer";
+                value "75";
+            }
+            trigger process-cpu-high {
+                description "Alert when the 1-hour average process CPU utilization exceeds a threshold";
+                synopsis "Alert when the 1-hour average process CPU utilization exceeds a threshold";
+                term is-healthy {
+                    when {
+                        less-than "$process-cpu-utilization-1h-average" "$process-cpu-utilization-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "process-cpu-utilization-1h-average is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than "$process-cpu-utilization-1h-average" "$process-cpu-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "process-cpu-utilization-1h-average = $process-cpu-utilization-1h-average %, exceeded warning threshold $process-cpu-utilization-warning-threshold.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$process-cpu-utilization-1h-average" "$process-cpu-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "process-cpu-utilization-1h-average = $process-cpu-utilization-1h-average %, exceeded critical threshold $process-cpu-utilization-critical-threshold.";
+                        }
+                    }
+                }
+            }
+            trigger process-memory-high {
+                description "Alert when the 1-hour average process memory utilization exceeds a threshold";
+                synopsis "Alert when the 1-hour average process memory utilization exceeds a threshold";
+                term is-healthy {
+                    when {
+                        less-than "$process-memory-utilization-1h-average" "$process-memory-utilization-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "process-memory-utilization-1h-average is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than "$process-memory-utilization-1h-average" "$process-memory-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "process-memory-utilization-1h-average = $process-memory-utilization-1h-average %, exceeded warning threshold $process-memory-utilization-warning-threshold.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$process-memory-utilization-1h-average" "$process-memory-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "process-memory-utilization-1h-average = $process-memory-utilization-1h-average %, exceeded critical threshold $process-memory-utilization-critical-threshold.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
