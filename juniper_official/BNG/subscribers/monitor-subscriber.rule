@@ -3,11 +3,12 @@ healthbot {
         rule monitor-subscriber-count {
             synopsis "Subscribers count statistics analyzer";
             description "This rule collects total subscribers and notifies in case of anomalies";
+            add-site-id true;
             sensor sdb-subscribers {
                 description "Subscriber-management open-config sensor to collect subscriber counter from database";
                 open-config {
                     frequency "60s";
-                    sensor-name "/junos/system/subscriber-management/infra/sdb/statistics/state";
+                    sensor-name "/junos/system/subscriber-management/infra/sdb/statistics/";
                 }
                 synopsis "Subscriber-management SDB open-config sensor definition";
             }
@@ -60,6 +61,26 @@ healthbot {
                     }
                 }
             }
+            field sdb-pppoe-subscriber-count {
+                description "Number of PPPoE subscribers in database";
+                sensor sdb-subscribers {
+                    path "/junos/system/subscriber-management/infra/sdb/statistics/client-type/pppoe-client-count";
+                }
+                type "integer";
+                plots pppoe-subscriber-count {
+                    unit "subscribers";
+                }
+            }
+            field sdb-dhcp-subscriber-count {
+                description "Number of DHCP subscribers in database";
+                sensor sdb-subscribers {
+                    path "/junos/system/subscriber-management/infra/sdb/statistics/client-type/dhcp-client-count";
+                }
+                type "integer";
+                plots dhcp-subscriber-count {
+                    unit "subscribers";
+                }
+            }
             variable subscriber-increase-max {
                 description "Maximum subsciber increase count";
                 type "integer";
@@ -71,6 +92,7 @@ healthbot {
                 value "10";
             }
             trigger total-subscribers-count {
+                alert-type "bng.subscriber-inventory.total-subscriber-count";
                 description "Sets health based on subscribers count";
                 synopsis "Subscribers count state";
                 term total-subscriber-normal {
@@ -94,6 +116,7 @@ healthbot {
                 }
             }
             trigger active-subscribers-count {
+                alert-type "bng.subscriber-inventory.active-subscriber-count";
                 description "Sets health based on active subscribers count";
                 synopsis "Active subscribers count state";
                 term active-subscriber-normal {
