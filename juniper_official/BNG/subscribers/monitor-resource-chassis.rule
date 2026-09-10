@@ -1,0 +1,173 @@
+healthbot {
+    topic bng.subscribers {
+        rule monitor-resource-chassis {
+            synopsis "Monitors subscriber-management resource utilization (chassis scope)";
+            description "resource-monitor KPIs at chassis scope";
+            add-site-id "true";
+            sensor resource-monitor-information {
+                description "Monitors subscriber-management resource utilization";
+                synopsis "Monitors subscriber-management resource utilization";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/infra/resource-monitor";
+                }
+            }
+            field chassis-current-subscriber-count {
+                description "Chassis current subscriber count";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/chassis/current-subscriber-count";
+                }
+                type "integer";
+                plots Chassis current subscriber count {
+                    unit "subscribers";
+                }
+            }
+            field chassis-configured-subscriber-limit {
+                description "Chassis configured subscriber limit (absolute count; streams only when a limit is configured)";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/chassis/configured-subscriber-limit";
+                }
+                type "integer";
+                plots Chassis configured subscriber limit {
+                    unit "subscribers";
+                }
+            }
+            field chassis-subscriber-limit-utilization {
+                description "Percent of the configured Chassis subscriber limit in use";
+                formula {
+                    eval {
+                        expression "( $chassis-current-subscriber-count / $chassis-configured-subscriber-limit ) * 100";
+                    }
+                }
+                type "float";
+                plots Chassis subscriber limit utilization {
+                    unit "percent";
+                    triggers "chassis-subscriber-limit-utilization";
+                }
+            }
+            field subscriber-limit-utilization-warning-threshold {
+                constant {
+                    value "{{subscriber-limit-utilization-warning-threshold}}";
+                }
+                description "Warning threshold: percent of the configured limit (default 75)";
+                type "integer";
+            }
+            field subscriber-limit-utilization-critical-threshold {
+                constant {
+                    value "{{subscriber-limit-utilization-critical-threshold}}";
+                }
+                description "Critical threshold: percent of the configured limit (default 100 = at the limit)";
+                type "integer";
+            }
+            variable subscriber-limit-utilization-warning-threshold {
+                description "Warning threshold: percent of the configured limit (default 75)";
+                type "integer";
+                value "75";
+            }
+            variable subscriber-limit-utilization-critical-threshold {
+                description "Critical threshold: percent of the configured limit (default 100 = at the limit)";
+                type "integer";
+                value "100";
+            }
+            trigger chassis-subscriber-limit-utilization {
+                alert-type "bng.subscriber-resource-utilization.chassis.subscriber-limit";
+                description "Alert on Chassis subscriber-limit utilization: warning at 75% of the limit, critical at the limit";
+                synopsis "Alert on Chassis subscriber-limit utilization versus the configured limit";
+                term is-no-limit {
+                    when {
+                        less-than-or-equal-to "$chassis-configured-subscriber-limit" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No Chassis subscriber limit is configured; utilization not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than "$chassis-subscriber-limit-utilization" "$subscriber-limit-utilization-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "chassis-subscriber-limit-utilization = $chassis-subscriber-limit-utilization%, below the warning level.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than "$chassis-subscriber-limit-utilization" "$subscriber-limit-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "chassis-subscriber-limit-utilization = $chassis-subscriber-limit-utilization%, above $subscriber-limit-utilization-warning-threshold% of the configured limit.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$chassis-subscriber-limit-utilization" "$subscriber-limit-utilization-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "chassis-subscriber-limit-utilization = $chassis-subscriber-limit-utilization% - the configured limit is reached.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

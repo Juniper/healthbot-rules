@@ -1,0 +1,506 @@
+healthbot {
+    topic bng.diameter {
+        rule monitor-diameter-gx-statistics {
+            synopsis "Monitors Gx/PCRF diameter client statistics";
+            description "P1 KPIs: Monitor Gx CCA initial-failure, parse-error, terminate-timeout";
+            add-site-id "true";
+            sensor diameter-client-information {
+                description "Monitors Gx/PCRF diameter client statistics";
+                synopsis "Monitors Gx/PCRF diameter client statistics";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/aaa/diameter/clients";
+                }
+            }
+            field cca-initial-failure-critical-threshold {
+                constant {
+                    value "{{cca-initial-failure-critical-threshold}}";
+                }
+                description "CCA initial-failure percentage at or above which the Gx client is treated as critically degraded";
+                type "integer";
+            }
+            field cca-initial-failure-warning-threshold {
+                constant {
+                    value "{{cca-initial-failure-warning-threshold}}";
+                }
+                description "CCA initial-failure percentage above which the Gx client needs attention";
+                type "integer";
+            }
+            field cca-initial-failure {
+                description "GX CCA initial failure responses";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/cca-initial-failure";
+                }
+                type "integer";
+                plots GX CCA initial failure responses {
+                    unit "responses";
+                }
+            }
+            field cca-parse-error-critical-threshold {
+                constant {
+                    value "{{cca-parse-error-critical-threshold}}";
+                }
+                description "CCA parse-error percentage at or above which the Gx client is treated as critically degraded";
+                type "integer";
+            }
+            field cca-parse-error-warning-threshold {
+                constant {
+                    value "{{cca-parse-error-warning-threshold}}";
+                }
+                description "CCA parse-error percentage above which the Gx client needs attention";
+                type "integer";
+            }
+            field cca-parse-error {
+                description "GX CCA parse errors";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/cca-parse-error";
+                }
+                type "integer";
+                plots GX CCA parse errors {
+                    unit "responses";
+                }
+            }
+            field cca-terminate-timeout {
+                description "GX CCA terminate timeout responses";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/cca-terminate-timeout";
+                }
+                type "integer";
+                plots GX CCA terminate timeout responses {
+                    unit "responses";
+                }
+            }
+            field ccr-initial {
+                description "GX CCR-Initial requests sent";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/ccr-initial";
+                }
+                type "integer";
+                plots GX CCR-Initial requests sent {
+                    unit "requests";
+                }
+            }
+            field cca-initial {
+                description "GX CCA-Initial responses received";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/cca-initial";
+                }
+                type "integer";
+            }
+            field cca-update {
+                description "GX CCA-Update responses received";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/cca-update";
+                }
+                type "integer";
+            }
+            field cca-terminate {
+                description "GX CCA-Terminate responses received";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/cca-terminate";
+                }
+                type "integer";
+            }
+            field cca-initial-failure-min {
+                description "Minimum GX CCA initial-failure responses over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$cca-initial-failure";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field ccr-initial-min {
+                description "Minimum GX CCR-Initial requests sent over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$ccr-initial";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field cca-parse-error-min {
+                description "Minimum GX CCA parse errors over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$cca-parse-error";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field cca-initial-min {
+                description "Minimum GX CCA-Initial responses received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$cca-initial";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field cca-update-min {
+                description "Minimum GX CCA-Update responses received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$cca-update";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field cca-terminate-min {
+                description "Minimum GX CCA-Terminate responses received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$cca-terminate";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field cca-initial-failure-percentage {
+                description "Percentage of Gx CCR-Initial requests answered with CCA initial-failure over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $cca-initial-failure - $cca-initial-failure-min ) / ( $ccr-initial - $ccr-initial-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots GX CCA initial failure percentage {
+                    unit "percent";
+                    triggers "diameter-gx-failures";
+                }
+            }
+            field cca-parse-error-percentage {
+                description "Percentage of received Gx CCA responses (initial+update+terminate) that failed parsing over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $cca-parse-error - $cca-parse-error-min ) / ( ( $cca-initial + $cca-update + $cca-terminate ) - ( $cca-initial-min + $cca-update-min + $cca-terminate-min ) ) ) * 100";
+                    }
+                }
+                type "float";
+                plots GX CCA parse error percentage {
+                    unit "percent";
+                    triggers "diameter-gx-parse-errors";
+                }
+            }
+            field ccr-initial-delta {
+                description "Gx CCR-Initial requests sent in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $ccr-initial - $ccr-initial-min )";
+                    }
+                }
+                type "integer";
+            }
+            field cca-total-delta {
+                description "Gx CCA responses (initial+update+terminate) received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( ( $cca-initial + $cca-update + $cca-terminate ) - ( $cca-initial-min + $cca-update-min + $cca-terminate-min ) )";
+                    }
+                }
+                type "integer";
+            }
+            field ccr-terminate {
+                description "GX CCR-Terminate requests sent";
+                sensor diameter-client-information {
+                    path "/junos/system/subscriber-management/aaa/diameter/clients/gx/ccr-terminate";
+                }
+                type "integer";
+                plots GX CCR-Terminate requests sent {
+                    unit "requests";
+                }
+            }
+            field cca-terminate-timeout-min {
+                description "Minimum GX CCA terminate timeout responses over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$cca-terminate-timeout";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field ccr-terminate-min {
+                description "Minimum GX CCR-Terminate requests sent over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$ccr-terminate";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field ccr-terminate-delta {
+                description "Gx CCR-Terminate requests sent in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $ccr-terminate - $ccr-terminate-min )";
+                    }
+                }
+                type "integer";
+            }
+            field cca-terminate-timeout-percentage {
+                description "Percentage of Gx CCR-Terminate requests that got no answer (timeout) over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $cca-terminate-timeout - $cca-terminate-timeout-min ) / ( $ccr-terminate - $ccr-terminate-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots GX CCA terminate timeout percentage {
+                    unit "percent";
+                    triggers "diameter-gx-terminate-timeouts";
+                }
+            }
+            field cca-terminate-timeout-critical-threshold {
+                constant {
+                    value "{{cca-terminate-timeout-critical-threshold}}";
+                }
+                description "CCA terminate-timeout percentage at or above which the Gx client is treated as critically degraded";
+                type "integer";
+            }
+            field cca-terminate-timeout-warning-threshold {
+                constant {
+                    value "{{cca-terminate-timeout-warning-threshold}}";
+                }
+                description "CCA terminate-timeout percentage above which the Gx client needs attention";
+                type "integer";
+            }
+            variable cca-initial-failure-critical-threshold {
+                description "CCA initial-failure percentage at or above which the Gx client is treated as critically degraded";
+                type "integer";
+                value "5";
+            }
+            variable cca-initial-failure-warning-threshold {
+                description "CCA initial-failure percentage above which the Gx client needs attention";
+                type "integer";
+                value "1";
+            }
+            variable cca-parse-error-critical-threshold {
+                description "CCA parse-error percentage at or above which the Gx client is treated as critically degraded";
+                type "integer";
+                value "5";
+            }
+            variable cca-parse-error-warning-threshold {
+                description "CCA parse-error percentage above which the Gx client needs attention";
+                type "integer";
+                value "1";
+            }
+            variable cca-terminate-timeout-critical-threshold {
+                description "CCA terminate-timeout percentage at or above which the Gx client is treated as critically degraded";
+                type "integer";
+                value "5";
+            }
+            variable cca-terminate-timeout-warning-threshold {
+                description "CCA terminate-timeout percentage above which the Gx client needs attention";
+                type "integer";
+                value "1";
+            }
+            trigger diameter-gx-failures {
+                alert-type "bng.subscriber-policy-health.diameter.gx-failures";
+                description "Alert when cca-initial-failure-percentage exceeds threshold";
+                synopsis "Alert when cca-initial-failure-percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$ccr-initial-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No Gx CCR-Initial requests in the last 1 hour; initial-failure percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$cca-initial-failure-percentage" "$cca-initial-failure-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "cca-initial-failure-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$cca-initial-failure-percentage" "$cca-initial-failure-warning-threshold";
+                        less-than-or-equal-to "$cca-initial-failure-percentage" "$cca-initial-failure-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "cca-initial-failure-percentage = $cca-initial-failure-percentage%, exceeded warning threshold $cca-initial-failure-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$cca-initial-failure-percentage" "$cca-initial-failure-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "cca-initial-failure-percentage = $cca-initial-failure-percentage%, exceeded critical threshold $cca-initial-failure-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger diameter-gx-parse-errors {
+                alert-type "bng.subscriber-policy-health.diameter.gx-parse-errors";
+                description "Alert when cca-parse-error-percentage exceeds threshold";
+                synopsis "Alert when cca-parse-error-percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$cca-total-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No Gx CCA responses in the last 1 hour; parse-error percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$cca-parse-error-percentage" "$cca-parse-error-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "cca-parse-error-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$cca-parse-error-percentage" "$cca-parse-error-warning-threshold";
+                        less-than-or-equal-to "$cca-parse-error-percentage" "$cca-parse-error-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "cca-parse-error-percentage = $cca-parse-error-percentage%, exceeded warning threshold $cca-parse-error-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$cca-parse-error-percentage" "$cca-parse-error-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "cca-parse-error-percentage = $cca-parse-error-percentage%, exceeded critical threshold $cca-parse-error-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger diameter-gx-terminate-timeouts {
+                alert-type "bng.subscriber-policy-health.diameter.gx-terminate-timeouts";
+                description "Alert when the Gx CCA terminate-timeout percentage exceeds a threshold";
+                synopsis "Alert when the Gx CCA terminate-timeout percentage exceeds a threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$ccr-terminate-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No Gx CCR-Terminate requests in the last 1 hour; terminate-timeout percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$cca-terminate-timeout-percentage" "$cca-terminate-timeout-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "cca-terminate-timeout-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$cca-terminate-timeout-percentage" "$cca-terminate-timeout-warning-threshold";
+                        less-than-or-equal-to "$cca-terminate-timeout-percentage" "$cca-terminate-timeout-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "cca-terminate-timeout-percentage = $cca-terminate-timeout-percentage%, exceeded warning threshold $cca-terminate-timeout-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$cca-terminate-timeout-percentage" "$cca-terminate-timeout-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "cca-terminate-timeout-percentage = $cca-terminate-timeout-percentage%, exceeded critical threshold $cca-terminate-timeout-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

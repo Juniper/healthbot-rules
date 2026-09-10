@@ -1,0 +1,179 @@
+healthbot {
+    topic bng.subscribers {
+        rule monitor-subscriber-count {
+            synopsis "Subscribers count statistics analyzer";
+            description "This rule collects total subscribers and notifies in case of anomalies";
+            add-site-id "true";
+            sensor sdb-subscribers {
+                description "Subscriber-management open-config sensor to collect subscriber counter from database";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/infra/sdb/statistics/";
+                }
+                synopsis "Subscriber-management SDB open-config sensor definition";
+            }
+            field subscriber-increase-maximum-threshold {
+                constant {
+                    value "{{subscriber-increase-max}}";
+                }
+                description "Maximum subsciber increase count";
+                type "integer";
+            }
+            field active-subscriber-percentage-threshold {
+                constant {
+                    value "{{min-active-subscriber-percentage}}";
+                }
+                description "Minimum active subsciber to total subscriber percentage";
+                type "integer";
+            }
+            field sdb-total-subscriber-count {
+                description "Number of subscribers in database";
+                sensor sdb-subscribers {
+                    path "/junos/system/subscriber-management/infra/sdb/statistics/state/total-state-count";
+                }
+                type "integer";
+                plots total-subscriber-count {
+                    unit "subscribers";
+                    triggers "total-subscribers-count";
+                }
+            }
+            field active-subscriber-count-minimum-threshold {
+                description "Miniumm active subscriber counts";
+                formula {
+                    eval {
+                        expression "(( $sdb-total-subscriber-count * $active-subscriber-percentage-threshold ) / 100 )";
+                    }
+                }
+                type "integer";
+            }
+            field sdb-active-subscriber-count {
+                description "Number of active subscribers in database";
+                sensor sdb-subscribers {
+                    path "/junos/system/subscriber-management/infra/sdb/statistics/state/active-state-count";
+                }
+                type "integer";
+                plots active-subscriber-count {
+                    unit "subscribers";
+                    triggers "active-subscribers-count";
+                    thresholds active-subscriber-ratio-threshold {
+                        field-name "$active-subscriber-count-minimum-threshold";
+                        severity "critical";
+                    }
+                }
+            }
+            field sdb-pppoe-subscriber-count {
+                description "Number of PPPoE subscribers in database";
+                sensor sdb-subscribers {
+                    path "/junos/system/subscriber-management/infra/sdb/statistics/client-type/pppoe-client-count";
+                }
+                type "integer";
+                plots pppoe-subscriber-count {
+                    unit "subscribers";
+                }
+            }
+            field sdb-dhcp-subscriber-count {
+                description "Number of DHCP subscribers in database";
+                sensor sdb-subscribers {
+                    path "/junos/system/subscriber-management/infra/sdb/statistics/client-type/dhcp-client-count";
+                }
+                type "integer";
+                plots dhcp-subscriber-count {
+                    unit "subscribers";
+                }
+            }
+            variable subscriber-increase-max {
+                description "Maximum subsciber increase count";
+                type "integer";
+                value "60";
+            }
+            variable min-active-subscriber-percentage {
+                description "Minimum active subscriber vs total subscriber percentage";
+                type "integer";
+                value "10";
+            }
+            trigger total-subscribers-count {
+                alert-type "bng.subscriber-inventory.total-subscriber-count";
+                description "Sets health based on subscribers count";
+                synopsis "Subscribers count state";
+                term total-subscriber-normal {
+                    then {
+                        status {
+                            color "green";
+                            message "Total subscriber count increase is normal. Current total subscriber count is : $sdb-total-subscriber-count";
+                        }
+                    }
+                    when {
+                        increasing-at-most-by-value "$sdb-total-subscriber-count" "$subscriber-increase-maximum-threshold";
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color "red";
+                            message "Total subscriber count increased more than $subscriber-increase-maximum-threshold. Current total subscriber count is : $sdb-total-subscriber-count";
+                        }
+                    }
+                }
+            }
+            trigger active-subscribers-count {
+                alert-type "bng.subscriber-inventory.active-subscriber-count";
+                description "Sets health based on active subscribers count";
+                synopsis "Active subscribers count state";
+                term active-subscriber-normal {
+                    then {
+                        status {
+                            color "green";
+                            message "Active subscriber count is normal. Current active subscriber count is : $sdb-active-subscriber-count";
+                        }
+                    }
+                    when {
+                        greater-than-or-equal-to "$sdb-active-subscriber-count" "$active-subscriber-count-minimum-threshold";
+                    }
+                }
+                term default-term {
+                    then {
+                        status {
+                            color "red";
+                            message "Active subscriber count is less than $active-subscriber-count-minimum-threshold . Current active subscriber count is : $sdb-active-subscriber-count";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX2010 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 18.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

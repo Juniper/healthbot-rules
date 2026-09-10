@@ -1,0 +1,274 @@
+healthbot {
+    topic bng.dhcp {
+        rule monitor-dhcp-v6-relay-server {
+            keys [ "routing-instance-name" "v6-server-address" ];
+            synopsis "Monitors DHCPv6 relay upstream-server response-time stats";
+            description "Monitors jdhcpd DHCPv6 relay upstream-server response-time stats";
+            add-site-id "true";
+            sensor jdhcpd-information {
+                description "jdhcpd DHCPv6 relay upstream-server response-time stats";
+                synopsis "jdhcpd DHCPv6 relay upstream-server response-time stats";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance";
+                }
+            }
+            field routing-instance-name {
+                description "routing-instance name";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/@ri-name";
+                    where "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/@ri-name =~ /{{routing-instance-name}}/";
+                }
+                type "string";
+            }
+            field v6-server-address {
+                description "v6-server-address: upstream DHCPv6 server IP key for relay per-server response-time stats";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/servers/server/@server-ipv6";
+                    where "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/servers/server/@server-ipv6 =~ /{{v6-server-address}}/";
+                }
+                type "string";
+            }
+            field v6-relay-server-average-response-time {
+                description "DHCPv6 relay server average response time";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/servers/server/response-time/one-minute-average-response-time";
+                }
+                type "integer";
+                plots DHCPv6 relay server average response time {
+                    unit "ms";
+                    triggers "dhcpv6-relay-server-response-time";
+                }
+            }
+            field v6-relay-server-messages-no-response {
+                description "DHCPv6 relay server no response messages";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/servers/server/response-time/one-minute-messages-no-response";
+                }
+                type "integer";
+                plots DHCPv6 relay server no response messages {
+                    unit "events";
+                }
+            }
+            field v6-relay-server-response-time-critical-threshold {
+                constant {
+                    value "{{v6-relay-server-response-time-critical-threshold}}";
+                }
+                description "DHCPv6 relay upstream-server average response time at or above which the server is treated as critically degraded";
+                type "integer";
+            }
+            field v6-relay-server-response-time-warning-threshold {
+                constant {
+                    value "{{v6-relay-server-response-time-warning-threshold}}";
+                }
+                description "DHCPv6 relay upstream-server average response time above which the server needs attention";
+                type "integer";
+            }
+            field v6-relay-server-no-response-critical-threshold {
+                constant {
+                    value "{{v6-relay-server-no-response-critical-threshold}}";
+                }
+                description "Critical threshold for DHCPV6 relay upstream-server no-response percentage (share of last-minute messages unanswered)";
+                type "integer";
+            }
+            field v6-relay-server-no-response-warning-threshold {
+                constant {
+                    value "{{v6-relay-server-no-response-warning-threshold}}";
+                }
+                description "Warning threshold for DHCPV6 relay upstream-server no-response percentage (share of last-minute messages unanswered)";
+                type "integer";
+            }
+            field v6-relay-server-messages-sent {
+                description "DHCPV6 relay messages sent to the upstream server in the last minute";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/servers/server/response-time/one-minute-messages-sent";
+                }
+                type "integer";
+                plots DHCPv6 relay server messages sent {
+                    unit "count";
+                }
+            }
+            field v6-relay-server-no-response-percentage {
+                description "Percentage of DHCPV6 relay messages sent in the last minute that received no response from the upstream server";
+                formula {
+                    eval {
+                        expression "( $v6-relay-server-messages-no-response / $v6-relay-server-messages-sent ) * 100";
+                    }
+                }
+                type "float";
+                plots DHCPv6 relay server no-response percentage {
+                    unit "percent";
+                    triggers "dhcpv6-relay-server-no-response";
+                }
+            }
+            variable routing-instance-name {
+                description "Routing instance name for jdhcpd telemetry";
+                type "string";
+                value ".+";
+            }
+            variable v6-server-address {
+                description "Upstream DHCPv6 server IP for relay per-server response-time stats";
+                type "string";
+                value ".+";
+            }
+            variable v6-relay-server-response-time-critical-threshold {
+                description "DHCPv6 relay upstream-server average response time at or above which the server is treated as critically degraded";
+                type "integer";
+                value "5000";
+            }
+            variable v6-relay-server-response-time-warning-threshold {
+                description "DHCPv6 relay upstream-server average response time above which the server needs attention";
+                type "integer";
+                value "2000";
+            }
+            variable v6-relay-server-no-response-critical-threshold {
+                description "Critical threshold for DHCPV6 relay upstream-server no-response percentage (share of last-minute messages unanswered)";
+                type "integer";
+                value "10";
+            }
+            variable v6-relay-server-no-response-warning-threshold {
+                description "Warning threshold for DHCPV6 relay upstream-server no-response percentage (share of last-minute messages unanswered)";
+                type "integer";
+                value "5";
+            }
+            trigger dhcpv6-relay-server-response-time {
+                alert-type "bng.subscriber-login-performance.dhcp.v6.relay-server-response-time";
+                description "Evaluate DHCPv6 relay upstream-server 1-minute average response time against warning and critical thresholds";
+                synopsis "Evaluate DHCPv6 relay upstream-server average response time";
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$v6-relay-server-average-response-time" "$v6-relay-server-response-time-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "v6-relay-server-average-response-time is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$v6-relay-server-average-response-time" "$v6-relay-server-response-time-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "v6-relay-server-average-response-time = $v6-relay-server-average-response-time ms, exceeded warning threshold $v6-relay-server-response-time-warning-threshold.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$v6-relay-server-average-response-time" "$v6-relay-server-response-time-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "v6-relay-server-average-response-time = $v6-relay-server-average-response-time ms, exceeded critical threshold $v6-relay-server-response-time-critical-threshold.";
+                        }
+                    }
+                }
+            }
+            trigger dhcpv6-relay-server-no-response {
+                alert-type "bng.subscriber-login-performance.dhcp.v6.relay-server-no-response";
+                description "Evaluate DHCPV6 relay upstream-server no-response percentage against warning and critical thresholds";
+                synopsis "Evaluate DHCPV6 relay upstream-server no-response percentage";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$v6-relay-server-messages-sent" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No DHCPV6 relay messages sent to this server in the last minute; no-response percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$v6-relay-server-no-response-percentage" "$v6-relay-server-no-response-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "v6-relay-server-no-response-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        greater-than "$v6-relay-server-no-response-percentage" "$v6-relay-server-no-response-warning-threshold";
+                        less-than-or-equal-to "$v6-relay-server-no-response-percentage" "$v6-relay-server-no-response-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "v6-relay-server-no-response-percentage = $v6-relay-server-no-response-percentage%, exceeded warning threshold $v6-relay-server-no-response-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$v6-relay-server-no-response-percentage" "$v6-relay-server-no-response-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "v6-relay-server-no-response-percentage = $v6-relay-server-no-response-percentage%, exceeded critical threshold $v6-relay-server-no-response-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

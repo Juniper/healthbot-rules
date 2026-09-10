@@ -1,0 +1,351 @@
+healthbot {
+    topic bng.dhcp {
+        rule monitor-dhcp-v6-statistics {
+            keys [ "routing-instance-name" ];
+            synopsis "Monitors jdhcpd DHCPv6 server and relay aggregate statistics";
+            description "Monitors jdhcpd DHCPv6 server and relay aggregate statistics";
+            add-site-id "true";
+            sensor jdhcpd-information {
+                description "jdhcpd DHCPv6 routing-instance statistics";
+                synopsis "jdhcpd DHCPv6 routing-instance statistics";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance";
+                }
+            }
+            field routing-instance-name {
+                description "routing-instance name";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/@ri-name";
+                    where "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/@ri-name =~ /{{routing-instance-name}}/";
+                }
+                type "string";
+            }
+            field v6-server-dropped-total {
+                description "DHCPv6 server total drops";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/statistics/dropped-v6server-total";
+                }
+                type "integer";
+                plots DHCPv6 server total drops {
+                    unit "events";
+                }
+            }
+            field v6-server-solicit-received {
+                description "DHCPv6 server SOLICIT messages received";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/server/statistics/msg-recv-v6server-dhcpv6-solicit";
+                }
+                type "integer";
+                plots DHCPv6 server SOLICIT messages received {
+                    unit "count";
+                }
+            }
+            field v6-relay-dropped-total {
+                description "DHCPv6 relay total drops";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/statistics/dropped-v6relay-total";
+                }
+                type "integer";
+                plots DHCPv6 relay total drops {
+                    unit "events";
+                }
+            }
+            field v6-relay-solicit-received {
+                description "DHCPv6 relay SOLICIT messages received";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v6/routing-instances/routing-instance/relay/statistics/msg-recv-v6relay-solicit";
+                }
+                type "integer";
+                plots DHCPv6 relay SOLICIT messages received {
+                    unit "count";
+                }
+            }
+            field v6-server-dropped-total-min {
+                description "Minimum DHCPv6 server total drops over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v6-server-dropped-total";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v6-server-solicit-received-min {
+                description "Minimum DHCPv6 server SOLICIT messages received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v6-server-solicit-received";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v6-server-drops-percentage {
+                description "Percentage of DHCPv6 server SOLICIT messages dropped over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $v6-server-dropped-total - $v6-server-dropped-total-min ) / ( $v6-server-solicit-received - $v6-server-solicit-received-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots DHCPv6 server drop percentage {
+                    unit "percent";
+                    triggers "dhcpv6-server-total-drops";
+                }
+            }
+            field v6-relay-dropped-total-min {
+                description "Minimum DHCPv6 relay total drops over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v6-relay-dropped-total";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v6-relay-solicit-received-min {
+                description "Minimum DHCPv6 relay SOLICIT messages received over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v6-relay-solicit-received";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v6-relay-drops-percentage {
+                description "Percentage of DHCPv6 relay SOLICIT messages dropped over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $v6-relay-dropped-total - $v6-relay-dropped-total-min ) / ( $v6-relay-solicit-received - $v6-relay-solicit-received-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots DHCPv6 relay drop percentage {
+                    unit "percent";
+                    triggers "dhcpv6-relay-total-drops";
+                }
+            }
+            field v6-relay-drops-critical-threshold {
+                constant {
+                    value "{{v6-relay-drops-critical-threshold}}";
+                }
+                description "Drop percentage at or above which the DHCPv6 relay is treated as critically degraded";
+                type "integer";
+            }
+            field v6-relay-drops-warning-threshold {
+                constant {
+                    value "{{v6-relay-drops-warning-threshold}}";
+                }
+                description "Drop percentage above which the DHCPv6 relay needs attention";
+                type "integer";
+            }
+            field v6-server-drops-critical-threshold {
+                constant {
+                    value "{{v6-server-drops-critical-threshold}}";
+                }
+                description "Drop percentage at or above which the DHCPv6 server is treated as critically degraded";
+                type "integer";
+            }
+            field v6-server-drops-warning-threshold {
+                constant {
+                    value "{{v6-server-drops-warning-threshold}}";
+                }
+                description "Drop percentage above which the DHCPv6 server needs attention";
+                type "integer";
+            }
+            field v6-relay-solicit-received-delta {
+                description "DHCPv6 relay SOLICITs received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $v6-relay-solicit-received - $v6-relay-solicit-received-min )";
+                    }
+                }
+                type "integer";
+            }
+            field v6-server-solicit-received-delta {
+                description "DHCPv6 server SOLICITs received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $v6-server-solicit-received - $v6-server-solicit-received-min )";
+                    }
+                }
+                type "integer";
+            }
+            variable routing-instance-name {
+                description "Routing instance name for jdhcpd telemetry";
+                type "string";
+                value ".+";
+            }
+            variable v6-relay-drops-critical-threshold {
+                description "Drop percentage at or above which the DHCPv6 relay is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            variable v6-relay-drops-warning-threshold {
+                description "Drop percentage above which the DHCPv6 relay needs attention";
+                type "integer";
+                value "5";
+            }
+            variable v6-server-drops-critical-threshold {
+                description "Drop percentage at or above which the DHCPv6 server is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            variable v6-server-drops-warning-threshold {
+                description "Drop percentage above which the DHCPv6 server needs attention";
+                type "integer";
+                value "5";
+            }
+            trigger dhcpv6-relay-total-drops {
+                alert-type "bng.subscriber-login-performance.dhcp.v6.relay-drops";
+                description "Evaluate DHCPv6 relay drop percentage against warning and critical thresholds";
+                synopsis "Evaluate DHCPv6 relay drop percentage";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$v6-relay-solicit-received-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No DHCPv6 relay SOLICITs in the last 1 hour; v6-relay-drops-percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$v6-relay-drops-percentage" "$v6-relay-drops-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "v6-relay-drops-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$v6-relay-drops-percentage" "$v6-relay-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "v6-relay-drops-percentage = $v6-relay-drops-percentage%, exceeded warning threshold $v6-relay-drops-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$v6-relay-drops-percentage" "$v6-relay-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "v6-relay-drops-percentage = $v6-relay-drops-percentage%, exceeded critical threshold $v6-relay-drops-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger dhcpv6-server-total-drops {
+                alert-type "bng.subscriber-login-performance.dhcp.v6.server-drops";
+                description "Evaluate DHCPv6 server drop percentage against warning and critical thresholds";
+                synopsis "Evaluate DHCPv6 server drop percentage";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$v6-server-solicit-received-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No DHCPv6 server SOLICITs in the last 1 hour; v6-server-drops-percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$v6-server-drops-percentage" "$v6-server-drops-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "v6-server-drops-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$v6-server-drops-percentage" "$v6-server-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "v6-server-drops-percentage = $v6-server-drops-percentage%, exceeded warning threshold $v6-server-drops-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$v6-server-drops-percentage" "$v6-server-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "v6-server-drops-percentage = $v6-server-drops-percentage%, exceeded critical threshold $v6-server-drops-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

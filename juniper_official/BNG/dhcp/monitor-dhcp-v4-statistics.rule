@@ -1,0 +1,351 @@
+healthbot {
+    topic bng.dhcp {
+        rule monitor-dhcp-v4-statistics {
+            keys [ "routing-instance-name" ];
+            synopsis "Monitors jdhcpd DHCPv4 server and relay aggregate statistics";
+            description "Monitors jdhcpd DHCPv4 server and relay aggregate statistics";
+            add-site-id "true";
+            sensor jdhcpd-information {
+                description "jdhcpd DHCPv4 routing-instance statistics";
+                synopsis "jdhcpd DHCPv4 routing-instance statistics";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance";
+                }
+            }
+            field routing-instance-name {
+                description "routing-instance name";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/@ri-name";
+                    where "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/@ri-name =~ /{{routing-instance-name}}/";
+                }
+                type "string";
+            }
+            field v4-server-dropped-total {
+                description "DHCPv4 server total drops";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/server/statistics/dropped-v4server-total";
+                }
+                type "integer";
+                plots DHCPv4 server total drops {
+                    unit "events";
+                }
+            }
+            field v4-server-discover-received {
+                description "DHCPv4 server total discovers";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/server/statistics/msg-recv-v4server-discover";
+                }
+                type "integer";
+                plots DHCPv4 server total discovers {
+                    unit "count";
+                }
+            }
+            field v4-relay-dropped-total {
+                description "DHCPv4 relay total drops";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/relay/statistics/dropped-v4relay-total";
+                }
+                type "integer";
+                plots DHCPv4 relay total drops {
+                    unit "events";
+                }
+            }
+            field v4-relay-bootp-request-received {
+                description "DHCPv4 relay total requests";
+                sensor jdhcpd-information {
+                    path "/junos/system/subscriber-management/client-protocols/dhcp/v4/routing-instances/routing-instance/relay/statistics/v4relay-bootp-request-rcvd";
+                }
+                type "integer";
+                plots DHCPv4 relay total requests {
+                    unit "count";
+                }
+            }
+            field v4-server-dropped-total-min {
+                description "Minimum DHCPv4 server total drops over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v4-server-dropped-total";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v4-server-discover-received-min {
+                description "Minimum DHCPv4 server total discovers over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v4-server-discover-received";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v4-server-drops-percentage {
+                description "Percentage of DHCPv4 server discovers dropped over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $v4-server-dropped-total - $v4-server-dropped-total-min ) / ( $v4-server-discover-received - $v4-server-discover-received-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots DHCPv4 server drop percentage {
+                    unit "percent";
+                    triggers "v4-server-dropped-total";
+                }
+            }
+            field v4-relay-dropped-total-min {
+                description "Minimum DHCPv4 relay total drops over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v4-relay-dropped-total";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v4-relay-bootp-request-received-min {
+                description "Minimum DHCPv4 relay total requests over the last 1 hour (window start value)";
+                formula {
+                    min {
+                        field-name "$v4-relay-bootp-request-received";
+                        time-range "1h";
+                    }
+                }
+                type "integer";
+            }
+            field v4-relay-drops-percentage {
+                description "Percentage of DHCPv4 relay requests dropped over the last 1 hour";
+                formula {
+                    eval {
+                        expression "( ( $v4-relay-dropped-total - $v4-relay-dropped-total-min ) / ( $v4-relay-bootp-request-received - $v4-relay-bootp-request-received-min ) ) * 100";
+                    }
+                }
+                type "float";
+                plots DHCPv4 relay drop percentage {
+                    unit "percent";
+                    triggers "v4-relay-dropped-total";
+                }
+            }
+            field v4-relay-drops-critical-threshold {
+                constant {
+                    value "{{v4-relay-drops-critical-threshold}}";
+                }
+                description "Drop percentage at or above which the DHCPv4 relay is treated as critically degraded";
+                type "integer";
+            }
+            field v4-relay-drops-warning-threshold {
+                constant {
+                    value "{{v4-relay-drops-warning-threshold}}";
+                }
+                description "Drop percentage above which the DHCPv4 relay needs attention";
+                type "integer";
+            }
+            field v4-server-drops-critical-threshold {
+                constant {
+                    value "{{v4-server-drops-critical-threshold}}";
+                }
+                description "Drop percentage at or above which the DHCPv4 server is treated as critically degraded";
+                type "integer";
+            }
+            field v4-server-drops-warning-threshold {
+                constant {
+                    value "{{v4-server-drops-warning-threshold}}";
+                }
+                description "Drop percentage above which the DHCPv4 server needs attention";
+                type "integer";
+            }
+            field v4-relay-bootp-request-received-delta {
+                description "DHCPv4 relay requests received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $v4-relay-bootp-request-received - $v4-relay-bootp-request-received-min )";
+                    }
+                }
+                type "integer";
+            }
+            field v4-server-discover-received-delta {
+                description "DHCPv4 server discovers received in the last 1 hour (window delta)";
+                formula {
+                    eval {
+                        expression "( $v4-server-discover-received - $v4-server-discover-received-min )";
+                    }
+                }
+                type "integer";
+            }
+            variable routing-instance-name {
+                description "Routing instance name for jdhcpd telemetry";
+                type "string";
+                value ".+";
+            }
+            variable v4-relay-drops-critical-threshold {
+                description "Drop percentage at or above which the DHCPv4 relay is treated as critically degraded";
+                type "integer";
+                value "10";
+            }
+            variable v4-relay-drops-warning-threshold {
+                description "Drop percentage above which the DHCPv4 relay needs attention";
+                type "integer";
+                value "5";
+            }
+            variable v4-server-drops-critical-threshold {
+                description "Drop percentage at or above which the DHCPv4 server is treated as critically degraded";
+                type "integer";
+                value "5";
+            }
+            variable v4-server-drops-warning-threshold {
+                description "Drop percentage above which the DHCPv4 server needs attention";
+                type "integer";
+                value "1";
+            }
+            trigger v4-relay-dropped-total {
+                alert-type "bng.subscriber-login-performance.dhcp.v4.relay-drops";
+                description "Alert when DHCPv4 relay drop percentage exceeds threshold";
+                synopsis "Alert when DHCPv4 relay drop percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$v4-relay-bootp-request-received-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No DHCPv4 relay requests in the last 1 hour; v4-relay-drops-percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$v4-relay-drops-percentage" "$v4-relay-drops-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "v4-relay-drops-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$v4-relay-drops-percentage" "$v4-relay-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "v4-relay-drops-percentage = $v4-relay-drops-percentage%, exceeded warning threshold $v4-relay-drops-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$v4-relay-drops-percentage" "$v4-relay-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "v4-relay-drops-percentage = $v4-relay-drops-percentage%, exceeded critical threshold $v4-relay-drops-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            trigger v4-server-dropped-total {
+                alert-type "bng.subscriber-login-performance.dhcp.v4.server-drops";
+                description "Alert when DHCPv4 server drop percentage exceeds threshold";
+                synopsis "Alert when DHCPv4 server drop percentage exceeds threshold";
+                term is-no-traffic {
+                    when {
+                        less-than-or-equal-to "$v4-server-discover-received-delta" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No DHCPv4 server discovers in the last 1 hour; v4-server-drops-percentage not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than-or-equal-to "$v4-server-drops-percentage" "$v4-server-drops-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "v4-server-drops-percentage is healthy.";
+                        }
+                    }
+                }
+                term is-warning {
+                    when {
+                        less-than-or-equal-to "$v4-server-drops-percentage" "$v4-server-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "yellow";
+                            message "v4-server-drops-percentage = $v4-server-drops-percentage%, exceeded warning threshold $v4-server-drops-warning-threshold%.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than "$v4-server-drops-percentage" "$v4-server-drops-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "v4-server-drops-percentage = $v4-server-drops-percentage%, exceeded critical threshold $v4-server-drops-critical-threshold%.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

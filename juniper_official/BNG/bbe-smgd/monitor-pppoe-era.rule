@@ -1,0 +1,117 @@
+healthbot {
+    topic bng.bbe-smgd {
+        rule monitor-pppoe-era {
+            synopsis "Monitors PPPoE ERA reported failures from bbe-smgd";
+            description "Monitors PPPoE Event Rate Analyzer (ERA) reported failures from bbe-smgd";
+            add-site-id "true";
+            sensor pppoe-statistics-information {
+                description "Monitors PPPoE module statistics including ERA failure reporting";
+                synopsis "Monitors PPPoE module statistics including ERA failure reporting";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/client-protocols/pppoe/statistics";
+                }
+            }
+            field era-reported-failures {
+                description "PPPoE ERA reported failures";
+                sensor pppoe-statistics-information {
+                    path "/junos/system/subscriber-management/client-protocols/pppoe/statistics/era-reported-failures";
+                }
+                type "integer";
+                plots PPPoE ERA reported failures {
+                    unit "events";
+                    triggers "era-reported-failures";
+                }
+            }
+            field era-reported-failures-critical-threshold {
+                constant {
+                    value "{{era-reported-failures-critical-threshold}}";
+                }
+                description "Maximum new era-reported-failures between consecutive evaluations (60s sensor cadence) before raising the critical (red) alarm.";
+                type "integer";
+            }
+            variable era-reported-failures-critical-threshold {
+                description "Maximum new era-reported-failures between consecutive evaluations (60s sensor cadence) before raising the critical (red) alarm.";
+                type "integer";
+                value "20";
+            }
+            trigger era-reported-failures {
+                alert-type "bng.subscriber-session-establishment.pppoe.era-reported-failures";
+                description "Alert when era-reported-failures grows abnormally fast between consecutive evaluations";
+                synopsis "Alert when era-reported-failures grows abnormally fast between consecutive evaluations";
+                term is-healthy {
+                    when {
+                        increasing-at-most-by-value "$era-reported-failures" "$era-reported-failures-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "era-reported-failures is healthy.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        increasing-at-least-by-value "$era-reported-failures" "$era-reported-failures-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "era-reported-failures increased by at least $era-reported-failures-critical-threshold events since the previous evaluation (lifetime total $era-reported-failures) - critical.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

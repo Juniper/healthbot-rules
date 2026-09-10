@@ -1,0 +1,172 @@
+healthbot {
+    topic bng.subscribers {
+        rule monitor-resource-sblock {
+            keys [ "fpc-slot" "pfe-number" "scheduler-block-number" ];
+            synopsis "Monitors subscriber-management resource utilization (sblock scope)";
+            description "Monitors per-scheduler-block CoS queue utilization on BNG, comparing allocated queues against the scheduler-block queue capacity";
+            add-site-id "true";
+            sensor resource-monitor-information {
+                description "Monitors subscriber-management resource utilization";
+                synopsis "Monitors subscriber-management resource utilization";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/infra/resource-monitor";
+                }
+            }
+            field fpc-slot {
+                description "FPC slot number";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type "string";
+            }
+            field pfe-number {
+                description "PFE number within the FPC";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/@pfe-no";
+                }
+                type "string";
+            }
+            field scheduler-block-number {
+                description "Scheduler-block number within the PFE";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/sched-blocks/sched-block/@sblock-no";
+                }
+                type "string";
+            }
+            field sched-block-queues-allocated {
+                description "Scheduler block CoS queues allocated";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/sched-blocks/sched-block/queues-allocated";
+                }
+                type "integer";
+                plots Scheduler block CoS queues allocated {
+                    unit "queues";
+                }
+            }
+            field sched-block-queues-max {
+                description "Scheduler block CoS queue capacity";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/sched-blocks/sched-block/queues-max";
+                }
+                type "integer";
+                plots Scheduler block CoS queue capacity {
+                    unit "queues";
+                }
+            }
+            field sched-block-cos-queue-critical-threshold {
+                constant {
+                    value "{{sched-block-cos-queue-critical-threshold}}";
+                }
+                description "Scheduler-block CoS queue threshold, percent of capacity. Default 100. RD backend: wire to [system services resource-monitor high-cos-queue-threshold].";
+                type "integer";
+            }
+            field sched-block-cos-queue-utilization {
+                description "CoS queues in use as percent of the scheduler-block capacity";
+                formula {
+                    eval {
+                        expression "( $sched-block-queues-allocated / $sched-block-queues-max ) * 100";
+                    }
+                }
+                type "float";
+                plots Scheduler block CoS queue utilization of threshold {
+                    unit "percent";
+                    triggers "sched-block-cos-queue-utilization";
+                }
+            }
+            variable sched-block-cos-queue-critical-threshold {
+                description "Scheduler-block CoS queue threshold, percent of capacity. Default 100. RD backend: wire to [system services resource-monitor high-cos-queue-threshold].";
+                type "integer";
+                value "100";
+            }
+            trigger sched-block-cos-queue-utilization {
+                alert-type "bng.subscriber-resource-utilization.sched-block-cos-queue-utilization";
+                description "Alert when the CoS queue fill percent reaches the configured threshold (single tier)";
+                synopsis "Alert when the CoS queue fill percent reaches the configured threshold";
+                term is-no-capacity {
+                    when {
+                        less-than-or-equal-to "$sched-block-queues-max" "0";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "No CoS queue capacity reported; not evaluated.";
+                        }
+                    }
+                }
+                term is-healthy {
+                    when {
+                        less-than "$sched-block-cos-queue-utilization" "$sched-block-cos-queue-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "sched-block-cos-queue-utilization is healthy.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$sched-block-cos-queue-utilization" "$sched-block-cos-queue-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "FPC $fpc-slot PFE $pfe-number SBlock $scheduler-block-number: sched-block-cos-queue-utilization = $sched-block-cos-queue-utilization% - the configured threshold $sched-block-cos-queue-critical-threshold% is reached.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

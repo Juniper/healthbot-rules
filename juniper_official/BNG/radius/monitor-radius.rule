@@ -1,0 +1,173 @@
+healthbot {
+    topic bng.radius {
+        rule monitor-radius-server {
+            keys [ "server-address" ];
+            synopsis "Monitors RADIUS server response status";
+            description "Monitors RADIUS server response from the BNG's perspective";
+            add-site-id "true";
+            sensor radius-server-information {
+                description "Telemetry for RADIUS server information";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/aaa/radius-servers/radius-server";
+                }
+                synopsis "Telemetry for RADIUS server information";
+            }
+            field auth-access-accepts {
+                description "The authentication access accepted by this RADIUS server";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/auth-access-accepts";
+                }
+                type "integer";
+                plots access-accepts {
+                    unit "accepts";
+                    triggers "radius-server-accepts-responses";
+                }
+            }
+            field auth-access-rejects {
+                description "The authentication access rejected by this RADIUS server";
+                sensor radius-server-information {
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/statistics/auth-access-rejects";
+                }
+                type "integer";
+                plots access-rejects {
+                    unit "rejects";
+                    triggers "radius-server-rejects-responses";
+                }
+            }
+            field max-accepts-increase-threshold {
+                constant {
+                    value "{{max-num-of-accepts-increase}}";
+                }
+                description "The maximum number of RADIUS accepts increase allowed before the server is considered unhealthy";
+                type "integer";
+            }
+            field max-rejects-increase-threshold {
+                constant {
+                    value "{{max-num-of-rejects-increase}}";
+                }
+                description "The maximum number of RADIUS rejects increase allowed before the server is considered unhealthy";
+                type "integer";
+            }
+            field server-address {
+                sensor radius-server-information {
+                    where "/junos/system/subscriber-management/aaa/radius-servers/radius-server/@server-address =~ /{{server-address}}/";
+                    path "/junos/system/subscriber-management/aaa/radius-servers/radius-server/@server-address";
+                }
+                description "The IP address of the RADIUS server";
+                type "string";
+            }
+            variable max-num-of-rejects-increase {
+                description "The maximum number of RADIUS rejects allowed before the server is considered unhealthy";
+                type "integer";
+                value "100";
+            }
+            variable max-num-of-accepts-increase {
+                description "The maximum number of RADIUS accepts allowed before the server is considered unhealthy";
+                type "integer";
+                value "10000";
+            }
+            variable server-address {
+                description "The IP address of the RADIUS server";
+                type "string";
+                value ".*";
+            }
+            trigger radius-server-rejects-responses {
+                description "Alert when RADIUS Server rejects exceed the threshold";
+                synopsis "Alert when RADIUS Server rejects exceed the threshold";
+                term is-unhealthy-rejects {
+                    then {
+                        status {
+                            color "red";
+                            message "RADIUS Server $server-address is unhealthy. Rejects = $auth-access-rejects, increased more than threshold $max-rejects-increase-threshold Check for server config or user authentication issues";
+                        }
+                    }
+                    when {
+                        increasing-at-least-by-value "$auth-access-rejects" "$max-rejects-increase-threshold";
+                    }
+                }
+                term is-healthy {
+                    then {
+                        status {
+                            color "green";
+                            message "RADIUS Server rejects is within range.";
+                        }
+                    }
+                }
+            }
+            trigger radius-server-accepts-responses {
+                description "Alert when RADIUS Server accepts exceed the threshold";
+                synopsis "Alert when RADIUS Server accepts exceed the threshold";
+                term is-unhealthy-accepts {
+                    then {
+                        status {
+                            color "yellow";
+                            message "RADIUS Server $server-address is unhealthy. Accepts = $auth-access-accepts, increased more than $max-accepts-increase-threshold Check for possible server overload issues";
+                        }
+                    }
+                    when {
+                        increasing-at-least-by-value "$auth-access-accepts" "$max-accepts-increase-threshold";
+                    }
+                }
+                term is-healthy {
+                    then {
+                        status {
+                            color "green";
+                            message "RADIUS Server accepts is within range.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

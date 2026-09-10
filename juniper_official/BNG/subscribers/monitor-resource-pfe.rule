@@ -1,0 +1,182 @@
+healthbot {
+    topic bng.subscribers {
+        rule monitor-resource-pfe {
+            keys [ "fpc-slot" "pfe-number" ];
+            synopsis "Monitors subscriber-management resource utilization (pfe scope)";
+            description "Monitors per-PFE subscriber-management memory utilization on BNG";
+            add-site-id "true";
+            sensor resource-monitor-information {
+                description "Monitors subscriber-management resource utilization";
+                synopsis "Monitors subscriber-management resource utilization";
+                open-config {
+                    frequency "60s";
+                    sensor-name "/junos/system/subscriber-management/infra/resource-monitor";
+                }
+            }
+            field fpc-slot {
+                description "FPC slot number";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/@slot";
+                }
+                type "string";
+            }
+            field pfe-number {
+                description "PFE number within the FPC";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/@pfe-no";
+                }
+                type "string";
+            }
+            field pfe-expansion-memory-used {
+                description "PFE expansion memory used, percent";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/expansion-memory-used";
+                }
+                type "integer";
+                plots PFE expansion memory used {
+                    unit "percent";
+                    triggers "pfe-expansion-memory-utilization";
+                }
+            }
+            field pfe-expansion-memory-critical-threshold {
+                constant {
+                    value "{{pfe-expansion-memory-critical-threshold}}";
+                }
+                description "PFE expansion memory high threshold, percent. Default 95. no config knob; smid fixed default 95.";
+                type "integer";
+            }
+            field pfe-ifl-memory-used {
+                description "PFE ifl memory used, percent";
+                sensor resource-monitor-information {
+                    path "/junos/system/subscriber-management/infra/resource-monitor/fpcs/fpc/statistics/pfes/pfe/ifl-memory-used";
+                }
+                type "integer";
+                plots PFE ifl memory used {
+                    unit "percent";
+                    triggers "pfe-ifl-memory-utilization";
+                }
+            }
+            field pfe-ifl-memory-critical-threshold {
+                constant {
+                    value "{{pfe-ifl-memory-critical-threshold}}";
+                }
+                description "PFE ifl memory high threshold, percent. Default 95. RD backend: wire to [system services resource-monitor high-threshold]; default 95 when the knob is not set.";
+                type "integer";
+            }
+            variable pfe-expansion-memory-critical-threshold {
+                description "PFE expansion memory high threshold, percent. Default 95. no config knob; smid fixed default 95.";
+                type "integer";
+                value "95";
+            }
+            variable pfe-ifl-memory-critical-threshold {
+                description "PFE ifl memory high threshold, percent. Default 95. RD backend: wire to [system services resource-monitor high-threshold]; default 95 when the knob is not set.";
+                type "integer";
+                value "95";
+            }
+            trigger pfe-expansion-memory-utilization {
+                alert-type "bng.subscriber-resource-utilization.pfe.expansion-memory";
+                description "Alert when PFE expansion memory reaches the configured threshold (single tier, direct percent compare)";
+                synopsis "Alert when PFE expansion memory reaches the configured threshold";
+                term is-healthy {
+                    when {
+                        less-than "$pfe-expansion-memory-used" "$pfe-expansion-memory-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "pfe-expansion-memory-used is healthy.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$pfe-expansion-memory-used" "$pfe-expansion-memory-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "FPC $fpc-slot PFE $pfe-number: pfe-expansion-memory-used = $pfe-expansion-memory-used% - the configured threshold $pfe-expansion-memory-critical-threshold% is reached.";
+                        }
+                    }
+                }
+            }
+            trigger pfe-ifl-memory-utilization {
+                alert-type "bng.subscriber-resource-utilization.pfe.ifl-memory";
+                description "Alert when PFE logical-interface memory reaches the configured threshold (single tier, direct percent compare)";
+                synopsis "Alert when PFE logical-interface memory reaches the configured threshold";
+                term is-healthy {
+                    when {
+                        less-than "$pfe-ifl-memory-used" "$pfe-ifl-memory-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "green";
+                            message "pfe-ifl-memory-used is healthy.";
+                        }
+                    }
+                }
+                term is-critical {
+                    when {
+                        greater-than-or-equal-to "$pfe-ifl-memory-used" "$pfe-ifl-memory-critical-threshold";
+                    }
+                    then {
+                        status {
+                            color "red";
+                            message "FPC $fpc-slot PFE $pfe-number: pfe-ifl-memory-used = $pfe-ifl-memory-used% - the configured threshold $pfe-ifl-memory-critical-threshold% is reached.";
+                        }
+                    }
+                }
+            }
+            rule-properties {
+                supported-devices {
+                    juniper {
+                        operating-system junos {
+                            products MX {
+                                platforms MX10K {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2010 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX2020 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX240 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX480 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms MX960 {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                                platforms VMX {
+                                    releases 19.1R1 {
+                                        release-support "min-supported-release";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
