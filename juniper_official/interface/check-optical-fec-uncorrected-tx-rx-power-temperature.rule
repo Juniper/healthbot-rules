@@ -1,0 +1,567 @@
+/*
+ * Monitor Coherent optics stats like Tx/Rx power, and errors and notify anomalies
+ *
+ * Req 1105 : https://paragon-automation.atlassian.net/browse/REQ-1105
+ * 
+ */
+healthbot {
+    topic interfaces {
+        rule check-optical-fec-uncorrected-tx-rx-power-temperature {
+            /*
+             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
+             * threshold values and notifies by displaying green,yellow and red alarms.
+             * Use interface-name as key for the rule.
+             */
+            keys interface-name;
+            synopsis "KPI for  interface optical degradation";
+            description "Monitor the interface optical degradation";
+            sensor optical-sensor-oc {
+                synopsis "Interface optics sensor definition";
+                description "Sensor to collects data from network device";
+                open-config {
+                    sensor-name /components/component;
+                    frequency 60s;
+                }
+            }
+            field fault-condition {
+                sensor optical-sensor-oc {
+                    path /components/component/transceiver/state/fault-condition;
+                }
+                type string;
+                enumerate __default__ as -1;
+                enumerate false as 0;
+                enumerate true as 1;
+                description "Indicates (T/F) if a fault condition exists in the transceiver";
+                plots fault-condition {
+                    triggers fault-condition;
+                }
+            }
+            field fec-uncorrected {
+                sensor optical-sensor-oc {
+                    path /components/component/transceiver/state/fec-uncorrectable-blocks;
+                }
+                type integer;
+                description "Number of code blocks received that could not be corrected. A non-zero value equals packet loss";
+                plots fec-uncorrected {
+                    triggers uncorrected-forward-error-correction-errors;
+                    unit count;
+                }
+            }
+            field fec-uncorrected-threshold {
+                constant {
+                    value "{{fec-uncorrected-threshold-variable}}";
+                }
+                type integer;
+                description "fec-uncorrected count increase threshold";
+            }
+            field interface-name {
+                sensor optical-sensor-oc {
+                    where "/components/component/@name =~ /{{interface-name}}/";
+                    path "/components/component/@name";
+                }
+                type string;
+                description "Interface name";
+            }
+            field optical-temp {
+                sensor optical-sensor-oc {
+                    path /components/component/state/temperature/instant;
+                }
+                type integer;
+                description "Temperature of the Optical Module in degrees Centigrade";
+                plots temperature-plots {
+                    triggers interface-optical-temperature;
+                    unit celsius;
+                    thresholds temp-high-alarm-threshold {
+                        field-name "$temp-high-alarm-threshold";
+                        severity critical;
+                    }
+                    thresholds temp-high-warning-threshold {
+                        field-name "$temp-high-warning-threshold";
+                        severity minor;
+                    }
+                }
+            }
+            field optics-rx-power {
+                sensor optical-sensor-oc {
+                    path /components/component/transceiver/state/input-power/instant;
+                }
+                type float;
+                description "rx power level of the optical module.";
+                plots optics-rx-power {
+                    triggers interface-optical-rx-power;
+                    unit dbm;
+                    thresholds rx-high-alarm-threshold {
+                        field-name "$rx-high-alarm-threshold";
+                        severity critical;
+                    }
+                    thresholds rx-high-warning-threshold {
+                        field-name "$rx-high-warning-threshold";
+                        severity minor;
+                    }
+                    thresholds rx-low-alarm-threshold {
+                        field-name "$rx-low-alarm-threshold";
+                        severity critical;
+                    }
+                    thresholds rx-low-warning-threshold {
+                        field-name "$rx-low-warning-threshold";
+                        severity minor;
+                    }
+                }
+            }
+            field optics-tx-power {
+                sensor optical-sensor-oc {
+                    path /components/component/transceiver/state/output-power/instant;
+                }
+                type float;
+                description "output power level of the optical module.";
+                plots optics-tx-power {
+                    triggers interface-optical-tx-power;
+                    unit dbm;
+                    thresholds tx-high-alarm-threshold {
+                        field-name "$tx-high-alarm-threshold";
+                        severity critical;
+                    }
+                    thresholds tx-high-warning-threshold {
+                        field-name "$tx-high-warning-threshold";
+                        severity minor;
+                    }
+                    thresholds tx-low-alarm-threshold {
+                        field-name "$tx-low-alarm-threshold";
+                        severity critical;
+                    }
+                    thresholds tx-low-warning-threshold {
+                        field-name "$tx-low-warning-threshold";
+                        severity minor;
+                    }
+                }
+            }
+            field rx-high-alarm-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/input-power-upper;
+                }
+                type float;
+                description "Default rx power high alarm threshold.";
+            }
+            field rx-high-warning-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{warning}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/input-power-upper;
+                }
+                type float;
+                description "Default rx power high warning threshold.";
+            }
+            field rx-low-alarm-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/input-power-lower;
+                }
+                type float;
+                description "Default rx power low alarm threshold.";
+            }
+            field rx-low-warning-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{warning}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/input-power-lower;
+                }
+                type float;
+                description "Default rx power low warning threshold.";
+            }
+            field temp-high-alarm-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/module-temperature-upper;
+                }
+                type integer;
+                description "Default Module temperature high alarm threshold.";
+            }
+            field temp-high-warning-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{warning}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/module-temperature-upper;
+                }
+                type integer;
+                description "Default Module temperature high warning threshold.";
+            }
+            field tx-high-alarm-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/output-power-upper;
+                }
+                type float;
+                description "Default tx power high alarm threshold";
+            }
+            field tx-high-warning-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{warning}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/output-power-upper;
+                }
+                type float;
+                description "Default tx power high warning threshold";
+            }
+            field tx-low-alarm-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/output-power-lower;
+                }
+                type float;
+                description "Default tx power low alarm threshold";
+            }
+            field tx-low-warning-threshold {
+                sensor optical-sensor-oc {
+                    where "/components/component/transceiver/thresholds/threshold/@severity == /{{warning}}/" {
+                        field-scoped true;
+                    }
+                    path /components/component/transceiver/thresholds/threshold/state/output-power-lower;
+                }
+                type float;
+                description "Default tx power low warning threshold.";
+            }
+            trigger fault-condition {
+                synopsis "Transceiver Fault Condition KPI";
+                description "Indicates (T/F) if a fault condition exists in the transceiver";
+                frequency 1offset;
+                alert-type interfaces.link_failure.fault-condition;
+                term fault-condition-false {
+                    when {
+                        matches-with "$fault-condition" false {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name, fault conditon is False";
+                        }
+                    }
+                }
+                term fault-condition-true {
+                    when {
+                        matches-with "$fault-condition" true {
+                            ignore-case;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name, fault conditon is true";
+                        }
+                    }
+                }
+            }
+            trigger interface-optical-rx-power {
+                synopsis "Interface optical rx high power KPI";
+                description "Sets health based on Interface optical rx high power";
+                frequency 1offset;
+                alert-type interfaces.rx.power.interface-optical-rx-power;
+                term rx-betweeen-warning-threshold {
+                    when {
+                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
+                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name Rx power $optics-rx-power is normal";
+                        }
+                    }
+                }
+                term rx-above-high-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx-power" "$rx-high-warning-threshold";
+                        less-than-or-equal-to "$optics-rx-power" "$rx-high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name Rx power $optics-rx-power is above high warning threshold ($rx-high-warning-threshold) ";
+                        }
+                    }
+                }
+                term rx-below-low-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
+                        less-than-or-equal-to "$optics-rx-power" "$rx-low-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name Rx power $optics-rx-power is below low warning threshold ($rx-low-warning-threshold) ";
+                        }
+                    }
+                }
+                term rx-above-high-alarm-threshold {
+                    when {
+                        greater-than "$optics-rx-power" "$rx-high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name Rx power $optics-rx-power is above high alarm threshold ($rx-high-alarm-threshold)";
+                        }
+                    }
+                }
+                term rx-below-low-alarm-threshold {
+                    when {
+                        less-than "$optics-rx-power" "$rx-low-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name Rx power $optics-rx-power is below low alarm threshold ($rx-low-alarm-threshold)";
+                        }
+                    }
+                }
+            }
+            trigger interface-optical-temperature {
+                synopsis "high optical temperature";
+                description "Sets health based on the optical temperature";
+                frequency 1offset;
+                alert-type interfaces.temperature.interface-optical-temperature;
+                term less-than-warning-threshold {
+                    when {
+                        less-than "$optical-temp" "$temp-high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name, temperature $optical-temp is normal.";
+                        }
+                    }
+                }
+                term greater-than-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optical-temp" "$temp-high-warning-threshold";
+                        less-than "$optical-temp" "$temp-high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name, temperature $optical-temp exceeds default warning threshold ($temp-high-warning-threshold)";
+                        }
+                    }
+                }
+                term greater-than-alarm-threshold {
+                    when {
+                        greater-than-or-equal-to "$optical-temp" "$temp-high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name, temperature $optical-temp exceeds default alarm threshold ($temp-high-alarm-threshold)";
+                        }
+                    }
+                }
+            }
+            trigger interface-optical-tx-power {
+                synopsis "Interface optical tx high power KPI";
+                description "Sets health based on Interface optical tx high power";
+                frequency 1offset;
+                alert-type interfaces.tx.power.interface-optical-tx-power;
+                term tx-betweeen-warning-threshold {
+                    when {
+                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
+                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "$interface-name Tx power $optics-tx-power is normal";
+                        }
+                    }
+                }
+                term tx-above-high-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-tx-power" "$tx-high-warning-threshold";
+                        less-than-or-equal-to "$optics-tx-power" "$tx-high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name Tx power $optics-tx-power is above warning threshold ($tx-high-warning-threshold)";
+                        }
+                    }
+                }
+                term tx-below-low-warning-threshold {
+                    when {
+                        greater-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
+                        less-than-or-equal-to "$optics-tx-power" "$tx-low-warning-threshold";
+                    }
+                    then {
+                        status {
+                            color yellow;
+                            message "$interface-name Tx power $optics-tx-power is below warning threshold ($tx-low-warning-threshold)";
+                        }
+                    }
+                }
+                term tx-above-high-alarm-threshold {
+                    when {
+                        greater-than "$optics-tx-power" "$tx-high-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
+                        }
+                    }
+                }
+                term tx-lesser-than-low-alarm-threshold {
+                    when {
+                        less-than "$optics-tx-power" "$tx-low-alarm-threshold";
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "$interface-name Tx power $optics-tx-power is below alarm threshold ($tx-low-alarm-threshold)";
+                        }
+                    }
+                }
+            }
+            trigger uncorrected-forward-error-correction-errors {
+                synopsis "Uncorrected forward error correction errors KPI";
+                description "Sets health based on Uncorrected forward error correction errors";
+                frequency 1offset;
+                alert-type interfaces.optical.errors.uncorrected-forward-error-correction-errors;
+                term no-fec-uncorrected-errors {
+                    when {
+                        matches-with-previous "$fec-uncorrected" {
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $interface-name has no FEC uncorrected errors";
+                        }
+                    }
+                }
+                term fec-uncorrected-errors-present {
+                    when {
+                        increasing-at-least-by-value "$fec-uncorrected" {
+                            value "$fec-uncorrected-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
+                    then {
+                        status {
+                            color red;
+                            message "Interface $interface-name has non-zero FEC uncorrected errors";
+                        }
+                    }
+                }
+            }
+            variable critical {
+                value CRITICAL;
+                description "Seveity is matching critical";
+                type string;
+            }
+            variable fec-uncorrected-threshold-variable {
+                value 1;
+                description "Interface fec-uncorrected threshold: Number of fec-uncorrected increase between metrics, before we report anomaly";
+                type int;
+            }
+            variable interface-name {
+                value "(?i)^(?:CHASSIS\\d+:)?FPC\\d+:PIC\\d+:(?:NPU\\d+:)?PORT\\d+:XCVR\\d+$";
+                description "Name of the interface.";
+                type string;
+                value-type interface;
+            }
+            variable warning {
+                value WARNING;
+                description "Seveity is matching warning";
+                type string;
+            }
+            rule-properties {
+                domain-name interfaces;
+                supported-devices {
+                    sensors optical-sensor-oc;
+                    juniper {
+                        operating-system junos {
+                            products JNP {
+                                sensors optical-sensor-oc;
+                                platforms JNP10004 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms JNP10008 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms JNP10016 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products MX {
+                                sensors optical-sensor-oc;
+                                platforms MX10004 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX10008 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX10016 {
+                                    releases 22.3R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX204 {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms MX304 {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                        operating-system junosEvolved {
+                            products ACX {
+                                sensors optical-sensor-oc;
+                                platforms ACX7024 {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms ACX7100 {
+                                    releases 23.2R1 {
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }			 
+        }
+    }
+}

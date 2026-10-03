@@ -1,0 +1,576 @@
+/*
+ * Monitor Coherent optics stats like Carrier Frequency Offset,Optical/Effective Signal to Noise Ratio,
+ * pre-fec ber and notify anomalies
+ *
+ * Req 1105 : https://paragon-automation.atlassian.net/browse/REQ-1105
+ * 
+ */
+healthbot {
+    topic interfaces {
+        rule check-optical-cfo-osnr-esnr-pre-fec-ber {
+            /*
+             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
+             * threshold values and notifies by displaying green,yellow and red alarms.
+             * Use interface-name as key for the rule.
+             */		
+        keys interface-name;
+        synopsis "KPI for  interface optical degradation";
+        description "Monitor the interface optical degradation";
+        sensor optical-sensor-oc {
+            synopsis "Interface optics sensor definition";
+            description "Sensor to collects data from network device";
+            open-config {
+                sensor-name /components/component;
+                frequency 60s;
+            }
+        }
+        field cfo {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/carrier-frequency-offset/instant;
+            }
+            type float;
+            description "Carrier Frequency Offset of the optical module";
+            plots cfo {
+                triggers carrier-frequency-offset;
+                unit Mhz;
+                thresholds cfo-high-threshold {
+                    field-name "$cfo-high-threshold";
+                    severity critical;
+                }
+                thresholds cfo-low-threshold {
+                    field-name "$cfo-low-threshold";
+                    severity minor;
+                }
+            }
+        }
+        field cfo-high-threshold {
+            constant {
+                value "{{cfo-high-threshold}}";
+            }
+            type float;
+            description "Default CFO High threshold.";
+        }
+        field cfo-low-threshold {
+            constant {
+                value "{{cfo-low-threshold}}";
+            }
+            type float;
+            description "Default CFO low threshold.";
+        }
+        field chromatic-dispersion {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/chromatic-dispersion/instant;
+            }
+            type float;
+            description "Chromatic Dispersion of an optical channel (in ps/nm) ";
+            plots chromatic-dispersion;
+        }
+        field esnr {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/esnr/instant;
+            }
+            type float;
+            description "Actual signal quality seen by the receiver after all impairments are considered";
+            plots esnr {
+                triggers esnr;
+                unit count;
+            }
+        }
+        field esnr-low-threshold {
+            constant {
+                value "{{esnr-low-threshold}}";
+            }
+            type float;
+            description "Default esnr low threshold.";
+        }
+        field interface-name {
+            sensor optical-sensor-oc {
+                where "/components/component/@name =~ /{{interface-name}}/";
+                path "/components/component/@name";
+            }
+            type string;
+            description "Interface name";
+        }
+        field optics-rx-signal-power {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/input-power/instant;
+            }
+            type float;
+            description "Represents the filtered signal power calculated by the coherent DSP for that specific logical optical channel";
+            plots optics-rx-signal-power {
+                triggers interface-optical-rx-signal-power;
+                unit dbm;
+                thresholds optics-rx-signal-power-high-threshold {
+                    field-name "$optics-rx-signal-power-high-threshold";
+                    severity critical;
+                }
+                thresholds optics-rx-signal-power-low-threshold {
+                    field-name "$optics-rx-signal-power-low-threshold";
+                    severity minor;
+                }
+            }
+        }
+        field optics-rx-signal-power-high-threshold {
+            constant {
+                value "{{optics-rx-signal-power-high-threshold}}";
+            }
+            type float;
+            description "Default Rx Signal Power High threshold.";
+        }
+        field optics-rx-signal-power-low-threshold {
+            constant {
+                value "{{optics-rx-signal-power-low-threshold}}";
+            }
+            type float;
+            description "Default Rx Signal Power low threshold.";
+        }
+        field osnr {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/osnr/instant;
+            }
+            type float;
+            description "Quality of an optical signal relative to the optical noise present on the fiber";
+            plots osnr {
+                triggers osnr;
+                unit count;
+            }
+        }
+        field osnr-low-threshold {
+            constant {
+                value "{{osnr-low-threshold}}";
+            }
+            type float;
+            description "Default osnr low threshold.";
+        }
+        field polarization-dependent-loss {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/polarization-dependent-loss/instant;
+            }
+            type float;
+            description "PDL is the difference between the maximum and minimum transmission loss of an optical component as the input light polarization changes";
+            plots polarization-dependent-loss;
+        }
+        field pre-fec-ber {
+            sensor optical-sensor-oc {
+                path /components/component/optical-channel/state/pre-fec-ber/instant;
+            }
+            type float;
+            description "Bit error rate before error correction";
+            plots pre-fec-ber {
+                triggers pre-fec-ber;
+                unit count;
+            }
+        }
+        field pre-fec-ber-high-threshold {
+            constant {
+                value "{{pre-fec-ber-high-threshold}}";
+            }
+            type float;
+            description "Default pre-fec-ber high threshold.";
+        }
+        field q-factor {
+            formula {
+                qfactor {
+                    ber "$pre-fec-ber";
+                }
+            }
+            type float;
+            description "Q-factor is a measure of how well the receiver can distinguish between transmitted symbols in the presence of noise";
+            plots q-factor {
+                triggers q-factor;
+                unit db;
+            }
+        }
+        field q-factor-threshold {
+            constant {
+                value "{{q-factor-threshold}}";
+            }
+            type float;
+            description "Threshold below which qfactor is considered unstable or failing";
+        }
+        field q-margin {
+            formula {
+                qmargin {
+                    ber "$pre-fec-ber";
+                    fec-threshold-ber "$fec-threshold-ber";					
+                }
+            }
+            type float;
+            description "It tells you how much performance headroom remains before the link reaches its FEC correction limit";
+            plots q-margin {
+                triggers q-margin;
+                unit db;
+            }
+        }
+        field fec-threshold-ber {
+            constant {
+                value "{{fec-threshold-ber}}";
+            }
+            type float;
+            description "Threshold to be used in q-margin formula";
+        }		
+        field q-margin-threshold {
+            constant {
+                value "{{q-margin-threshold}}";
+            }
+            type float;
+            description "Threshold below which qfactor is considered unstable or failing";
+        }
+        trigger carrier-frequency-offset {
+            synopsis "Interface optical CFO KPI";
+            description "Carrier Frequency Offset of the optical module";
+            frequency 1offset;
+            alert-type interfaces.optical.errors.carrier-frequency-offset;
+            term rx-betweeen-warning-threshold {
+                when {
+                    greater-than "$cfo" "$cfo-low-threshold";
+                    less-than "$cfo" "$cfo-high-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,CFO $cfo is normal";
+                    }
+                }
+            }
+            term cfo-above-high-warning-threshold {
+                when {
+                    greater-than-or-equal-to "$cfo" "$cfo-high-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,CFO $cfo is above high warning threshold ($cfo-high-threshold) ";
+                    }
+                }
+            }
+            term cfo-below-low-warning-threshold {
+                when {
+                    less-than-or-equal-to "$cfo" "$cfo-low-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,CFO $cfo is below low warning threshold ($cfo-low-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger esnr {
+            synopsis "Effective Signal-to-Noise Ratio";
+            description "Actual signal quality seen by the receiver after all impairments are considered";
+            frequency 1offset;
+            alert-type interfaces.optical.errors.esnr;
+            term no-esnr {
+                when {
+                    greater-than-or-equal-to "$esnr" "$esnr-low-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,esnr $esnr is normal";
+                    }
+                }
+            }
+            term esnr-present {
+                when {
+                    less-than "$esnr" "$esnr-low-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,esnr $esnr is below low threshold ($esnr-low-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger interface-optical-rx-signal-power {
+            synopsis "Interface optical Rx Signal Power KPI";
+            description "Rx Signal Power of the optical module";
+            frequency 1offset;
+            alert-type interfaces.rx.power.interface-optical-rx-signal-power;
+            term rx-betweeen-warning-threshold {
+                when {
+                    greater-than "$optics-rx-signal-power" "$optics-rx-signal-power-low-threshold";
+                    less-than "$optics-rx-signal-power" "$optics-rx-signal-power-high-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,Rx Signal Power $optics-rx-signal-power is normal";
+                    }
+                }
+            }
+            term optics-rx-signal-power-above-high-warning-threshold {
+                when {
+                    greater-than-or-equal-to "$optics-rx-signal-power" "$optics-rx-signal-power-high-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,Rx Signal Power $optics-rx-signal-power is above high warning threshold ($optics-rx-signal-power-high-threshold)";
+                    }
+                }
+            }
+            term optics-rx-signal-power-below-low-warning-threshold {
+                when {
+                    less-than-or-equal-to "$optics-rx-signal-power" "$optics-rx-signal-power-low-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,Rx Signal Power $optics-rx-signal-power is below low warning threshold ($optics-rx-signal-power-low-threshold)";
+                    }
+                }
+            }
+        }
+        trigger osnr {
+            synopsis "Optical Signal-to-Noise Ratio";
+            description "Quality of an optical signal relative to the optical noise present on the fiber";
+            frequency 1offset;
+            alert-type interfaces.optical.errors.osnr;
+            term no-osnr {
+                when {
+                    greater-than-or-equal-to "$osnr" "$osnr-low-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,osnr $osnr is normal";
+                    }
+                }
+            }
+            term osnr-present {
+                when {
+                    less-than "$osnr" "$osnr-low-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,osnr $osnr is below low threshold ($osnr-low-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger pre-fec-ber {
+            synopsis "Pre-Forward Error Correction Bit Error Rate";
+            description "It is the bit error rate measured before FEC is applied to the receiving signal";
+            frequency 1offset;
+            alert-type interfaces.optical.errors.pre-fec-ber;
+            term no-pre-fec-ber {
+                when {
+                    less-than "$pre-fec-ber" "$pre-fec-ber-high-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,pre-fec-ber $pre-fec-ber is normal";
+                    }
+                }
+            }
+            term pre-fec-ber-present {
+                when {
+                    greater-than-or-equal-to "$pre-fec-ber" "$pre-fec-ber-high-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,pre-fec-ber $pre-fec-ber is above high threshold ($pre-fec-ber-high-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger q-factor {
+            synopsis "Q-factor KPI";
+            description "Value below which q-factor is considered as unhealthy";
+            frequency 1offset;
+            alert-type interfaces.optical.errors.q-factor;
+            term q-factor-healthy {
+                when {
+                    greater-than-or-equal-to "$q-factor" "$q-factor-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,q-factor $q-factor is normal";
+                    }
+                }
+            }
+            term q-factor-not-healthy {
+                when {
+                    less-than "$q-factor" "$q-factor-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,q-factor $q-factor is below low threshold ($q-factor-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger q-margin {
+            synopsis "Q-factor KPI";
+            description "Value below which q-margin is considered as unhealthy";
+            frequency 1offset;
+            alert-type interfaces.optical.errors.q-margin;
+            term q-margin-healthy {
+                when {
+                    greater-than-or-equal-to "$q-margin" "$q-margin-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,q-margin $q-margin is normal";
+                    }
+                }
+            }
+            term q-margin-not-healthy {
+                when {
+                    less-than "$q-margin" "$q-margin-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,q-margin $q-margin is below low threshold ($q-margin-threshold)";
+                    }
+                }
+            }
+        }		
+        variable cfo-high-threshold {
+            value .*;
+            description "High threshold of CFO";
+            type integer;
+            value-type coherent-optics.cfo-max;			
+        }
+        variable cfo-low-threshold {
+            value .*;
+            description "Low threshold value of CFO";
+            type integer;
+            value-type coherent-optics.cfo-min;			
+        }
+        variable esnr-low-threshold {
+            value .*;
+            description "Low threshold value of ESNR";
+            type float;
+            value-type coherent-optics.esnr-min;			
+        }
+        variable interface-name {
+            value "(?i)^(?:CHASSIS\\d+:)?FPC\\d+:PIC\\d+:(?:NPU\\d+:)?PORT\\d+:XCVR\\d+:OCH$";
+            description "Name of the interface.";
+            type string;
+            value-type interface;
+        }
+        variable optics-rx-signal-power-high-threshold {
+            value .*;
+            description "High threshold of Rx Signal Power";
+            type integer;
+            value-type coherent-optics.rx-signal-power-max;			
+        }
+        variable optics-rx-signal-power-low-threshold {
+            value .*;
+            description "Low threshold value of Rx Signal Power";
+            type integer;
+            value-type coherent-optics.rx-signal-power-min;	 		
+        }
+        variable osnr-low-threshold {
+            value .*;
+            description "Low threshold value of OSNR";
+            type float;
+            value-type	coherent-optics.osnr-min;		
+        }
+        variable pre-fec-ber-high-threshold {
+            value .*;
+            description "High threshold of pre fec ber";
+            type float;
+            value-type coherent-optics.pre-fec-ber-max;			
+        }
+        variable q-factor-threshold {
+            value 6;
+            description "Unstable/failing threshold";
+            type float;
+        }
+        variable q-margin-threshold {
+            value 3;
+            description "Q-margin threshold";
+            type float;
+        }
+        variable fec-threshold-ber {
+            value .*;
+            description "fec ber threshold used in Q-Margin formula";
+            type float;
+            value-type coherent-optics.fec-threshold-ber;			
+        }		
+        rule-properties {
+            domain-name interfaces;
+            supported-devices {
+                sensors optical-sensor-oc;
+                juniper {
+                    operating-system junos {
+                        products JNP {
+                            sensors optical-sensor-oc;
+                            platforms JNP10004 {
+                                releases 22.3R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms JNP10008 {
+                                releases 22.3R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms JNP10016 {
+                                releases 22.3R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                        }
+                        products MX {
+                            sensors optical-sensor-oc;
+                            platforms MX10004 {
+                                releases 22.3R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms MX10008 {
+                                releases 22.3R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms MX10016 {
+                                releases 22.3R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms MX204 {
+                                releases 23.2R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms MX304 {
+                                releases 23.2R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                        }
+                    }
+                    operating-system junosEvolved {
+                        products ACX {
+                            sensors optical-sensor-oc;
+                            platforms ACX7024 {
+                                releases 23.2R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                            platforms ACX7100 {
+                                releases 23.2R1 {
+                                    release-support min-supported-release;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+}
