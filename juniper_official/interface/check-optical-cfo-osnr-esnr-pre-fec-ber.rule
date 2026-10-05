@@ -7,12 +7,7 @@
  */
 healthbot {
     topic interfaces {
-        rule check-optical-cfo-osnr-esnr-pre-fec-ber {
-            /*
-             * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
-             * threshold values and notifies by displaying green,yellow and red alarms.
-             * Use interface-name as key for the rule.
-             */		
+        rule check-optical-carrier-frequency-offset-osnr-esnr-pre-fec-ber {
         keys interface-name;
         synopsis "KPI for  interface optical degradation";
         description "Monitor the interface optical degradation";
@@ -24,35 +19,35 @@ healthbot {
                 frequency 60s;
             }
         }
-        field cfo {
+        field carrier-frequency-offset {
             sensor optical-sensor-oc {
                 path /components/component/optical-channel/state/carrier-frequency-offset/instant;
             }
             type float;
             description "Carrier Frequency Offset of the optical module";
-            plots cfo {
+            plots carrier-frequency-offset {
                 triggers carrier-frequency-offset;
                 unit Mhz;
-                thresholds cfo-high-threshold {
-                    field-name "$cfo-high-threshold";
+                thresholds carrier-frequency-offset-critical-threshold {
+                    field-name "$carrier-frequency-offset-critical-threshold";
                     severity critical;
                 }
-                thresholds cfo-low-threshold {
-                    field-name "$cfo-low-threshold";
+                thresholds carrier-frequency-offset-minor-threshold {
+                    field-name "$carrier-frequency-offset-minor-threshold";
                     severity minor;
                 }
             }
         }
-        field cfo-high-threshold {
+        field carrier-frequency-offset-critical-threshold {
             constant {
-                value "{{cfo-high-threshold}}";
+                value "{{carrier-frequency-offset-critical-threshold}}";
             }
             type float;
             description "Default CFO High threshold.";
         }
-        field cfo-low-threshold {
+        field carrier-frequency-offset-minor-threshold {
             constant {
-                value "{{cfo-low-threshold}}";
+                value "{{carrier-frequency-offset-minor-threshold}}";
             }
             type float;
             description "Default CFO low threshold.";
@@ -73,7 +68,7 @@ healthbot {
             description "Actual signal quality seen by the receiver after all impairments are considered";
             plots esnr {
                 triggers esnr;
-                unit count;
+                unit db;
             }
         }
         field esnr-low-threshold {
@@ -132,7 +127,7 @@ healthbot {
             description "Quality of an optical signal relative to the optical noise present on the fiber";
             plots osnr {
                 triggers osnr;
-                unit count;
+                unit db;
             }
         }
         field osnr-low-threshold {
@@ -219,39 +214,38 @@ healthbot {
         trigger carrier-frequency-offset {
             synopsis "Interface optical CFO KPI";
             description "Carrier Frequency Offset of the optical module";
-            frequency 1offset;
             alert-type interfaces.optical.errors.carrier-frequency-offset;
             term rx-betweeen-warning-threshold {
                 when {
-                    greater-than "$cfo" "$cfo-low-threshold";
-                    less-than "$cfo" "$cfo-high-threshold";
+                    greater-than "$carrier-frequency-offset" "$carrier-frequency-offset-minor-threshold";
+                    less-than "$carrier-frequency-offset" "$carrier-frequency-offset-critical-threshold";
                 }
                 then {
                     status {
                         color green;
-                        message "$interface-name,CFO $cfo is normal";
+                        message "$interface-name,CFO $carrier-frequency-offset is normal";
                     }
                 }
             }
-            term cfo-above-high-warning-threshold {
+            term carrier-frequency-offset-above-high-warning-threshold {
                 when {
-                    greater-than-or-equal-to "$cfo" "$cfo-high-threshold";
+                    greater-than-or-equal-to "$carrier-frequency-offset" "$carrier-frequency-offset-critical-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,CFO $cfo is above high warning threshold ($cfo-high-threshold) ";
+                        message "$interface-name,CFO $carrier-frequency-offset is above high warning threshold ($carrier-frequency-offset-critical-threshold) ";
                     }
                 }
             }
-            term cfo-below-low-warning-threshold {
+            term carrier-frequency-offset-below-low-warning-threshold {
                 when {
-                    less-than-or-equal-to "$cfo" "$cfo-low-threshold";
+                    less-than-or-equal-to "$carrier-frequency-offset" "$carrier-frequency-offset-minor-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,CFO $cfo is below low warning threshold ($cfo-low-threshold) ";
+                        message "$interface-name,CFO $carrier-frequency-offset is below low warning threshold ($carrier-frequency-offset-minor-threshold) ";
                     }
                 }
             }
@@ -259,7 +253,6 @@ healthbot {
         trigger esnr {
             synopsis "Effective Signal-to-Noise Ratio";
             description "Actual signal quality seen by the receiver after all impairments are considered";
-            frequency 1offset;
             alert-type interfaces.optical.errors.esnr;
             term no-esnr {
                 when {
@@ -287,7 +280,6 @@ healthbot {
         trigger interface-optical-rx-signal-power {
             synopsis "Interface optical Rx Signal Power KPI";
             description "Rx Signal Power of the optical module";
-            frequency 1offset;
             alert-type interfaces.rx.power.interface-optical-rx-signal-power;
             term rx-betweeen-warning-threshold {
                 when {
@@ -327,7 +319,6 @@ healthbot {
         trigger osnr {
             synopsis "Optical Signal-to-Noise Ratio";
             description "Quality of an optical signal relative to the optical noise present on the fiber";
-            frequency 1offset;
             alert-type interfaces.optical.errors.osnr;
             term no-osnr {
                 when {
@@ -355,7 +346,6 @@ healthbot {
         trigger pre-fec-ber {
             synopsis "Pre-Forward Error Correction Bit Error Rate";
             description "It is the bit error rate measured before FEC is applied to the receiving signal";
-            frequency 1offset;
             alert-type interfaces.optical.errors.pre-fec-ber;
             term no-pre-fec-ber {
                 when {
@@ -383,7 +373,6 @@ healthbot {
         trigger q-factor {
             synopsis "Q-factor KPI";
             description "Value below which q-factor is considered as unhealthy";
-            frequency 1offset;
             alert-type interfaces.optical.errors.q-factor;
             term q-factor-healthy {
                 when {
@@ -411,7 +400,6 @@ healthbot {
         trigger q-margin {
             synopsis "Q-factor KPI";
             description "Value below which q-margin is considered as unhealthy";
-            frequency 1offset;
             alert-type interfaces.optical.errors.q-margin;
             term q-margin-healthy {
                 when {
@@ -436,17 +424,17 @@ healthbot {
                 }
             }
         }		
-        variable cfo-high-threshold {
+        variable carrier-frequency-offset-critical-threshold {
             value .*;
             description "High threshold of CFO";
             type integer;
-            value-type coherent-optics.cfo-max;			
+            value-type coherent-optics.carrier-frequency-offset-max;			
         }
-        variable cfo-low-threshold {
+        variable carrier-frequency-offset-minor-threshold {
             value .*;
             description "Low threshold value of CFO";
             type integer;
-            value-type coherent-optics.cfo-min;			
+            value-type coherent-optics.carrier-frequency-offset-min;			
         }
         variable esnr-low-threshold {
             value .*;

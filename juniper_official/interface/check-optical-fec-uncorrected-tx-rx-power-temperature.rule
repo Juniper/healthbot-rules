@@ -9,7 +9,7 @@ healthbot {
         rule check-optical-fec-uncorrected-tx-rx-power-temperature {
             /*
              * Checks for fec uncorrected errors.Checks if tx and rx power are greater than   
-             * threshold values and notifies by displaying green,yellow and red alarms.
+             * threshold values and notifies by displaying green,yellow and red criticals.
              * Use interface-name as key for the rule.
              */
             keys interface-name;
@@ -62,7 +62,7 @@ healthbot {
                 type string;
                 description "Interface name";
             }
-            field optical-temp {
+            field optical-temperature {
                 sensor optical-sensor-oc {
                     path /components/component/state/temperature/instant;
                 }
@@ -71,8 +71,8 @@ healthbot {
                 plots temperature-plots {
                     triggers interface-optical-temperature;
                     unit celsius;
-                    thresholds temp-high-alarm-threshold {
-                        field-name "$temp-high-alarm-threshold";
+                    thresholds temp-high-critical-threshold {
+                        field-name "$temp-high-critical-threshold";
                         severity critical;
                     }
                     thresholds temp-high-warning-threshold {
@@ -90,16 +90,16 @@ healthbot {
                 plots optics-rx-power {
                     triggers interface-optical-rx-power;
                     unit dbm;
-                    thresholds rx-high-alarm-threshold {
-                        field-name "$rx-high-alarm-threshold";
+                    thresholds rx-high-critical-threshold {
+                        field-name "$rx-high-critical-threshold";
                         severity critical;
                     }
                     thresholds rx-high-warning-threshold {
                         field-name "$rx-high-warning-threshold";
                         severity minor;
                     }
-                    thresholds rx-low-alarm-threshold {
-                        field-name "$rx-low-alarm-threshold";
+                    thresholds rx-low-critical-threshold {
+                        field-name "$rx-low-critical-threshold";
                         severity critical;
                     }
                     thresholds rx-low-warning-threshold {
@@ -117,16 +117,16 @@ healthbot {
                 plots optics-tx-power {
                     triggers interface-optical-tx-power;
                     unit dbm;
-                    thresholds tx-high-alarm-threshold {
-                        field-name "$tx-high-alarm-threshold";
+                    thresholds tx-high-critical-threshold {
+                        field-name "$tx-high-critical-threshold";
                         severity critical;
                     }
                     thresholds tx-high-warning-threshold {
                         field-name "$tx-high-warning-threshold";
                         severity minor;
                     }
-                    thresholds tx-low-alarm-threshold {
-                        field-name "$tx-low-alarm-threshold";
+                    thresholds tx-low-critical-threshold {
+                        field-name "$tx-low-critical-threshold";
                         severity critical;
                     }
                     thresholds tx-low-warning-threshold {
@@ -135,7 +135,7 @@ healthbot {
                     }
                 }
             }
-            field rx-high-alarm-threshold {
+            field rx-high-critical-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
                         field-scoped true;
@@ -143,7 +143,7 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/input-power-upper;
                 }
                 type float;
-                description "Default rx power high alarm threshold.";
+                description "Default rx power high critical threshold.";
             }
             field rx-high-warning-threshold {
                 sensor optical-sensor-oc {
@@ -155,7 +155,7 @@ healthbot {
                 type float;
                 description "Default rx power high warning threshold.";
             }
-            field rx-low-alarm-threshold {
+            field rx-low-critical-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
                         field-scoped true;
@@ -163,7 +163,7 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/input-power-lower;
                 }
                 type float;
-                description "Default rx power low alarm threshold.";
+                description "Default rx power low critical threshold.";
             }
             field rx-low-warning-threshold {
                 sensor optical-sensor-oc {
@@ -175,7 +175,7 @@ healthbot {
                 type float;
                 description "Default rx power low warning threshold.";
             }
-            field temp-high-alarm-threshold {
+            field temp-high-critical-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
                         field-scoped true;
@@ -183,7 +183,7 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/module-temperature-upper;
                 }
                 type integer;
-                description "Default Module temperature high alarm threshold.";
+                description "Default Module temperature high critical threshold.";
             }
             field temp-high-warning-threshold {
                 sensor optical-sensor-oc {
@@ -195,7 +195,7 @@ healthbot {
                 type integer;
                 description "Default Module temperature high warning threshold.";
             }
-            field tx-high-alarm-threshold {
+            field tx-high-critical-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
                         field-scoped true;
@@ -203,7 +203,7 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/output-power-upper;
                 }
                 type float;
-                description "Default tx power high alarm threshold";
+                description "Default tx power high critical threshold";
             }
             field tx-high-warning-threshold {
                 sensor optical-sensor-oc {
@@ -215,7 +215,7 @@ healthbot {
                 type float;
                 description "Default tx power high warning threshold";
             }
-            field tx-low-alarm-threshold {
+            field tx-low-critical-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
                         field-scoped true;
@@ -223,7 +223,7 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/output-power-lower;
                 }
                 type float;
-                description "Default tx power low alarm threshold";
+                description "Default tx power low critical threshold";
             }
             field tx-low-warning-threshold {
                 sensor optical-sensor-oc {
@@ -238,7 +238,6 @@ healthbot {
             trigger fault-condition {
                 synopsis "Transceiver Fault Condition KPI";
                 description "Indicates (T/F) if a fault condition exists in the transceiver";
-                frequency 1offset;
                 alert-type interfaces.link_failure.fault-condition;
                 term fault-condition-false {
                     when {
@@ -270,7 +269,6 @@ healthbot {
             trigger interface-optical-rx-power {
                 synopsis "Interface optical rx high power KPI";
                 description "Sets health based on Interface optical rx high power";
-                frequency 1offset;
                 alert-type interfaces.rx.power.interface-optical-rx-power;
                 term rx-betweeen-warning-threshold {
                     when {
@@ -287,7 +285,7 @@ healthbot {
                 term rx-above-high-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optics-rx-power" "$rx-high-warning-threshold";
-                        less-than-or-equal-to "$optics-rx-power" "$rx-high-alarm-threshold";
+                        less-than-or-equal-to "$optics-rx-power" "$rx-high-critical-threshold";
                     }
                     then {
                         status {
@@ -298,7 +296,7 @@ healthbot {
                 }
                 term rx-below-low-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optics-rx-power" "$rx-low-alarm-threshold";
+                        greater-than-or-equal-to "$optics-rx-power" "$rx-low-critical-threshold";
                         less-than-or-equal-to "$optics-rx-power" "$rx-low-warning-threshold";
                     }
                     then {
@@ -308,25 +306,25 @@ healthbot {
                         }
                     }
                 }
-                term rx-above-high-alarm-threshold {
+                term rx-above-high-critical-threshold {
                     when {
-                        greater-than "$optics-rx-power" "$rx-high-alarm-threshold";
+                        greater-than "$optics-rx-power" "$rx-high-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Rx power $optics-rx-power is above high alarm threshold ($rx-high-alarm-threshold)";
+                            message "$interface-name Rx power $optics-rx-power is above high critical threshold ($rx-high-critical-threshold)";
                         }
                     }
                 }
-                term rx-below-low-alarm-threshold {
+                term rx-below-low-critical-threshold {
                     when {
-                        less-than "$optics-rx-power" "$rx-low-alarm-threshold";
+                        less-than "$optics-rx-power" "$rx-low-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Rx power $optics-rx-power is below low alarm threshold ($rx-low-alarm-threshold)";
+                            message "$interface-name Rx power $optics-rx-power is below low critical threshold ($rx-low-critical-threshold)";
                         }
                     }
                 }
@@ -334,39 +332,38 @@ healthbot {
             trigger interface-optical-temperature {
                 synopsis "high optical temperature";
                 description "Sets health based on the optical temperature";
-                frequency 1offset;
                 alert-type interfaces.temperature.interface-optical-temperature;
                 term less-than-warning-threshold {
                     when {
-                        less-than "$optical-temp" "$temp-high-warning-threshold";
+                        less-than "$optical-temperature" "$temp-high-warning-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$interface-name, temperature $optical-temp is normal.";
+                            message "$interface-name, temperature $optical-temperature is normal.";
                         }
                     }
                 }
                 term greater-than-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optical-temp" "$temp-high-warning-threshold";
-                        less-than "$optical-temp" "$temp-high-alarm-threshold";
+                        greater-than-or-equal-to "$optical-temperature" "$temp-high-warning-threshold";
+                        less-than "$optical-temperature" "$temp-high-critical-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name, temperature $optical-temp exceeds default warning threshold ($temp-high-warning-threshold)";
+                            message "$interface-name, temperature $optical-temperature exceeds default warning threshold ($temp-high-warning-threshold)";
                         }
                     }
                 }
-                term greater-than-alarm-threshold {
+                term greater-than-critical-threshold {
                     when {
-                        greater-than-or-equal-to "$optical-temp" "$temp-high-alarm-threshold";
+                        greater-than-or-equal-to "$optical-temperature" "$temp-high-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name, temperature $optical-temp exceeds default alarm threshold ($temp-high-alarm-threshold)";
+                            message "$interface-name, temperature $optical-temperature exceeds default critical threshold ($temp-high-critical-threshold)";
                         }
                     }
                 }
@@ -374,7 +371,6 @@ healthbot {
             trigger interface-optical-tx-power {
                 synopsis "Interface optical tx high power KPI";
                 description "Sets health based on Interface optical tx high power";
-                frequency 1offset;
                 alert-type interfaces.tx.power.interface-optical-tx-power;
                 term tx-betweeen-warning-threshold {
                     when {
@@ -391,7 +387,7 @@ healthbot {
                 term tx-above-high-warning-threshold {
                     when {
                         greater-than-or-equal-to "$optics-tx-power" "$tx-high-warning-threshold";
-                        less-than-or-equal-to "$optics-tx-power" "$tx-high-alarm-threshold";
+                        less-than-or-equal-to "$optics-tx-power" "$tx-high-critical-threshold";
                     }
                     then {
                         status {
@@ -402,7 +398,7 @@ healthbot {
                 }
                 term tx-below-low-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optics-tx-power" "$tx-low-alarm-threshold";
+                        greater-than-or-equal-to "$optics-tx-power" "$tx-low-critical-threshold";
                         less-than-or-equal-to "$optics-tx-power" "$tx-low-warning-threshold";
                     }
                     then {
@@ -412,25 +408,25 @@ healthbot {
                         }
                     }
                 }
-                term tx-above-high-alarm-threshold {
+                term tx-above-high-critical-threshold {
                     when {
-                        greater-than "$optics-tx-power" "$tx-high-alarm-threshold";
+                        greater-than "$optics-tx-power" "$tx-high-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Tx power $optics-tx-power is above alarm threshold ($tx-high-alarm-threshold)";
+                            message "$interface-name Tx power $optics-tx-power is above critical threshold ($tx-high-critical-threshold)";
                         }
                     }
                 }
-                term tx-lesser-than-low-alarm-threshold {
+                term tx-lesser-than-low-critical-threshold {
                     when {
-                        less-than "$optics-tx-power" "$tx-low-alarm-threshold";
+                        less-than "$optics-tx-power" "$tx-low-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Tx power $optics-tx-power is below alarm threshold ($tx-low-alarm-threshold)";
+                            message "$interface-name Tx power $optics-tx-power is below critical threshold ($tx-low-critical-threshold)";
                         }
                     }
                 }
@@ -438,7 +434,6 @@ healthbot {
             trigger uncorrected-forward-error-correction-errors {
                 synopsis "Uncorrected forward error correction errors KPI";
                 description "Sets health based on Uncorrected forward error correction errors";
-                frequency 1offset;
                 alert-type interfaces.optical.errors.uncorrected-forward-error-correction-errors;
                 term no-fec-uncorrected-errors {
                     when {
