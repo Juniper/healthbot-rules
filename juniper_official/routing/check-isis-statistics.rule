@@ -28,7 +28,7 @@
              * 
              * Use interface name as key for rule.
              */
-            keys interface-name;
+            keys [ interface-name level ];
             /*
              * Sensor configuration to get data from network devices
              */
@@ -54,11 +54,9 @@
              */
             field csnp-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/csnp/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/dropped;
                 }				
                 type integer;
@@ -70,11 +68,9 @@
             }
             field esh-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/esh/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/esh/state/dropped;
                 }				
                 type integer;
@@ -86,11 +82,9 @@
             }
             field iih-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/iih/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/dropped;
                 }				
                 type integer;
@@ -112,13 +106,24 @@
                 type string;
                 description "Interfaces to be monitored";
             }
+            field level {
+                sensor isis-sensor {
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number;
+                    data-if-missing {
+                        value 0;
+                    }
+                }
+                sensor isis-sensor-level {
+                    path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/@level-number;
+                }
+                type string;
+                description "Isis level as string due to rule key";
+            }
             field ish-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/ish/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/ish/state/dropped;
                 }				
                 type integer;
@@ -130,11 +135,9 @@
             }
             field lsp-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/lsp/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/dropped;
                 }				
                 type integer;
@@ -146,11 +149,9 @@
             }
             field psnp-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/psnp/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/dropped;
                 }				
                 type integer;
@@ -169,11 +170,9 @@
             }
             field unknown-drops {
                 sensor isis-sensor {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/packet-counters/unknown/state/dropped;
                 }
                 sensor isis-sensor-level {
-                    where "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/@interface-id =~ /{{interface-name}}/";
                     path /network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/dropped;
                 }				
                 type integer;
@@ -204,7 +203,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS CSNP packet drops $csnp-drops are not increasing on $interface-name";
+                            message "ISIS CSNP packet drops $csnp-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -223,7 +222,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS CSNP packet drops $csnp-drops are increasing on $interface-name";
+                            message "ISIS CSNP packet drops $csnp-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -246,7 +245,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS ESH packet drops $esh-drops are not increasing on $interface-name";
+                            message "ISIS ESH packet drops $esh-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }				
@@ -265,7 +264,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS ESH packet drops $esh-drops are increasing on $interface-name";
+                            message "ISIS ESH packet drops $esh-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -288,7 +287,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS IIH packet drops $iih-drops are not increasing on $interface-name";
+                            message "ISIS IIH packet drops $iih-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }				
@@ -307,7 +306,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS IIH packet drops $iih-drops are increasing on $interface-name";
+                            message "ISIS IIH packet drops $iih-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -330,7 +329,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS ISH packet drops $ish-drops are not increasing on $interface-name";
+                            message "ISIS ISH packet drops $ish-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }				
@@ -349,7 +348,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS ISH packet drops $ish-drops are increasing on $interface-name";
+                            message "ISIS ISH packet drops $ish-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -372,7 +371,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS LSP packet drops $lsp-drops are not increasing on $interface-name";
+                            message "ISIS LSP packet drops $lsp-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }				
@@ -391,7 +390,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS LSP packet drops $lsp-drops are increasing on $interface-name";
+                            message "ISIS LSP packet drops $lsp-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -414,7 +413,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS PSNP packet drops $psnp-drops are not increasing on $interface-name";
+                            message "ISIS PSNP packet drops $psnp-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }				
@@ -433,7 +432,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS PSNP packet drops $psnp-drops are increasing on $interface-name";
+                            message "ISIS PSNP packet drops $psnp-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
@@ -456,7 +455,7 @@
                     then {
                         status {
                             color green;
-                            message "ISIS unknown packet drops $unknown-drops are not increasing on $interface-name";
+                            message "ISIS unknown packet drops $unknown-drops are not increasing on $interface-name:$level";
                         }
                     }
                 }				
@@ -475,7 +474,7 @@
                     then {
                         status {
                             color red;
-                            message "ISIS unknown packet drops $unknown-drops are increasing on $interface-name";
+                            message "ISIS unknown packet drops $unknown-drops are increasing on $interface-name:$level";
                         }
                     }
                 }
