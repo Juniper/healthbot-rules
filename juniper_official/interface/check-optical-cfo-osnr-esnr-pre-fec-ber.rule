@@ -24,7 +24,7 @@ healthbot {
                 path /components/component/optical-channel/state/carrier-frequency-offset/instant;
             }
             type float;
-            description "Carrier Frequency Offset of the optical module";
+            description "Offset (MHz) between the received optical carrier and the receiver's local oscillator. Large values in either direction indicate laser drift";
             plots carrier-frequency-offset {
                 triggers carrier-frequency-offset;
                 unit Mhz;
@@ -43,21 +43,21 @@ healthbot {
                 value "{{carrier-frequency-offset-critical-threshold}}";
             }
             type float;
-            description "Default CFO High threshold.";
+            description "Upper CFO limit (MHz). CFO at or above this value raises a critical alert";
         }
         field carrier-frequency-offset-minor-threshold {
             constant {
                 value "{{carrier-frequency-offset-minor-threshold}}";
             }
             type float;
-            description "Default CFO low threshold.";
+            description "Lower (most negative) CFO limit (MHz). CFO at or below this value raises a minor alert";
         }
         field chromatic-dispersion {
             sensor optical-sensor-oc {
                 path /components/component/optical-channel/state/chromatic-dispersion/instant;
             }
             type float;
-            description "Chromatic Dispersion of an optical channel (in ps/nm) ";
+            description "Accumulated chromatic dispersion on the channel, as estimated by the coherent DSP";
             plots chromatic-dispersion;
         }
         field esnr {
@@ -71,9 +71,9 @@ healthbot {
                 unit db;
             }
         }
-        field esnr-low-threshold {
+        field esnr-minor-threshold {
             constant {
-                value "{{esnr-low-threshold}}";
+                value "{{esnr-minor-threshold}}";
             }
             type float;
             description "Default esnr low threshold.";
@@ -86,35 +86,35 @@ healthbot {
             type string;
             description "Interface name";
         }
-        field optics-rx-signal-power {
+        field rx-signal-power {
             sensor optical-sensor-oc {
                 path /components/component/optical-channel/state/input-power/instant;
             }
             type float;
-            description "Represents the filtered signal power calculated by the coherent DSP for that specific logical optical channel";
-            plots optics-rx-signal-power {
+            description "Received optical signal power (dBm) of the channel, as measured by the coherent DSP";
+            plots rx-signal-power {
                 triggers interface-optical-rx-signal-power;
                 unit dbm;
-                thresholds optics-rx-signal-power-high-threshold {
-                    field-name "$optics-rx-signal-power-high-threshold";
+                thresholds rx-signal-power-critical-threshold {
+                    field-name "$rx-signal-power-critical-threshold";
                     severity critical;
                 }
-                thresholds optics-rx-signal-power-low-threshold {
-                    field-name "$optics-rx-signal-power-low-threshold";
+                thresholds rx-signal-power-minor-threshold {
+                    field-name "$rx-signal-power-minor-threshold";
                     severity minor;
                 }
             }
         }
-        field optics-rx-signal-power-high-threshold {
+        field rx-signal-power-critical-threshold {
             constant {
-                value "{{optics-rx-signal-power-high-threshold}}";
+                value "{{rx-signal-power-critical-threshold}}";
             }
             type float;
             description "Default Rx Signal Power High threshold.";
         }
-        field optics-rx-signal-power-low-threshold {
+        field rx-signal-power-minor-threshold {
             constant {
-                value "{{optics-rx-signal-power-low-threshold}}";
+                value "{{rx-signal-power-minor-threshold}}";
             }
             type float;
             description "Default Rx Signal Power low threshold.";
@@ -130,9 +130,9 @@ healthbot {
                 unit db;
             }
         }
-        field osnr-low-threshold {
+        field osnr-minor-threshold {
             constant {
-                value "{{osnr-low-threshold}}";
+                value "{{osnr-minor-threshold}}";
             }
             type float;
             description "Default osnr low threshold.";
@@ -156,9 +156,9 @@ healthbot {
                 unit count;
             }
         }
-        field pre-fec-ber-high-threshold {
+        field pre-fec-ber-critical-threshold {
             constant {
-                value "{{pre-fec-ber-high-threshold}}";
+                value "{{pre-fec-ber-critical-threshold}}";
             }
             type float;
             description "Default pre-fec-ber high threshold.";
@@ -213,9 +213,9 @@ healthbot {
         }
         trigger carrier-frequency-offset {
             synopsis "Interface optical CFO KPI";
-            description "Carrier Frequency Offset of the optical module";
+            description "Offset (MHz) between the received optical carrier and the receiver's local oscillator. Large values in either direction indicate laser drift";
             alert-type interfaces.optical.errors.carrier-frequency-offset;
-            term rx-betweeen-warning-threshold {
+            term normal-carrier-frequency-offset {
                 when {
                     greater-than "$carrier-frequency-offset" "$carrier-frequency-offset-minor-threshold";
                     less-than "$carrier-frequency-offset" "$carrier-frequency-offset-critical-threshold";
@@ -227,7 +227,7 @@ healthbot {
                     }
                 }
             }
-            term carrier-frequency-offset-above-high-warning-threshold {
+            term carrier-frequency-offset-above-critical-threshold {
                 when {
                     greater-than-or-equal-to "$carrier-frequency-offset" "$carrier-frequency-offset-critical-threshold";
                 }
@@ -238,7 +238,7 @@ healthbot {
                     }
                 }
             }
-            term carrier-frequency-offset-below-low-warning-threshold {
+            term carrier-frequency-offset-below-minor-threshold {
                 when {
                     less-than-or-equal-to "$carrier-frequency-offset" "$carrier-frequency-offset-minor-threshold";
                 }
@@ -256,7 +256,7 @@ healthbot {
             alert-type interfaces.optical.errors.esnr;
             term no-esnr {
                 when {
-                    greater-than-or-equal-to "$esnr" "$esnr-low-threshold";
+                    greater-than-or-equal-to "$esnr" "$esnr-minor-threshold";
                 }
                 then {
                     status {
@@ -267,12 +267,12 @@ healthbot {
             }
             term esnr-present {
                 when {
-                    less-than "$esnr" "$esnr-low-threshold";
+                    less-than "$esnr" "$esnr-minor-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,esnr $esnr is below low threshold ($esnr-low-threshold) ";
+                        message "$interface-name,esnr $esnr is below low threshold ($esnr-minor-threshold) ";
                     }
                 }
             }
@@ -283,35 +283,35 @@ healthbot {
             alert-type interfaces.rx.power.interface-optical-rx-signal-power;
             term rx-betweeen-warning-threshold {
                 when {
-                    greater-than "$optics-rx-signal-power" "$optics-rx-signal-power-low-threshold";
-                    less-than "$optics-rx-signal-power" "$optics-rx-signal-power-high-threshold";
+                    greater-than "$rx-signal-power" "$rx-signal-power-minor-threshold";
+                    less-than "$rx-signal-power" "$rx-signal-power-critical-threshold";
                 }
                 then {
                     status {
                         color green;
-                        message "$interface-name,Rx Signal Power $optics-rx-signal-power is normal";
+                        message "$interface-name,Rx Signal Power $rx-signal-power is normal";
                     }
                 }
             }
-            term optics-rx-signal-power-above-high-warning-threshold {
+            term rx-signal-power-above-high-warning-threshold {
                 when {
-                    greater-than-or-equal-to "$optics-rx-signal-power" "$optics-rx-signal-power-high-threshold";
+                    greater-than-or-equal-to "$rx-signal-power" "$rx-signal-power-critical-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,Rx Signal Power $optics-rx-signal-power is above high warning threshold ($optics-rx-signal-power-high-threshold)";
+                        message "$interface-name,Rx Signal Power $rx-signal-power is above high warning threshold ($rx-signal-power-critical-threshold)";
                     }
                 }
             }
-            term optics-rx-signal-power-below-low-warning-threshold {
+            term rx-signal-power-below-low-warning-threshold {
                 when {
-                    less-than-or-equal-to "$optics-rx-signal-power" "$optics-rx-signal-power-low-threshold";
+                    less-than-or-equal-to "$rx-signal-power" "$rx-signal-power-minor-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,Rx Signal Power $optics-rx-signal-power is below low warning threshold ($optics-rx-signal-power-low-threshold)";
+                        message "$interface-name,Rx Signal Power $rx-signal-power is below low warning threshold ($rx-signal-power-minor-threshold)";
                     }
                 }
             }
@@ -322,7 +322,7 @@ healthbot {
             alert-type interfaces.optical.errors.osnr;
             term no-osnr {
                 when {
-                    greater-than-or-equal-to "$osnr" "$osnr-low-threshold";
+                    greater-than-or-equal-to "$osnr" "$osnr-minor-threshold";
                 }
                 then {
                     status {
@@ -333,12 +333,12 @@ healthbot {
             }
             term osnr-present {
                 when {
-                    less-than "$osnr" "$osnr-low-threshold";
+                    less-than "$osnr" "$osnr-minor-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,osnr $osnr is below low threshold ($osnr-low-threshold) ";
+                        message "$interface-name,osnr $osnr is below low threshold ($osnr-minor-threshold) ";
                     }
                 }
             }
@@ -349,7 +349,7 @@ healthbot {
             alert-type interfaces.optical.errors.pre-fec-ber;
             term no-pre-fec-ber {
                 when {
-                    less-than "$pre-fec-ber" "$pre-fec-ber-high-threshold";
+                    less-than "$pre-fec-ber" "$pre-fec-ber-critical-threshold";
                 }
                 then {
                     status {
@@ -360,12 +360,12 @@ healthbot {
             }
             term pre-fec-ber-present {
                 when {
-                    greater-than-or-equal-to "$pre-fec-ber" "$pre-fec-ber-high-threshold";
+                    greater-than-or-equal-to "$pre-fec-ber" "$pre-fec-ber-critical-threshold";
                 }
                 then {
                     status {
                         color red;
-                        message "$interface-name,pre-fec-ber $pre-fec-ber is above high threshold ($pre-fec-ber-high-threshold) ";
+                        message "$interface-name,pre-fec-ber $pre-fec-ber is above high threshold ($pre-fec-ber-critical-threshold) ";
                     }
                 }
             }
@@ -426,19 +426,19 @@ healthbot {
         }		
         variable carrier-frequency-offset-critical-threshold {
             value .*;
-            description "High threshold of CFO";
+            description "Critical threshold of carrier-frequency-offset";
             type integer;
             value-type coherent-optics.carrier-frequency-offset-max;			
         }
         variable carrier-frequency-offset-minor-threshold {
             value .*;
-            description "Low threshold value of CFO";
+            description "Minor threshold value of carrier-frequency-offset";
             type integer;
             value-type coherent-optics.carrier-frequency-offset-min;			
         }
-        variable esnr-low-threshold {
+        variable esnr-minor-threshold {
             value .*;
-            description "Low threshold value of ESNR";
+            description "Minimum acceptable ESNR (dB). Below this value raises a critical alert";
             type float;
             value-type coherent-optics.esnr-min;			
         }
@@ -448,38 +448,38 @@ healthbot {
             type string;
             value-type interface;
         }
-        variable optics-rx-signal-power-high-threshold {
+        variable rx-signal-power-critical-threshold {
             value .*;
-            description "High threshold of Rx Signal Power";
+            description "Upper rx signal power limit (dBm). Power at or beyond this value raises a critical alert.";
             type integer;
             value-type coherent-optics.rx-signal-power-max;			
         }
-        variable optics-rx-signal-power-low-threshold {
+        variable rx-signal-power-minor-threshold {
             value .*;
-            description "Low threshold value of Rx Signal Power";
+            description "Lower rx signal power limit (dBm). Power at or beyond this value raises a minor alert";
             type integer;
             value-type coherent-optics.rx-signal-power-min;	 		
         }
-        variable osnr-low-threshold {
+        variable osnr-minor-threshold {
             value .*;
-            description "Low threshold value of OSNR";
+            description "Minimum acceptable OSNR (dB). Below this value raises a critical alert";
             type float;
             value-type	coherent-optics.osnr-min;		
         }
-        variable pre-fec-ber-high-threshold {
+        variable pre-fec-ber-critical-threshold {
             value .*;
-            description "High threshold of pre fec ber";
+            description "Maximum acceptable pre-FEC BER. At or above this value raises a critical alert";
             type float;
             value-type coherent-optics.pre-fec-ber-max;			
         }
         variable q-factor-threshold {
             value 6;
-            description "Unstable/failing threshold";
+            description "Minimum acceptable Q-factor (dB). Below this value raises a critical alert";
             type float;
         }
         variable q-margin-threshold {
             value 3;
-            description "Q-margin threshold";
+            description "Minimum acceptable Q-margin (dB) before the FEC limit. Below this value raises a critical alert";
             type float;
         }
         variable fec-threshold-ber {

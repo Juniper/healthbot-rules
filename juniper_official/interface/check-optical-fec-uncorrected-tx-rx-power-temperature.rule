@@ -69,7 +69,7 @@ healthbot {
                 type integer;
                 description "Temperature of the Optical Module in degrees Centigrade";
                 plots temperature-plots {
-                    triggers interface-optical-temperature;
+                    triggers interface-temperature;
                     unit celsius;
                     thresholds temp-high-critical-threshold {
                         field-name "$temp-high-critical-threshold";
@@ -81,14 +81,14 @@ healthbot {
                     }
                 }
             }
-            field optics-rx-power {
+            field rx-power {
                 sensor optical-sensor-oc {
                     path /components/component/transceiver/state/input-power/instant;
                 }
                 type float;
                 description "rx power level of the optical module.";
-                plots optics-rx-power {
-                    triggers interface-optical-rx-power;
+                plots rx-power {
+                    triggers interface-rx-power;
                     unit dbm;
                     thresholds rx-high-critical-threshold {
                         field-name "$rx-high-critical-threshold";
@@ -108,14 +108,14 @@ healthbot {
                     }
                 }
             }
-            field optics-tx-power {
+            field tx-power {
                 sensor optical-sensor-oc {
                     path /components/component/transceiver/state/output-power/instant;
                 }
                 type float;
                 description "output power level of the optical module.";
-                plots optics-tx-power {
-                    triggers interface-optical-tx-power;
+                plots tx-power {
+                    triggers interface-tx-power;
                     unit dbm;
                     thresholds tx-high-critical-threshold {
                         field-name "$tx-high-critical-threshold";
@@ -266,73 +266,73 @@ healthbot {
                     }
                 }
             }
-            trigger interface-optical-rx-power {
+            trigger interface-rx-power {
                 synopsis "Interface optical rx high power KPI";
                 description "Sets health based on Interface optical rx high power";
-                alert-type interfaces.rx.power.interface-optical-rx-power;
+                alert-type interfaces.rx.power.interface-rx-power;
                 term rx-betweeen-warning-threshold {
                     when {
-                        greater-than "$optics-rx-power" "$rx-low-warning-threshold";
-                        less-than "$optics-rx-power" "$rx-high-warning-threshold";
+                        greater-than "$rx-power" "$rx-low-warning-threshold";
+                        less-than "$rx-power" "$rx-high-warning-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$interface-name Rx power $optics-rx-power is normal";
+                            message "$interface-name Rx power $rx-power is normal";
                         }
                     }
                 }
                 term rx-above-high-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optics-rx-power" "$rx-high-warning-threshold";
-                        less-than-or-equal-to "$optics-rx-power" "$rx-high-critical-threshold";
+                        greater-than-or-equal-to "$rx-power" "$rx-high-warning-threshold";
+                        less-than-or-equal-to "$rx-power" "$rx-high-critical-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name Rx power $optics-rx-power is above high warning threshold ($rx-high-warning-threshold) ";
+                            message "$interface-name Rx power $rx-power is above high warning threshold ($rx-high-warning-threshold) ";
                         }
                     }
                 }
                 term rx-below-low-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optics-rx-power" "$rx-low-critical-threshold";
-                        less-than-or-equal-to "$optics-rx-power" "$rx-low-warning-threshold";
+                        greater-than-or-equal-to "$rx-power" "$rx-low-critical-threshold";
+                        less-than-or-equal-to "$rx-power" "$rx-low-warning-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name Rx power $optics-rx-power is below low warning threshold ($rx-low-warning-threshold) ";
+                            message "$interface-name Rx power $rx-power is below low warning threshold ($rx-low-warning-threshold) ";
                         }
                     }
                 }
                 term rx-above-high-critical-threshold {
                     when {
-                        greater-than "$optics-rx-power" "$rx-high-critical-threshold";
+                        greater-than "$rx-power" "$rx-high-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Rx power $optics-rx-power is above high critical threshold ($rx-high-critical-threshold)";
+                            message "$interface-name Rx power $rx-power is above high critical threshold ($rx-high-critical-threshold)";
                         }
                     }
                 }
                 term rx-below-low-critical-threshold {
                     when {
-                        less-than "$optics-rx-power" "$rx-low-critical-threshold";
+                        less-than "$rx-power" "$rx-low-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Rx power $optics-rx-power is below low critical threshold ($rx-low-critical-threshold)";
+                            message "$interface-name Rx power $rx-power is below low critical threshold ($rx-low-critical-threshold)";
                         }
                     }
                 }
             }
-            trigger interface-optical-temperature {
+            trigger interface-temperature {
                 synopsis "high optical temperature";
                 description "Sets health based on the optical temperature";
-                alert-type interfaces.temperature.interface-optical-temperature;
+                alert-type interfaces.temperature.interface-temperature;
                 term less-than-warning-threshold {
                     when {
                         less-than "$optical-temperature" "$temp-high-warning-threshold";
@@ -368,65 +368,65 @@ healthbot {
                     }
                 }
             }
-            trigger interface-optical-tx-power {
+            trigger interface-tx-power {
                 synopsis "Interface optical tx high power KPI";
                 description "Sets health based on Interface optical tx high power";
-                alert-type interfaces.tx.power.interface-optical-tx-power;
+                alert-type interfaces.tx.power.interface-tx-power;
                 term tx-betweeen-warning-threshold {
                     when {
-                        greater-than "$optics-tx-power" "$tx-low-warning-threshold";
-                        less-than "$optics-tx-power" "$tx-high-warning-threshold";
+                        greater-than "$tx-power" "$tx-low-warning-threshold";
+                        less-than "$tx-power" "$tx-high-warning-threshold";
                     }
                     then {
                         status {
                             color green;
-                            message "$interface-name Tx power $optics-tx-power is normal";
+                            message "$interface-name Tx power $tx-power is normal";
                         }
                     }
                 }
                 term tx-above-high-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optics-tx-power" "$tx-high-warning-threshold";
-                        less-than-or-equal-to "$optics-tx-power" "$tx-high-critical-threshold";
+                        greater-than-or-equal-to "$tx-power" "$tx-high-warning-threshold";
+                        less-than-or-equal-to "$tx-power" "$tx-high-critical-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name Tx power $optics-tx-power is above warning threshold ($tx-high-warning-threshold)";
+                            message "$interface-name Tx power $tx-power is above warning threshold ($tx-high-warning-threshold)";
                         }
                     }
                 }
                 term tx-below-low-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optics-tx-power" "$tx-low-critical-threshold";
-                        less-than-or-equal-to "$optics-tx-power" "$tx-low-warning-threshold";
+                        greater-than-or-equal-to "$tx-power" "$tx-low-critical-threshold";
+                        less-than-or-equal-to "$tx-power" "$tx-low-warning-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name Tx power $optics-tx-power is below warning threshold ($tx-low-warning-threshold)";
+                            message "$interface-name Tx power $tx-power is below warning threshold ($tx-low-warning-threshold)";
                         }
                     }
                 }
                 term tx-above-high-critical-threshold {
                     when {
-                        greater-than "$optics-tx-power" "$tx-high-critical-threshold";
+                        greater-than "$tx-power" "$tx-high-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Tx power $optics-tx-power is above critical threshold ($tx-high-critical-threshold)";
+                            message "$interface-name Tx power $tx-power is above critical threshold ($tx-high-critical-threshold)";
                         }
                     }
                 }
                 term tx-lesser-than-low-critical-threshold {
                     when {
-                        less-than "$optics-tx-power" "$tx-low-critical-threshold";
+                        less-than "$tx-power" "$tx-low-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name Tx power $optics-tx-power is below critical threshold ($tx-low-critical-threshold)";
+                            message "$interface-name Tx power $tx-power is below critical threshold ($tx-low-critical-threshold)";
                         }
                     }
                 }
