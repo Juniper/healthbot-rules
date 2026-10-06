@@ -75,12 +75,12 @@ healthbot {
                 plots optical-temperature {
                     triggers interface-temperature;
                     unit celsius;
-                    thresholds temp-high-critical-threshold {
-                        field-name "$temp-high-critical-threshold";
+                    thresholds temperature-critical-threshold {
+                        field-name "$temperature-critical-threshold";
                         severity critical;
                     }
-                    thresholds temp-high-warning-threshold {
-                        field-name "$temp-high-warning-threshold";
+                    thresholds temperature-warning-threshold {
+                        field-name "$temperature-warning-threshold";
                         severity minor;
                     }
                 }
@@ -179,7 +179,7 @@ healthbot {
                 type float;
                 description "Default rx power low warning threshold.";
             }
-            field temp-high-critical-threshold {
+            field temperature-critical-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{critical}}/" {
                         field-scoped true;
@@ -187,9 +187,9 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/module-temperature-upper;
                 }
                 type integer;
-                description "Default Module temperature high critical threshold.";
+                description "Default Module temperature critical threshold.";
             }
-            field temp-high-warning-threshold {
+            field temperature-warning-threshold {
                 sensor optical-sensor-oc {
                     where "/components/component/transceiver/thresholds/threshold/@severity == /{{warning}}/" {
                         field-scoped true;
@@ -197,7 +197,7 @@ healthbot {
                     path /components/component/transceiver/thresholds/threshold/state/module-temperature-upper;
                 }
                 type integer;
-                description "Default Module temperature high warning threshold.";
+                description "Default Module temperature warning threshold.";
             }
             field tx-high-critical-threshold {
                 sensor optical-sensor-oc {
@@ -339,7 +339,7 @@ healthbot {
                 alert-type interfaces.temperature.interface-temperature;
                 term less-than-warning-threshold {
                     when {
-                        less-than "$optical-temperature" "$temp-high-warning-threshold";
+                        less-than "$optical-temperature" "$temperature-warning-threshold";
                     }
                     then {
                         status {
@@ -350,24 +350,24 @@ healthbot {
                 }
                 term greater-than-warning-threshold {
                     when {
-                        greater-than-or-equal-to "$optical-temperature" "$temp-high-warning-threshold";
-                        less-than "$optical-temperature" "$temp-high-critical-threshold";
+                        greater-than-or-equal-to "$optical-temperature" "$temperature-warning-threshold";
+                        less-than "$optical-temperature" "$temperature-critical-threshold";
                     }
                     then {
                         status {
                             color yellow;
-                            message "$interface-name, temperature $optical-temperature exceeds default warning threshold ($temp-high-warning-threshold)";
+                            message "$interface-name, temperature $optical-temperature exceeds default warning threshold ($temperature-warning-threshold)";
                         }
                     }
                 }
                 term greater-than-critical-threshold {
                     when {
-                        greater-than-or-equal-to "$optical-temperature" "$temp-high-critical-threshold";
+                        greater-than-or-equal-to "$optical-temperature" "$temperature-critical-threshold";
                     }
                     then {
                         status {
                             color red;
-                            message "$interface-name, temperature $optical-temperature exceeds default critical threshold ($temp-high-critical-threshold)";
+                            message "$interface-name, temperature $optical-temperature exceeds default critical threshold ($temperature-critical-threshold)";
                         }
                     }
                 }
@@ -469,11 +469,6 @@ healthbot {
                     }
                 }
             }
-            variable critical {
-                value CRITICAL;
-                description "Seveity is matching critical";
-                type string;
-            }
             variable fec-uncorrected-threshold-variable {
                 value 1;
                 description "Interface fec-uncorrected threshold: Number of fec-uncorrected increase between metrics, before we report anomaly";
@@ -484,11 +479,6 @@ healthbot {
                 description "Name of the interface.";
                 type string;
                 value-type coherent-optics.interface;
-            }
-            variable warning {
-                value WARNING;
-                description "Seveity is matching warning";
-                type string;
             }
             rule-properties {
                 domain-name interfaces;
