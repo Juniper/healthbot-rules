@@ -1,6 +1,6 @@
 /*
- * Monitors system cpu, memory utlilization and notifies when anomalies are found.
- * 
+ * Monitors system cpu, memory utilization and notifies when anomalies are found.
+ *
  * Four inputs control detection
  *
  *   1) "re-slot-no" is a regular expression that matches the routing engine
@@ -9,8 +9,8 @@
  *      routing engine 0.
  *
  *   2) "memory-buffer-re-high-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 75. 
- * 
+ *      rule to report an anomaly. By default it's 75.
+ *
  *   3) "re-cpu-high-threshold" is the threshold that causes the
  *      rule to report an anomaly. By default it's 80.
  *
@@ -18,23 +18,23 @@
  *      rule to report an anomaly. By default it's 50.
  *
  *   5) "memory-buffer-re-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 50. 
+ *      rule to report an anomaly. By default it's 50.
  */
 healthbot {
     topic hardware.system {
         rule check-system-cpu-memory {
             /*
-             * Monitors the system cpu, memory utlilization and notifies via dashboard, red color 
-             * when threshold is exceeded else green. 
+             * Monitors the system cpu, memory utilization and notifies via dashboard, red color
+             * when threshold is exceeded else green.
 			 *
              * Use routing-engine as key for rule.
-             */		
+             */
             keys routing-engine;
             synopsis "CPU and Memory analyzer";
             description "Collects system RE CPU and Memory statistics periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
-             */			 
+             */
             sensor components-oc {
                 synopsis "system cpu and memory KPI";
                 description "/components open-config sensor to collect telemetry data from network device";
@@ -46,7 +46,7 @@ healthbot {
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */				 
+             */
             field re-cpu-utilization {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == 'cpu-utilization-total'";
@@ -66,21 +66,7 @@ healthbot {
                         field-name "$re-cpu-utilization-low-threshold";
                         severity minor;
                     }
-                    thresholds re-cpu-utilization-anomaly {
-                        field-name "$re-cpu-utilization-anomaly";
-                        severity minor;
-                        type jaiml-threshold;
-                    }					
-                }				
-            }
-            field re-cpu-utilization-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$re-cpu-utilization";
-                    }
                 }
-                type integer;
-                description "JAIML anomaly detection on re-cpu-utilization field";
             }
             field re-cpu-utilization-high-threshold {
                 constant {
@@ -115,21 +101,7 @@ healthbot {
                         field-name "$re-memory-buffer-low-threshold";
                         severity minor;
                     }
-                    thresholds re-memory-buffer-anomaly {
-                        field-name "$re-memory-buffer-anomaly";
-                        severity minor;
-                        type jaiml-threshold;
-                    }					
-                }				
-            }
-            field re-memory-buffer-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$re-memory-buffer";
-                    }
                 }
-                type integer;
-                description "JAIML anomaly detection on re-memory-buffer field";
             }
             field re-memory-buffer-high-threshold {
                 constant {
@@ -162,40 +134,7 @@ healthbot {
                  frequency 1offset;
                 /*
                  * Sets color to green when re-cpu utilization is less-than re-cpu-utilization-low-threshold
-                 */				 
-                 term re-cpu-utilization-normal {
-                     when {
-                         less-than "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
-                         less-than-or-equal-to "$re-cpu-utilization-anomaly" 0;
-                     }				 
-                     then {
-                         status {
-                             color green;
-                             message "$routing-engine CPU utilization($re-cpu-utilization%) is normal";
-                         }
-                     }
-                 }	
-                 /*
-                 * Sets color to yellow when re-cpu utilization is below low threshold ($re-cpu-utilization-low-threshold)
-                 * and the temperature value is anomalous.
-                 */ 
-                term is-re-cpu-utilization-anomalous {
-                    when {
-                        less-than "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
-                        equal-to "$re-cpu-utilization-anomaly" 1;
-                        
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU utilization is anomalous";
-                        }
-                    }
-                }		
-                /*
-                 * Sets color to green when re-cpu utilization is less-than re-cpu-utilization-low-threshold
-                 * 
-                 */				
+                 */
                 term is-re-cpu-utilization-less-than-low-threshold {
                     when {
                         less-than "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
@@ -206,14 +145,14 @@ healthbot {
                             message "$routing-engine CPU utilization($re-cpu-utilization%) is normal";
                         }
                     }
-                }			 
+                }
                 /*
                  * Sets color to yellow when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-low-threshold
-                 */				 
+                 */
                  term is-re-cpu-utilization-middle {
                      when {
                          greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-low-threshold";
-                         less-than "$re-cpu-utilization" "$re-cpu-utilization-high-threshold";						 
+                         less-than "$re-cpu-utilization" "$re-cpu-utilization-high-threshold";
                      }
                      then {
                          status {
@@ -222,10 +161,10 @@ healthbot {
                          }
                      }
                  }
-                			 
+
                 /*
                  * Sets color to red when re-cpu utilization is greater-than-or-equal-to re-cpu-utilization-high-threshold
-                 */				 
+                 */
                  term is-re-cpu-utilization-abnormal {
                      when {
                          greater-than-or-equal-to "$re-cpu-utilization" "$re-cpu-utilization-high-threshold";
@@ -236,7 +175,7 @@ healthbot {
                              message "$routing-engine CPU utilization($re-cpu-utilization%) exceeds critical threshold($re-cpu-utilization-high-threshold%)";
                          }
                      }
-                 }				 
+                 }
              }
              trigger routing-engine-memory-buffer-utilization {
                  alert-type hardware.memory.routing_engine.routing-engine-memory-buffer-utilization;
@@ -244,40 +183,8 @@ healthbot {
                  description "Sets health based on increase in system memory buffer utilization";
                  frequency 1offset;
                 /*
-                 * Sets color to green when re-memory-buffer utilization is less-than re-memory-buffer-low-threshold
-                 */				 
-                 term is-re-memory-buffer-utilization-normal {
-                     when {
-                         less-than "$re-memory-buffer" "$re-memory-buffer-low-threshold";
-                         less-than-or-equal-to "$re-memory-buffer-anomaly" 0;
-                     }				 
-                     then {
-                         status {
-                             color green;
-                             message "$routing-engine memory buffer utilization($re-memory-buffer%) is normal";
-                         }
-                     }
-                 }	
-                 /*
-                 * Sets color to yellow when re-memory-buffer utilization is below low threshold ($re-memory-buffer-low-threshold)
-                 * and the re-memory-buffer value is anomalous.
-                 */ 
-                term is-re-memory-buffer-anomalous {
-                    when {
-                        less-than "$re-memory-buffer" "$re-memory-buffer-low-threshold";
-                        equal-to "$re-memory-buffer-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine memory buffer utilization is anomalous";
-                        }
-                    }
-                }	
-                /*
                  * Sets color to green when re-memory-buffer utilization is below low threshold ($re-memory-buffer-low-threshold)
-                 * 
-                 */				
+                 */
                 term is-re-memory-buffer-utilization-less-than-low-threshold {
                     when {
                         less-than "$re-memory-buffer" "$re-memory-buffer-low-threshold";
@@ -288,15 +195,15 @@ healthbot {
                             message "$routing-engine memory buffer utilization($re-memory-buffer%) is normal";
                         }
                     }
-                }			 
+                }
                 /*
                  * Sets color to yellow when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-low-threshold
-                 */				 
+                 */
                  term is-re-memory-buffer-utilization-middle {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-low-threshold";
                          less-than "$re-memory-buffer" "$re-memory-buffer-high-threshold";
-                        }						 
+                        }
                      then {
                          status {
                              color yellow;
@@ -306,7 +213,7 @@ healthbot {
                  }
                 /*
                  * Sets color to red when re-memory-buffer utilization is greater-than-or-equal-to re-memory-buffer-high-threshold
-                 */				 
+                 */
                  term is-re-memory-buffer-utilization-abnormal {
                      when {
                          greater-than-or-equal-to "$re-memory-buffer" "$re-memory-buffer-high-threshold";
@@ -317,12 +224,12 @@ healthbot {
                              message "$routing-engine memory buffer utilization($re-memory-buffer%) exceed critical threshold($re-memory-buffer-high-threshold%)";
                          }
                      }
-                 }				 
-             }			 
+                 }
+             }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
-             */			
+             */
             variable memory-buffer-re-high-threshold {
                 value 75;
                 description "Memory buffer high threshold: Utilization increase between metrics, before we report anomaly";
@@ -369,7 +276,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms ACX7100 {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -384,25 +291,25 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products PTX {
                                 platforms PTX10008 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
+                                }
+                            }
                         }
                         operating-system junos {
-                            sensors components-oc;						
+                            sensors components-oc;
                             products MX {
                                 sensors components-oc;
                                 platforms MX204 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX304 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
@@ -422,7 +329,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products JNP {
                                 sensors components-oc;
@@ -440,13 +347,12 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-                        }						
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-	}	
-}	
-		
+	}
+}

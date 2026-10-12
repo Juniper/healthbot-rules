@@ -1,6 +1,6 @@
 /*
  * Monitors routing-engine temperature and notifies when anomalies are found.
- * 
+ *
  * Three inputs control detection
  *
  *   1) "re-slot-no" is a regular expression that matches the routing engine
@@ -9,12 +9,12 @@
  *      routing engine 0.
  *
  *   2) "re-temperature-low-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 45 degree Celcius of 
+ *      rule to report an anomaly. By default it's 45 degree Celsius of
  *      RE temperature. This rule will set a dashboard color to green
  *      when temperature is below low threshold.
- * 
+ *
  *   3) "re-temperature-high-threshold" is the threshold that causes the
- *      rule to report an anomaly. By default it's 55 degree Celcius of RE 
+ *      rule to report an anomaly. By default it's 55 degree Celsius of RE
  *      temperature.
  *
  * Requirement 14 (https://paragon-automation.atlassian.net/browse/REQ-14)
@@ -24,17 +24,17 @@ healthbot {
     topic hardware.chassis {
         rule check-routing-engine-temperature {
             /*
-             * Monitors the routing-engine temperature and notifies via dashboard, red color 
-             * when threshold is exceeded else green. 
+             * Monitors the routing-engine temperature and notifies via dashboard, red color
+             * when threshold is exceeded else green.
 			 *
              * Use routing-engine as key for rule.
-             */		
+             */
             keys routing-engine;
             synopsis "Routing engine temperature";
             description "Collects system RE Temperature statistics periodically and notifies anomalies";
             /*
              * Sensor configuration to get data from network devices.
-             */			 
+             */
             sensor components-oc {
                 synopsis "routing-engine temperature KPI";
                 description "open-config sensor to collect telemetry data from network device";
@@ -48,11 +48,11 @@ healthbot {
                     sensor-name /components/component;
                     frequency 60s;
                 }
-            }			
+            }
             /*
              * Fields defined using sensor path. Map the longer sensor names
              * to the shorter field names used in the rules.
-             */				 
+             */
             field routing-engine-cpu-temperature {
                 sensor components-oc {
                     where "/components/component/properties/property/@name == 'CPU Temperature'";
@@ -61,7 +61,7 @@ healthbot {
                 sensor components-oc-junos {
                     where "/components/component/properties/property/@name == 'temperature-cpu'";
                     path /components/component/properties/property/state/value;
-                }				
+                }
                 type integer;
                 description "CPU temperature";
                 plots re-cpu-temperature-plots {
@@ -75,12 +75,7 @@ healthbot {
                         field-name "$low-threshold";
                         severity minor;
                     }
-                    thresholds routing-engine-cpu-temperature-anomaly {
-                        field-name "$routing-engine-cpu-temperature-anomaly";
-                        severity minor;
-                        type jaiml-threshold;
-                    }					
-                }				
+                }
             }
             field routing-engine-temperature {
                 sensor components-oc {
@@ -90,7 +85,7 @@ healthbot {
                 sensor components-oc-junos {
                     where "/components/component/properties/property/@name == 'temperature'";
                     path /components/component/properties/property/state/value;
-                }				
+                }
                 type integer;
                 description "RE temperature";
                 plots re-temperature-plots {
@@ -104,12 +99,7 @@ healthbot {
                         field-name "$low-threshold";
                         severity minor;
                     }
-                    thresholds routing-engine-temperature-anomaly {
-                        field-name "$routing-engine-temperature-anomaly";
-                        severity minor;
-                        type jaiml-threshold;
-                    }					
-                }				
+                }
             }
             field routing-engine {
                 sensor components-oc {
@@ -119,7 +109,7 @@ healthbot {
                 sensor components-oc-junos {
                     where "/components/component/@name =~ /^Routing Engine[{{re-slot-no}}]$|^RE[{{re-slot-no}}]$|^CHASSIS[{{re-slot-no}}]:RE[{{re-slot-no}}]$/";
                     path "/components/component/@name";
-                }				
+                }
                 description "RE name to monitor";
             }
             field high-threshold {
@@ -136,68 +126,17 @@ healthbot {
                 type integer;
                 description "RE temperature low threshold";
             }
-            field routing-engine-cpu-temperature-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$routing-engine-cpu-temperature";
-                    }
-                }
-                type integer;
-                description "JAIML anomaly detection on routing engine CPU temperature field";
-            }
-            field routing-engine-temperature-anomaly {
-                formula {
-                    jaiml-anomaly-detection {
-                        field-name "$routing-engine-temperature";
-                    }
-                }
-                type integer;
-                description "JAIML anomaly detection on routing engine temperature field";
-            }
             /*
              * Anomaly detection logic.
              */
             trigger routing-engine-temperature {
-                alert-type hardware.temperature.routing_engine.routing-engine-temperature;			
+                alert-type hardware.temperature.routing_engine.routing-engine-temperature;
                 synopsis "RE temperature KPI";
                 description "Sets health based increase in RE temperature";
                 frequency 1offset;
                 /*
-                 * Sets color to green when RE temperature
-                 * re-temperature is below low threshold ($low-threshold).
-                 */ 
-                term is-re-temperature-normal {
-                    when {
-                        less-than "$routing-engine-temperature" "$low-threshold";
-                        less-than-or-equal-to "$routing-engine-temperature-anomaly" 0;
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine temperature($routing-engine-temperature degree C) is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
-                 * and the temperature value is anomalous.
-                 */ 				
-                term is-re-temperature-anomalous {
-                    when {
-                        less-than "$routing-engine-temperature" "$low-threshold";
-                        equal-to "$routing-engine-temperature-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine temperature is anomalous";
-                        }
-                    }
-                }
-                /*
                  * Sets color to green when RE temperature is below low threshold ($low-threshold)
-                 * 
-                 */				
+                 */
                 term is-temperature-less-than-low-threshold {
                     when {
                         less-than "$routing-engine-temperature" "$low-threshold";
@@ -208,14 +147,14 @@ healthbot {
                             message "$routing-engine temperature($routing-engine-temperature degree celsius) is normal";
                         }
                     }
-                }				
+                }
                 /*
-                 * Sets color to yellow and notify anomaly when RE temperature 
+                 * Sets color to yellow and notify anomaly when RE temperature
                  * ($routing-engine-temperature) is below high threshold ($high-threshold)
-                 */  
+                 */
                 term is-re-temperature-median {
                     when {
-                        greater-than-or-equal-to "$routing-engine-temperature" "$low-threshold";					
+                        greater-than-or-equal-to "$routing-engine-temperature" "$low-threshold";
                         less-than "$routing-engine-temperature" "$high-threshold";
                     }
                     then {
@@ -227,7 +166,7 @@ healthbot {
                 }
                 /*
                  * Defaults color to red and notify anomaly.
-                 */ 
+                 */
                 term re-temperature-abnormal {
                     when {
                         greater-than-or-equal-to "$routing-engine-temperature" "$high-threshold";
@@ -241,46 +180,13 @@ healthbot {
                 }
             }
             trigger routing-engine-cpu-temperature {
-                alert-type hardware.temperature.routing_engine.cpu.routing-engine-cpu-temperature;			
+                alert-type hardware.temperature.routing_engine.cpu.routing-engine-cpu-temperature;
                 synopsis "RE CPU temperature KPI";
                 description "Sets health based increase in RE CPU temperature";
                 frequency 1offset;
                 /*
-                 * Sets color to green when RE CPU temperature
-                 * re-cpu-temperature is below low threshold ($low-threshold).
-                 */ 
-                term is-temperature-normal {
-                    when {
-                        less-than "$routing-engine-cpu-temperature" "$low-threshold";
-                        less-than-or-equal-to "$routing-engine-cpu-temperature-anomaly" 0;
-                    }
-                    then {
-                        status {
-                            color green;
-                            message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree C) is normal";
-                        }
-                    }
-                }
-                /*
-                 * Sets color to yellow when RE temperature re-temperature is below low threshold ($low-threshold)
-                 * and the temperature value is anomalous.
-                 */ 
-                term is-re-cpu-temperature-anomalous {
-                    when {
-                        less-than "$routing-engine-cpu-temperature" "$low-threshold";					
-                        equal-to "$routing-engine-cpu-temperature-anomaly" 1;
-                    }
-                    then {
-                        status {
-                            color yellow;
-                            message "$routing-engine CPU temperature is anomalous";
-                        }
-                    }
-                }
-                /*
                  * Sets color to green when RE CPU temperature is below low threshold ($low-threshold)
-                 * 
-                 */				
+                 */
                 term is-temperature-less-than-low-threshold {
                     when {
                         less-than "$routing-engine-cpu-temperature" "$low-threshold";
@@ -291,15 +197,15 @@ healthbot {
                             message "$routing-engine CPU temperature($routing-engine-cpu-temperature degree celsius) is normal";
                         }
                     }
-                }				
+                }
                 /*
                  * Sets color to yellow and notify anomaly when RE CPU
                  * temperature ($routing-engine-cpu-temperature) is below high threshold
                  * ($high-threshold).
-                 */  
+                 */
                 term is-temperature-median {
                     when {
-                       greater-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";					
+                       greater-than-or-equal-to "$routing-engine-cpu-temperature" "$low-threshold";
                        less-than "$routing-engine-cpu-temperature" "$high-threshold";
                     }
                     then {
@@ -311,11 +217,11 @@ healthbot {
                 }
                 /*
                  * Defaults color to red and notify anomaly.
-                 */ 
+                 */
                 term temperature-abnormal {
                     when {
                         greater-than-or-equal-to "$routing-engine-cpu-temperature" "$high-threshold";
-                    }				
+                    }
                     then {
                         status {
                             color red;
@@ -323,11 +229,11 @@ healthbot {
                         }
                     }
                 }
-            }			
+            }
             /*
              * Variables with default values. Default values can be changed
              * while deploying playbook instance.
-             */			
+             */
             variable re-slot-no {
                 value 0-1;
                 description "Routing engine numbers to monitor, regular expression, e.g. '0'";
@@ -342,7 +248,7 @@ healthbot {
                 value 45;
                 description "RE temperature low threshold: Utilization increase between metrics, before we report anomaly";
                 type int;
-            }		
+            }
             rule-properties {
                 version 1;
                 domain-name chassis;
@@ -350,11 +256,11 @@ healthbot {
                 category advanced;
                 supported-healthbot-version 4.2.0;
                 supported-devices {
-                    sensors components-oc;				    
+                    sensors components-oc;
                     juniper {
                         operating-system junosEvolved {
                             products ACX {
-                                sensors components-oc;							
+                                sensors components-oc;
                                 platforms All {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
@@ -367,17 +273,17 @@ healthbot {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
-                            }							
-                        }							
-                        operating-system junos {							
+                                }
+                            }
+                        }
+                        operating-system junos {
                             products MX {
                                 sensors components-oc-junos;
                                 platforms MX204 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                                 platforms MX304 {
                                     releases 22.2R3 {
                                         release-support min-supported-release;
@@ -407,7 +313,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products JNP {
                                 sensors components-oc-junos;
@@ -425,7 +331,7 @@ healthbot {
                                     releases 22.3R1 {
                                         release-support min-supported-release;
                                     }
-                                }								
+                                }
                             }
                             products EX {
                                 sensors components-oc-junos;
@@ -448,5 +354,5 @@ healthbot {
                 }
             }
         }
-    }	
+    }
 }
