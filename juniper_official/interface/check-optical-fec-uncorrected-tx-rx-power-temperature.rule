@@ -469,6 +469,60 @@ healthbot {
                     }
                 }
             }
+        trigger q-factor {
+            synopsis "Q-factor KPI";
+            description "Value below which q-factor is considered as unhealthy";
+            alert-type interfaces.optics.signal-quality.q-factor;
+            term q-factor-healthy {
+                when {
+                    greater-than-or-equal-to "$q-factor" "$q-factor-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,q-factor $q-factor is normal";
+                    }
+                }
+            }
+            term q-factor-not-healthy {
+                when {
+                    less-than "$q-factor" "$q-factor-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,q-factor $q-factor is below low threshold ($q-factor-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger q-margin {
+            synopsis "Q-factor KPI";
+            description "Value below which q-margin is considered as unhealthy";
+            alert-type interfaces.optics.signal-quality.q-margin;
+            term q-margin-healthy {
+                when {
+                    greater-than-or-equal-to "$q-margin" "$q-margin-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,q-margin $q-margin is normal";
+                    }
+                }
+            }
+            term q-margin-not-healthy {
+                when {
+                    less-than "$q-margin" "$q-margin-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,q-margin $q-margin is below low threshold ($q-margin-threshold)";
+                    }
+                }
+            }
+        }			
             variable critical {
                 value CRITICAL;
                 description "Seveity is matching critical";
