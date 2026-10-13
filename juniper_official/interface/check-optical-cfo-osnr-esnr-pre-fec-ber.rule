@@ -392,6 +392,60 @@ healthbot {
                 }
             }
         }
+        trigger q-factor {
+            synopsis "Q-factor KPI";
+            description "Value below which q-factor is considered as unhealthy";
+            alert-type interfaces.optics.signal-quality.q-factor;
+            term q-factor-healthy {
+                when {
+                    greater-than-or-equal-to "$q-factor" "$q-factor-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,q-factor $q-factor is normal";
+                    }
+                }
+            }
+            term q-factor-not-healthy {
+                when {
+                    less-than "$q-factor" "$q-factor-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,q-factor $q-factor is below low threshold ($q-factor-threshold) ";
+                    }
+                }
+            }
+        }
+        trigger q-margin {
+            synopsis "Q-factor KPI";
+            description "Value below which q-margin is considered as unhealthy";
+            alert-type interfaces.optics.signal-quality.q-margin;
+            term q-margin-healthy {
+                when {
+                    greater-than-or-equal-to "$q-margin" "$q-margin-threshold";
+                }
+                then {
+                    status {
+                        color green;
+                        message "$interface-name,q-margin $q-margin is normal";
+                    }
+                }
+            }
+            term q-margin-not-healthy {
+                when {
+                    less-than "$q-margin" "$q-margin-threshold";
+                }
+                then {
+                    status {
+                        color red;
+                        message "$interface-name,q-margin $q-margin is below low threshold ($q-margin-threshold)";
+                    }
+                }
+            }
+        }		
         variable carrier-frequency-offset-high-threshold {
             value 3600;
             description "Critical threshold of carrier-frequency-offset";
@@ -441,12 +495,12 @@ healthbot {
             value-type coherent-optics.pre-fec-ber-max;			
         }
         variable q-factor-threshold {
-            value 6;
+            value 7;
             description "Minimum acceptable Q-factor (dB). Below this value raises a critical alert";
             type float;
         }
         variable q-margin-threshold {
-            value 3;
+            value 1;
             description "Minimum acceptable Q-margin (dB) before the FEC limit. Below this value raises a critical alert";
             type float;
         }
