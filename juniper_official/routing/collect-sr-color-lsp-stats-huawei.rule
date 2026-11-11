@@ -1,0 +1,131 @@
+/*
+ * Collect SR Color LSP traffic statistics for Huawei devices for pathfinder dynamic topology.
+ *
+ * Req 2031: https://paragon-automation.atlassian.net/browse/REQ-2031
+ *
+ * Two input control detection
+ *
+ *   1) input-to-address, is a regular expression that matches the SR color lsp
+ *      destination address that must be monitored.  By default it's '.*', which matches
+ *      all destination address. Use something like '11.0.0*' to match only destination
+ *      address starting with '11.0.0'.
+ *
+ *   2) input-color, is a regular expression that matches the color of SR color lsp
+ *      that must be monitored.  By default it's '.*', which matches
+ *      all colors. Use something like '10*' to match LSPs starting with color '10'.
+ *
+ */
+healthbot {
+    topic routing.spring {
+        rule collect-sr-color-lsp-stats-huawei {
+            keys [ lsp-name ];
+            description "Collects Huawei SR color LSP stats periodically";
+            sensor huawei-sr-color-lsp {
+                description "Huawei SR-TE policy traffic statistics sensor";
+                open-config {
+                    sensor-name huawei-network-instance:network-instance/instances/instance/huawei-segment-routing:segment-routing/huawei-srpolicy:srpolicy/policy-traffic-statistics/policy-traffic-statistic;
+                    frequency 60s;
+                }
+            }
+            field lsp-destination {
+                sensor huawei-sr-color-lsp {
+                    where "huawei-network-instance:network-instance/instances/instance/segment-routing/srpolicy/policy-traffic-statistics/policy-traffic-statistic/endpoint =~ /{{input-to-address}}/";
+                    path "huawei-network-instance:network-instance/instances/instance/segment-routing/srpolicy/policy-traffic-statistics/policy-traffic-statistic/endpoint";
+                }
+                type string;
+                description "LSP destination address";
+            }
+            field lsp-color {
+                sensor huawei-sr-color-lsp {
+                    where "huawei-network-instance:network-instance/instances/instance/segment-routing/srpolicy/policy-traffic-statistics/policy-traffic-statistic/color =~ /{{input-color}}/";
+                    path "huawei-network-instance:network-instance/instances/instance/segment-routing/srpolicy/policy-traffic-statistics/policy-traffic-statistic/color";
+                }
+                type string;
+                description "Color of the LSP being monitored";
+            }
+            field lsp-stats-bytes {
+                sensor huawei-sr-color-lsp {
+                    path huawei-network-instance:network-instance/instances/instance/segment-routing/srpolicy/policy-traffic-statistics/policy-traffic-statistic/total-byte;
+                }
+                type integer;
+                description "LSP bytes counter";
+            }
+            field lsp-stats-packets {
+                sensor huawei-sr-color-lsp {
+                    path huawei-network-instance:network-instance/instances/instance/segment-routing/srpolicy/policy-traffic-statistics/policy-traffic-statistic/total-packet;
+                }
+                type integer;
+                description "LSP packet counter";
+            }
+            field lsp-name {
+                formula {
+                    concatenate {
+                        strings [ "srte_c_" "$lsp-color" "_ep_" "$lsp-destination" ];
+                    }
+                }
+                type string;
+                description "LSP name";
+            }
+            field lsp-stats-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-bytes";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "LSP bit rate";
+            }
+            field lsp-stats-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-packets";
+                    }
+                }
+                type integer;
+                description "LSP packet rate";
+            }
+            variable input-to-address {
+                value .*;
+                description "SR color LSP destination address to monitor, regular expression, eg '11.0.0.*|10.52.135.*'";
+                type string;
+            }
+            variable input-color {
+                value .*;
+                description "SR color LSP colors to monitor, regular expression, eg '100|20*'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor huawei {
+                        vendor-name huawei;
+                        operating-systems vrp {
+                            products "NE" {
+                                platforms "NE9000-8" {
+                                    releases 8.230 {
+                                        sensors huawei-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms "NE40E-X3A" {
+                                    releases 8.230 {
+                                        sensors huawei-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products "NetEngine" {
+                                platforms "NetEngine 8000 X4" {
+                                    releases 8.250 {
+                                        sensors huawei-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

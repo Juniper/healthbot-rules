@@ -1,0 +1,173 @@
+/*
+ * Collect Physical Interface traffic statistics for Huawei devices for pathfinder dynamic topology.
+ *
+ * Req 2031: https://paragon-automation.atlassian.net/browse/REQ-2031
+ *
+ * One input control detection
+ *
+ *   1) input-ifd-name, is a regular expression that matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'GigabitEthernet.*' to match only
+ *      gigabit ethernet interfaces.
+ *
+ * Sensor selection rationale:
+ *
+ * The OpenConfig interface sensor is used for Pathfinder because it provides
+ * the required in-pkts and out-pkts counters for both physical and logical
+ * interfaces. These counters are not available through the IETF sensor
+ * currently used by Insights.
+ *
+ * There are two key limitations with using the IETF sensor for the Pathfinder
+ * use case:
+ *
+ * 1. Lack of logical interface support:
+ *    The IETF sensor does not provide statistics for logical interfaces,
+ *    which are required for Pathfinder optimization use cases. Using the
+ *    OpenConfig sensor provides a consistent telemetry path for both
+ *    physical and logical interfaces.
+ *
+ * 2. Inability to accurately derive total packet counters:
+ *    Total packet counters cannot be reliably calculated by summing
+ *    unicast, multicast, and broadcast packet counters.
+ *
+ *    According to the OpenConfig definition, in-pkts represents the total
+ *    number of packets received on an interface, including unicast,
+ *    multicast, broadcast, and bad packets.
+ *
+ *    The OpenConfig definition does not specify exactly which counters
+ *    contribute to the bad-packet category or how devices calculate the
+ *    final value. Therefore, deriving in-pkts by summing unicast,
+ *    multicast, and broadcast counters may result in inaccurate statistics.
+ *
+ *    In service provider networks, packet errors can become significant
+ *    during outages or network failure scenarios. Excluding these packets
+ *    could lead to inaccurate statistics and potentially affect Pathfinder
+ *    optimization decisions.
+ *
+ *    Hence, Pathfinder uses the packet counters directly reported by the
+ *    device rather than attempting to derive them from individual packet
+ *    counters.
+ *
+ */
+ healthbot {
+    topic interfaces {
+        rule collect-physical-interface-stats-huawei {
+            keys interface-name;
+            description "Collects Huawei physical interface traffic stats periodically";
+            sensor interfaces-oc {
+                synopsis "Interface open-config sensor definition";
+                description "Interface open-config sensor definition";
+                open-config {
+                    sensor-name openconfig-interfaces:interfaces/interface/state;
+                    frequency 60s;
+                }
+            }
+            field out-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-octets";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+            }
+            field out-octets {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/state/counters/out-octets;
+                }
+                type integer;
+                description "Interface egress octets counter";
+            }
+            field out-pkts {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/state/counters/out-pkts;
+                }
+                type integer;
+                description "Interface egress packets counter";
+            }
+            field out-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-pkts";
+                    }
+                }
+                type integer;
+            }
+            field in-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-octets";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+            }
+            field in-octets {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/state/counters/in-octets;
+                }
+                type integer;
+                description "Interface ingress octets";
+            }
+            field in-pkts {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/state/counters/in-pkts;
+                }
+                type integer;
+                description "Interface ingress packets";
+            }
+            field in-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-pkts";
+                    }
+                }
+                type integer;
+            }
+            field interface-name {
+                sensor interfaces-oc {
+                    where "openconfig-interfaces:interfaces/interface/@name =~ /{{input-ifd-name}}/";
+                    path "openconfig-interfaces:interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            variable input-ifd-name {
+                value .*;
+                description "Interfaces to be monitored, regular expression, eg 'GigabitEthernet.*'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor huawei {
+                        vendor-name huawei;
+                        operating-systems vrp {
+                            products "NE" {
+                                platforms "NE9000-8" {
+                                    releases 8.230 {
+                                        sensors interfaces-oc;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms "NE40E-X3A" {
+                                    releases 8.230 {
+                                        sensors interfaces-oc;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products "NetEngine" {
+                                platforms "NetEngine 8000 X4" {
+                                    releases 8.250 {
+                                        sensors interfaces-oc;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
