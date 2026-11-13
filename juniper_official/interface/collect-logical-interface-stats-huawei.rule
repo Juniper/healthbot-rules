@@ -1,0 +1,195 @@
+/*
+ * Collect Logical Interface traffic statistics for Huawei devices for pathfinder dynamic topology.
+ *
+ * Req 2031: https://paragon-automation.atlassian.net/browse/REQ-2031
+ *
+ * Two inputs control detection
+ *
+ *   1) input-ifd-name, is a regular expression that matches the interfaces
+ *      that you would like to monitor.  By default it's '.*', which matches
+ *      all interfaces. Use something like 'GigabitEthernet.*' to match only
+ *      gigabit ethernet interfaces.
+ *
+ *   2) input-ifl-no, is a regular expression that matches the IFL index number that
+ *      you would like to monitor.  By default it's '.*', which matches all
+ *      interfaces. Use something like '0-10*' to match only 0 to 10 IFLs.
+ *
+ *
+ * Sensor selection rationale:
+ *
+ * The OpenConfig interface sensor is used for Pathfinder because it provides
+ * the required in-pkts and out-pkts counters for both physical and logical
+ * interfaces. These counters are not available through the IETF sensor
+ * currently used by Insights.
+ *
+ * There are two key limitations with using the IETF sensor for the Pathfinder
+ * use case:
+ *
+ * 1. Lack of logical interface support:
+ *    The IETF sensor does not provide statistics for logical interfaces,
+ *    which are required for Pathfinder optimization use cases. Using the
+ *    OpenConfig sensor provides a consistent telemetry path for both
+ *    physical and logical interfaces.
+ *
+ * 2. Inability to accurately derive total packet counters:
+ *    Total packet counters cannot be reliably calculated by summing
+ *    unicast, multicast, and broadcast packet counters.
+ *
+ *    According to the OpenConfig definition, in-pkts represents the total
+ *    number of packets received on an interface, including unicast,
+ *    multicast, broadcast, and bad packets.
+ *
+ *    The OpenConfig definition does not specify exactly which counters
+ *    contribute to the bad-packet category or how devices calculate the
+ *    final value. Therefore, deriving in-pkts by summing unicast,
+ *    multicast, and broadcast counters may result in inaccurate statistics.
+ *
+ *    In service provider networks, packet errors can become significant
+ *    during outages or network failure scenarios. Excluding these packets
+ *    could lead to inaccurate statistics and potentially affect Pathfinder
+ *    optimization decisions.
+ *
+ *    Hence, Pathfinder uses the packet counters directly reported by the
+ *    device rather than attempting to derive them from individual packet
+ *    counters.
+ *
+ */
+ healthbot {
+    topic interfaces {
+        rule collect-logical-interface-stats-huawei {
+            keys [ interface-name sub-interface-index ];
+            description "Collects Huawei logical interface traffic stats periodically";
+            sensor interfaces-oc {
+                synopsis "Sub Interface open-config sensor definition";
+                description "Sub Interfaces open-config sensor to collect telemetry data from network device";
+                open-config {
+                    sensor-name openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/state;
+                    frequency 60s;
+                }
+            }
+            field out-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-octets";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "Egress bit rate";
+            }
+            field out-octets {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/state/counters/out-octets;
+                }
+                type integer;
+                description "Subinterface egress octets";
+            }
+            field out-pkts {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/state/counters/out-pkts;
+                }
+                type integer;
+                description "Subinterface egress packets";
+            }
+            field out-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$out-pkts";
+                    }
+                }
+                type integer;
+                description "Egress packet rate";
+            }
+            field in-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-octets";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "Ingress bit rate";
+            }
+            field in-octets {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/state/counters/in-octets;
+                }
+                type integer;
+                description "Subinterface ingress octets";
+            }
+            field in-pkts {
+                sensor interfaces-oc {
+                    path openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/state/counters/in-pkts;
+                }
+                type integer;
+                description "Subinterface ingress packets";
+            }
+            field in-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$in-pkts";
+                    }
+                }
+                type integer;
+                description "Ingress packet rate";
+            }
+            field interface-name {
+                sensor interfaces-oc {
+                    where "openconfig-interfaces:interfaces/interface/@name =~ /{{input-ifd-name}}/";
+                    path "openconfig-interfaces:interfaces/interface/@name";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            field sub-interface-index {
+                sensor interfaces-oc {
+                    where "openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/@index =~ /{{input-ifl-no}}/";
+                    path "openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/@index";
+                }
+                type string;
+                description "Interfaces to be monitored";
+            }
+            variable input-ifd-name {
+                value .*;
+                description "Interfaces to be monitored, regular expression, eg 'GigabitEthernet.*'";
+                type string;
+            }
+            variable input-ifl-no {
+                value .*;
+                description "Sub interfaces index to be monitored, regular expression, eg '0-10'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor huawei {
+                        vendor-name huawei;
+                        operating-systems vrp {
+                            products "NE" {
+                                platforms "NE9000-8" {
+                                    releases 8.230 {
+                                        sensors interfaces-oc;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms "NE40E-X3A" {
+                                    releases 8.230 {
+                                        sensors interfaces-oc;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products "NetEngine" {
+                                platforms "NetEngine 8000 X4" {
+                                    releases 8.250 {
+                                        sensors interfaces-oc;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
