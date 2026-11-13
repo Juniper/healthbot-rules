@@ -1,0 +1,105 @@
+/*
+ * Collect SR LSP traffic statistics for Huawei devices for pathfinder dynamic topology.
+ *
+ * Req 2031: https://paragon-automation.atlassian.net/browse/REQ-2031
+ *
+ * One input control detection
+ *
+ *   1) input-lsp-name, is a regular expression that matches the SR lsp name
+ *      that must be monitored.  By default it's '.*', which matches
+ *      all lsps. Use something like 'Silver*' to match only lsp names starting
+ *      with 'Silver'.
+ *
+ */
+healthbot {
+    topic routing.spring {
+        rule collect-sr-lsp-stats-huawei {
+            keys [ lsp-name ];
+            description "Collects Huawei SR LSP stats periodically";
+            sensor huawei-sr-lsp {
+                description "Huawei MPLS-TE LSP traffic statistics sensor";
+                open-config {
+                    sensor-name huawei-mpls:mpls/huawei-mpls-te:te/traffic-statistics;
+                    frequency 60s;
+                }
+            }
+            field lsp-name {
+                sensor huawei-sr-lsp {
+                    where "huawei-mpls:mpls/te/traffic-statistics/traffic-statistic/name =~ /{{input-lsp-name}}/";
+                    path "huawei-mpls:mpls/te/traffic-statistics/traffic-statistic/name";
+                }
+                type string;
+                description "LSP destination in case of SR color LSP and name in case of SR LSP";
+            }
+            field lsp-stats-bytes {
+                sensor huawei-sr-lsp {
+                    path huawei-mpls:mpls/te/traffic-statistics/traffic-statistic/transit-bytes;
+                }
+                type integer;
+                description "LSP bytes counter";
+            }
+            field lsp-stats-packets {
+                sensor huawei-sr-lsp {
+                    path huawei-mpls:mpls/te/traffic-statistics/traffic-statistic/transit-packets;
+                }
+                type integer;
+                description "LSP packet counter";
+            }
+            field lsp-stats-bps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-bytes";
+                        multiplication-factor 8;
+                    }
+                }
+                type integer;
+                description "LSP bit rate";
+            }
+            field lsp-stats-pps {
+                formula {
+                    rate-of-change {
+                        field-name "$lsp-stats-packets";
+                    }
+                }
+                type integer;
+                description "LSP packet rate";
+            }
+            variable input-lsp-name {
+                value .*;
+                description "LSP names to monitor, regular expression, eg 'LSP-1.*|LSP-A.*'";
+                type string;
+            }
+            rule-properties {
+                supported-devices {
+                    other-vendor huawei {
+                        vendor-name huawei;
+                        operating-systems vrp {
+                            products "NE" {
+                                platforms "NE9000-8" {
+                                    releases 8.230 {
+                                        sensors huawei-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                                platforms "NE40E-X3A" {
+                                    releases 8.230 {
+                                        sensors huawei-sr-color-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                            products "NetEngine" {
+                                platforms "NetEngine 8000 X4" {
+                                    releases 8.250 {
+                                        sensors huawei-sr-lsp;
+                                        release-support min-supported-release;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
