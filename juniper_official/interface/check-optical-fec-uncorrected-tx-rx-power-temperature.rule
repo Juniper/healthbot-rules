@@ -45,10 +45,6 @@ healthbot {
                 plots fec-uncorrected {
                     triggers uncorrected-forward-error-correction-errors;
                     unit count;
-                    thresholds fec-uncorrected-threshold {
-                        field-name "$fec-uncorrected-threshold";
-                        severity critical;
-                    }					
                 }
             }
             field fec-uncorrected-threshold {
@@ -453,6 +449,17 @@ healthbot {
                         }
                     }
                 }
+                term zero-fec-uncorrected-errors {
+                    when {
+                        equal-to "$fec-uncorrected" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $interface-name has no FEC uncorrected errors";
+                        }
+                    }
+                }				
                 term fec-uncorrected-errors-present {
                     when {
                         increasing-at-least-by-value "$fec-uncorrected" {
