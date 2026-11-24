@@ -309,7 +309,7 @@ healthbot {
                 description "Sets health based on Uncorrected forward error correction errors";			
                 frequency 1offset;
                 /*
-                 * Sets color to green when fec uncorrected error is not increasing
+                 * Sets color to green when fec uncorrected error is not increasing or 0
                  */				
                 term no-fec-uncorrected-errors {
                     when {
@@ -322,6 +322,17 @@ healthbot {
                         status {
                             color green;
                             message "Interface $interface-name FEC uncorrected errors are not increasing";
+                        }
+                    }
+                }	
+                term zero-fec-uncorrected-errors {
+                    when {
+                        equal-to "$fec-uncorrected" 0;
+                    }
+                    then {
+                        status {
+                            color green;
+                            message "Interface $interface-name has no FEC uncorrected errors";
                         }
                     }
                 }				
