@@ -309,33 +309,40 @@ healthbot {
                 description "Sets health based on Uncorrected forward error correction errors";			
                 frequency 1offset;
                 /*
-                 * Sets color to green when fec uncorrected error is equal to 0
+                 * Sets color to green when fec uncorrected error is not increasing
                  */				
                 term no-fec-uncorrected-errors {
                     when {
-                        equal-to "$fec-uncorrected" 0;
+                        matches-with-previous "$fec-uncorrected" {
+                            time-range 2.5offset;
+                            latest;
+                        }
                     }
                     then {
                         status {
                             color green;
-                            message "Interface $interface-name has no FEC uncorrected errors";
+                            message "Interface $interface-name FEC uncorrected errors are not increasing";
                         }
                     }
-                }
+                }				
                 /*
-                 * Sets color to red when fec uncorrected error is greater than 0.
+                 * Sets color to red when fec uncorrected error is increasing
                  */				
                 term fec-uncorrected-errors-present {
                     when {
-                        not-equal-to "$fec-uncorrected" 0;
-                    }				
+                        increasing-at-least-by-value "$fec-uncorrected" {
+                            value "$fec-uncorrected-threshold";
+                            time-range 2.5offset;
+                            latest;
+                        }
+                    }
                     then {
                         status {
                             color red;
-                            message "Interface $interface-name has non-zero FEC uncorrected errors";
+                            message "Interface $interface-name has FEC uncorrected errors are increasing";
                         }
                     }
-                }
+                }				
             }
             trigger interface-rx-loss-of-signal-functionality {
                 alert-type interfaces.rx.los.interface-rx-loss-of-signal-functionality;
@@ -681,6 +688,11 @@ healthbot {
                 type string;
                 value-type interface;				
             }
+            variable fec-uncorrected-threshold-variable {
+                value 1;
+                description "Interface fec-uncorrected threshold: Number of fec-uncorrected increase between metrics, before we report anomaly";
+                type integer;
+            }			
             rule-properties {
                 version 1;
                 domain-name interfaces.client-optics;
